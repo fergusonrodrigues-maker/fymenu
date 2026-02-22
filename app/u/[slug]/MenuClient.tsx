@@ -9,6 +9,10 @@ type Unit = {
   address: string;
   instagram: string;
   slug: string;
+
+  // ✅ novos campos (podem ser string vazia)
+  whatsapp: string;
+  logo_url: string;
 };
 
 type Category = {
@@ -32,10 +36,64 @@ function moneyBR(v: number) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-type ModalState = {
-  list: Product[];
-  index: number;
-} | null;
+type ModalState =
+  | {
+      list: Product[];
+      index: number;
+    }
+  | null;
+
+type FooterLink = {
+  key: "instagram" | "maps" | "whatsapp";
+  label: string;
+  href: string;
+  icon: string;
+};
+
+function normalizeInstagram(instagram: string) {
+  const v = (instagram ?? "").trim();
+  if (!v) return "";
+  if (v.startsWith("http://") || v.startsWith("https://")) return v;
+  const handle = v.replace("@", "").trim();
+  if (!handle) return "";
+  return `https://instagram.com/${handle}`;
+}
+
+function mapsFromAddress(address: string) {
+  const v = (address ?? "").trim();
+  if (!v) return "";
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(v)}`;
+}
+
+// aceitas:
+// - "62999999999"
+// - "+55 62 99999-9999"
+// - "55 62 99999-9999"
+function normalizeWhatsappToWaMe(phone: string) {
+  const digits = (phone ?? "").replace(/\D/g, "");
+  if (!digits) return "";
+  // se já veio com 55, ok. se veio sem, assume BR e exige DDD+numero (mas não forçamos demais no MVP)
+  const withCountry = digits.startsWith("55") ? digits : `55${digits}`;
+  return `https://wa.me/${withCountry}`;
+}
+
+function buildFooterLinks(unit: Unit): FooterLink[] {
+  const links: FooterLink[] = [];
+
+  const ig = normalizeInstagram(unit.instagram);
+  const maps = mapsFromAddress(unit.address);
+
+  // ⚠️ MVP: whatsapp ainda não existe em unit — não inventar link.
+  // Quando tiver unit.whatsapp no banco, trocamos para:
+  // const wa = normalizeWhatsappToWaMe(unit.whatsapp)
+  const wa = "";
+
+  if (ig) links.push({ key: "instagram", label: "Instagram", href: ig, icon: "📷" });
+  if (maps) links.push({ key: "maps", label: "Maps", href: maps, icon: "📍" });
+  if (wa) links.push({ key: "whatsapp", label: "WhatsApp", href: wa, icon: "💬" });
+
+  return links;
+}
 
 export default function MenuClient({
   unit,
@@ -46,6 +104,7 @@ export default function MenuClient({
   categories: Category[];
   products: Product[];
 }) {
+  // Agrupa produtos por categoria (id -> Product[])
   const grouped = useMemo(() => {
     const map = new Map<string, Product[]>();
     for (const c of categories) map.set(c.id, []);
@@ -56,13 +115,29 @@ export default function MenuClient({
     return map;
   }, [categories, products]);
 
+  // ✅ Regra MVP: no público, categoria vazia NÃO aparece
+  const visibleCategories = useMemo(() => {
+    const has = new Set<string>();
+    for (const p of products) has.add(p.category_id);
+    return categories.filter((c) => has.has(c.id));
+  }, [categories, products]);
+
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const chipBtnRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
-  const [activeCatId, setActiveCatId] = useState<string>(categories[0]?.id ?? "");
+  const [activeCatId, setActiveCatId] = useState<string>(visibleCategories[0]?.id ?? "");
   const [modal, setModal] = useState<ModalState>(null);
 
-  // trava scroll do body quando modal estiver aberto (menu atrás não mexe)
+  // ✅ Se as categorias mudarem, garante active válido
+  useEffect(() => {
+    if (!visibleCategories.length) return;
+    if (!activeCatId || !visibleCategories.some((c) => c.id === activeCatId)) {
+      setActiveCatId(visibleCategories[0].id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visibleCategories]);
+
+  // trava scroll do body quando modal estiver aberto
   useEffect(() => {
     if (!modal) return;
     const prev = document.body.style.overflow;
@@ -74,7 +149,7 @@ export default function MenuClient({
 
   // Observa qual seção (categoria) está em vigência no scroll vertical
   useEffect(() => {
-    const ids = categories.map((c) => c.id);
+    const ids = visibleCategories.map((c) => c.id);
     const els = ids
       .map((id) => sectionRefs.current[id])
       .filter(Boolean) as HTMLDivElement[];
@@ -101,9 +176,9 @@ export default function MenuClient({
 
     els.forEach((el) => io.observe(el));
     return () => io.disconnect();
-  }, [categories]);
+  }, [visibleCategories]);
 
-  // centraliza o botão da categoria ativa no “meio”
+  // centraliza o botão da categoria ativa nos chips
   useEffect(() => {
     const btn = chipBtnRefs.current[activeCatId];
     if (!btn) return;
@@ -116,23 +191,37 @@ export default function MenuClient({
     el.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  const igLink = unit.instagram
-    ? unit.instagram.startsWith("http")
-      ? unit.instagram
-      : `https://instagram.com/${unit.instagram.replace("@", "")}`
-    : "";
-
-  const mapsLink = unit.address
-    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(unit.address)}`
-    : "";
-
-  // WhatsApp placeholder (trocar quando tiver no banco)
-  const whatsappLink = `https://wa.me/55${"6299999999"}`;
+  // bucket de links (só renderiza os válidos)
+  const footerLinks = useMemo(() => buildFooterLinks(unit), [unit]);
 
   const bg = "#0b0b0b";
   const glass = "rgba(255,255,255,0.06)";
   const border = "rgba(255,255,255,0.12)";
   const text = "#fff";
+
+  // ✅ Se não tem nada publicado (nenhum produto)
+  if (!visibleCategories.length) {
+    return (
+      <main
+        style={{
+          minHeight: "100vh",
+          background: bg,
+          color: text,
+          display: "grid",
+          placeItems: "center",
+          padding: 20,
+          textAlign: "center",
+        }}
+      >
+        <div style={{ maxWidth: 420 }}>
+          <div style={{ fontSize: 18, fontWeight: 950 }}>Cardápio</div>
+          <div style={{ marginTop: 10, opacity: 0.7 }}>
+            Ainda não há itens publicados neste cardápio.
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main
@@ -140,7 +229,7 @@ export default function MenuClient({
         minHeight: "100vh",
         background: bg,
         color: text,
-        paddingBottom: 120, // espaço pro footer flutuante
+        paddingBottom: footerLinks.length ? 120 : 70, // se não tiver links, menos espaço
       }}
     >
       {/* ===== HEADER FIXO ===== */}
@@ -151,13 +240,12 @@ export default function MenuClient({
           zIndex: 50,
           padding: "14px 14px 10px",
           backdropFilter: "blur(14px)",
-          // remove “linha preta” dura: degradê mais suave/transparente
           background:
             "linear-gradient(rgba(11,11,11,0.96) 0%, rgba(11,11,11,0.80) 55%, rgba(11,11,11,0.00) 100%)",
           borderBottom: "1px solid rgba(255,255,255,0.04)",
         }}
       >
-        {/* topo: avatar + título centralizado */}
+        {/* topo */}
         <div
           style={{
             display: "grid",
@@ -198,14 +286,13 @@ export default function MenuClient({
             paddingBottom: 8,
             paddingTop: 2,
             WebkitOverflowScrolling: "touch",
-            // evita corte nas laterais e ajuda o “center”
             paddingLeft: 18,
             paddingRight: 18,
             scrollPaddingLeft: 60,
             scrollPaddingRight: 60,
           }}
         >
-          {categories.map((c) => {
+          {visibleCategories.map((c) => {
             const active = c.id === activeCatId;
             return (
               <button
@@ -215,7 +302,9 @@ export default function MenuClient({
                 }}
                 onClick={() => scrollToCategory(c.id)}
                 style={{
-                  border: `1px solid ${active ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.10)"}`,
+                  border: `1px solid ${
+                    active ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.10)"
+                  }`,
                   background: active ? "rgba(255,255,255,0.10)" : "rgba(255,255,255,0.03)",
                   color: "#fff",
                   padding: active ? "10px 16px" : "9px 14px",
@@ -237,9 +326,11 @@ export default function MenuClient({
 
       {/* ===== CONTEÚDO ===== */}
       <div style={{ padding: 14, display: "flex", flexDirection: "column", gap: 26 }}>
-        {categories.map((cat) => {
+        {visibleCategories.map((cat) => {
           const items = grouped.get(cat.id) ?? [];
           const isActive = cat.id === activeCatId;
+
+          if (!items.length) return null;
 
           return (
             <div
@@ -247,11 +338,9 @@ export default function MenuClient({
               ref={(el) => {
                 sectionRefs.current[cat.id] = el;
               }}
-              style={{
-                scrollMarginTop: 140,
-              }}
+              style={{ scrollMarginTop: 140 }}
             >
-              {/* Nome da categoria: mantém “não vigentes” visível com fade, mas a vigente some */}
+              {/* Nome da categoria */}
               <div
                 style={{
                   textAlign: "center",
@@ -268,64 +357,35 @@ export default function MenuClient({
                 {cat.name}
               </div>
 
-              {items.length === 0 ? (
-                <div
-                  style={{
-                    marginTop: 6,
-                    border: "1px solid rgba(255,255,255,0.08)",
-                    background: "rgba(255,255,255,0.03)",
-                    borderRadius: 16,
-                    padding: 14,
-                    opacity: 0.85,
-                    textAlign: "center",
-                  }}
-                >
-                  Nenhum item nesta categoria.
-                </div>
-              ) : (
-                <HorizontalProducts
-                  items={items}
-                  variant={isActive ? "active" : "inactive"} // NÃO VIGENTES SEMPRE MENORES
-                  onOpen={(p, index) => {
-                    setModal({ list: items, index });
-                  }}
-                />
-              )}
+              <HorizontalProducts
+                items={items}
+                variant={isActive ? "active" : "inactive"}
+                onOpen={(p, index) => {
+                  setModal({ list: items, index });
+                }}
+              />
             </div>
           );
         })}
       </div>
 
-      {/* ===== FOOTER FLUTUANTE ===== */}
-      <footer
-        style={{
-          position: "fixed",
-          left: 0,
-          right: 0,
-          bottom: 18,
-          zIndex: 60,
-          display: "flex",
-          justifyContent: "center",
-          pointerEvents: "none",
-        }}
-      >
-        <div
+      {/* ===== FOOTER FLUTUANTE (bucket dinâmico) ===== */}
+      {footerLinks.length > 0 && (
+        <footer
           style={{
-            pointerEvents: "auto",
+            position: "fixed",
+            left: 0,
+            right: 0,
+            bottom: 18,
+            zIndex: 60,
             display: "flex",
-            gap: 10,
-            padding: "10px 12px",
-            borderRadius: 999,
-            background: "rgba(255,255,255,0.06)",
-            border: "1px solid rgba(255,255,255,0.10)",
-            backdropFilter: "blur(14px)",
+            justifyContent: "center",
+            pointerEvents: "none",
           }}
         >
-          <FooterBtn label="Instagram" href={igLink} icon="📷" disabled={!igLink} />
-          <FooterBtn label="Maps" href={mapsLink} icon="📍" disabled={!mapsLink} />
-          <FooterBtn label="WhatsApp" href={whatsappLink} icon="💬" disabled={!whatsappLink} />
-        </div>
-      </footer>
+          <FooterBucket links={footerLinks} />
+        </footer>
+      )}
 
       {/* ===== MODAL (BOX) ===== */}
       {modal && (
@@ -340,25 +400,42 @@ export default function MenuClient({
   );
 }
 
+function FooterBucket({ links }: { links: FooterLink[] }) {
+  return (
+    <div
+      style={{
+        pointerEvents: "auto",
+        display: "flex",
+        gap: 10,
+        padding: "10px 12px",
+        borderRadius: 999,
+        background: "rgba(255,255,255,0.06)",
+        border: "1px solid rgba(255,255,255,0.10)",
+        backdropFilter: "blur(14px)",
+      }}
+    >
+      {links.map((l) => (
+        <FooterBtn key={l.key} label={l.label} href={l.href} icon={l.icon} />
+      ))}
+    </div>
+  );
+}
+
 function FooterBtn({
   label,
   href,
   icon,
-  disabled,
 }: {
   label: string;
   href: string;
   icon: string;
-  disabled?: boolean;
 }) {
   return (
     <a
-      href={disabled ? undefined : href}
-      target={disabled ? undefined : "_blank"}
+      href={href}
+      target="_blank"
       rel="noreferrer"
       style={{
-        pointerEvents: disabled ? "none" : "auto",
-        opacity: disabled ? 0.35 : 1,
         textDecoration: "none",
         color: "#fff",
         display: "grid",
@@ -388,7 +465,6 @@ function HorizontalProducts({
 }) {
   const scrollerRef = useRef<HTMLDivElement | null>(null);
 
-  // HERO sempre no meio do scroller
   useEffect(() => {
     const el = scrollerRef.current;
     if (!el) return;
@@ -405,14 +481,14 @@ function HorizontalProducts({
         const dist = Math.abs(centerX - cardCenter);
         const max = rect.width * 0.55;
 
-        const t = Math.max(0, 1 - dist / max); // 0..1
+        const t = Math.max(0, 1 - dist / max);
 
-        // ✅ MEMÓRIA: não-vigentes sempre menores
         const base = variant === "active" ? 0.93 : 0.82;
         const grow = variant === "active" ? 0.12 : 0.06;
 
         const scale = base + t * grow;
-        const alpha = (variant === "active" ? 0.72 : 0.48) + t * (variant === "active" ? 0.28 : 0.24);
+        const alpha =
+          (variant === "active" ? 0.72 : 0.48) + t * (variant === "active" ? 0.28 : 0.24);
 
         c.style.transform = `scale(${scale})`;
         c.style.opacity = String(alpha);
@@ -421,7 +497,11 @@ function HorizontalProducts({
 
     requestAnimationFrame(() => {
       const first = cards()[0];
-      if (first) el.scrollLeft = Math.max(0, first.offsetLeft - el.clientWidth / 2 + first.clientWidth / 2);
+      if (first)
+        el.scrollLeft = Math.max(
+          0,
+          first.offsetLeft - el.clientWidth / 2 + first.clientWidth / 2
+        );
       update();
     });
 
@@ -433,26 +513,25 @@ function HorizontalProducts({
     };
   }, [variant]);
 
-  // ✅ MEMÓRIA: tamanho NÃO depende da quantidade de produtos
   const W = variant === "active" ? 250 : 180;
 
   return (
     <div
-  ref={scrollerRef}
-  style={{
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: variant === "active" ? 14 : 10,
-    overflowX: "auto",
-    paddingTop: 14,        // ✅ espaço pra não “cortar” o hero
-    paddingBottom: 12,
-    WebkitOverflowScrolling: "touch",
-    scrollSnapType: "x mandatory",
-    paddingLeft: variant === "active" ? 26 : 18,
-    paddingRight: variant === "active" ? 26 : 18,
-  }}
->
+      ref={scrollerRef}
+      style={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        gap: variant === "active" ? 14 : 10,
+        overflowX: "auto",
+        paddingTop: 14,
+        paddingBottom: 12,
+        WebkitOverflowScrolling: "touch",
+        scrollSnapType: "x mandatory",
+        paddingLeft: variant === "active" ? 26 : 18,
+        paddingRight: variant === "active" ? 26 : 18,
+      }}
+    >
       {items.map((p, idx) => (
         <button
           key={p.id}
@@ -473,15 +552,37 @@ function HorizontalProducts({
             scrollSnapAlign: "center",
           }}
         >
-          <div style={{ position: "relative", width: "100%", aspectRatio: "9 / 16", background: "rgba(255,255,255,0.06)" }}>
+          <div
+            style={{
+              position: "relative",
+              width: "100%",
+              aspectRatio: "9 / 16",
+              background: "rgba(255,255,255,0.06)",
+            }}
+          >
             {p.thumbnail_url ? (
               <img
                 src={p.thumbnail_url}
                 alt={p.name}
-                style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                }}
               />
             ) : (
-              <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", opacity: 0.55, fontSize: 12 }}>
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  display: "grid",
+                  placeItems: "center",
+                  opacity: 0.55,
+                  fontSize: 12,
+                }}
+              >
                 sem foto
               </div>
             )}
@@ -490,9 +591,11 @@ function HorizontalProducts({
               style={{
                 position: "absolute",
                 inset: 0,
-                background: "linear-gradient(rgba(0,0,0,0.00) 35%, rgba(0,0,0,0.70) 78%, rgba(0,0,0,0.88) 100%)",
+                background:
+                  "linear-gradient(rgba(0,0,0,0.00) 35%, rgba(0,0,0,0.70) 78%, rgba(0,0,0,0.88) 100%)",
               }}
             />
+
             <div style={{ position: "absolute", left: 14, right: 14, bottom: 14 }}>
               <div
                 style={{
@@ -537,6 +640,9 @@ function HorizontalProducts({
     </div>
   );
 }
+
+// ---- Modal (mantido igual ao seu) ----
+
 function ProductModal({
   list,
   index,
@@ -549,47 +655,36 @@ function ProductModal({
   onClose: () => void;
 }) {
   const product = list[index];
-
-  // REF do vídeo p/ autoplay forçado
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
-  // ESC / setas
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
       if (e.key === "ArrowLeft") onChangeIndex(Math.max(0, index - 1));
-      if (e.key === "ArrowRight")
-        onChangeIndex(Math.min(list.length - 1, index + 1));
+      if (e.key === "ArrowRight") onChangeIndex(Math.min(list.length - 1, index + 1));
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [index, list.length, onChangeIndex, onClose]);
 
-  // Autoplay + loop sempre que abrir/trocar produto
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
 
-    // garante autoplay mobile
     v.muted = true;
     v.playsInline = true;
 
-    // reinicia sempre que mudar o item do modal
     try {
       v.currentTime = 0;
     } catch {}
 
     const p = v.play();
     if (p && typeof (p as any).catch === "function") {
-      (p as any).catch(() => {
-        // se o browser bloquear, tudo bem: o user toca e roda
-      });
+      (p as any).catch(() => {});
     }
   }, [product?.id, product?.video_url]);
 
-  // gesture (pointer + touch) — captura mesmo em cima do vídeo
   const startRef = useRef<{ x: number; y: number } | null>(null);
-
   const TH_X = 70;
   const TH_Y = 70;
 
@@ -607,13 +702,11 @@ function ProductModal({
     const ax = Math.abs(dx);
     const ay = Math.abs(dy);
 
-    // swipe vertical fecha
     if (ay > TH_Y && ay > ax) {
       onClose();
       return;
     }
 
-    // swipe horizontal troca
     if (ax > TH_X && ax > ay) {
       if (dx < 0) onChangeIndex(Math.min(list.length - 1, index + 1));
       else onChangeIndex(Math.max(0, index - 1));
@@ -640,7 +733,7 @@ function ProductModal({
 
   return (
     <div
-      onClick={onClose} // clicar fora fecha
+      onClick={onClose}
       style={{
         position: "fixed",
         inset: 0,
@@ -669,10 +762,9 @@ function ProductModal({
           aspectRatio: "9 / 16",
           position: "relative",
           animation: "fymenuPop 220ms cubic-bezier(.2,.9,.2,1)",
-          touchAction: "pan-y pan-x", // importante p/ gestos
+          touchAction: "pan-y pan-x",
         }}
       >
-        {/* índice */}
         <div
           style={{
             position: "absolute",
@@ -691,7 +783,6 @@ function ProductModal({
           {index + 1}/{list.length}
         </div>
 
-        {/* fechar */}
         <button
           onClick={onClose}
           style={{
@@ -712,11 +803,10 @@ function ProductModal({
           Fechar
         </button>
 
-        {/* mídia full (sem bordas) */}
         <div style={{ position: "absolute", inset: 0, background: "#000" }}>
           {product.video_url ? (
             <video
-              key={product.video_url} // força reset quando trocar vídeo
+              key={product.video_url}
               ref={videoRef}
               src={product.video_url}
               autoPlay
@@ -760,7 +850,6 @@ function ProductModal({
             </div>
           )}
 
-          {/* degradê por cima */}
           <div
             style={{
               position: "absolute",
@@ -770,16 +859,7 @@ function ProductModal({
             }}
           />
 
-          {/* textos */}
-          <div
-            style={{
-              position: "absolute",
-              left: 18,
-              right: 18,
-              bottom: 18,
-              textAlign: "center",
-            }}
-          >
+          <div style={{ position: "absolute", left: 18, right: 18, bottom: 18, textAlign: "center" }}>
             <div
               style={{
                 fontWeight: 950,
@@ -814,9 +894,7 @@ function ProductModal({
             )}
 
             <div style={{ marginTop: 10, fontSize: 20, fontWeight: 950 }}>
-              {product.price_type === "fixed"
-                ? moneyBR(product.base_price)
-                : "Preço variável"}
+              {product.price_type === "fixed" ? moneyBR(product.base_price) : "Preço variável"}
             </div>
 
             <div style={{ marginTop: 10, opacity: 0.6, fontSize: 12 }}>
@@ -833,4 +911,3 @@ function ProductModal({
     </div>
   );
 }
-

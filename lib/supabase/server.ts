@@ -1,7 +1,11 @@
-import { createServerClient } from "@supabase/ssr";
+// FILE: /lib/supabase/server.ts
+// ACTION: REPLACE ENTIRE FILE
+
 import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/ssr";
 
 export async function createClient() {
+  // ✅ Next.js 16: cookies() é async
   const cookieStore = await cookies();
 
   return createServerClient(
@@ -9,16 +13,25 @@ export async function createClient() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() {
-          return cookieStore.getAll();
+        get(name: string) {
+          return cookieStore.get(name)?.value;
         },
-        setAll(cookiesToSet) {
+
+        set(name: string, value: string, options: any) {
+          // ✅ No RSC o Next pode bloquear setar cookies.
+          // Para o MVP, não quebramos o render.
           try {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options);
-            });
+            cookieStore.set({ name, value, ...options });
           } catch {
-            // ok
+            // noop
+          }
+        },
+
+        remove(name: string, options: any) {
+          try {
+            cookieStore.set({ name, value: "", ...options });
+          } catch {
+            // noop
           }
         },
       },
