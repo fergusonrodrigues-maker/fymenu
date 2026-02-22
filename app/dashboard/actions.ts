@@ -13,6 +13,11 @@ function normalizeText(v: string) {
   return v.trim();
 }
 
+function normalizeSlug(v: string) {
+  // higiene do slug: trim + remove \r\n
+  return String(v ?? "").trim().replace(/[\r\n]/g, "");
+}
+
 function parsePrice(input: string): number | null {
   const raw = input.trim();
   if (!raw) return null;
@@ -39,6 +44,42 @@ async function getUnitIdOrThrow() {
   }
 
   return unit.id as string;
+}
+
+/* =========================
+   UNIT (editar dados da unidade)
+   (usado em /dashboard/unit)
+========================= */
+export async function updateUnit(formData: FormData): Promise<void> {
+  const supabase = await createClient();
+
+  const unitId = String(formData.get("unit_id") ?? "") || (await getUnitIdOrThrow());
+
+  const name = normalizeName(String(formData.get("name") ?? ""));
+  const slug = normalizeSlug(String(formData.get("slug") ?? ""));
+  const address = normalizeText(String(formData.get("address") ?? ""));
+  const instagram = normalizeText(String(formData.get("instagram") ?? ""));
+  const whatsapp = normalizeText(String(formData.get("whatsapp") ?? ""));
+
+  if (!name) throw new Error("Nome da unidade é obrigatório.");
+  if (!slug) throw new Error("Slug é obrigatório.");
+
+  const { error } = await supabase
+    .from("units")
+    .update({
+      name,
+      slug,
+      address: address || null,
+      instagram: instagram || null,
+      whatsapp: whatsapp || null,
+    })
+    .eq("id", unitId);
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/unit");
+  revalidatePath("/u");
 }
 
 /* =========================
@@ -93,6 +134,7 @@ export async function uploadLogoAction(
     }
 
     revalidatePath("/dashboard");
+    revalidatePath("/dashboard/unit");
     revalidatePath("/u");
 
     return { ok: true, publicUrl };
@@ -260,56 +302,4 @@ export async function deleteProduct(formData: FormData): Promise<void> {
 
   revalidatePath("/dashboard");
   revalidatePath("/u");
-}
-/* =========================
-   UNIT (Configurações da Unidade)
-========================= */
-
-export async function getUnitForDashboard() {
-  const supabase = await createClient();
-
-  const { data: unit, error } = await supabase
-    .from("units")
-    .select("id, name, slug, address, instagram, whatsapp, logo_url")
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .single();
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return unit;
-}
-
-export async function updateUnitInfo(formData: FormData): Promise<void> {
-  const supabase = await createClient();
-
-  const unitId = await getUnitIdOrThrow();
-
-  const name = normalizeName(String(formData.get("name") ?? ""));
-  const slug = normalizeText(String(formData.get("slug") ?? "")).replace(/[\r\n]/g, "");
-  const address = normalizeText(String(formData.get("address") ?? ""));
-  const instagram = normalizeText(String(formData.get("instagram") ?? ""));
-  const whatsapp = normalizeText(String(formData.get("whatsapp") ?? ""));
-
-  if (!name) throw new Error("Nome da unidade é obrigatório.");
-  if (!slug) throw new Error("Slug é obrigatório.");
-
-  const { error } = await supabase
-    .from("units")
-    .update({
-      name,
-      slug,
-      address: address || null,
-      instagram: instagram || null,
-      whatsapp: whatsapp || null,
-    })
-    .eq("id", unitId);
-
-  if (error) throw new Error(error.message);
-
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/unit");
-  revalidatePath(`/u/${slug}`);
 }

@@ -1,110 +1,128 @@
 // FILE: /app/dashboard/unit/page.tsx
 // ACTION: REPLACE ENTIRE FILE
 
-import { getUnitForDashboard, updateUnitInfo } from "../actions";
-import LogoUploader from "../LogoUploader";
+import { createClient } from "@/lib/supabase/server";
+import { updateUnit } from "../actions";
+import UnitLogoUploader from "./UnitLogoUploader";
 
 export default async function UnitPage() {
-  const unit = await getUnitForDashboard();
+  const supabase = await createClient();
 
-  // LogoUploader pode ser client e pode ter props diferentes dependendo de como você criou.
-  // Pra não dar erro de TypeScript por props, usamos "as any" e passamos unitId (se ele aceitar).
-  const LogoUploaderAny = LogoUploader as any;
+  // MVP: primeira unit
+  const { data: unit, error } = await supabase
+    .from("units")
+    .select("id, name, slug, address, instagram, whatsapp, logo_url")
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (error || !unit) {
+    return (
+      <main style={{ padding: 16 }}>
+        <h1>Unidade</h1>
+        <p>Erro ao carregar unidade (MVP).</p>
+        {error && <pre style={{ whiteSpace: "pre-wrap" }}>{JSON.stringify(error, null, 2)}</pre>}
+      </main>
+    );
+  }
 
   return (
-    <div className="max-w-xl space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold">Configurações da Unidade</h1>
-        <p className="text-sm text-white/60">
-          Atualize as informações da sua empresa. A logo será usada no Dashboard e no público.
-        </p>
+    <main style={{ padding: 16, display: "grid", gap: 14 }}>
+      <div>
+        <h1 style={{ marginBottom: 6 }}>Unidade</h1>
+        <div style={{ opacity: 0.75, fontSize: 13 }}>
+          Aqui você edita os dados que aparecem no público (rodapé / links / slug).
+        </div>
       </div>
 
-      {/* Logo */}
-      <section className="space-y-3 rounded-2xl bg-white/5 p-4 backdrop-blur">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h2 className="text-sm font-medium">Logo da empresa</h2>
-            <p className="text-xs text-white/50">
-              Essa logo é salva em <span className="text-white/70">units.logo_url</span>.
-            </p>
-          </div>
+      {/* Upload de logo */}
+      <UnitLogoUploader unitId={unit.id} initialUrl={unit.logo_url ?? ""} />
 
-          {unit?.logo_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={unit.logo_url}
-              alt={`Logo ${unit?.name ?? "Unidade"}`}
-              className="h-12 w-12 rounded-xl object-cover"
-            />
-          ) : (
-            <div className="h-12 w-12 rounded-xl bg-white/10" />
-          )}
+      {/* Form da unidade (server action) */}
+      <form
+        action={updateUnit}
+        style={{
+          border: "1px solid rgba(255,255,255,0.12)",
+          borderRadius: 14,
+          padding: 14,
+          background: "rgba(255,255,255,0.03)",
+          display: "grid",
+          gap: 10,
+        }}
+      >
+        <input type="hidden" name="unit_id" value={unit.id} />
+
+        <div style={{ display: "grid", gap: 6 }}>
+          <div style={{ fontWeight: 800 }}>Nome da empresa/unidade</div>
+          <input name="name" defaultValue={unit.name ?? ""} placeholder="Ex: Pedacci" style={inputStyle} />
         </div>
 
-        {/* Uploader (edição) */}
-        <LogoUploaderAny unitId={unit?.id} />
-      </section>
-
-      {/* Form de dados da unidade */}
-      <form action={updateUnitInfo} className="space-y-4 rounded-2xl bg-white/5 p-4 backdrop-blur">
-        <div className="space-y-1">
-          <label className="text-sm text-white/70">Nome da Unidade</label>
-          <input
-            name="name"
-            defaultValue={unit?.name ?? ""}
-            required
-            className="w-full rounded-xl bg-white/10 p-3 outline-none"
-          />
-        </div>
-
-        <div className="space-y-1">
-          <label className="text-sm text-white/70">Slug (URL pública)</label>
+        <div style={{ display: "grid", gap: 6 }}>
+          <div style={{ fontWeight: 800 }}>Slug (link público)</div>
           <input
             name="slug"
-            defaultValue={unit?.slug ?? ""}
-            required
-            className="w-full rounded-xl bg-white/10 p-3 outline-none"
+            defaultValue={unit.slug ?? ""}
+            placeholder="Ex: pedacci-setor-oeste"
+            style={inputStyle}
           />
-          <p className="text-xs text-white/40">
-            URL final: fymenu.com/u/{unit?.slug ?? ""}
-          </p>
+          <div style={{ opacity: 0.7, fontSize: 12 }}>
+            Isso vira: <b>/u/{unit.slug ?? ""}</b>
+          </div>
         </div>
 
-        <div className="space-y-1">
-          <label className="text-sm text-white/70">Endereço / Maps</label>
+        <div style={{ display: "grid", gap: 6 }}>
+          <div style={{ fontWeight: 800 }}>Endereço (ou link do Maps)</div>
           <input
             name="address"
-            defaultValue={unit?.address ?? ""}
-            className="w-full rounded-xl bg-white/10 p-3 outline-none"
+            defaultValue={unit.address ?? ""}
+            placeholder="Ex: Rua X, Setor Y, Goiânia"
+            style={inputStyle}
           />
         </div>
 
-        <div className="space-y-1">
-          <label className="text-sm text-white/70">Instagram</label>
+        <div style={{ display: "grid", gap: 6 }}>
+          <div style={{ fontWeight: 800 }}>Instagram</div>
           <input
             name="instagram"
-            defaultValue={unit?.instagram ?? ""}
-            className="w-full rounded-xl bg-white/10 p-3 outline-none"
+            defaultValue={unit.instagram ?? ""}
+            placeholder="@seuinstagram"
+            style={inputStyle}
           />
         </div>
 
-        <div className="space-y-1">
-          <label className="text-sm text-white/70">WhatsApp</label>
+        <div style={{ display: "grid", gap: 6 }}>
+          <div style={{ fontWeight: 800 }}>WhatsApp da empresa</div>
           <input
             name="whatsapp"
-            defaultValue={(unit as any)?.whatsapp ?? ""}
-            className="w-full rounded-xl bg-white/10 p-3 outline-none"
+            defaultValue={unit.whatsapp ?? ""}
+            placeholder="Ex: 62999999999"
+            style={inputStyle}
           />
         </div>
 
-        <button
-          type="submit"
-          className="rounded-xl bg-white px-4 py-2 text-black font-medium hover:opacity-90"
-        >
-          Salvar alterações
+        <button style={btnStyle} type="submit">
+          Salvar dados da unidade
         </button>
       </form>
-    </div>
+    </main>
   );
 }
+
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  padding: "12px 12px",
+  borderRadius: 12,
+  border: "1px solid rgba(255,255,255,0.14)",
+  background: "rgba(255,255,255,0.06)",
+  color: "inherit",
+  outline: "none",
+};
+
+const btnStyle: React.CSSProperties = {
+  padding: "12px 12px",
+  borderRadius: 12,
+  border: "1px solid rgba(255,255,255,0.18)",
+  background: "rgba(255,255,255,0.10)",
+  cursor: "pointer",
+  fontWeight: 900,
+};
