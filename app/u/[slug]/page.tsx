@@ -138,7 +138,8 @@ export default async function Page({ params }: PageProps) {
   // 4) Variações (Sprint 2 pré-base)
   const { data: variationsRaw, error: varError } = await supabase
     .from("product_variations")
-    .select("id, product_id, name, price, order_index")
+    .select("id, product_id, name, price, created_at")
+.order("created_at", { ascending: true })
     .in(
       "product_id",
       productIds.length ? productIds : ["00000000-0000-0000-0000-000000000000"]

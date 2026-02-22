@@ -1,4 +1,5 @@
 // FILE: /app/u/[slug]/MenuClient.tsx
+// ACTION: REPLACE ENTIRE FILE
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
@@ -10,7 +11,6 @@ type Unit = {
   instagram: string;
   slug: string;
 
-  // ✅ novos campos (podem ser string vazia)
   whatsapp: string;
   logo_url: string;
 };
@@ -19,6 +19,13 @@ type Category = {
   id: string;
   name: string;
   type: string;
+};
+
+type Variation = {
+  id: string;
+  product_id: string;
+  name: string;
+  price: number;
 };
 
 type Product = {
@@ -30,10 +37,23 @@ type Product = {
   base_price: number;
   thumbnail_url: string;
   video_url: string;
+
+  // ✅ Sprint 2 payload
+  variations?: Variation[];
 };
 
 function moneyBR(v: number) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+function minVariationPrice(p: Product): number | null {
+  const vars = p.variations ?? [];
+  const prices = vars
+    .map((v) => Number(v.price))
+    .filter((n) => Number.isFinite(n) && n > 0);
+
+  if (!prices.length) return null;
+  return Math.min(...prices);
 }
 
 type ModalState =
@@ -72,7 +92,6 @@ function mapsFromAddress(address: string) {
 function normalizeWhatsappToWaMe(phone: string) {
   const digits = (phone ?? "").replace(/\D/g, "");
   if (!digits) return "";
-  // se já veio com 55, ok. se veio sem, assume BR e exige DDD+numero (mas não forçamos demais no MVP)
   const withCountry = digits.startsWith("55") ? digits : `55${digits}`;
   return `https://wa.me/${withCountry}`;
 }
@@ -82,11 +101,7 @@ function buildFooterLinks(unit: Unit): FooterLink[] {
 
   const ig = normalizeInstagram(unit.instagram);
   const maps = mapsFromAddress(unit.address);
-
-  // ⚠️ MVP: whatsapp ainda não existe em unit — não inventar link.
-  // Quando tiver unit.whatsapp no banco, trocamos para:
-  // const wa = normalizeWhatsappToWaMe(unit.whatsapp)
-  const wa = "";
+  const wa = normalizeWhatsappToWaMe(unit.whatsapp);
 
   if (ig) links.push({ key: "instagram", label: "Instagram", href: ig, icon: "📷" });
   if (maps) links.push({ key: "maps", label: "Maps", href: maps, icon: "📍" });
@@ -229,7 +244,7 @@ export default function MenuClient({
         minHeight: "100vh",
         background: bg,
         color: text,
-        paddingBottom: footerLinks.length ? 120 : 70, // se não tiver links, menos espaço
+        paddingBottom: footerLinks.length ? 120 : 70,
       }}
     >
       {/* ===== HEADER FIXO ===== */}
@@ -253,6 +268,7 @@ export default function MenuClient({
             alignItems: "center",
           }}
         >
+          {/* Logo (se existir) senão fallback U */}
           <div
             style={{
               width: 36,
@@ -260,12 +276,21 @@ export default function MenuClient({
               borderRadius: 12,
               background: glass,
               border: `1px solid ${border}`,
+              overflow: "hidden",
               display: "grid",
               placeItems: "center",
               fontWeight: 900,
             }}
           >
-            U
+            {unit.logo_url ? (
+              <img
+                src={unit.logo_url}
+                alt={unit.name}
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              />
+            ) : (
+              "U"
+            )}
           </div>
 
           <div style={{ textAlign: "center", lineHeight: 1.05 }}>
@@ -340,7 +365,6 @@ export default function MenuClient({
               }}
               style={{ scrollMarginTop: 140 }}
             >
-              {/* Nome da categoria */}
               <div
                 style={{
                   textAlign: "center",
@@ -369,7 +393,7 @@ export default function MenuClient({
         })}
       </div>
 
-      {/* ===== FOOTER FLUTUANTE (bucket dinâmico) ===== */}
+      {/* ===== FOOTER FLUTUANTE ===== */}
       {footerLinks.length > 0 && (
         <footer
           style={{
@@ -387,7 +411,7 @@ export default function MenuClient({
         </footer>
       )}
 
-      {/* ===== MODAL (BOX) ===== */}
+      {/* ===== MODAL ===== */}
       {modal && (
         <ProductModal
           list={modal.list}
@@ -421,15 +445,7 @@ function FooterBucket({ links }: { links: FooterLink[] }) {
   );
 }
 
-function FooterBtn({
-  label,
-  href,
-  icon,
-}: {
-  label: string;
-  href: string;
-  icon: string;
-}) {
+function FooterBtn({ label, href, icon }: { label: string; href: string; icon: string }) {
   return (
     <a
       href={href}
@@ -498,10 +514,7 @@ function HorizontalProducts({
     requestAnimationFrame(() => {
       const first = cards()[0];
       if (first)
-        el.scrollLeft = Math.max(
-          0,
-          first.offsetLeft - el.clientWidth / 2 + first.clientWidth / 2
-        );
+        el.scrollLeft = Math.max(0, first.offsetLeft - el.clientWidth / 2 + first.clientWidth / 2);
       update();
     });
 
@@ -532,93 +545,86 @@ function HorizontalProducts({
         paddingRight: variant === "active" ? 26 : 18,
       }}
     >
-      {items.map((p, idx) => (
-        <button
-          key={p.id}
-          data-card="1"
-          onClick={() => onOpen(p, idx)}
-          style={{
-            minWidth: W,
-            maxWidth: W,
-            borderRadius: 22,
-            border: "1px solid rgba(255,255,255,0.12)",
-            background: "rgba(255,255,255,0.04)",
-            overflow: "hidden",
-            padding: 0,
-            textAlign: "center",
-            color: "#fff",
-            cursor: "pointer",
-            transition: "transform 140ms ease, opacity 140ms ease",
-            scrollSnapAlign: "center",
-          }}
-        >
-          <div
+      {items.map((p, idx) => {
+        const min = p.price_type === "variable" ? minVariationPrice(p) : null;
+
+        const priceLabel =
+          p.price_type === "fixed"
+            ? moneyBR(p.base_price)
+            : min !== null
+              ? `A partir de ${moneyBR(min)}`
+              : "Preço variável";
+
+        return (
+          <button
+            key={p.id}
+            data-card="1"
+            onClick={() => onOpen(p, idx)}
             style={{
-              position: "relative",
-              width: "100%",
-              aspectRatio: "9 / 16",
-              background: "rgba(255,255,255,0.06)",
+              minWidth: W,
+              maxWidth: W,
+              borderRadius: 22,
+              border: "1px solid rgba(255,255,255,0.12)",
+              background: "rgba(255,255,255,0.04)",
+              overflow: "hidden",
+              padding: 0,
+              textAlign: "center",
+              color: "#fff",
+              cursor: "pointer",
+              transition: "transform 140ms ease, opacity 140ms ease",
+              scrollSnapAlign: "center",
             }}
           >
-            {p.thumbnail_url ? (
-              <img
-                src={p.thumbnail_url}
-                alt={p.name}
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                }}
-              />
-            ) : (
-              <div
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  display: "grid",
-                  placeItems: "center",
-                  opacity: 0.55,
-                  fontSize: 12,
-                }}
-              >
-                sem foto
-              </div>
-            )}
-
             <div
               style={{
-                position: "absolute",
-                inset: 0,
-                background:
-                  "linear-gradient(rgba(0,0,0,0.00) 35%, rgba(0,0,0,0.70) 78%, rgba(0,0,0,0.88) 100%)",
+                position: "relative",
+                width: "100%",
+                aspectRatio: "9 / 16",
+                background: "rgba(255,255,255,0.06)",
               }}
-            />
-
-            <div style={{ position: "absolute", left: 14, right: 14, bottom: 14 }}>
-              <div
-                style={{
-                  fontWeight: 950,
-                  fontSize: 16,
-                  lineHeight: 1.05,
-                  textShadow: "0 1px 8px rgba(0,0,0,0.6)",
-                  display: "-webkit-box",
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: "vertical",
-                  overflow: "hidden",
-                }}
-              >
-                {p.name}
-              </div>
-
-              {!!p.description && (
+            >
+              {p.thumbnail_url ? (
+                <img
+                  src={p.thumbnail_url}
+                  alt={p.name}
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                  }}
+                />
+              ) : (
                 <div
                   style={{
-                    marginTop: 6,
-                    opacity: 0.85,
+                    position: "absolute",
+                    inset: 0,
+                    display: "grid",
+                    placeItems: "center",
+                    opacity: 0.55,
                     fontSize: 12,
-                    lineHeight: 1.2,
+                  }}
+                >
+                  sem foto
+                </div>
+              )}
+
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  background:
+                    "linear-gradient(rgba(0,0,0,0.00) 35%, rgba(0,0,0,0.70) 78%, rgba(0,0,0,0.88) 100%)",
+                }}
+              />
+
+              <div style={{ position: "absolute", left: 14, right: 14, bottom: 14 }}>
+                <div
+                  style={{
+                    fontWeight: 950,
+                    fontSize: 16,
+                    lineHeight: 1.05,
                     textShadow: "0 1px 8px rgba(0,0,0,0.6)",
                     display: "-webkit-box",
                     WebkitLineClamp: 2,
@@ -626,23 +632,38 @@ function HorizontalProducts({
                     overflow: "hidden",
                   }}
                 >
-                  {p.description}
+                  {p.name}
                 </div>
-              )}
 
-              <div style={{ marginTop: 8, fontWeight: 950, fontSize: 16 }}>
-                {p.price_type === "fixed" ? moneyBR(p.base_price) : "Preço variável"}
+                {!!p.description && (
+                  <div
+                    style={{
+                      marginTop: 6,
+                      opacity: 0.85,
+                      fontSize: 12,
+                      lineHeight: 1.2,
+                      textShadow: "0 1px 8px rgba(0,0,0,0.6)",
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                    }}
+                  >
+                    {p.description}
+                  </div>
+                )}
+
+                <div style={{ marginTop: 8, fontWeight: 950, fontSize: 16 }}>{priceLabel}</div>
               </div>
             </div>
-          </div>
-        </button>
-      ))}
+          </button>
+        );
+      })}
     </div>
   );
 }
 
-// ---- Modal (mantido igual ao seu) ----
-
+// ---- Modal ----
 function ProductModal({
   list,
   index,
@@ -730,6 +751,17 @@ function ProductModal({
     if (!t) return;
     end(t.clientX, t.clientY);
   }
+
+  const vars = product.variations ?? [];
+  const hasVars = product.price_type === "variable" && vars.length > 0;
+  const min = product.price_type === "variable" ? minVariationPrice(product) : null;
+
+  const priceLabel =
+    product.price_type === "fixed"
+      ? moneyBR(product.base_price)
+      : min !== null
+        ? `A partir de ${moneyBR(min)}`
+        : "Preço variável";
 
   return (
     <div
@@ -859,7 +891,15 @@ function ProductModal({
             }}
           />
 
-          <div style={{ position: "absolute", left: 18, right: 18, bottom: 18, textAlign: "center" }}>
+          <div
+            style={{
+              position: "absolute",
+              left: 18,
+              right: 18,
+              bottom: 18,
+              textAlign: "center",
+            }}
+          >
             <div
               style={{
                 fontWeight: 950,
@@ -893,9 +933,40 @@ function ProductModal({
               </div>
             )}
 
-            <div style={{ marginTop: 10, fontSize: 20, fontWeight: 950 }}>
-              {product.price_type === "fixed" ? moneyBR(product.base_price) : "Preço variável"}
-            </div>
+            {/* ✅ PREÇO */}
+            <div style={{ marginTop: 10, fontSize: 20, fontWeight: 950 }}>{priceLabel}</div>
+
+            {/* ✅ LISTA DE VARIAÇÕES */}
+            {hasVars && (
+              <div
+                style={{
+                  marginTop: 10,
+                  display: "grid",
+                  gap: 6,
+                  textAlign: "left",
+                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.10)",
+                  borderRadius: 14,
+                  padding: "10px 12px",
+                }}
+              >
+                {vars.map((v) => (
+                  <div
+                    key={v.id}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      gap: 10,
+                      fontSize: 14,
+                      fontWeight: 800,
+                    }}
+                  >
+                    <span style={{ opacity: 0.95 }}>{v.name}</span>
+                    <span style={{ opacity: 0.95 }}>{moneyBR(Number(v.price ?? 0))}</span>
+                  </div>
+                ))}
+              </div>
+            )}
 
             <div style={{ marginTop: 10, opacity: 0.6, fontSize: 12 }}>
               Dica: swipe ← → para trocar • swipe ↑↓ ou toque fora para fechar

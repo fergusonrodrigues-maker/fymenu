@@ -2,7 +2,11 @@
 // ACTION: REPLACE ENTIRE FILE
 
 import { createClient } from "@/lib/supabase/server";
-import DashboardClient, { DashboardCategory, DashboardProduct } from "./DashboardClient";
+import DashboardClient, {
+  DashboardCategory,
+  DashboardProduct,
+  DashboardVariation,
+} from "./DashboardClient";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -20,7 +24,11 @@ export default async function DashboardPage() {
       <main style={{ padding: 16 }}>
         <h1>Dashboard</h1>
         <p>Erro ao carregar unit (MVP).</p>
-        {unitError && <pre style={{ whiteSpace: "pre-wrap" }}>{JSON.stringify(unitError, null, 2)}</pre>}
+        {unitError && (
+          <pre style={{ whiteSpace: "pre-wrap" }}>
+            {JSON.stringify(unitError, null, 2)}
+          </pre>
+        )}
       </main>
     );
   }
@@ -36,7 +44,9 @@ export default async function DashboardPage() {
       <main style={{ padding: 16 }}>
         <h1>Dashboard</h1>
         <p>Erro ao carregar categorias.</p>
-        <pre style={{ whiteSpace: "pre-wrap" }}>{JSON.stringify(catError, null, 2)}</pre>
+        <pre style={{ whiteSpace: "pre-wrap" }}>
+          {JSON.stringify(catError, null, 2)}
+        </pre>
       </main>
     );
   }
@@ -51,8 +61,13 @@ export default async function DashboardPage() {
 
   const { data: productsRaw, error: prodError } = await supabase
     .from("products")
-    .select("id, category_id, name, description, price_type, base_price, thumbnail_url, video_url, order_index")
-    .in("category_id", categoryIds.length ? categoryIds : ["00000000-0000-0000-0000-000000000000"])
+    .select(
+      "id, category_id, name, description, price_type, base_price, thumbnail_url, video_url, order_index"
+    )
+    .in(
+      "category_id",
+      categoryIds.length ? categoryIds : ["00000000-0000-0000-0000-000000000000"]
+    )
     .order("order_index", { ascending: true });
 
   if (prodError) {
@@ -60,12 +75,14 @@ export default async function DashboardPage() {
       <main style={{ padding: 16 }}>
         <h1>Dashboard</h1>
         <p>Erro ao carregar produtos.</p>
-        <pre style={{ whiteSpace: "pre-wrap" }}>{JSON.stringify(prodError, null, 2)}</pre>
+        <pre style={{ whiteSpace: "pre-wrap" }}>
+          {JSON.stringify(prodError, null, 2)}
+        </pre>
       </main>
     );
   }
 
-  const products: DashboardProduct[] = (productsRaw ?? []).map((p) => ({
+  const productsBase: DashboardProduct[] = (productsRaw ?? []).map((p) => ({
     id: p.id,
     category_id: p.category_id,
     name: p.name ?? "",
@@ -75,14 +92,57 @@ export default async function DashboardPage() {
     thumbnail_url: p.thumbnail_url ?? "",
     video_url: p.video_url ?? "",
     order_index: p.order_index ?? 0,
+    variations: [],
+  }));
+
+  const productIds = productsBase.map((p) => p.id);
+
+  // ✅ Busca variações (SEM order_index, pois sua tabela não tem)
+  const { data: variationsRaw, error: varError } = await supabase
+    .from("product_variations")
+    .select("id, product_id, name, price, created_at")
+    .in(
+      "product_id",
+      productIds.length ? productIds : ["00000000-0000-0000-0000-000000000000"]
+    )
+    .order("created_at", { ascending: true });
+
+  if (varError) {
+    return (
+      <main style={{ padding: 16 }}>
+        <h1>Dashboard</h1>
+        <p>Erro ao carregar variações.</p>
+        <pre style={{ whiteSpace: "pre-wrap" }}>
+          {JSON.stringify(varError, null, 2)}
+        </pre>
+      </main>
+    );
+  }
+
+  const vars: DashboardVariation[] = (variationsRaw ?? []).map((v) => ({
+    id: v.id,
+    product_id: v.product_id,
+    name: v.name ?? "",
+    price: Number(v.price ?? 0),
+  }));
+
+  // Agrupa por produto
+  const map = new Map<string, DashboardVariation[]>();
+  for (const v of vars) {
+    const arr = map.get(v.product_id) ?? [];
+    arr.push(v);
+    map.set(v.product_id, arr);
+  }
+
+  const products: DashboardProduct[] = productsBase.map((p) => ({
+    ...p,
+    variations: map.get(p.id) ?? [],
   }));
 
   return (
     <main style={{ padding: 16 }}>
       <h1 style={{ marginBottom: 6 }}>Dashboard</h1>
-      <div style={{ opacity: 0.75, marginBottom: 16 }}>
-        Unit (MVP): {unit.id}
-      </div>
+      <div style={{ opacity: 0.75, marginBottom: 16 }}>Unit (MVP): {unit.id}</div>
 
       <DashboardClient unitId={unit.id} categories={categories} products={products} />
     </main>

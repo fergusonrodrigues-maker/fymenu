@@ -13,6 +13,13 @@ export type DashboardCategory = {
   order_index: number;
 };
 
+export type DashboardVariation = {
+  id: string;
+  product_id: string;
+  name: string;
+  price: number;
+};
+
 export type DashboardProduct = {
   id: string;
   category_id: string;
@@ -23,6 +30,7 @@ export type DashboardProduct = {
   thumbnail_url: string;
   video_url: string;
   order_index: number;
+  variations: DashboardVariation[];
 };
 
 type Props = {
@@ -32,7 +40,20 @@ type Props = {
 };
 
 type DraftCategory = DashboardCategory & { _isNew?: boolean; _isSaving?: boolean };
-type DraftProduct = DashboardProduct & { _isNew?: boolean; _isSaving?: boolean };
+
+type DraftVariation = {
+  id: string; // pode ser temp
+  product_id: string;
+  name: string;
+  price: number;
+  _isNew?: boolean;
+};
+
+type DraftProduct = Omit<DashboardProduct, "variations"> & {
+  variations: DraftVariation[];
+  _isNew?: boolean;
+  _isSaving?: boolean;
+};
 
 export default function DashboardClient({ unitId, categories, products }: Props) {
   const router = useRouter();
@@ -45,10 +66,15 @@ export default function DashboardClient({ unitId, categories, products }: Props)
     return map;
   });
 
-  // drafts de produtos
+  // drafts de produtos (com variações)
   const [prodDrafts, setProdDrafts] = useState<Record<string, DraftProduct>>(() => {
     const map: Record<string, DraftProduct> = {};
-    for (const p of products) map[p.id] = { ...p };
+    for (const p of products) {
+      map[p.id] = {
+        ...p,
+        variations: (p.variations ?? []).map((v) => ({ ...v })),
+      };
+    }
     return map;
   });
 
@@ -93,32 +119,20 @@ export default function DashboardClient({ unitId, categories, products }: Props)
       return;
     }
 
-    // próximo order_index
     const nextOrder =
       categoriesList.length ? Math.max(...categoriesList.map((c) => c.order_index ?? 0)) + 1 : 0;
 
-    // cria otimista
     const tempId = `new-cat-${crypto.randomUUID()}`;
     setCatDrafts((prev) => ({
       ...prev,
-      [tempId]: {
-        id: tempId,
-        name,
-        order_index: nextOrder,
-        _isNew: true,
-        _isSaving: true,
-      },
+      [tempId]: { id: tempId, name, order_index: nextOrder, _isNew: true, _isSaving: true },
     }));
     setNewCategoryName("");
 
     try {
       const { data, error } = await supabase
         .from("categories")
-        .insert({
-          unit_id: unitId,
-          name,
-          order_index: nextOrder,
-        })
+        .insert({ unit_id: unitId, name, order_index: nextOrder })
         .select("id, name, order_index")
         .single();
 
@@ -144,7 +158,6 @@ export default function DashboardClient({ unitId, categories, products }: Props)
     } catch (e: any) {
       console.error(e);
       alert(e?.message || "Erro ao criar categoria.");
-      // rollback
       setCatDrafts((prev) => {
         const copy = { ...prev };
         delete copy[tempId];
@@ -163,17 +176,12 @@ export default function DashboardClient({ unitId, categories, products }: Props)
     setCatDraft(cat.id, { _isSaving: true });
 
     try {
-      // se for nova (temp), não deveria cair aqui
       if (cat._isNew) {
         setCatDraft(cat.id, { _isSaving: false });
         return;
       }
 
-      const { error } = await supabase
-        .from("categories")
-        .update({ name })
-        .eq("id", cat.id);
-
+      const { error } = await supabase.from("categories").update({ name }).eq("id", cat.id);
       if (error) throw error;
 
       setCatDraft(cat.id, { name, _isSaving: false });
@@ -189,14 +197,12 @@ export default function DashboardClient({ unitId, categories, products }: Props)
     const ok = confirm("Excluir esta categoria?");
     if (!ok) return;
 
-    // proteção: bloqueia se tiver produtos
     const hasProducts = (productsByCategory[cat.id] ?? []).length > 0;
     if (hasProducts) {
       alert("Essa categoria tem produtos. Apague os produtos primeiro (MVP).");
       return;
     }
 
-    // se for nova (temp), remove local
     if (cat._isNew) {
       setCatDrafts((prev) => {
         const copy = { ...prev };
@@ -227,7 +233,7 @@ export default function DashboardClient({ unitId, categories, products }: Props)
   }
 
   // -----------------------
-  // PRODUTOS (CRUD)
+  // PRODUTOS (CRUD + VARIAÇÕES)
   // -----------------------
   function addNewProduct(categoryId: string) {
     const tempId = `new-${crypto.randomUUID()}`;
@@ -246,9 +252,59 @@ export default function DashboardClient({ unitId, categories, products }: Props)
         thumbnail_url: "",
         video_url: "",
         order_index: nextOrder,
+        variations: [],
         _isNew: true,
       },
     }));
+  }
+
+  function addVariation(productId: string) {
+    const p = prodDrafts[productId];
+    const next = {
+      id: `new-var-${crypto.randomUUID()}`,
+      product_id: productId,
+      name: "",
+      price: 0,
+      _isNew: true,
+    } as DraftVariation;
+
+    setProdDraft(productId, { variations: [...(p.variations ?? []), next] });
+  }
+
+  function updateVariation(productId: string, varId: string, patch: Partial<DraftVariation>) {
+    const p = prodDrafts[productId];
+    const vars = (p.variations ?? []).map((v) => (v.id === varId ? { ...v, ...patch } : v));
+    setProdDraft(productId, { variations: vars });
+  }
+
+  function deleteVariation(productId: string, varId: string) {
+    const p = prodDrafts[productId];
+    const vars = (p.variations ?? []).filter((v) => v.id !== varId);
+    setProdDraft(productId, { variations: vars });
+  }
+
+  async function persistVariations(productId: string, variations: DraftVariation[]) {
+    // 1) apaga tudo do produto
+    const { error: delErr } = await supabase
+      .from("product_variations")
+      .delete()
+      .eq("product_id", productId);
+
+    if (delErr) throw delErr;
+
+    // 2) insere novamente se tiver
+    const cleaned = variations
+      .map((v) => ({
+        product_id: productId,
+        name: (v.name ?? "").trim(),
+        price: Number(v.price ?? 0),
+      }))
+      .filter((v) => v.name.length > 0);
+
+    if (cleaned.length === 0) return;
+
+    const { error: insErr } = await supabase.from("product_variations").insert(cleaned);
+    if (insErr) throw insErr;
   }
 
   async function saveProduct(p: DraftProduct) {
@@ -257,9 +313,19 @@ export default function DashboardClient({ unitId, categories, products }: Props)
       return;
     }
 
+    // Regra: se variável, precisa de pelo menos 1 variação válida
+    if (p.price_type === "variable") {
+      const valid = (p.variations ?? []).filter((v) => (v.name ?? "").trim().length > 0);
+      if (valid.length === 0) {
+        alert("Produto variável precisa de pelo menos 1 variação (nome + preço).");
+        return;
+      }
+    }
+
     setProdDraft(p.id, { _isSaving: true });
 
     try {
+      // CREATE
       if (p._isNew) {
         const { data, error } = await supabase
           .from("products")
@@ -280,6 +346,14 @@ export default function DashboardClient({ unitId, categories, products }: Props)
 
         const newId = data.id as string;
 
+        // ✅ se for variável, persiste variações
+        if (p.price_type === "variable") {
+          await persistVariations(newId, p.variations ?? []);
+        } else {
+          // opcional: garante que não sobra variação velha
+          await persistVariations(newId, []);
+        }
+
         setProdDrafts((prev) => {
           const copy = { ...prev };
           const temp = copy[p.id];
@@ -292,6 +366,7 @@ export default function DashboardClient({ unitId, categories, products }: Props)
         return;
       }
 
+      // UPDATE
       const { error } = await supabase
         .from("products")
         .update({
@@ -306,6 +381,13 @@ export default function DashboardClient({ unitId, categories, products }: Props)
         .eq("id", p.id);
 
       if (error) throw error;
+
+      // ✅ sincroniza variações
+      if (p.price_type === "variable") {
+        await persistVariations(p.id, p.variations ?? []);
+      } else {
+        await persistVariations(p.id, []);
+      }
 
       setProdDraft(p.id, { _isSaving: false });
       router.refresh();
@@ -332,6 +414,9 @@ export default function DashboardClient({ unitId, categories, products }: Props)
     setProdDraft(p.id, { _isSaving: true });
 
     try {
+      // apaga variações primeiro
+      await persistVariations(p.id, []);
+
       const { error } = await supabase.from("products").delete().eq("id", p.id);
       if (error) throw error;
 
@@ -352,14 +437,7 @@ export default function DashboardClient({ unitId, categories, products }: Props)
   return (
     <div style={{ display: "grid", gap: 14 }}>
       {/* Criar categoria */}
-      <section
-        style={{
-          border: "1px solid rgba(255,255,255,0.12)",
-          borderRadius: 14,
-          padding: 14,
-          background: "rgba(255,255,255,0.03)",
-        }}
-      >
+      <section style={sectionStyle}>
         <div style={{ fontWeight: 700, marginBottom: 10 }}>Categorias</div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 10 }}>
@@ -369,16 +447,7 @@ export default function DashboardClient({ unitId, categories, products }: Props)
             placeholder="Nova categoria (ex: Pizzas Tradicionais)"
             style={inputStyle}
           />
-          <button
-            onClick={createCategory}
-            style={{
-              padding: "10px 12px",
-              borderRadius: 12,
-              border: "1px solid rgba(255,255,255,0.18)",
-              background: "rgba(255,255,255,0.06)",
-              cursor: "pointer",
-            }}
-          >
+          <button onClick={createCategory} style={buttonStyle}>
             Criar
           </button>
         </div>
@@ -389,15 +458,7 @@ export default function DashboardClient({ unitId, categories, products }: Props)
         const list = productsByCategory[c.id] ?? [];
 
         return (
-          <section
-            key={c.id}
-            style={{
-              border: "1px solid rgba(255,255,255,0.12)",
-              borderRadius: 14,
-              padding: 14,
-              background: "rgba(255,255,255,0.03)",
-            }}
-          >
+          <section key={c.id} style={sectionStyle}>
             {/* Header categoria com editar/excluir */}
             <div style={{ display: "grid", gap: 10 }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr auto auto", gap: 10 }}>
@@ -411,14 +472,7 @@ export default function DashboardClient({ unitId, categories, products }: Props)
                 <button
                   disabled={!!c._isSaving}
                   onClick={() => saveCategory(c)}
-                  style={{
-                    padding: "10px 12px",
-                    borderRadius: 12,
-                    border: "1px solid rgba(255,255,255,0.18)",
-                    background: "rgba(255,255,255,0.10)",
-                    cursor: c._isSaving ? "not-allowed" : "pointer",
-                    opacity: c._isSaving ? 0.7 : 1,
-                  }}
+                  style={{ ...buttonStyle, opacity: c._isSaving ? 0.7 : 1 }}
                 >
                   {c._isSaving ? "..." : "Salvar"}
                 </button>
@@ -426,30 +480,14 @@ export default function DashboardClient({ unitId, categories, products }: Props)
                 <button
                   disabled={!!c._isSaving}
                   onClick={() => deleteCategory(c)}
-                  style={{
-                    padding: "10px 12px",
-                    borderRadius: 12,
-                    border: "1px solid rgba(255,80,80,0.45)",
-                    background: "rgba(255,80,80,0.12)",
-                    cursor: c._isSaving ? "not-allowed" : "pointer",
-                    opacity: c._isSaving ? 0.7 : 1,
-                  }}
+                  style={dangerButtonStyle}
                 >
                   Excluir
                 </button>
               </div>
 
               <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                <button
-                  onClick={() => addNewProduct(c.id)}
-                  style={{
-                    padding: "10px 12px",
-                    borderRadius: 12,
-                    border: "1px solid rgba(255,255,255,0.18)",
-                    background: "rgba(255,255,255,0.06)",
-                    cursor: "pointer",
-                  }}
-                >
+                <button onClick={() => addNewProduct(c.id)} style={buttonStyle}>
                   + Criar Produto
                 </button>
               </div>
@@ -462,17 +500,7 @@ export default function DashboardClient({ unitId, categories, products }: Props)
             ) : (
               <div style={{ display: "grid", gap: 10 }}>
                 {list.map((p) => (
-                  <div
-                    key={p.id}
-                    style={{
-                      border: "1px solid rgba(255,255,255,0.12)",
-                      borderRadius: 14,
-                      padding: 12,
-                      background: "rgba(0,0,0,0.18)",
-                      display: "grid",
-                      gap: 10,
-                    }}
-                  >
+                  <div key={p.id} style={productCardStyle}>
                     <div style={{ display: "grid", gap: 8 }}>
                       <input
                         value={p.name}
@@ -492,7 +520,9 @@ export default function DashboardClient({ unitId, categories, products }: Props)
                         <input
                           value={String(p.base_price ?? 0)}
                           onChange={(e) =>
-                            setProdDraft(p.id, { base_price: Number(e.target.value.replace(",", ".")) || 0 })
+                            setProdDraft(p.id, {
+                              base_price: Number(e.target.value.replace(",", ".")) || 0,
+                            })
                           }
                           placeholder="Preço (ex: 39.90)"
                           style={inputStyle}
@@ -501,14 +531,78 @@ export default function DashboardClient({ unitId, categories, products }: Props)
                         <select
                           value={p.price_type}
                           onChange={(e) =>
-                            setProdDraft(p.id, { price_type: e.target.value === "variable" ? "variable" : "fixed" })
+                            setProdDraft(p.id, {
+                              price_type: e.target.value === "variable" ? "variable" : "fixed",
+                            })
                           }
                           style={inputStyle}
                         >
-                          <option value="fixed">Preço fixo</option>
-                          <option value="variable">Preço variável</option>
+                          <option value="fixed">Fixo</option>
+                          <option value="variable">Variável</option>
                         </select>
                       </div>
+
+                      {/* BLOCO VARIAÇÕES */}
+                      {p.price_type === "variable" && (
+                        <div style={{ display: "grid", gap: 8 }}>
+                          <div style={{ fontSize: 12, opacity: 0.7 }}>
+                            Variações ({p.variations?.length ?? 0})
+                          </div>
+
+                          {(p.variations?.length ?? 0) === 0 ? (
+                            <div style={{ fontSize: 12, opacity: 0.7 }}>
+                              Nenhuma variação (clique em “+ Adicionar”).
+                            </div>
+                          ) : (
+                            <div style={{ display: "grid", gap: 8 }}>
+                              {p.variations.map((v) => (
+                                <div
+                                  key={v.id}
+                                  style={{
+                                    display: "grid",
+                                    gridTemplateColumns: "1fr 160px auto",
+                                    gap: 8,
+                                  }}
+                                >
+                                  <input
+                                    value={v.name}
+                                    onChange={(e) =>
+                                      updateVariation(p.id, v.id, { name: e.target.value })
+                                    }
+                                    placeholder="Nome (ex: Pequena)"
+                                    style={inputStyle}
+                                  />
+
+                                  <input
+                                    value={String(v.price ?? 0)}
+                                    onChange={(e) =>
+                                      updateVariation(p.id, v.id, {
+                                        price: Number(e.target.value.replace(",", ".")) || 0,
+                                      })
+                                    }
+                                    placeholder="Preço (ex: 39.90)"
+                                    style={inputStyle}
+                                  />
+
+                                  <button
+                                    onClick={() => deleteVariation(p.id, v.id)}
+                                    style={miniDangerButtonStyle}
+                                    title="Remover"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                            <button onClick={() => addVariation(p.id)} style={buttonStyle}>
+                              + Adicionar
+                            </button>
+                          </div>
+                        </div>
+                      )}
 
                       <input
                         value={p.thumbnail_url}
@@ -529,14 +623,7 @@ export default function DashboardClient({ unitId, categories, products }: Props)
                       <button
                         disabled={!!p._isSaving}
                         onClick={() => saveProduct(p)}
-                        style={{
-                          padding: "10px 12px",
-                          borderRadius: 12,
-                          border: "1px solid rgba(255,255,255,0.18)",
-                          background: "rgba(255,255,255,0.10)",
-                          cursor: p._isSaving ? "not-allowed" : "pointer",
-                          opacity: p._isSaving ? 0.7 : 1,
-                        }}
+                        style={{ ...buttonStyle, opacity: p._isSaving ? 0.7 : 1 }}
                       >
                         {p._isSaving ? "Salvando..." : "Salvar"}
                       </button>
@@ -544,14 +631,7 @@ export default function DashboardClient({ unitId, categories, products }: Props)
                       <button
                         disabled={!!p._isSaving}
                         onClick={() => deleteProduct(p)}
-                        style={{
-                          padding: "10px 12px",
-                          borderRadius: 12,
-                          border: "1px solid rgba(255,80,80,0.45)",
-                          background: "rgba(255,80,80,0.12)",
-                          cursor: p._isSaving ? "not-allowed" : "pointer",
-                          opacity: p._isSaving ? 0.7 : 1,
-                        }}
+                        style={dangerButtonStyle}
                       >
                         Excluir
                       </button>
@@ -567,6 +647,22 @@ export default function DashboardClient({ unitId, categories, products }: Props)
   );
 }
 
+const sectionStyle: React.CSSProperties = {
+  border: "1px solid rgba(255,255,255,0.12)",
+  borderRadius: 14,
+  padding: 14,
+  background: "rgba(255,255,255,0.03)",
+};
+
+const productCardStyle: React.CSSProperties = {
+  border: "1px solid rgba(255,255,255,0.12)",
+  borderRadius: 14,
+  padding: 12,
+  background: "rgba(0,0,0,0.18)",
+  display: "grid",
+  gap: 10,
+};
+
 const inputStyle: React.CSSProperties = {
   width: "100%",
   padding: "12px 12px",
@@ -575,4 +671,28 @@ const inputStyle: React.CSSProperties = {
   background: "rgba(255,255,255,0.06)",
   color: "inherit",
   outline: "none",
+};
+
+const buttonStyle: React.CSSProperties = {
+  padding: "10px 12px",
+  borderRadius: 12,
+  border: "1px solid rgba(255,255,255,0.18)",
+  background: "rgba(255,255,255,0.10)",
+  cursor: "pointer",
+};
+
+const dangerButtonStyle: React.CSSProperties = {
+  padding: "10px 12px",
+  borderRadius: 12,
+  border: "1px solid rgba(255,80,80,0.45)",
+  background: "rgba(255,80,80,0.12)",
+  cursor: "pointer",
+};
+
+const miniDangerButtonStyle: React.CSSProperties = {
+  padding: "10px 12px",
+  borderRadius: 12,
+  border: "1px solid rgba(255,80,80,0.45)",
+  background: "rgba(255,80,80,0.12)",
+  cursor: "pointer",
 };
