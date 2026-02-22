@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { uploadLogoAction } from "./actions";
 
 type Props = {
   unitId: string;
@@ -10,7 +10,6 @@ type Props = {
 };
 
 export default function LogoUploader({ unitId, currentLogoUrl, onUpdated }: Props) {
-  const supabase = createClient();
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const [uploading, setUploading] = useState(false);
@@ -26,35 +25,19 @@ export default function LogoUploader({ unitId, currentLogoUrl, onUpdated }: Prop
       if (!file.type.startsWith("image/")) throw new Error("Envie uma imagem (PNG/JPG/WebP).");
       if (file.size > 3 * 1024 * 1024) throw new Error("Imagem muito grande. Limite: 3MB.");
 
-      const ext = file.name.split(".").pop()?.toLowerCase() || "png";
-      const fileName = `logo-${Date.now()}.${ext}`;
-      const path = `${unitId}/${fileName}`;
+      const formData = new FormData();
+      formData.append("unitId", unitId);
+      formData.append("file", file);
 
-      // 1) upload no Storage
-      const { error: upErr } = await supabase.storage
-        .from("logos")
-        .upload(path, file, {
-          cacheControl: "3600",
-          upsert: true,
-          contentType: file.type,
-        });
+      const res = await uploadLogoAction(formData);
 
-      if (upErr) throw upErr;
+      if (!res?.ok) {
+        throw new Error(res?.message || "Falha ao enviar logo.");
+      }
 
-      // 2) pegar URL pública
-      const { data } = supabase.storage.from("logos").getPublicUrl(path);
-      const publicUrl = data.publicUrl;
-
-      // 3) salvar no banco (units.logo_url)
-      const { error: dbErr } = await supabase
-        .from("units")
-        .update({ logo_url: publicUrl })
-        .eq("id", unitId);
-
-      if (dbErr) throw dbErr;
-
-      setLogoUrl(publicUrl);
-      onUpdated?.(publicUrl);
+      const newUrl = res.publicUrl || "";
+      setLogoUrl(newUrl);
+      onUpdated?.(newUrl);
     } catch (e: any) {
       setErr(e?.message ?? "Falha ao enviar logo.");
     } finally {
@@ -112,9 +95,7 @@ export default function LogoUploader({ unitId, currentLogoUrl, onUpdated }: Prop
             {uploading ? "Enviando..." : "Enviar logo"}
           </button>
 
-          <div style={{ marginTop: 8, fontSize: 12, opacity: 0.7 }}>
-            PNG/JPG/WebP • até 3MB
-          </div>
+          <div style={{ marginTop: 8, fontSize: 12, opacity: 0.7 }}>PNG/JPG/WebP • até 3MB</div>
 
           {!!err && (
             <div style={{ marginTop: 8, fontSize: 12, color: "salmon" }}>
