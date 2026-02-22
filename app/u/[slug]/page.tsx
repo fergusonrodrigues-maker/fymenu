@@ -9,7 +9,7 @@ type PageProps = {
 };
 
 export default async function Page({ params }: PageProps) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const resolvedParams = await Promise.resolve(params);
   const rawSlug = resolvedParams?.slug ?? "";
