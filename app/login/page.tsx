@@ -1,6 +1,12 @@
+"use client";
+
+import { useSearchParams } from "next/navigation";
 import { loginAction } from "./actions";
 
 export default function LoginPage() {
+  const sp = useSearchParams();
+  const err = sp.get("err");
+
   return (
     <main style={{ padding: 18, maxWidth: 420, margin: "0 auto" }}>
       <h1 style={{ fontSize: 22, fontWeight: 900 }}>Entrar</h1>
@@ -40,6 +46,12 @@ export default function LoginPage() {
           Não tem conta? Criar agora
         </a>
       </form>
+
+      {err && (
+        <div style={{ marginTop: 14, color: "crimson", fontSize: 13, lineHeight: 1.3 }}>
+          Erro: {decodeURIComponent(err)}
+        </div>
+      )}
     </main>
   );
 }

@@ -10,8 +10,9 @@ export async function loginAction(formData: FormData) {
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
-  // MVP: se der erro, volta pro login (depois a gente mostra msg bonitinha)
-  if (error) redirect("/login");
+  if (error) {
+    redirect(`/login?err=${encodeURIComponent(error.message)}`);
+  }
 
   redirect("/dashboard");
 }
