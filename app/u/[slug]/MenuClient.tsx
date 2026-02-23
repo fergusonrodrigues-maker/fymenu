@@ -312,12 +312,10 @@ export default function MenuClient({
                 style={{ scrollMarginTop: 140 }}
               >
                 <CategoryCarousel
-                  title={cat.name}
-                  items={items}
-                  compact={true}
-                  onOpen={(p, idx) => setModal({ list: items, index: idx })}
-                />
-              </div>
+  items={items}
+  compact={true}
+  onOpen={(p, idx) => setModal({ list: items, index: idx })}
+/>
             );
           })}
         </div>
