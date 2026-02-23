@@ -1,7 +1,11 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
+
 import BottomGlassBar from "./BottomGlassBar";
+import CategoryPillsTop from "./CategoryPillsTop";
+import FeaturedCarousel from "./FeaturedCarousel";
+import CategoryCarousel from "./CategoryCarousel";
 
 type Variation = {
   id: string;
@@ -17,11 +21,8 @@ type Unit = {
   address: string;
   instagram: string;
   slug: string;
-
   whatsapp: string;
   logo_url: string;
-
-  // suportar futuro (sem exigir existir agora)
   city?: string;
   neighborhood?: string;
 };
@@ -30,6 +31,7 @@ type Category = {
   id: string;
   name: string;
   type: string;
+  slug?: string;
 };
 
 type Product = {
@@ -41,7 +43,6 @@ type Product = {
   base_price: number;
   thumbnail_url: string;
   video_url: string;
-
   variations?: Variation[];
 };
 
@@ -56,34 +57,20 @@ type ModalState =
     }
   | null;
 
-function normalizeInstagram(instagram: string) {
-  const v = (instagram ?? "").trim();
-  if (!v) return "";
-  if (v.startsWith("http://") || v.startsWith("https://")) return v;
-  const handle = v.replace("@", "").trim();
-  if (!handle) return "";
-  return `https://instagram.com/${handle}`;
+function normKey(v: string) {
+  return (v ?? "").trim().toLowerCase();
 }
 
-function mapsFromAddress(address: string) {
-  const v = (address ?? "").trim();
-  if (!v) return "";
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(v)}`;
-}
+function findFeaturedCategory(categories: Category[]): Category | null {
+  if (!categories.length) return null;
 
-function normalizeWhatsappToWaMe(phone: string) {
-  const digits = (phone ?? "").replace(/\D/g, "");
-  if (!digits) return "";
-  const withCountry = digits.startsWith("55") ? digits : `55${digits}`;
-  return `https://wa.me/${withCountry}`;
-}
+  const bySlugOrName = categories.find((c) => {
+    const n = normKey(c.name);
+    const s = normKey((c as any).slug ?? "");
+    return n === "destaque" || s === "destaque";
+  });
 
-function getMinVariationPrice(p: Product): number | null {
-  const vars = (p.variations ?? []).filter((v) => Number.isFinite(v.price));
-  if (!vars.length) return null;
-  let min = vars[0].price;
-  for (const v of vars) if (v.price < min) min = v.price;
-  return min;
+  return bySlugOrName ?? categories[0] ?? null;
 }
 
 export default function MenuClient({
@@ -95,50 +82,50 @@ export default function MenuClient({
   categories: Category[];
   products: Product[];
 }) {
-  const grouped = useMemo(() => {
-    const map = new Map<string, Product[]>();
-    for (const c of categories) map.set(c.id, []);
-    for (const p of products) {
-      if (!map.has(p.category_id)) map.set(p.category_id, []);
-      map.get(p.category_id)!.push(p);
-    }
-    return map;
-  }, [categories, products]);
-
   const visibleCategories = useMemo(() => {
     const has = new Set<string>();
     for (const p of products) has.add(p.category_id);
     return categories.filter((c) => has.has(c.id));
   }, [categories, products]);
 
+  const grouped = useMemo(() => {
+    const map = new Map<string, Product[]>();
+    for (const c of visibleCategories) map.set(c.id, []);
+    for (const p of products) {
+      if (!map.has(p.category_id)) continue;
+      map.get(p.category_id)!.push(p);
+    }
+    return map;
+  }, [visibleCategories, products]);
+
+  const featuredCategory = useMemo(
+    () => findFeaturedCategory(visibleCategories),
+    [visibleCategories]
+  );
+  const featuredId = featuredCategory?.id ?? "";
+
+  const featuredItems = useMemo(() => {
+    if (!featuredId) return [];
+    return grouped.get(featuredId) ?? [];
+  }, [grouped, featuredId]);
+
+  const otherCategories = useMemo(() => {
+    if (!featuredId) return visibleCategories;
+    return visibleCategories.filter((c) => c.id !== featuredId);
+  }, [visibleCategories, featuredId]);
+
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  const chipBtnRefs = useRef<Record<string, HTMLButtonElement | null>>({});
-  const chipsWrapRef = useRef<HTMLDivElement | null>(null);
-
-  const [activeCatId, setActiveCatId] = useState<string>(visibleCategories[0]?.id ?? "");
-  const [modal, setModal] = useState<ModalState>(null);
-
-  // ===== Debug (?debug=1) =====
-  const [debugOn, setDebugOn] = useState(false);
-  const [debugScrollLeft, setDebugScrollLeft] = useState(0);
-  const [debugSnap, setDebugSnap] = useState<"ON" | "OFF">("ON");
+  const [activeCategoryId, setActiveCategoryId] = useState<string>(
+    featuredId || otherCategories[0]?.id || ""
+  );
 
   useEffect(() => {
-    try {
-      const p = new URLSearchParams(window.location.search);
-      setDebugOn(p.get("debug") === "1");
-    } catch {
-      setDebugOn(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!visibleCategories.length) return;
-    if (!activeCatId || !visibleCategories.some((c) => c.id === activeCatId)) {
-      setActiveCatId(visibleCategories[0].id);
-    }
+    const next = featuredId || otherCategories[0]?.id || "";
+    if (next && next !== activeCategoryId) setActiveCategoryId(next);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visibleCategories]);
+  }, [featuredId, otherCategories.length]);
+
+  const [modal, setModal] = useState<ModalState>(null);
 
   useEffect(() => {
     if (!modal) return;
@@ -149,69 +136,44 @@ export default function MenuClient({
     };
   }, [modal]);
 
-  // ===== Chips: mantém o chip ativo centralizado (apenas programático) =====
   useEffect(() => {
-    const btn = chipBtnRefs.current[activeCatId];
-    if (!btn) return;
-    btn.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
-  }, [activeCatId]);
+    const ids = [featuredId, ...otherCategories.map((c) => c.id)].filter(Boolean);
+    const els = ids
+      .map((id) => sectionRefs.current[id])
+      .filter(Boolean) as HTMLDivElement[];
 
-  // ===== Chips: ao parar o scroll horizontal, escolhe o chip mais central =====
-  useEffect(() => {
-    const wrap = chipsWrapRef.current;
-    if (!wrap) return;
+    if (!els.length) return;
 
-    let t: any = null;
+    const io = new IntersectionObserver(
+      (entries) => {
+        const best = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => (b.intersectionRatio ?? 0) - (a.intersectionRatio ?? 0))[0];
 
-    const pickCenterChip = () => {
-      const rect = wrap.getBoundingClientRect();
-      const centerX = rect.left + rect.width / 2;
-
-      let bestId = "";
-      let bestDist = Infinity;
-
-      for (const c of visibleCategories) {
-        const btn = chipBtnRefs.current[c.id];
-        if (!btn) continue;
-        const r = btn.getBoundingClientRect();
-        const mid = r.left + r.width / 2;
-        const dist = Math.abs(centerX - mid);
-        if (dist < bestDist) {
-          bestDist = dist;
-          bestId = c.id;
-        }
+        if (!best?.target) return;
+        const foundId = ids.find((id) => sectionRefs.current[id] === best.target);
+        if (foundId) setActiveCategoryId(foundId);
+      },
+      {
+        root: null,
+        threshold: [0.25, 0.4, 0.55],
+        rootMargin: "-140px 0px -55% 0px",
       }
+    );
 
-      if (bestId) {
-        setActiveCatId(bestId);
-        const el = sectionRefs.current[bestId];
-        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
-    };
+    els.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, [featuredId, otherCategories]);
 
-    const onScroll = () => {
-      if (t) clearTimeout(t);
-      t = setTimeout(pickCenterChip, 140);
+  function scrollToCategory(id: string) {
+    const el = sectionRefs.current[id];
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
-      if (debugOn) {
-        setDebugScrollLeft(wrap.scrollLeft);
-      }
-    };
-
-    wrap.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      if (t) clearTimeout(t);
-      wrap.removeEventListener("scroll", onScroll);
-    };
-  }, [visibleCategories, debugOn]);
-
-  const bg = "#0b0b0b";
-  const glass = "rgba(255,255,255,0.06)";
-  const border = "rgba(255,255,255,0.12)";
-  const text = "#fff";
-
-  // ⚠️ padding bottom maior pra não cobrir conteúdo com a nova barra (2 camadas)
   const bottomPad = 190;
+  const bg = "#0b0b0b";
+  const text = "#fff";
 
   if (!visibleCategories.length) {
     return (
@@ -236,6 +198,13 @@ export default function MenuClient({
     );
   }
 
+  const pillsCategories = useMemo(() => {
+    const arr: Category[] = [];
+    if (featuredCategory) arr.push(featuredCategory);
+    for (const c of otherCategories) arr.push(c);
+    return arr;
+  }, [featuredCategory, otherCategories]);
+
   return (
     <main
       style={{
@@ -245,7 +214,6 @@ export default function MenuClient({
         paddingBottom: bottomPad,
       }}
     >
-      {/* HEADER */}
       <div
         style={{
           position: "sticky",
@@ -258,108 +226,35 @@ export default function MenuClient({
           borderBottom: "1px solid rgba(255,255,255,0.04)",
         }}
       >
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "44px 1fr 44px",
-            alignItems: "center",
+        <CategoryPillsTop
+          categories={pillsCategories}
+          activeCategoryId={activeCategoryId}
+          onSelectCategory={(id) => {
+            setActiveCategoryId(id);
+            scrollToCategory(id);
           }}
-        >
-          <div
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 12,
-              background: glass,
-              border: `1px solid ${border}`,
-              display: "grid",
-              placeItems: "center",
-              fontWeight: 900,
-              overflow: "hidden",
-            }}
-          >
-            {unit.logo_url ? (
-              <img
-                src={unit.logo_url}
-                alt="Logo"
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-              />
-            ) : (
-              "U"
-            )}
-          </div>
-
-          <div style={{ textAlign: "center", lineHeight: 1.05 }}>
-            <div style={{ fontWeight: 900, fontSize: 16 }}>{unit.name || "Cardápio"}</div>
-            <div style={{ opacity: 0.65, fontSize: 12 }}>{unit.slug || "Unidade"}</div>
-          </div>
-
-          <div />
-        </div>
-
-        {/* Chips (categorias) */}
-        <div
-          ref={chipsWrapRef}
-          className="fy-scroll-x"
-          style={{
-            marginTop: 10,
-            display: "flex",
-            gap: 10,
-            overflowX: "auto",
-            paddingBottom: 8,
-            paddingTop: 2,
-            WebkitOverflowScrolling: "touch",
-            paddingLeft: 18,
-            paddingRight: 18,
-            scrollPaddingLeft: 60,
-            scrollPaddingRight: 60,
-            overscrollBehaviorX: "contain",
-            touchAction: "pan-x",
-          }}
-        >
-          {visibleCategories.map((c) => {
-            const active = c.id === activeCatId;
-            return (
-              <button
-                key={c.id}
-                ref={(el) => {
-                  chipBtnRefs.current[c.id] = el;
-                }}
-                onClick={() => {
-                  setActiveCatId(c.id);
-                  const el = sectionRefs.current[c.id];
-                  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-                }}
-                style={{
-                  border: `1px solid ${
-                    active ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.10)"
-                  }`,
-                  background: active ? "rgba(255,255,255,0.10)" : "rgba(255,255,255,0.03)",
-                  color: "#fff",
-                  padding: active ? "10px 16px" : "9px 14px",
-                  borderRadius: 999,
-                  fontWeight: 800,
-                  fontSize: 13,
-                  whiteSpace: "nowrap",
-                  opacity: active ? 1 : 0.72,
-                  transform: active ? "scale(1.04)" : "scale(0.98)",
-                  transition: "transform 160ms ease, opacity 160ms ease, background 160ms ease",
-                  outline: "none",
-                }}
-              >
-                {c.name}
-              </button>
-            );
-          })}
-        </div>
+        />
       </div>
 
-      {/* CONTEÚDO */}
-      <div style={{ padding: 14, display: "flex", flexDirection: "column", gap: 26 }}>
-        {visibleCategories.map((cat) => {
-          const items = grouped.get(cat.id) ?? [];
-          const isActive = cat.id === activeCatId;
+      <div style={{ padding: 14, display: "flex", flexDirection: "column", gap: 22 }}>
+        {featuredCategory && (
+          <div
+            ref={(el) => {
+              sectionRefs.current[featuredCategory.id] = el;
+            }}
+            style={{ scrollMarginTop: 140 }}
+          >
+            <FeaturedCarousel
+              items={featuredItems}
+              onOpen={(p, originalIndex) =>
+                setModal({ list: featuredItems, index: originalIndex })
+              }
+            />
+          </div>
+        )}
 
+        {otherCategories.map((cat) => {
+          const items = grouped.get(cat.id) ?? [];
           if (!items.length) return null;
 
           return (
@@ -368,42 +263,51 @@ export default function MenuClient({
               ref={(el) => {
                 sectionRefs.current[cat.id] = el;
               }}
-              style={{ scrollMarginTop: 140 }}
+              style={{
+                scrollMarginTop: 140,
+                position: "relative",
+                paddingTop: 8,
+              }}
             >
               <div
                 style={{
-                  textAlign: "center",
-                  fontWeight: 900,
-                  fontSize: 28,
-                  marginTop: 2,
-                  marginBottom: 12,
-                  opacity: isActive ? 0 : 0.55,
-                  transform: isActive ? "translateY(-6px)" : "translateY(0px)",
-                  transition: "opacity 240ms ease, transform 240ms ease",
+                  position: "absolute",
+                  left: 0,
+                  right: 0,
+                  top: -2,
+                  zIndex: 10,
+                  display: "flex",
+                  justifyContent: "center",
                   pointerEvents: "none",
                 }}
               >
-                {cat.name}
+                <div
+                  style={{
+                    padding: "8px 14px",
+                    borderRadius: 999,
+                    background: "rgba(255,255,255,0.90)",
+                    color: "#0b0b0b",
+                    fontWeight: 950,
+                    fontSize: 13,
+                    boxShadow: "0 10px 26px rgba(0,0,0,0.35)",
+                  }}
+                >
+                  {cat.name}
+                </div>
               </div>
 
-              <HorizontalProducts
+              <CategoryCarousel
                 items={items}
-                variant={isActive ? "active" : "inactive"}
-                debugOn={debugOn}
-                onDebugSnap={(v) => setDebugSnap(v)}
-                onOpen={(p, index) => {
-                  setModal({ list: items, index });
-                }}
+                compact={true}
+                onOpen={(p, idx) => setModal({ list: items, index: idx })}
               />
             </div>
           );
         })}
       </div>
 
-      {/* ✅ NOVA BARRA INFERIOR (Liquid Glass Dark) */}
       <BottomGlassBar unit={unit} />
 
-      {/* MODAL */}
       {modal && (
         <ProductModal
           list={modal.list}
@@ -413,315 +317,16 @@ export default function MenuClient({
         />
       )}
 
-      {/* DEBUG overlay */}
-      {debugOn && (
-        <div
-          style={{
-            position: "fixed",
-            top: 10,
-            right: 10,
-            zIndex: 200,
-            padding: "8px 10px",
-            borderRadius: 12,
-            background: "rgba(0,0,0,0.55)",
-            border: "1px solid rgba(255,255,255,0.10)",
-            backdropFilter: "blur(10px)",
-            color: "rgba(255,255,255,0.92)",
-            fontSize: 12,
-            fontWeight: 800,
-            pointerEvents: "none",
-          }}
-        >
-          <div>debug=1</div>
-          <div>chips scrollLeft: {Math.round(debugScrollLeft)}</div>
-          <div>snapX: {debugSnap}</div>
-        </div>
-      )}
-
-      {/* ✅ CSS: esconder scrollbars/indicadores e remover highlight */}
       <style>{`
-        /* esconder scrollbar (webKit) */
-        .fy-scroll-x::-webkit-scrollbar {
-          width: 0px;
-          height: 0px;
-          display: none;
-        }
-
-        /* firefox / edge */
-        .fy-scroll-x {
-          scrollbar-width: none;
-          -ms-overflow-style: none;
-        }
-
-        /* tirar "tap highlight" e foco feio */
-        button, a {
-          -webkit-tap-highlight-color: transparent;
-        }
-        button:focus, button:focus-visible, a:focus, a:focus-visible {
-          outline: none;
-        }
+        .fy-scroll-x::-webkit-scrollbar { width: 0px; height: 0px; display: none; }
+        .fy-scroll-x { scrollbar-width: none; -ms-overflow-style: none; }
+        .fy-no-highlight, button, a { -webkit-tap-highlight-color: transparent; }
+        .fy-no-highlight:focus, .fy-no-highlight:focus-visible,
+        button:focus, button:focus-visible, a:focus, a:focus-visible { outline: none; }
       `}</style>
     </main>
   );
 }
-
-function HorizontalProducts({
-  items,
-  variant,
-  onOpen,
-  debugOn,
-  onDebugSnap,
-}: {
-  items: Product[];
-  variant: "active" | "inactive";
-  onOpen: (p: Product, index: number) => void;
-  debugOn: boolean;
-  onDebugSnap: (v: "ON" | "OFF") => void;
-}) {
-  const scrollerRef = useRef<HTMLDivElement | null>(null);
-
-  // ✅ Fix travadinha:
-  // - Snap "proximity" (não mandatory)
-  // - Desliga snap durante drag (pointer/touch), reativa ao soltar
-  const [snapEnabled, setSnapEnabled] = useState(true);
-  const draggingRef = useRef(false);
-
-  useEffect(() => {
-    onDebugSnap(snapEnabled ? "ON" : "OFF");
-  }, [snapEnabled, onDebugSnap]);
-
-  useEffect(() => {
-    const el = scrollerRef.current;
-    if (!el) return;
-
-    const cards = () => Array.from(el.querySelectorAll<HTMLElement>("[data-card='1']"));
-
-    let raf = 0;
-
-    const update = () => {
-      raf = 0;
-
-      const rect = el.getBoundingClientRect();
-      const centerX = rect.left + rect.width / 2;
-
-      for (const c of cards()) {
-        const r = c.getBoundingClientRect();
-        const cardCenter = r.left + r.width / 2;
-        const dist = Math.abs(centerX - cardCenter);
-        const max = rect.width * 0.55;
-        const t = Math.max(0, 1 - dist / max);
-
-        const base = variant === "active" ? 0.93 : 0.82;
-        const grow = variant === "active" ? 0.12 : 0.06;
-
-        const scale = base + t * grow;
-        const alpha =
-          (variant === "active" ? 0.72 : 0.48) + t * (variant === "active" ? 0.28 : 0.24);
-
-        c.style.transform = `translateZ(0) scale(${scale})`;
-        c.style.opacity = String(alpha);
-      }
-    };
-
-    const schedule = () => {
-      if (raf) return;
-      raf = requestAnimationFrame(update);
-    };
-
-    requestAnimationFrame(() => {
-      const first = cards()[0];
-      if (first) {
-        el.scrollLeft = Math.max(
-          0,
-          first.offsetLeft - el.clientWidth / 2 + first.clientWidth / 2
-        );
-      }
-      update();
-    });
-
-    const onScroll = () => {
-      schedule();
-      if (debugOn) {
-        // logs leves
-        // eslint-disable-next-line no-console
-        console.log("[scrollX]", { scrollLeft: Math.round(el.scrollLeft), snapEnabled });
-      }
-    };
-
-    el.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", schedule);
-
-    return () => {
-      if (raf) cancelAnimationFrame(raf);
-      el.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", schedule);
-    };
-  }, [variant, debugOn, snapEnabled]);
-
-  function dragStart() {
-    draggingRef.current = true;
-    setSnapEnabled(false);
-    if (debugOn) console.log("[drag start]");
-  }
-
-  function dragEnd() {
-    draggingRef.current = false;
-    // reativa snap no próximo tick (deixa o gesto terminar)
-    setTimeout(() => setSnapEnabled(true), 0);
-    if (debugOn) console.log("[drag end]");
-  }
-
-  const W = variant === "active" ? 250 : 180;
-
-  return (
-    <div
-      ref={scrollerRef}
-      className="fy-scroll-x"
-      onPointerDownCapture={dragStart}
-      onPointerUpCapture={dragEnd}
-      onPointerCancel={dragEnd}
-      onTouchStartCapture={dragStart}
-      onTouchEndCapture={dragEnd}
-      style={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        gap: variant === "active" ? 14 : 10,
-        overflowX: "auto",
-        paddingTop: 14,
-        paddingBottom: 12,
-        WebkitOverflowScrolling: "touch",
-        paddingLeft: variant === "active" ? 26 : 18,
-        paddingRight: variant === "active" ? 26 : 18,
-        overscrollBehaviorX: "contain",
-        touchAction: "pan-x",
-
-        // ✅ snap controlado (resolve engasgo)
-        scrollSnapType: snapEnabled ? "x proximity" : "none",
-      }}
-    >
-      {items.map((p, idx) => {
-        const minVar = p.price_type === "variable" ? getMinVariationPrice(p) : null;
-        const priceLabel =
-          p.price_type === "fixed"
-            ? moneyBR(p.base_price)
-            : minVar !== null
-              ? `A partir de ${moneyBR(minVar)}`
-              : "Preço variável";
-
-        return (
-          <button
-            key={p.id}
-            data-card="1"
-            onClick={() => onOpen(p, idx)}
-            style={{
-              minWidth: W,
-              maxWidth: W,
-              borderRadius: 22,
-              border: "1px solid rgba(255,255,255,0.12)",
-              background: "rgba(255,255,255,0.04)",
-              overflow: "hidden",
-              padding: 0,
-              textAlign: "center",
-              color: "#fff",
-              cursor: "pointer",
-              transition: "transform 140ms ease, opacity 140ms ease",
-              scrollSnapAlign: "center",
-              willChange: "transform, opacity",
-              transform: "translateZ(0)",
-              outline: "none",
-            }}
-          >
-            <div
-              style={{
-                position: "relative",
-                width: "100%",
-                aspectRatio: "9 / 16",
-                background: "rgba(255,255,255,0.06)",
-              }}
-            >
-              {p.thumbnail_url ? (
-                <img
-                  src={p.thumbnail_url}
-                  alt={p.name}
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
-                  }}
-                />
-              ) : (
-                <div
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    display: "grid",
-                    placeItems: "center",
-                    opacity: 0.55,
-                    fontSize: 12,
-                  }}
-                >
-                  sem foto
-                </div>
-              )}
-
-              {/* ✅ degradê (não mexer) */}
-              <div
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  background:
-                    "linear-gradient(rgba(0,0,0,0.00) 35%, rgba(0,0,0,0.70) 78%, rgba(0,0,0,0.88) 100%)",
-                }}
-              />
-
-              <div style={{ position: "absolute", left: 14, right: 14, bottom: 14 }}>
-                <div
-                  style={{
-                    fontWeight: 950,
-                    fontSize: 16,
-                    lineHeight: 1.05,
-                    textShadow: "0 1px 8px rgba(0,0,0,0.6)",
-                    display: "-webkit-box",
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: "vertical",
-                    overflow: "hidden",
-                  }}
-                >
-                  {p.name}
-                </div>
-
-                {!!p.description && (
-                  <div
-                    style={{
-                      marginTop: 6,
-                      opacity: 0.85,
-                      fontSize: 12,
-                      lineHeight: 1.2,
-                      textShadow: "0 1px 8px rgba(0,0,0,0.6)",
-                      display: "-webkit-box",
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: "vertical",
-                      overflow: "hidden",
-                    }}
-                  >
-                    {p.description}
-                  </div>
-                )}
-
-                <div style={{ marginTop: 8, fontWeight: 950, fontSize: 16 }}>{priceLabel}</div>
-              </div>
-            </div>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-// ---- Modal (mantido igual ao seu; só colei o que você já tinha) ----
 
 function ProductModal({
   list,
@@ -765,7 +370,7 @@ function ProductModal({
       : selectedVar
         ? moneyBR(selectedVar.price)
         : vars.length
-          ? `A partir de ${moneyBR(getMinVariationPrice(product) ?? 0)}`
+          ? `A partir de ${moneyBR(Math.min(...vars.map((v) => v.price)))}`
           : "Preço variável";
 
   useEffect(() => {
@@ -876,24 +481,6 @@ function ProductModal({
           touchAction: "pan-y pan-x",
         }}
       >
-        <div
-          style={{
-            position: "absolute",
-            top: 12,
-            left: 12,
-            padding: "6px 10px",
-            borderRadius: 999,
-            background: "rgba(255,255,255,0.10)",
-            border: "1px solid rgba(255,255,255,0.14)",
-            backdropFilter: "blur(10px)",
-            fontSize: 12,
-            fontWeight: 900,
-            zIndex: 5,
-          }}
-        >
-          {index + 1}/{list.length}
-        </div>
-
         <button
           onClick={onClose}
           style={{
@@ -972,51 +559,14 @@ function ProductModal({
           />
 
           <div style={{ position: "absolute", left: 18, right: 18, bottom: 18, textAlign: "center" }}>
-            <div
-              style={{
-                fontWeight: 950,
-                fontSize: 20,
-                lineHeight: 1.05,
-                textShadow: "0 1px 10px rgba(0,0,0,0.65)",
-                display: "-webkit-box",
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: "vertical",
-                overflow: "hidden",
-              }}
-            >
-              {product.name}
-            </div>
-
+            <div style={{ fontWeight: 950, fontSize: 20 }}>{product.name}</div>
             {!!product.description && (
-              <div
-                style={{
-                  marginTop: 8,
-                  opacity: 0.9,
-                  fontSize: 13,
-                  lineHeight: 1.25,
-                  textShadow: "0 1px 10px rgba(0,0,0,0.65)",
-                  display: "-webkit-box",
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: "vertical",
-                  overflow: "hidden",
-                }}
-              >
-                {product.description}
-              </div>
+              <div style={{ marginTop: 8, opacity: 0.9, fontSize: 13 }}>{product.description}</div>
             )}
-
             <div style={{ marginTop: 10, fontSize: 20, fontWeight: 950 }}>{displayPrice}</div>
 
             {product.price_type === "variable" && vars.length > 0 && (
-              <div
-                style={{
-                  marginTop: 10,
-                  display: "flex",
-                  gap: 8,
-                  justifyContent: "center",
-                  flexWrap: "wrap",
-                }}
-              >
+              <div style={{ marginTop: 10, display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
                 {vars.map((v) => {
                   const active = v.id === selectedVarId;
                   return (
@@ -1026,9 +576,7 @@ function ProductModal({
                       style={{
                         padding: "8px 12px",
                         borderRadius: 999,
-                        border: `1px solid ${
-                          active ? "rgba(255,255,255,0.26)" : "rgba(255,255,255,0.12)"
-                        }`,
+                        border: `1px solid ${active ? "rgba(255,255,255,0.26)" : "rgba(255,255,255,0.12)"}`,
                         background: active ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.06)",
                         color: "#fff",
                         cursor: "pointer",
@@ -1048,18 +596,9 @@ function ProductModal({
                 })}
               </div>
             )}
-
-            <div style={{ marginTop: 10, opacity: 0.6, fontSize: 12 }}>
-              Dica: swipe ← → para trocar • swipe ↑↓ ou toque fora para fechar
-            </div>
           </div>
         </div>
       </div>
-
-      <style>{`
-        @keyframes fymenuFadeIn { from { opacity: 0 } to { opacity: 1 } }
-        @keyframes fymenuPop { from { transform: scale(.94); opacity: 0.6 } to { transform: scale(1); opacity: 1 } }
-      `}</style>
     </div>
   );
 }
