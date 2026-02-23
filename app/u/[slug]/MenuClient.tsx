@@ -66,7 +66,7 @@ function findFeaturedCategory(categories: Category[]): Category | null {
 
   const bySlugOrName = categories.find((c) => {
     const n = normKey(c.name);
-    const s = normKey(c.slug ?? "");
+    const s = normKey((c as any).slug ?? "");
     return n === "destaque" || s === "destaque";
   });
 
@@ -84,7 +84,6 @@ export default function MenuClient({
 }) {
   const bg = "#0b0b0b";
   const text = "#fff";
-  const bottomPad = 190;
 
   const visibleCategories = useMemo(() => {
     const has = new Set<string>();
@@ -126,19 +125,25 @@ export default function MenuClient({
   }, [featuredCategory, otherCategories]);
 
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
-
   const [activeCategoryId, setActiveCategoryId] = useState<string>(
     featuredId || otherCategories[0]?.id || ""
   );
 
-  useEffect(() => {
-    const next = featuredId || otherCategories[0]?.id || "";
-    if (next && next !== activeCategoryId) setActiveCategoryId(next);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [featuredId, otherCategories.length]);
+  // evita “brigar” durante scroll programático do clique
+  const programmaticScrollRef = useRef(false);
+  const programmaticTimerRef = useRef<any>(null);
 
   const [modal, setModal] = useState<ModalState>(null);
 
+  // quando featured muda, garante activeCategoryId = featured
+  useEffect(() => {
+    const next = featuredId || otherCategories[0]?.id || "";
+    if (!next) return;
+    setActiveCategoryId(next);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [featuredId, otherCategories.length]);
+
+  // trava body quando modal abre
   useEffect(() => {
     if (!modal) return;
     const prev = document.body.style.overflow;
@@ -148,7 +153,7 @@ export default function MenuClient({
     };
   }, [modal]);
 
-  // sync categoria ativa via IntersectionObserver (sem onScroll setState)
+  // ✅ vigência estável: usa “ponto âncora” abaixo do header (não por ratio)
   useEffect(() => {
     const ids = [featuredId, ...otherCategories.map((c) => c.id)].filter(Boolean);
     const els = ids
@@ -157,20 +162,34 @@ export default function MenuClient({
 
     if (!els.length) return;
 
+    const HEADER_ANCHOR_Y = 155; // ponto abaixo do topo (ajuste fino)
+
     const io = new IntersectionObserver(
       (entries) => {
-        const best = entries
-          .filter((e) => e.isIntersecting)
-          .sort((a, b) => (b.intersectionRatio ?? 0) - (a.intersectionRatio ?? 0))[0];
+        if (programmaticScrollRef.current) return;
 
-        if (!best?.target) return;
+        const visible = entries.filter((e) => e.isIntersecting);
+        if (!visible.length) return;
+
+        let best = visible[0];
+        let bestDist = Infinity;
+
+        for (const e of visible) {
+          const rect = (e.target as HTMLElement).getBoundingClientRect();
+          const dist = Math.abs(rect.top - HEADER_ANCHOR_Y);
+          if (dist < bestDist) {
+            bestDist = dist;
+            best = e;
+          }
+        }
+
         const foundId = ids.find((id) => sectionRefs.current[id] === best.target);
         if (foundId) setActiveCategoryId(foundId);
       },
       {
         root: null,
-        threshold: [0.25, 0.4, 0.55],
-        rootMargin: "-140px 0px -55% 0px",
+        threshold: [0.01, 0.1, 0.2],
+        rootMargin: "-140px 0px -70% 0px",
       }
     );
 
@@ -181,49 +200,44 @@ export default function MenuClient({
   function scrollToCategory(id: string) {
     const el = sectionRefs.current[id];
     if (!el) return;
+
+    // marca como scroll programático para não “voltar pro 1”
+    programmaticScrollRef.current = true;
+    if (programmaticTimerRef.current) clearTimeout(programmaticTimerRef.current);
+
+    // scroll suave só em clique
     el.scrollIntoView({ behavior: "smooth", block: "start" });
+
+    programmaticTimerRef.current = setTimeout(() => {
+      programmaticScrollRef.current = false;
+    }, 520);
   }
 
   if (!visibleCategories.length) {
     return (
-      <div
+      <main
         style={{
           minHeight: "100vh",
           background: bg,
-          display: "flex",
-          justifyContent: "center",
+          color: text,
+          display: "grid",
+          placeItems: "center",
+          padding: 20,
+          textAlign: "center",
         }}
       >
-        <main
-          style={{
-            width: "100%",
-            maxWidth: 480,
-            minHeight: "100vh",
-            background: bg,
-            color: text,
-            display: "grid",
-            placeItems: "center",
-            padding: 20,
-            textAlign: "center",
-          }}
-        >
-          <div style={{ maxWidth: 420 }}>
-            <div style={{ fontSize: 18, fontWeight: 950 }}>Cardápio</div>
-            <div style={{ marginTop: 10, opacity: 0.7 }}>
-              Ainda não há itens publicados neste cardápio.
-            </div>
+        <div style={{ maxWidth: 420 }}>
+          <div style={{ fontSize: 18, fontWeight: 950 }}>Cardápio</div>
+          <div style={{ marginTop: 10, opacity: 0.7 }}>
+            Ainda não há itens publicados neste cardápio.
           </div>
-        </main>
-      </div>
+        </div>
+      </main>
     );
   }
 
-  const css = [
-    ".fy-scroll-x::-webkit-scrollbar{width:0;height:0;display:none;}",
-    ".fy-scroll-x{scrollbar-width:none;-ms-overflow-style:none;}",
-    ".fy-no-highlight,button,a{-webkit-tap-highlight-color:transparent;}",
-    ".fy-no-highlight:focus,.fy-no-highlight:focus-visible,button:focus,button:focus-visible,a:focus,a:focus-visible{outline:none;}",
-  ].join("\n");
+  // padding bottom para a BottomGlassBar não cobrir
+  const bottomPad = 190;
 
   return (
     <div
@@ -242,17 +256,32 @@ export default function MenuClient({
           background: bg,
           color: text,
           paddingBottom: bottomPad,
+          overscrollBehaviorY: "auto",
         }}
       >
-        {/* ===== HEADER FIXO (pílulas) ===== */}
-        <CategoryPillsTop
-          categories={pillsCategories}
-          activeCategoryId={activeCategoryId}
-          onSelectCategory={(id) => {
-            setActiveCategoryId(id);
-            scrollToCategory(id);
+        {/* ===== HEADER FIXO (somente pílulas) ===== */}
+        <div
+          style={{
+            position: "sticky",
+            top: 0,
+            zIndex: 50,
+            padding: "14px 14px 10px",
+            backdropFilter: "blur(16px)",
+            // ✅ sem linha/corte: gradiente suave até transparente
+            background:
+              "linear-gradient(rgba(11,11,11,0.92) 0%, rgba(11,11,11,0.78) 55%, rgba(11,11,11,0.00) 100%)",
+            borderBottom: "none",
           }}
-        />
+        >
+          <CategoryPillsTop
+            categories={pillsCategories}
+            activeCategoryId={activeCategoryId}
+            onSelectCategory={(id) => {
+              setActiveCategoryId(id);
+              scrollToCategory(id);
+            }}
+          />
+        </div>
 
         {/* ===== CONTEÚDO ===== */}
         <div style={{ padding: 14, display: "flex", flexDirection: "column", gap: 22 }}>
@@ -265,9 +294,7 @@ export default function MenuClient({
             >
               <FeaturedCarousel
                 items={featuredItems}
-                onOpen={(p, originalIndex) =>
-                  setModal({ list: featuredItems, index: originalIndex })
-                }
+                onOpen={(p, idx) => setModal({ list: featuredItems, index: idx })}
               />
             </div>
           )}
@@ -282,41 +309,10 @@ export default function MenuClient({
                 ref={(el) => {
                   sectionRefs.current[cat.id] = el;
                 }}
-                style={{
-                  scrollMarginTop: 140,
-                  position: "relative",
-                  paddingTop: 8,
-                }}
+                style={{ scrollMarginTop: 140 }}
               >
-                {/* Se você quiser REMOVER o badge do meio, é só apagar esse bloco. */}
-                <div
-                  style={{
-                    position: "absolute",
-                    left: 0,
-                    right: 0,
-                    top: -2,
-                    zIndex: 10,
-                    display: "flex",
-                    justifyContent: "center",
-                    pointerEvents: "none",
-                  }}
-                >
-                  <div
-                    style={{
-                      padding: "8px 14px",
-                      borderRadius: 999,
-                      background: "rgba(255,255,255,0.90)",
-                      color: "#0b0b0b",
-                      fontWeight: 950,
-                      fontSize: 13,
-                      boxShadow: "0 10px 26px rgba(0,0,0,0.35)",
-                    }}
-                  >
-                    {cat.name}
-                  </div>
-                </div>
-
                 <CategoryCarousel
+                  title={cat.name}
                   items={items}
                   compact={true}
                   onOpen={(p, idx) => setModal({ list: items, index: idx })}
@@ -326,10 +322,8 @@ export default function MenuClient({
           })}
         </div>
 
-        {/* ===== BARRA INFERIOR ===== */}
         <BottomGlassBar unit={unit} />
 
-        {/* ===== MODAL ===== */}
         {modal && (
           <ProductModal
             list={modal.list}
@@ -339,11 +333,20 @@ export default function MenuClient({
           />
         )}
 
-        <style>{css}</style>
+        {/* helpers visuais */}
+        <style>{`
+          .fy-scroll-x::-webkit-scrollbar { width: 0px; height: 0px; display: none; }
+          .fy-scroll-x { scrollbar-width: none; -ms-overflow-style: none; }
+          .fy-no-highlight, button, a { -webkit-tap-highlight-color: transparent; }
+          .fy-no-highlight:focus, .fy-no-highlight:focus-visible,
+          button:focus, button:focus-visible, a:focus, a:focus-visible { outline: none; }
+        `}</style>
       </main>
     </div>
   );
 }
+
+/* ===== Modal (mantido do seu padrão) ===== */
 
 function ProductModal({
   list,
@@ -391,6 +394,16 @@ function ProductModal({
       : "Preço variável";
 
   useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowLeft") onChangeIndex(Math.max(0, index - 1));
+      if (e.key === "ArrowRight") onChangeIndex(Math.min(list.length - 1, index + 1));
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [index, list.length, onChangeIndex, onClose]);
+
+  useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
 
@@ -406,35 +419,6 @@ function ProductModal({
       (p as any).catch(() => {});
     }
   }, [product?.id, product?.video_url]);
-
-  const startRef = useRef<{ x: number; y: number } | null>(null);
-  const TH_X = 70;
-  const TH_Y = 70;
-
-  function begin(x: number, y: number) {
-    startRef.current = { x, y };
-  }
-  function end(x: number, y: number) {
-    const s = startRef.current;
-    startRef.current = null;
-    if (!s) return;
-
-    const dx = x - s.x;
-    const dy = y - s.y;
-
-    const ax = Math.abs(dx);
-    const ay = Math.abs(dy);
-
-    if (ay > TH_Y && ay > ax) {
-      onClose();
-      return;
-    }
-
-    if (ax > TH_X && ax > ay) {
-      if (dx < 0) onChangeIndex(Math.min(list.length - 1, index + 1));
-      else onChangeIndex(Math.max(0, index - 1));
-    }
-  }
 
   return (
     <div
@@ -452,18 +436,6 @@ function ProductModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        onPointerDownCapture={(e) => begin(e.clientX, e.clientY)}
-        onPointerUpCapture={(e) => end(e.clientX, e.clientY)}
-        onTouchStartCapture={(e) => {
-          const t = e.touches[0];
-          if (!t) return;
-          begin(t.clientX, t.clientY);
-        }}
-        onTouchEndCapture={(e) => {
-          const t = e.changedTouches[0];
-          if (!t) return;
-          end(t.clientX, t.clientY);
-        }}
         style={{
           width: "100%",
           maxWidth: 420,
@@ -473,7 +445,6 @@ function ProductModal({
           overflow: "hidden",
           aspectRatio: "9 / 16",
           position: "relative",
-          touchAction: "pan-y pan-x",
         }}
       >
         <button
@@ -560,6 +531,7 @@ function ProductModal({
               right: 18,
               bottom: 18,
               textAlign: "center",
+              color: "#fff",
             }}
           >
             <div style={{ fontWeight: 950, fontSize: 20 }}>{product.name}</div>
