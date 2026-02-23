@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useEffect } from "react";
+import { useCarouselSnap } from "./useCarouselSnap";
 
 type Variation = {
   id: string;
@@ -34,219 +35,73 @@ function getMinVariationPrice(p: Product): number | null {
   return min;
 }
 
-/**
- * Destaque: loop infinito performático:
- * - duplica lista: [...items, ...items]
- * - inicia scroll no meio
- * - reposiciona scrollLeft quando passa limites
- * - sem setState em onScroll
- * - sem snap mandatory (usa proximity e desliga durante drag)
- * - carrossel NÃO prende eixo (touchAction pan-y) p/ iOS liberar vertical
- */
 export default function FeaturedCarousel({
   items,
   onOpen,
 }: {
   items: Product[];
-  onOpen: (p: Product, indexInOriginal: number) => void;
+  onOpen: (p: Product, index: number) => void;
 }) {
-  const scrollerRef = useRef<HTMLDivElement | null>(null);
-  const draggingRef = useRef(false);
-
-  const loop = useMemo(() => {
-    if (!items.length) return [];
-    return [...items, ...items];
-  }, [items]);
-
-  const cardW = 286; // wrapper maior (não muda o design interno)
-  const gap = 14;
-
-  const rafRef = useRef<number>(0);
-  const settleTimer = useRef<any>(null);
-
-  function scheduleUpdate() {
-    if (rafRef.current) return;
-    rafRef.current = requestAnimationFrame(() => {
-      rafRef.current = 0;
-      applyCenterEmphasis();
-    });
-  }
-
-  function applyCenterEmphasis() {
-    const el = scrollerRef.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const cards = Array.from(el.querySelectorAll<HTMLElement>("[data-card='1']"));
-
-    for (const c of cards) {
-      const r = c.getBoundingClientRect();
-      const cardCenter = r.left + r.width / 2;
-      const dist = Math.abs(centerX - cardCenter);
-      const max = rect.width * 0.55;
-      const t = Math.max(0, 1 - dist / max);
-
-      const base = 0.92;
-      const grow = 0.14;
-      const scale = base + t * grow;
-      const alpha = 0.62 + t * 0.38;
-
-      c.style.transform = `translateZ(0) scale(${scale})`;
-      c.style.opacity = String(alpha);
-    }
-  }
-
-  function setSnapEnabled(enabled: boolean) {
-    const el = scrollerRef.current;
-    if (!el) return;
-    el.style.scrollSnapType = enabled ? "x proximity" : "none";
-  }
-
-  function initMiddle() {
-    const el = scrollerRef.current;
-    if (!el) return;
-
-    // vai pro meio do conteúdo (segunda metade)
-    const half = items.length;
-    const middleIndex = Math.max(0, half); // início da 2ª cópia
-    const x = middleIndex * (cardW + gap);
-    el.scrollLeft = x;
-
-    applyCenterEmphasis();
-  }
-
-  function wrapIfNeeded() {
-    const el = scrollerRef.current;
-    if (!el) return;
-    if (!items.length) return;
-
-    const total = items.length * (cardW + gap);
-    const minX = total * 0.25;
-    const maxX = total * 1.75;
-
-    if (el.scrollLeft < minX) {
-      el.scrollLeft += total;
-    } else if (el.scrollLeft > maxX) {
-      el.scrollLeft -= total;
-    }
-  }
-
-  function settleNearest() {
-    const el = scrollerRef.current;
-    if (!el) return;
-
-    // alinhar rápido no fim do gesto, sem brigar durante drag
-    const rect = el.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const cards = Array.from(el.querySelectorAll<HTMLElement>("[data-card='1']"));
-
-    let best: { x: number; dist: number } | null = null;
-
-    for (const c of cards) {
-      const r = c.getBoundingClientRect();
-      const cardCenter = r.left + r.width / 2;
-      const dist = Math.abs(centerX - cardCenter);
-      if (!best || dist < best.dist) {
-        best = { x: el.scrollLeft + (cardCenter - centerX), dist };
-      }
-    }
-
-    if (best) {
-      // scroll programático curto (smooth leve)
-      el.scrollTo({ left: best.x, behavior: "smooth" });
-    }
-  }
+  const { scrollerRef, DebugOverlay } = useCarouselSnap({
+    cardSelector: "[data-card='1']",
+    settleMs: 90,
+    smoothWhenSlow: true,
+  });
 
   useEffect(() => {
     const el = scrollerRef.current;
     if (!el) return;
 
-    // inicial
-    requestAnimationFrame(initMiddle);
+    const first = el.querySelector<HTMLElement>("[data-card='1']");
+    if (!first) return;
 
-    const onScroll = () => {
-      wrapIfNeeded();
-      scheduleUpdate();
+    const targetLeft = first.offsetLeft - (el.clientWidth / 2 - first.clientWidth / 2);
+    el.scrollTo({ left: Math.max(0, targetLeft), behavior: "auto" });
+  }, [scrollerRef, items.length]);
 
-      if (settleTimer.current) clearTimeout(settleTimer.current);
-      // settle após parar o scroll (sem state loop)
-      settleTimer.current = setTimeout(() => {
-        if (!draggingRef.current) settleNearest();
-      }, 90);
-    };
-
-    el.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", scheduleUpdate);
-
-    return () => {
-      el.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", scheduleUpdate);
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      if (settleTimer.current) clearTimeout(settleTimer.current);
-    };
-  }, [items.length]);
-
-  function dragStart() {
-    draggingRef.current = true;
-    setSnapEnabled(false);
-  }
-  function dragEnd() {
-    draggingRef.current = false;
-    setTimeout(() => setSnapEnabled(true), 0);
-    setTimeout(settleNearest, 0);
-  }
-
-  if (!items.length) return null;
+  const W = 280;
 
   return (
-    <div style={{ marginTop: 8 }}>
+    <>
+      {DebugOverlay}
+
       <div
         ref={scrollerRef}
         className="fy-scroll-x"
         style={{
           display: "flex",
+          justifyContent: "center",
           alignItems: "center",
-          gap,
+          gap: 14,
           overflowX: "auto",
           paddingTop: 14,
           paddingBottom: 12,
-          paddingLeft: 22,
-          paddingRight: 22,
+          paddingLeft: 26,
+          paddingRight: 26,
           WebkitOverflowScrolling: "touch",
-          overscrollBehaviorX: "contain",
 
-          // CRÍTICO iOS: não prender eixo horizontal (vertical sempre libera)
+          // IMPORTANT: não travar vertical no iOS
           touchAction: "pan-y pinch-zoom",
-
-          scrollSnapType: "x proximity",
         }}
-        onPointerDownCapture={dragStart}
-        onPointerUpCapture={dragEnd}
-        onPointerCancel={dragEnd}
-        onTouchStartCapture={dragStart}
-        onTouchEndCapture={dragEnd}
       >
-        {loop.map((p, idx) => {
-          const originalIndex = idx % items.length;
-
+        {items.map((p, idx) => {
           const minVar = p.price_type === "variable" ? getMinVariationPrice(p) : null;
           const priceLabel =
             p.price_type === "fixed"
               ? moneyBR(p.base_price)
               : minVar !== null
-                ? `A partir de ${moneyBR(minVar)}`
-                : "Preço variável";
+              ? `A partir de ${moneyBR(minVar)}`
+              : "Preço variável";
 
           return (
             <button
-              key={`${p.id}-${idx}`}
+              key={p.id}
               data-card="1"
-              onClick={() => onOpen(p, originalIndex)}
-              className="fy-no-highlight"
+              onClick={() => onOpen(p, idx)}
               style={{
-                minWidth: cardW,
-                maxWidth: cardW,
-                borderRadius: 22,
+                minWidth: W,
+                maxWidth: W,
+                borderRadius: 24,
                 border: "1px solid rgba(255,255,255,0.12)",
                 background: "rgba(255,255,255,0.04)",
                 overflow: "hidden",
@@ -254,14 +109,11 @@ export default function FeaturedCarousel({
                 textAlign: "center",
                 color: "#fff",
                 cursor: "pointer",
-                transition: "transform 140ms ease, opacity 140ms ease",
                 scrollSnapAlign: "center",
-                willChange: "transform, opacity",
-                transform: "translateZ(0)",
-                outline: "none",
+                WebkitTapHighlightColor: "transparent",
               }}
             >
-              {/* ✅ NÃO mexer no design interno do card */}
+              {/* ✅ NÃO ALTERAR DESIGN INTERNO */}
               <div
                 style={{
                   position: "relative",
@@ -347,6 +199,14 @@ export default function FeaturedCarousel({
           );
         })}
       </div>
-    </div>
+
+      <style jsx>{`
+        .fy-scroll-x::-webkit-scrollbar {
+          display: none;
+          width: 0;
+          height: 0;
+        }
+      `}</style>
+    </>
   );
 }

@@ -66,7 +66,7 @@ function findFeaturedCategory(categories: Category[]): Category | null {
 
   const bySlugOrName = categories.find((c) => {
     const n = normKey(c.name);
-    const s = normKey((c as any).slug ?? "");
+    const s = normKey(c.slug ?? "");
     return n === "destaque" || s === "destaque";
   });
 
@@ -82,6 +82,10 @@ export default function MenuClient({
   categories: Category[];
   products: Product[];
 }) {
+  const bg = "#0b0b0b";
+  const text = "#fff";
+  const bottomPad = 190;
+
   const visibleCategories = useMemo(() => {
     const has = new Set<string>();
     for (const p of products) has.add(p.category_id);
@@ -114,7 +118,15 @@ export default function MenuClient({
     return visibleCategories.filter((c) => c.id !== featuredId);
   }, [visibleCategories, featuredId]);
 
+  const pillsCategories = useMemo(() => {
+    const arr: Category[] = [];
+    if (featuredCategory) arr.push(featuredCategory);
+    for (const c of otherCategories) arr.push(c);
+    return arr;
+  }, [featuredCategory, otherCategories]);
+
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
   const [activeCategoryId, setActiveCategoryId] = useState<string>(
     featuredId || otherCategories[0]?.id || ""
   );
@@ -136,6 +148,7 @@ export default function MenuClient({
     };
   }, [modal]);
 
+  // sync categoria ativa via IntersectionObserver (sem onScroll setState)
   useEffect(() => {
     const ids = [featuredId, ...otherCategories.map((c) => c.id)].filter(Boolean);
     const els = ids
@@ -171,61 +184,67 @@ export default function MenuClient({
     el.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  const bottomPad = 190;
-  const bg = "#0b0b0b";
-  const text = "#fff";
-
   if (!visibleCategories.length) {
     return (
-      <main
+      <div
         style={{
           minHeight: "100vh",
           background: bg,
-          color: text,
-          display: "grid",
-          placeItems: "center",
-          padding: 20,
-          textAlign: "center",
+          display: "flex",
+          justifyContent: "center",
         }}
       >
-        <div style={{ maxWidth: 420 }}>
-          <div style={{ fontSize: 18, fontWeight: 950 }}>Cardápio</div>
-          <div style={{ marginTop: 10, opacity: 0.7 }}>
-            Ainda não há itens publicados neste cardápio.
+        <main
+          style={{
+            width: "100%",
+            maxWidth: 480,
+            minHeight: "100vh",
+            background: bg,
+            color: text,
+            display: "grid",
+            placeItems: "center",
+            padding: 20,
+            textAlign: "center",
+          }}
+        >
+          <div style={{ maxWidth: 420 }}>
+            <div style={{ fontSize: 18, fontWeight: 950 }}>Cardápio</div>
+            <div style={{ marginTop: 10, opacity: 0.7 }}>
+              Ainda não há itens publicados neste cardápio.
+            </div>
           </div>
-        </div>
-      </main>
+        </main>
+      </div>
     );
   }
 
-  const pillsCategories = useMemo(() => {
-    const arr: Category[] = [];
-    if (featuredCategory) arr.push(featuredCategory);
-    for (const c of otherCategories) arr.push(c);
-    return arr;
-  }, [featuredCategory, otherCategories]);
+  const css = [
+    ".fy-scroll-x::-webkit-scrollbar{width:0;height:0;display:none;}",
+    ".fy-scroll-x{scrollbar-width:none;-ms-overflow-style:none;}",
+    ".fy-no-highlight,button,a{-webkit-tap-highlight-color:transparent;}",
+    ".fy-no-highlight:focus,.fy-no-highlight:focus-visible,button:focus,button:focus-visible,a:focus,a:focus-visible{outline:none;}",
+  ].join("\n");
 
   return (
-    <main
+    <div
       style={{
         minHeight: "100vh",
         background: bg,
-        color: text,
-        paddingBottom: bottomPad,
+        display: "flex",
+        justifyContent: "center",
       }}
     >
-      <div
+      <main
         style={{
-          position: "sticky",
-          top: 0,
-          zIndex: 50,
-          padding: "14px 14px 10px",
-          backdropFilter: "blur(14px)",
-          background:
-            "linear-gradient(rgba(11,11,11,0.96) 0%, rgba(11,11,11,0.80) 55%, rgba(11,11,11,0.00) 100%)",
-          borderBottom: "1px solid rgba(255,255,255,0.04)",
+          width: "100%",
+          maxWidth: 480,
+          minHeight: "100vh",
+          background: bg,
+          color: text,
+          paddingBottom: bottomPad,
         }}
       >
+        {/* ===== HEADER FIXO (pílulas) ===== */}
         <CategoryPillsTop
           categories={pillsCategories}
           activeCategoryId={activeCategoryId}
@@ -234,97 +253,95 @@ export default function MenuClient({
             scrollToCategory(id);
           }}
         />
-      </div>
 
-      <div style={{ padding: 14, display: "flex", flexDirection: "column", gap: 22 }}>
-        {featuredCategory && (
-          <div
-            ref={(el) => {
-              sectionRefs.current[featuredCategory.id] = el;
-            }}
-            style={{ scrollMarginTop: 140 }}
-          >
-            <FeaturedCarousel
-              items={featuredItems}
-              onOpen={(p, originalIndex) =>
-                setModal({ list: featuredItems, index: originalIndex })
-              }
-            />
-          </div>
-        )}
-
-        {otherCategories.map((cat) => {
-          const items = grouped.get(cat.id) ?? [];
-          if (!items.length) return null;
-
-          return (
+        {/* ===== CONTEÚDO ===== */}
+        <div style={{ padding: 14, display: "flex", flexDirection: "column", gap: 22 }}>
+          {featuredCategory && (
             <div
-              key={cat.id}
               ref={(el) => {
-                sectionRefs.current[cat.id] = el;
+                sectionRefs.current[featuredCategory.id] = el;
               }}
-              style={{
-                scrollMarginTop: 140,
-                position: "relative",
-                paddingTop: 8,
-              }}
+              style={{ scrollMarginTop: 140 }}
             >
-              <div
-                style={{
-                  position: "absolute",
-                  left: 0,
-                  right: 0,
-                  top: -2,
-                  zIndex: 10,
-                  display: "flex",
-                  justifyContent: "center",
-                  pointerEvents: "none",
-                }}
-              >
-                <div
-                  style={{
-                    padding: "8px 14px",
-                    borderRadius: 999,
-                    background: "rgba(255,255,255,0.90)",
-                    color: "#0b0b0b",
-                    fontWeight: 950,
-                    fontSize: 13,
-                    boxShadow: "0 10px 26px rgba(0,0,0,0.35)",
-                  }}
-                >
-                  {cat.name}
-                </div>
-              </div>
-
-              <CategoryCarousel
-                items={items}
-                compact={true}
-                onOpen={(p, idx) => setModal({ list: items, index: idx })}
+              <FeaturedCarousel
+                items={featuredItems}
+                onOpen={(p, originalIndex) =>
+                  setModal({ list: featuredItems, index: originalIndex })
+                }
               />
             </div>
-          );
-        })}
-      </div>
+          )}
 
-      <BottomGlassBar unit={unit} />
+          {otherCategories.map((cat) => {
+            const items = grouped.get(cat.id) ?? [];
+            if (!items.length) return null;
 
-      {modal && (
-        <ProductModal
-          list={modal.list}
-          index={modal.index}
-          onChangeIndex={(idx) => setModal({ list: modal.list, index: idx })}
-          onClose={() => setModal(null)}
-        />
-      )}
+            return (
+              <div
+                key={cat.id}
+                ref={(el) => {
+                  sectionRefs.current[cat.id] = el;
+                }}
+                style={{
+                  scrollMarginTop: 140,
+                  position: "relative",
+                  paddingTop: 8,
+                }}
+              >
+                {/* Se você quiser REMOVER o badge do meio, é só apagar esse bloco. */}
+                <div
+                  style={{
+                    position: "absolute",
+                    left: 0,
+                    right: 0,
+                    top: -2,
+                    zIndex: 10,
+                    display: "flex",
+                    justifyContent: "center",
+                    pointerEvents: "none",
+                  }}
+                >
+                  <div
+                    style={{
+                      padding: "8px 14px",
+                      borderRadius: 999,
+                      background: "rgba(255,255,255,0.90)",
+                      color: "#0b0b0b",
+                      fontWeight: 950,
+                      fontSize: 13,
+                      boxShadow: "0 10px 26px rgba(0,0,0,0.35)",
+                    }}
+                  >
+                    {cat.name}
+                  </div>
+                </div>
 
-      <style>{`
-        .fy-scroll-x::-webkit-scrollbar { width: 0px; height: 0px; display: none; }
-        .fy-scroll-x { scrollbar-width: none; -ms-overflow-style: none; }
-        .fy-no-highlight, button, a { -webkit-tap-highlight-color: transparent; }
-        .fy-no-highlight:focus, .fy-no-highlight:focus-visible,
-        button:focus, button:focus-visible, a:focus, a:focus-visible { outline: none; }
-      `}</style>
-    </main>
+                <CategoryCarousel
+                  items={items}
+                  compact={true}
+                  onOpen={(p, idx) => setModal({ list: items, index: idx })}
+                />
+              </div>
+            );
+          })}
+        </div>
+
+        {/* ===== BARRA INFERIOR ===== */}
+        <BottomGlassBar unit={unit} />
+
+        {/* ===== MODAL ===== */}
+        {modal && (
+          <ProductModal
+            list={modal.list}
+            index={modal.index}
+            onChangeIndex={(idx) => setModal({ list: modal.list, index: idx })}
+            onClose={() => setModal(null)}
+          />
+        )}
+
+        <style>{css}</style>
+      </main>
+    </div>
   );
 }
 
@@ -368,20 +385,10 @@ function ProductModal({
     product.price_type === "fixed"
       ? moneyBR(product.base_price)
       : selectedVar
-        ? moneyBR(selectedVar.price)
-        : vars.length
-          ? `A partir de ${moneyBR(Math.min(...vars.map((v) => v.price)))}`
-          : "Preço variável";
-
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
-      if (e.key === "ArrowLeft") onChangeIndex(Math.max(0, index - 1));
-      if (e.key === "ArrowRight") onChangeIndex(Math.min(list.length - 1, index + 1));
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [index, list.length, onChangeIndex, onClose]);
+      ? moneyBR(selectedVar.price)
+      : vars.length
+      ? `A partir de ${moneyBR(Math.min(...vars.map((v) => v.price)))}`
+      : "Preço variável";
 
   useEffect(() => {
     const v = videoRef.current;
@@ -429,24 +436,6 @@ function ProductModal({
     }
   }
 
-  function onPointerDownCapture(e: React.PointerEvent) {
-    begin(e.clientX, e.clientY);
-  }
-  function onPointerUpCapture(e: React.PointerEvent) {
-    end(e.clientX, e.clientY);
-  }
-
-  function onTouchStartCapture(e: React.TouchEvent) {
-    const t = e.touches[0];
-    if (!t) return;
-    begin(t.clientX, t.clientY);
-  }
-  function onTouchEndCapture(e: React.TouchEvent) {
-    const t = e.changedTouches[0];
-    if (!t) return;
-    end(t.clientX, t.clientY);
-  }
-
   return (
     <div
       onClick={onClose}
@@ -459,15 +448,22 @@ function ProductModal({
         display: "grid",
         placeItems: "center",
         padding: 16,
-        animation: "fymenuFadeIn 160ms ease-out",
       }}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        onPointerDownCapture={onPointerDownCapture}
-        onPointerUpCapture={onPointerUpCapture}
-        onTouchStartCapture={onTouchStartCapture}
-        onTouchEndCapture={onTouchEndCapture}
+        onPointerDownCapture={(e) => begin(e.clientX, e.clientY)}
+        onPointerUpCapture={(e) => end(e.clientX, e.clientY)}
+        onTouchStartCapture={(e) => {
+          const t = e.touches[0];
+          if (!t) return;
+          begin(t.clientX, t.clientY);
+        }}
+        onTouchEndCapture={(e) => {
+          const t = e.changedTouches[0];
+          if (!t) return;
+          end(t.clientX, t.clientY);
+        }}
         style={{
           width: "100%",
           maxWidth: 420,
@@ -477,7 +473,6 @@ function ProductModal({
           overflow: "hidden",
           aspectRatio: "9 / 16",
           position: "relative",
-          animation: "fymenuPop 220ms cubic-bezier(.2,.9,.2,1)",
           touchAction: "pan-y pan-x",
         }}
       >
@@ -558,15 +553,37 @@ function ProductModal({
             }}
           />
 
-          <div style={{ position: "absolute", left: 18, right: 18, bottom: 18, textAlign: "center" }}>
+          <div
+            style={{
+              position: "absolute",
+              left: 18,
+              right: 18,
+              bottom: 18,
+              textAlign: "center",
+            }}
+          >
             <div style={{ fontWeight: 950, fontSize: 20 }}>{product.name}</div>
+
             {!!product.description && (
-              <div style={{ marginTop: 8, opacity: 0.9, fontSize: 13 }}>{product.description}</div>
+              <div style={{ marginTop: 8, opacity: 0.9, fontSize: 13 }}>
+                {product.description}
+              </div>
             )}
-            <div style={{ marginTop: 10, fontSize: 20, fontWeight: 950 }}>{displayPrice}</div>
+
+            <div style={{ marginTop: 10, fontSize: 20, fontWeight: 950 }}>
+              {displayPrice}
+            </div>
 
             {product.price_type === "variable" && vars.length > 0 && (
-              <div style={{ marginTop: 10, display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
+              <div
+                style={{
+                  marginTop: 10,
+                  display: "flex",
+                  gap: 8,
+                  justifyContent: "center",
+                  flexWrap: "wrap",
+                }}
+              >
                 {vars.map((v) => {
                   const active = v.id === selectedVarId;
                   return (
@@ -576,8 +593,12 @@ function ProductModal({
                       style={{
                         padding: "8px 12px",
                         borderRadius: 999,
-                        border: `1px solid ${active ? "rgba(255,255,255,0.26)" : "rgba(255,255,255,0.12)"}`,
-                        background: active ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.06)",
+                        border: `1px solid ${
+                          active ? "rgba(255,255,255,0.26)" : "rgba(255,255,255,0.12)"
+                        }`,
+                        background: active
+                          ? "rgba(255,255,255,0.12)"
+                          : "rgba(255,255,255,0.06)",
                         color: "#fff",
                         cursor: "pointer",
                         fontWeight: 900,
