@@ -21,16 +21,12 @@ export default function FeaturedCarousel({
 }) {
   const scrollerRef = useRef<HTMLDivElement | null>(null);
 
-  // ✅ Centraliza HERO ao abrir
   useEffect(() => {
     const el = scrollerRef.current;
     if (!el || !items.length) return;
 
     requestAnimationFrame(() => {
-      const children = Array.from(
-        el.querySelectorAll<HTMLElement>("[data-item]")
-      );
-
+      const children = Array.from(el.querySelectorAll<HTMLElement>("[data-item]"));
       if (!children.length) return;
 
       const heroIndex = Math.floor(children.length / 2);
@@ -43,7 +39,6 @@ export default function FeaturedCarousel({
     });
   }, [items.length]);
 
-  // ✅ Snap nearest ao soltar
   useEffect(() => {
     const el = scrollerRef.current;
     if (!el) return;
@@ -51,10 +46,7 @@ export default function FeaturedCarousel({
     let timeout: any = null;
 
     const settle = () => {
-      const children = Array.from(
-        el.querySelectorAll<HTMLElement>("[data-item]")
-      );
-
+      const children = Array.from(el.querySelectorAll<HTMLElement>("[data-item]"));
       if (!children.length) return;
 
       const center = el.scrollLeft + el.clientWidth / 2;
@@ -108,7 +100,7 @@ export default function FeaturedCarousel({
           overflowX: "auto",
           padding: "12px 14px",
           WebkitOverflowScrolling: "touch",
-          touchAction: "auto", // ⚠️ ESSENCIAL PRA iOS
+          touchAction: "auto",
         }}
       >
         {items.map((p, i) => (
@@ -122,7 +114,7 @@ export default function FeaturedCarousel({
             }}
             onClick={() => onOpen(p, i)}
           >
-            {/* seu ProductCard aqui */}
+            {/* seu ProductCard aqui (mantém o design interno) */}
             <div style={{ height: 520, background: "#222", borderRadius: 24 }} />
           </div>
         ))}

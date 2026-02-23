@@ -1,11 +1,8 @@
-// FILE: /app/u/[slug]/page.tsx
-// ACTION: REPLACE ENTIRE FILE
-
 import MenuClient from "./MenuClient";
 import { createClient } from "@/lib/supabase/server";
 
 type PageProps = {
-  params: { slug: string } | Promise<{ slug: string }>;
+  params: { slug: string };
 };
 
 type UnitRow = {
@@ -13,8 +10,8 @@ type UnitRow = {
   name: string | null;
   address: string | null;
   instagram: string | null;
-  whatsapp?: string | null;
-  logo_url?: string | null;
+  whatsapp: string | null;
+  logo_url: string | null;
   slug: string | null;
 };
 
@@ -47,12 +44,9 @@ type VariationRow = {
 export default async function Page({ params }: PageProps) {
   const supabase = await createClient();
 
-  const resolvedParams = await Promise.resolve(params);
-  const rawSlug = resolvedParams?.slug ?? "";
+  const rawSlug = params?.slug ?? "";
 
-  // higiene extra:
-  // - trim
-  // - remove quebras de linha
+  // higiene extra: trim + remove \n / \r
   const slug = String(rawSlug).trim().replace(/[\r\n]/g, "");
 
   if (!slug) {
@@ -64,7 +58,7 @@ export default async function Page({ params }: PageProps) {
     );
   }
 
-  // 1) Unit pelo slug (mantém fallback de \n / \r\n só por segurança)
+  // 1) Unit pelo slug (fallback de \n / \r\n só por segurança)
   const { data: unit, error: unitError } = await supabase
     .from("units")
     .select("id, name, address, instagram, whatsapp, logo_url, slug")
@@ -78,9 +72,7 @@ export default async function Page({ params }: PageProps) {
         <h1>Cardápio não encontrado</h1>
         <p>Slug recebido: {slug}</p>
         {unitError && (
-          <pre style={{ whiteSpace: "pre-wrap" }}>
-            {JSON.stringify(unitError, null, 2)}
-          </pre>
+          <pre style={{ whiteSpace: "pre-wrap" }}>{JSON.stringify(unitError, null, 2)}</pre>
         )}
       </main>
     );
@@ -98,9 +90,7 @@ export default async function Page({ params }: PageProps) {
     return (
       <main style={{ padding: 16 }}>
         <h1>Erro ao carregar categorias</h1>
-        <pre style={{ whiteSpace: "pre-wrap" }}>
-          {JSON.stringify(catError, null, 2)}
-        </pre>
+        <pre style={{ whiteSpace: "pre-wrap" }}>{JSON.stringify(catError, null, 2)}</pre>
       </main>
     );
   }
@@ -108,16 +98,11 @@ export default async function Page({ params }: PageProps) {
   const categories = categoriesRaw ?? [];
   const categoryIds = categories.map((c) => c.id);
 
-  // 3) Produtos dessas categorias (schema atual: price_type + base_price)
+  // 3) Produtos dessas categorias
   const { data: productsRaw, error: prodError } = await supabase
     .from("products")
-    .select(
-      "id, category_id, name, description, price_type, base_price, thumbnail_url, video_url, order_index"
-    )
-    .in(
-      "category_id",
-      categoryIds.length ? categoryIds : ["00000000-0000-0000-0000-000000000000"]
-    )
+    .select("id, category_id, name, description, price_type, base_price, thumbnail_url, video_url, order_index")
+    .in("category_id", categoryIds.length ? categoryIds : ["00000000-0000-0000-0000-000000000000"])
     .order("order_index", { ascending: true })
     .returns<ProductRow[]>();
 
@@ -125,9 +110,7 @@ export default async function Page({ params }: PageProps) {
     return (
       <main style={{ padding: 16 }}>
         <h1>Erro ao carregar produtos</h1>
-        <pre style={{ whiteSpace: "pre-wrap" }}>
-          {JSON.stringify(prodError, null, 2)}
-        </pre>
+        <pre style={{ whiteSpace: "pre-wrap" }}>{JSON.stringify(prodError, null, 2)}</pre>
       </main>
     );
   }
@@ -135,15 +118,11 @@ export default async function Page({ params }: PageProps) {
   const products = productsRaw ?? [];
   const productIds = products.map((p) => p.id);
 
-  // 4) Variações (Sprint 2 pré-base)
+  // 4) Variações
   const { data: variationsRaw, error: varError } = await supabase
     .from("product_variations")
-    .select("id, product_id, name, price, created_at")
-.order("created_at", { ascending: true })
-    .in(
-      "product_id",
-      productIds.length ? productIds : ["00000000-0000-0000-0000-000000000000"]
-    )
+    .select("id, product_id, name, price, order_index")
+    .in("product_id", productIds.length ? productIds : ["00000000-0000-0000-0000-000000000000"])
     .order("order_index", { ascending: true })
     .returns<VariationRow[]>();
 
@@ -151,9 +130,7 @@ export default async function Page({ params }: PageProps) {
     return (
       <main style={{ padding: 16 }}>
         <h1>Erro ao carregar variações</h1>
-        <pre style={{ whiteSpace: "pre-wrap" }}>
-          {JSON.stringify(varError, null, 2)}
-        </pre>
+        <pre style={{ whiteSpace: "pre-wrap" }}>{JSON.stringify(varError, null, 2)}</pre>
       </main>
     );
   }
@@ -170,15 +147,11 @@ export default async function Page({ params }: PageProps) {
 
   // ✅ NÃO exibir categorias vazias (server)
   const categoryIdsWithProducts = new Set(products.map((p) => p.category_id));
-  const categoriesFiltered = categories.filter((c) =>
-    categoryIdsWithProducts.has(c.id)
-  );
+  const categoriesFiltered = categories.filter((c) => categoryIdsWithProducts.has(c.id));
 
   // ✅ filtra produtos para somente categorias visíveis
   const allowedCategoryIds = new Set(categoriesFiltered.map((c) => c.id));
-  const productsFiltered = products.filter((p) =>
-    allowedCategoryIds.has(p.category_id)
-  );
+  const productsFiltered = products.filter((p) => allowedCategoryIds.has(p.category_id));
 
   return (
     <MenuClient
@@ -197,9 +170,7 @@ export default async function Page({ params }: PageProps) {
         type: "normal",
       }))}
       products={productsFiltered.map((p) => {
-        const priceType: "fixed" | "variable" =
-          p.price_type === "variable" ? "variable" : "fixed";
-
+        const priceType: "fixed" | "variable" = p.price_type === "variable" ? "variable" : "fixed";
         const basePrice = typeof p.base_price === "number" ? p.base_price : 0;
 
         const vars = variationsByProductId.get(p.id) ?? [];

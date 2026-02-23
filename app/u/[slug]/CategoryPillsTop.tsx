@@ -19,11 +19,9 @@ export default function CategoryPillsTop({
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const btnRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
-  // ✅ drag vs click
   const didDragRef = useRef(false);
   const startRef = useRef<{ x: number; y: number } | null>(null);
 
-  // ✅ evita recentralizar enquanto o usuário está mexendo
   const isUserInteractingRef = useRef(false);
   const interactTimerRef = useRef<any>(null);
 
@@ -37,7 +35,6 @@ export default function CategoryPillsTop({
     }, 220);
   }
 
-  // ✅ centraliza o botão ativo (mas NÃO briga durante drag)
   useEffect(() => {
     if (!activeCategoryId) return;
     if (isUserInteractingRef.current) return;
@@ -46,9 +43,7 @@ export default function CategoryPillsTop({
     const btn = btnRefs.current[activeCategoryId];
     if (!scroller || !btn) return;
 
-    const target =
-      btn.offsetLeft - scroller.clientWidth / 2 + btn.clientWidth / 2;
-
+    const target = btn.offsetLeft - scroller.clientWidth / 2 + btn.clientWidth / 2;
     scroller.scrollTo({ left: Math.max(0, target), behavior: "smooth" });
   }, [activeCategoryId]);
 
@@ -67,8 +62,6 @@ export default function CategoryPillsTop({
         WebkitOverflowScrolling: "touch",
         scrollPaddingLeft: 60,
         scrollPaddingRight: 60,
-
-        // ✅ não trava vertical do iOS
         touchAction: "auto",
       }}
       onTouchStart={(e) => {
@@ -94,8 +87,6 @@ export default function CategoryPillsTop({
       onTouchEnd={() => {
         markInteracting();
         startRef.current = null;
-
-        // segura o flag por 1 tick, pra bloquear click pós-drag
         setTimeout(() => (didDragRef.current = false), 0);
       }}
       onWheel={() => markInteracting()}
@@ -113,17 +104,12 @@ export default function CategoryPillsTop({
               btnRefs.current[c.id] = el;
             }}
             onClick={() => {
-              // ✅ se foi drag, ignora click
               if (didDragRef.current) return;
               onSelectCategory(c.id);
             }}
             style={{
-              border: `1px solid ${
-                active ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.10)"
-              }`,
-              background: active
-                ? "rgba(255,255,255,0.10)"
-                : "rgba(255,255,255,0.03)",
+              border: `1px solid ${active ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.10)"}`,
+              background: active ? "rgba(255,255,255,0.10)" : "rgba(255,255,255,0.03)",
               color: "#fff",
               padding: active ? "10px 16px" : "9px 14px",
               borderRadius: 999,
@@ -132,8 +118,7 @@ export default function CategoryPillsTop({
               whiteSpace: "nowrap",
               opacity: active ? 1 : 0.72,
               transform: active ? "scale(1.06)" : "scale(0.98)",
-              transition:
-                "transform 160ms ease, opacity 160ms ease, background 160ms ease",
+              transition: "transform 160ms ease, opacity 160ms ease, background 160ms ease",
               cursor: "pointer",
             }}
           >

@@ -3,13 +3,9 @@
 import { useEffect, useMemo, useRef } from "react";
 
 type SnapOptions = {
-  /** seletor dos cards dentro do scroller */
   cardSelector?: string;
-  /** padding extra pro cálculo do "centro" */
   centerOffsetPx?: number;
-  /** debounce para detectar "scroll settle" */
   settleMs?: number;
-  /** se true, faz snap com smooth quando velocidade baixa */
   smoothWhenSlow?: boolean;
 };
 
@@ -35,14 +31,12 @@ export function useCarouselSnap(opts?: SnapOptions) {
 
   const scrollerRef = useRef<HTMLDivElement | null>(null);
 
-  // gesture / drag state via refs (sem setState no scroll)
   const draggingRef = useRef(false);
   const snappingRef = useRef(true);
 
   const startPtRef = useRef<{ x: number; y: number } | null>(null);
   const intentRef = useRef<DebugState["intent"]>("none");
 
-  // rAF velocity
   const rafRef = useRef<number>(0);
   const lastLeftRef = useRef<number>(0);
   const lastTRef = useRef<number>(0);
@@ -50,7 +44,6 @@ export function useCarouselSnap(opts?: SnapOptions) {
 
   const settleTimerRef = useRef<any>(null);
 
-  // debug overlay (sem mexer no layout final)
   const debugRef = useRef<HTMLDivElement | null>(null);
   const debugEnabled = useMemo(() => {
     if (typeof window === "undefined") return false;
@@ -105,14 +98,15 @@ export function useCarouselSnap(opts?: SnapOptions) {
     if (!best) return;
 
     const target = best.card;
-    const targetLeft =
-      target.offsetLeft - (scroller.clientWidth / 2 - target.clientWidth / 2);
+    const targetLeft = target.offsetLeft - (scroller.clientWidth / 2 - target.clientWidth / 2);
 
     const vel = Math.abs(velocityRef.current);
-    const useSmooth = options.smoothWhenSlow && vel < 0.9; // threshold simples
+    const useSmooth = options.smoothWhenSlow && vel < 0.9;
 
-    // IMPORTANT: smooth só programático, nunca durante drag
-    scroller.scrollTo({ left: Math.max(0, targetLeft), behavior: useSmooth ? "smooth" : "auto" });
+    scroller.scrollTo({
+      left: Math.max(0, targetLeft),
+      behavior: useSmooth ? "smooth" : "auto",
+    });
 
     setDebug({ snapping: "on" });
   }
@@ -127,7 +121,7 @@ export function useCarouselSnap(opts?: SnapOptions) {
 
       if (dt > 0) {
         const dx = nowLeft - lastLeftRef.current;
-        velocityRef.current = dx / dt; // px/ms
+        velocityRef.current = dx / dt;
       }
 
       lastLeftRef.current = nowLeft;
@@ -155,7 +149,6 @@ export function useCarouselSnap(opts?: SnapOptions) {
   function scheduleSnap(scroller: HTMLDivElement) {
     clearSettleTimer();
     settleTimerRef.current = setTimeout(() => {
-      // só alinha quando já parou e não está arrastando
       if (!draggingRef.current) snapToNearest(scroller);
     }, options.settleMs);
   }
@@ -163,7 +156,7 @@ export function useCarouselSnap(opts?: SnapOptions) {
   function onDown(x: number, y: number) {
     startPtRef.current = { x, y };
     intentRef.current = "none";
-    snappingRef.current = false; // enquanto interage, não "briga"
+    snappingRef.current = false;
     setDebug({ snapping: "off" });
   }
 
@@ -173,7 +166,6 @@ export function useCarouselSnap(opts?: SnapOptions) {
     const dx = x - s.x;
     const dy = y - s.y;
 
-    // lock leve do intent (uma vez)
     if (intentRef.current === "none") {
       if (Math.abs(dy) > Math.abs(dx)) intentRef.current = "vertical";
       else intentRef.current = "horizontal";
@@ -189,21 +181,13 @@ export function useCarouselSnap(opts?: SnapOptions) {
     const scroller = scrollerRef.current;
     if (!scroller) return;
 
-    // sem scrollbars visíveis (cross-browser)
-    // (mantém swipe)
     scroller.style.scrollbarWidth = "none";
     (scroller.style as any).msOverflowStyle = "none";
-
-    // iOS: scroll suave nativo
     scroller.style.setProperty("-webkit-overflow-scrolling", "touch");
 
     startVelocityLoop(scroller);
 
-    const onScroll = () => {
-      // IMPORTANT: não setState aqui
-      // só agenda o snap quando parar
-      scheduleSnap(scroller);
-    };
+    const onScroll = () => scheduleSnap(scroller);
 
     const onPointerDown = (e: PointerEvent) => {
       draggingRef.current = true;

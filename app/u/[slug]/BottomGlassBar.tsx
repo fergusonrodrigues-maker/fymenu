@@ -9,7 +9,7 @@ type UnitLike = {
   instagram?: string;
   whatsapp?: string;
 
-  // Se existirem no schema futuramente, já suporta:
+  // futuro
   city?: string;
   neighborhood?: string;
 };
@@ -18,7 +18,7 @@ type FooterLink = {
   key: "instagram" | "maps" | "whatsapp";
   label: string;
   href: string;
-  icon: string; // emoji pra não inventar SVG fixo
+  icon: string;
 };
 
 function normalizeInstagram(instagram: string) {
@@ -43,7 +43,7 @@ function normalizeWhatsappToWaMe(phone: string) {
   return `https://wa.me/${withCountry}`;
 }
 
-// Heurística leve (não muda schema): tenta inferir cidade/bairro do address por vírgula
+// heurística leve: tenta inferir cidade/bairro pelo address separado por vírgulas
 function inferCityNeighborhoodFromAddress(address?: string) {
   const raw = (address ?? "").trim();
   if (!raw) return { city: "", neighborhood: "" };
@@ -78,7 +78,6 @@ function buildLinks(unit: UnitLike): FooterLink[] {
 export default function BottomGlassBar({ unit }: { unit: UnitLike }) {
   const links = useMemo(() => buildLinks(unit), [unit]);
 
-  // Texto: "Cidade - Unidade: Bairro"
   const placeText = useMemo(() => {
     const city = (unit.city ?? "").trim();
     const neighborhood = (unit.neighborhood ?? "").trim();
@@ -90,23 +89,21 @@ export default function BottomGlassBar({ unit }: { unit: UnitLike }) {
     return `${finalCity} - Unidade: ${finalNeighborhood}`;
   }, [unit.address, unit.city, unit.neighborhood, unit.name]);
 
-  // Se não tiver nada (sem logo e sem links), não renderiza barra.
   const hasLogo = !!(unit.logo_url ?? "").trim();
   const hasAnything = hasLogo || links.length > 0;
-
   if (!hasAnything) return null;
 
-  // Liquid glass dark (premium)
+  // liquid glass dark (premium)
   const glassOuter = {
-    background: "rgba(0,0,0,0.40)", // bg-black/40
-    border: "1px solid rgba(255,255,255,0.10)", // border-white/10
-    boxShadow: "0 24px 70px rgba(0,0,0,0.55)", // shadow-2xl vibe
-    backdropFilter: "blur(22px) saturate(150%)", // blur forte + saturate
+    background: "rgba(0,0,0,0.40)",
+    border: "1px solid rgba(255,255,255,0.10)",
+    boxShadow: "0 24px 70px rgba(0,0,0,0.55)",
+    backdropFilter: "blur(22px) saturate(150%)",
     WebkitBackdropFilter: "blur(22px) saturate(150%)",
   } as const;
 
   const glassBadge = {
-    background: "rgba(0,0,0,0.30)", // bg-black/30
+    background: "rgba(0,0,0,0.30)",
     border: "1px solid rgba(255,255,255,0.10)",
     boxShadow: "0 10px 28px rgba(0,0,0,0.35)",
     backdropFilter: "blur(16px) saturate(140%)",
@@ -115,12 +112,13 @@ export default function BottomGlassBar({ unit }: { unit: UnitLike }) {
 
   const miniGlassBtn = (isWhatsApp: boolean) =>
     ({
-      background: isWhatsApp ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.10)",
-      border: "1px solid rgba(255,255,255,0.12)",
-      borderRadius: 18,
-      padding: 12,
       display: "grid",
       placeItems: "center",
+      width: 46,
+      height: 46,
+      borderRadius: 16,
+      border: "1px solid rgba(255,255,255,0.12)",
+      background: isWhatsApp ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.10)",
       textDecoration: "none",
       color: "#fff",
       backdropFilter: "blur(12px)",
@@ -159,7 +157,6 @@ export default function BottomGlassBar({ unit }: { unit: UnitLike }) {
         {placeText}
       </div>
 
-      {/* Espaçamento pequeno */}
       <div style={{ height: 10 }} />
 
       {/* Barra principal */}
@@ -167,13 +164,11 @@ export default function BottomGlassBar({ unit }: { unit: UnitLike }) {
         style={{
           pointerEvents: "auto",
           width: "92%",
-          maxWidth: 420, // max-w-md
-          borderRadius: 26, // rounded-3xl
+          maxWidth: 420,
+          borderRadius: 26,
           padding: 14,
           ...glassOuter,
-          // leve brilho interno (bem sutil)
-          boxShadow:
-            "inset 0 1px 0 rgba(255,255,255,0.10), 0 24px 70px rgba(0,0,0,0.55)",
+          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.10), 0 24px 70px rgba(0,0,0,0.55)",
         }}
       >
         <div
@@ -198,7 +193,7 @@ export default function BottomGlassBar({ unit }: { unit: UnitLike }) {
                 src={unit.logo_url}
                 alt="Logo"
                 style={{
-                  maxHeight: 48, // max-h-12
+                  maxHeight: 48,
                   width: "auto",
                   maxWidth: 130,
                   objectFit: "contain",

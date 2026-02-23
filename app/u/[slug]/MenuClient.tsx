@@ -272,7 +272,9 @@ export default function MenuClient({
             >
               <FeaturedCarousel
                 items={featuredItems}
-                onOpen={(p, originalIndex) => setModal({ list: featuredItems, index: originalIndex })}
+                onOpen={(p, originalIndex) =>
+                  setModal({ list: featuredItems, index: originalIndex })
+                }
               />
             </div>
           )}
@@ -529,7 +531,7 @@ function ProductModal({
           position: "relative",
           animation: "fyModalIn 260ms cubic-bezier(.22,.9,.3,1)",
           transformOrigin: "center center",
-          touchAction: "pan-y pan-x",
+          touchAction: "auto",
         }}
       >
         <button
@@ -610,15 +612,7 @@ function ProductModal({
             }}
           />
 
-          <div
-            style={{
-              position: "absolute",
-              left: 18,
-              right: 18,
-              bottom: 18,
-              textAlign: "center",
-            }}
-          >
+          <div style={{ position: "absolute", left: 18, right: 18, bottom: 18, textAlign: "center" }}>
             <div style={{ fontWeight: 950, fontSize: 20 }}>{product.name}</div>
 
             {!!product.description && (
@@ -628,15 +622,7 @@ function ProductModal({
             <div style={{ marginTop: 10, fontSize: 20, fontWeight: 950 }}>{displayPrice}</div>
 
             {product.price_type === "variable" && vars.length > 0 && (
-              <div
-                style={{
-                  marginTop: 10,
-                  display: "flex",
-                  gap: 8,
-                  justifyContent: "center",
-                  flexWrap: "wrap",
-                }}
-              >
+              <div style={{ marginTop: 10, display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
                 {vars.map((v) => {
                   const active = v.id === selectedVarId;
                   return (
