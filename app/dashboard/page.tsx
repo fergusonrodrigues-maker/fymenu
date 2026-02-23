@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import DashboardClient from "./DashboardClient";
-import getTenantContext from "../../lib/tenant/getTenantContext";
+import { getTenantContext } from "../../lib/tenant/getTenantContext";
 
 type SearchParamsShape = { unit?: string };
 
