@@ -300,26 +300,27 @@ export default function MenuClient({
           )}
 
           {otherCategories.map((cat) => {
-            const items = grouped.get(cat.id) ?? [];
-            if (!items.length) return null;
+  const items = grouped.get(cat.id) ?? [];
+  if (!items.length) return null;
 
-            return (
-              <div
-                key={cat.id}
-                ref={(el) => {
-                  sectionRefs.current[cat.id] = el;
-                }}
-                style={{ scrollMarginTop: 140 }}
-              >
-                <CategoryCarousel
-  items={items}
-  compact={true}
-  onOpen={(p, idx) => setModal({ list: items, index: idx })}
-/>
-            );
-          })}
-        </div>
-
+  return (
+    <div
+      key={cat.id}
+      ref={(el) => {
+        sectionRefs.current[cat.id] = el;
+      }}
+      style={{ scrollMarginTop: 160 }}
+    >
+      <CategoryCarousel
+        items={items}
+        compact={true}
+        onOpen={(p, idx) =>
+          setModal({ list: items, index: idx })
+        }
+      />
+    </div>
+  );
+})}
         <BottomGlassBar unit={unit} />
 
         {modal && (
