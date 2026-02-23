@@ -1,150 +1,38 @@
-// FILE: /app/dashboard/page.tsx
-// ACTION: REPLACE ENTIRE FILE
+import { redirect } from "next/navigation";
+import DashboardClient from "./DashboardClient";
+import getTenantContext from "../../lib/tenant/getTenantContext";
 
-import { createClient } from "@/lib/supabase/server";
-import DashboardClient, {
-  DashboardCategory,
-  DashboardProduct,
-  DashboardVariation,
-} from "./DashboardClient";
+type SearchParamsShape = { unit?: string };
 
-export default async function DashboardPage() {
-  const supabase = await createClient();
+async function resolveSearchParams(
+  sp: SearchParamsShape | Promise<SearchParamsShape> | undefined
+): Promise<SearchParamsShape> {
+  if (!sp) return {};
+  return await Promise.resolve(sp);
+}
 
-  // MVP: primeira unit
-  const { data: unit, error: unitError } = await supabase
-    .from("units")
-    .select("id, name")
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams?: SearchParamsShape | Promise<SearchParamsShape>;
+}) {
+  const { restaurant, units } = await getTenantContext();
 
-  if (unitError || !unit) {
-    return (
-      <main style={{ padding: 16 }}>
-        <h1>Dashboard</h1>
-        <p>Erro ao carregar unit (MVP).</p>
-        {unitError && (
-          <pre style={{ whiteSpace: "pre-wrap" }}>
-            {JSON.stringify(unitError, null, 2)}
-          </pre>
-        )}
-      </main>
-    );
-  }
+  if (!restaurant) redirect("/login");
+  if (!units || units.length === 0) redirect("/dashboard/unit");
 
-  const { data: categoriesRaw, error: catError } = await supabase
-    .from("categories")
-    .select("id, name, order_index")
-    .eq("unit_id", unit.id)
-    .order("order_index", { ascending: true });
+  const sp = await resolveSearchParams(searchParams);
+  const selectedUnitId = sp.unit;
 
-  if (catError) {
-    return (
-      <main style={{ padding: 16 }}>
-        <h1>Dashboard</h1>
-        <p>Erro ao carregar categorias.</p>
-        <pre style={{ whiteSpace: "pre-wrap" }}>
-          {JSON.stringify(catError, null, 2)}
-        </pre>
-      </main>
-    );
-  }
+  const activeUnit = units.find((u) => u.id === selectedUnitId) ?? units[0] ?? null;
 
-  const categories: DashboardCategory[] = (categoriesRaw ?? []).map((c) => ({
-    id: c.id,
-    name: c.name,
-    order_index: c.order_index ?? 0,
-  }));
-
-  const categoryIds = categories.map((c) => c.id);
-
-  const { data: productsRaw, error: prodError } = await supabase
-    .from("products")
-    .select(
-      "id, category_id, name, description, price_type, base_price, thumbnail_url, video_url, order_index"
-    )
-    .in(
-      "category_id",
-      categoryIds.length ? categoryIds : ["00000000-0000-0000-0000-000000000000"]
-    )
-    .order("order_index", { ascending: true });
-
-  if (prodError) {
-    return (
-      <main style={{ padding: 16 }}>
-        <h1>Dashboard</h1>
-        <p>Erro ao carregar produtos.</p>
-        <pre style={{ whiteSpace: "pre-wrap" }}>
-          {JSON.stringify(prodError, null, 2)}
-        </pre>
-      </main>
-    );
-  }
-
-  const productsBase: DashboardProduct[] = (productsRaw ?? []).map((p) => ({
-    id: p.id,
-    category_id: p.category_id,
-    name: p.name ?? "",
-    description: p.description ?? "",
-    price_type: p.price_type === "variable" ? "variable" : "fixed",
-    base_price: Number(p.base_price ?? 0),
-    thumbnail_url: p.thumbnail_url ?? "",
-    video_url: p.video_url ?? "",
-    order_index: p.order_index ?? 0,
-    variations: [],
-  }));
-
-  const productIds = productsBase.map((p) => p.id);
-
-  // ✅ Busca variações (SEM order_index, pois sua tabela não tem)
-  const { data: variationsRaw, error: varError } = await supabase
-    .from("product_variations")
-    .select("id, product_id, name, price, created_at")
-    .in(
-      "product_id",
-      productIds.length ? productIds : ["00000000-0000-0000-0000-000000000000"]
-    )
-    .order("created_at", { ascending: true });
-
-  if (varError) {
-    return (
-      <main style={{ padding: 16 }}>
-        <h1>Dashboard</h1>
-        <p>Erro ao carregar variações.</p>
-        <pre style={{ whiteSpace: "pre-wrap" }}>
-          {JSON.stringify(varError, null, 2)}
-        </pre>
-      </main>
-    );
-  }
-
-  const vars: DashboardVariation[] = (variationsRaw ?? []).map((v) => ({
-    id: v.id,
-    product_id: v.product_id,
-    name: v.name ?? "",
-    price: Number(v.price ?? 0),
-  }));
-
-  // Agrupa por produto
-  const map = new Map<string, DashboardVariation[]>();
-  for (const v of vars) {
-    const arr = map.get(v.product_id) ?? [];
-    arr.push(v);
-    map.set(v.product_id, arr);
-  }
-
-  const products: DashboardProduct[] = productsBase.map((p) => ({
-    ...p,
-    variations: map.get(p.id) ?? [],
-  }));
+  if (!activeUnit) redirect("/dashboard/unit");
 
   return (
-    <main style={{ padding: 16 }}>
-      <h1 style={{ marginBottom: 6 }}>Dashboard</h1>
-      <div style={{ opacity: 0.75, marginBottom: 16 }}>Unit (MVP): {unit.id}</div>
-
-      <DashboardClient unitId={unit.id} categories={categories} products={products} />
-    </main>
+    <DashboardClient
+      restaurant={restaurant}
+      units={units}
+      activeUnit={activeUnit}
+    />
   );
 }

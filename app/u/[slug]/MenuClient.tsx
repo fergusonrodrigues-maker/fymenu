@@ -1,8 +1,15 @@
-// FILE: /app/u/[slug]/MenuClient.tsx
-// ACTION: REPLACE ENTIRE FILE
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import BottomGlassBar from "./BottomGlassBar";
+
+type Variation = {
+  id: string;
+  product_id: string;
+  name: string;
+  price: number;
+  order_index?: number;
+};
 
 type Unit = {
   id: string;
@@ -13,19 +20,16 @@ type Unit = {
 
   whatsapp: string;
   logo_url: string;
+
+  // suportar futuro (sem exigir existir agora)
+  city?: string;
+  neighborhood?: string;
 };
 
 type Category = {
   id: string;
   name: string;
   type: string;
-};
-
-type Variation = {
-  id: string;
-  product_id: string;
-  name: string;
-  price: number;
 };
 
 type Product = {
@@ -38,22 +42,11 @@ type Product = {
   thumbnail_url: string;
   video_url: string;
 
-  // ✅ Sprint 2 payload
   variations?: Variation[];
 };
 
 function moneyBR(v: number) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
-
-function minVariationPrice(p: Product): number | null {
-  const vars = p.variations ?? [];
-  const prices = vars
-    .map((v) => Number(v.price))
-    .filter((n) => Number.isFinite(n) && n > 0);
-
-  if (!prices.length) return null;
-  return Math.min(...prices);
 }
 
 type ModalState =
@@ -62,13 +55,6 @@ type ModalState =
       index: number;
     }
   | null;
-
-type FooterLink = {
-  key: "instagram" | "maps" | "whatsapp";
-  label: string;
-  href: string;
-  icon: string;
-};
 
 function normalizeInstagram(instagram: string) {
   const v = (instagram ?? "").trim();
@@ -85,10 +71,6 @@ function mapsFromAddress(address: string) {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(v)}`;
 }
 
-// aceitas:
-// - "62999999999"
-// - "+55 62 99999-9999"
-// - "55 62 99999-9999"
 function normalizeWhatsappToWaMe(phone: string) {
   const digits = (phone ?? "").replace(/\D/g, "");
   if (!digits) return "";
@@ -96,18 +78,12 @@ function normalizeWhatsappToWaMe(phone: string) {
   return `https://wa.me/${withCountry}`;
 }
 
-function buildFooterLinks(unit: Unit): FooterLink[] {
-  const links: FooterLink[] = [];
-
-  const ig = normalizeInstagram(unit.instagram);
-  const maps = mapsFromAddress(unit.address);
-  const wa = normalizeWhatsappToWaMe(unit.whatsapp);
-
-  if (ig) links.push({ key: "instagram", label: "Instagram", href: ig, icon: "📷" });
-  if (maps) links.push({ key: "maps", label: "Maps", href: maps, icon: "📍" });
-  if (wa) links.push({ key: "whatsapp", label: "WhatsApp", href: wa, icon: "💬" });
-
-  return links;
+function getMinVariationPrice(p: Product): number | null {
+  const vars = (p.variations ?? []).filter((v) => Number.isFinite(v.price));
+  if (!vars.length) return null;
+  let min = vars[0].price;
+  for (const v of vars) if (v.price < min) min = v.price;
+  return min;
 }
 
 export default function MenuClient({
@@ -119,7 +95,6 @@ export default function MenuClient({
   categories: Category[];
   products: Product[];
 }) {
-  // Agrupa produtos por categoria (id -> Product[])
   const grouped = useMemo(() => {
     const map = new Map<string, Product[]>();
     for (const c of categories) map.set(c.id, []);
@@ -130,7 +105,6 @@ export default function MenuClient({
     return map;
   }, [categories, products]);
 
-  // ✅ Regra MVP: no público, categoria vazia NÃO aparece
   const visibleCategories = useMemo(() => {
     const has = new Set<string>();
     for (const p of products) has.add(p.category_id);
@@ -139,11 +113,25 @@ export default function MenuClient({
 
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const chipBtnRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const chipsWrapRef = useRef<HTMLDivElement | null>(null);
 
   const [activeCatId, setActiveCatId] = useState<string>(visibleCategories[0]?.id ?? "");
   const [modal, setModal] = useState<ModalState>(null);
 
-  // ✅ Se as categorias mudarem, garante active válido
+  // ===== Debug (?debug=1) =====
+  const [debugOn, setDebugOn] = useState(false);
+  const [debugScrollLeft, setDebugScrollLeft] = useState(0);
+  const [debugSnap, setDebugSnap] = useState<"ON" | "OFF">("ON");
+
+  useEffect(() => {
+    try {
+      const p = new URLSearchParams(window.location.search);
+      setDebugOn(p.get("debug") === "1");
+    } catch {
+      setDebugOn(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (!visibleCategories.length) return;
     if (!activeCatId || !visibleCategories.some((c) => c.id === activeCatId)) {
@@ -152,7 +140,6 @@ export default function MenuClient({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visibleCategories]);
 
-  // trava scroll do body quando modal estiver aberto
   useEffect(() => {
     if (!modal) return;
     const prev = document.body.style.overflow;
@@ -162,59 +149,70 @@ export default function MenuClient({
     };
   }, [modal]);
 
-  // Observa qual seção (categoria) está em vigência no scroll vertical
-  useEffect(() => {
-    const ids = visibleCategories.map((c) => c.id);
-    const els = ids
-      .map((id) => sectionRefs.current[id])
-      .filter(Boolean) as HTMLDivElement[];
-
-    if (!els.length) return;
-
-    const io = new IntersectionObserver(
-      (entries) => {
-        const best = entries
-          .filter((e) => e.isIntersecting)
-          .sort((a, b) => (b.intersectionRatio ?? 0) - (a.intersectionRatio ?? 0))[0];
-
-        if (best?.target) {
-          const foundId = ids.find((id) => sectionRefs.current[id] === best.target);
-          if (foundId) setActiveCatId(foundId);
-        }
-      },
-      {
-        root: null,
-        threshold: [0.2, 0.35, 0.5, 0.65],
-        rootMargin: "-140px 0px -55% 0px",
-      }
-    );
-
-    els.forEach((el) => io.observe(el));
-    return () => io.disconnect();
-  }, [visibleCategories]);
-
-  // centraliza o botão da categoria ativa nos chips
+  // ===== Chips: mantém o chip ativo centralizado (apenas programático) =====
   useEffect(() => {
     const btn = chipBtnRefs.current[activeCatId];
     if (!btn) return;
     btn.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
   }, [activeCatId]);
 
-  function scrollToCategory(id: string) {
-    const el = sectionRefs.current[id];
-    if (!el) return;
-    el.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
+  // ===== Chips: ao parar o scroll horizontal, escolhe o chip mais central =====
+  useEffect(() => {
+    const wrap = chipsWrapRef.current;
+    if (!wrap) return;
 
-  // bucket de links (só renderiza os válidos)
-  const footerLinks = useMemo(() => buildFooterLinks(unit), [unit]);
+    let t: any = null;
+
+    const pickCenterChip = () => {
+      const rect = wrap.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+
+      let bestId = "";
+      let bestDist = Infinity;
+
+      for (const c of visibleCategories) {
+        const btn = chipBtnRefs.current[c.id];
+        if (!btn) continue;
+        const r = btn.getBoundingClientRect();
+        const mid = r.left + r.width / 2;
+        const dist = Math.abs(centerX - mid);
+        if (dist < bestDist) {
+          bestDist = dist;
+          bestId = c.id;
+        }
+      }
+
+      if (bestId) {
+        setActiveCatId(bestId);
+        const el = sectionRefs.current[bestId];
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    };
+
+    const onScroll = () => {
+      if (t) clearTimeout(t);
+      t = setTimeout(pickCenterChip, 140);
+
+      if (debugOn) {
+        setDebugScrollLeft(wrap.scrollLeft);
+      }
+    };
+
+    wrap.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      if (t) clearTimeout(t);
+      wrap.removeEventListener("scroll", onScroll);
+    };
+  }, [visibleCategories, debugOn]);
 
   const bg = "#0b0b0b";
   const glass = "rgba(255,255,255,0.06)";
   const border = "rgba(255,255,255,0.12)";
   const text = "#fff";
 
-  // ✅ Se não tem nada publicado (nenhum produto)
+  // ⚠️ padding bottom maior pra não cobrir conteúdo com a nova barra (2 camadas)
+  const bottomPad = 190;
+
   if (!visibleCategories.length) {
     return (
       <main
@@ -244,10 +242,10 @@ export default function MenuClient({
         minHeight: "100vh",
         background: bg,
         color: text,
-        paddingBottom: footerLinks.length ? 120 : 70,
+        paddingBottom: bottomPad,
       }}
     >
-      {/* ===== HEADER FIXO ===== */}
+      {/* HEADER */}
       <div
         style={{
           position: "sticky",
@@ -260,7 +258,6 @@ export default function MenuClient({
           borderBottom: "1px solid rgba(255,255,255,0.04)",
         }}
       >
-        {/* topo */}
         <div
           style={{
             display: "grid",
@@ -268,7 +265,6 @@ export default function MenuClient({
             alignItems: "center",
           }}
         >
-          {/* Logo (se existir) senão fallback U */}
           <div
             style={{
               width: 36,
@@ -276,16 +272,16 @@ export default function MenuClient({
               borderRadius: 12,
               background: glass,
               border: `1px solid ${border}`,
-              overflow: "hidden",
               display: "grid",
               placeItems: "center",
               fontWeight: 900,
+              overflow: "hidden",
             }}
           >
             {unit.logo_url ? (
               <img
                 src={unit.logo_url}
-                alt={unit.name}
+                alt="Logo"
                 style={{ width: "100%", height: "100%", objectFit: "cover" }}
               />
             ) : (
@@ -294,15 +290,17 @@ export default function MenuClient({
           </div>
 
           <div style={{ textAlign: "center", lineHeight: 1.05 }}>
-            <div style={{ fontWeight: 900, fontSize: 16 }}>Cardápio</div>
-            <div style={{ opacity: 0.65, fontSize: 12 }}>Unidade</div>
+            <div style={{ fontWeight: 900, fontSize: 16 }}>{unit.name || "Cardápio"}</div>
+            <div style={{ opacity: 0.65, fontSize: 12 }}>{unit.slug || "Unidade"}</div>
           </div>
 
           <div />
         </div>
 
-        {/* chips */}
+        {/* Chips (categorias) */}
         <div
+          ref={chipsWrapRef}
+          className="fy-scroll-x"
           style={{
             marginTop: 10,
             display: "flex",
@@ -315,6 +313,8 @@ export default function MenuClient({
             paddingRight: 18,
             scrollPaddingLeft: 60,
             scrollPaddingRight: 60,
+            overscrollBehaviorX: "contain",
+            touchAction: "pan-x",
           }}
         >
           {visibleCategories.map((c) => {
@@ -325,7 +325,11 @@ export default function MenuClient({
                 ref={(el) => {
                   chipBtnRefs.current[c.id] = el;
                 }}
-                onClick={() => scrollToCategory(c.id)}
+                onClick={() => {
+                  setActiveCatId(c.id);
+                  const el = sectionRefs.current[c.id];
+                  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+                }}
                 style={{
                   border: `1px solid ${
                     active ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.10)"
@@ -340,6 +344,7 @@ export default function MenuClient({
                   opacity: active ? 1 : 0.72,
                   transform: active ? "scale(1.04)" : "scale(0.98)",
                   transition: "transform 160ms ease, opacity 160ms ease, background 160ms ease",
+                  outline: "none",
                 }}
               >
                 {c.name}
@@ -349,7 +354,7 @@ export default function MenuClient({
         </div>
       </div>
 
-      {/* ===== CONTEÚDO ===== */}
+      {/* CONTEÚDO */}
       <div style={{ padding: 14, display: "flex", flexDirection: "column", gap: 26 }}>
         {visibleCategories.map((cat) => {
           const items = grouped.get(cat.id) ?? [];
@@ -384,6 +389,8 @@ export default function MenuClient({
               <HorizontalProducts
                 items={items}
                 variant={isActive ? "active" : "inactive"}
+                debugOn={debugOn}
+                onDebugSnap={(v) => setDebugSnap(v)}
                 onOpen={(p, index) => {
                   setModal({ list: items, index });
                 }}
@@ -393,25 +400,10 @@ export default function MenuClient({
         })}
       </div>
 
-      {/* ===== FOOTER FLUTUANTE ===== */}
-      {footerLinks.length > 0 && (
-        <footer
-          style={{
-            position: "fixed",
-            left: 0,
-            right: 0,
-            bottom: 18,
-            zIndex: 60,
-            display: "flex",
-            justifyContent: "center",
-            pointerEvents: "none",
-          }}
-        >
-          <FooterBucket links={footerLinks} />
-        </footer>
-      )}
+      {/* ✅ NOVA BARRA INFERIOR (Liquid Glass Dark) */}
+      <BottomGlassBar unit={unit} />
 
-      {/* ===== MODAL ===== */}
+      {/* MODAL */}
       {modal && (
         <ProductModal
           list={modal.list}
@@ -420,53 +412,56 @@ export default function MenuClient({
           onClose={() => setModal(null)}
         />
       )}
+
+      {/* DEBUG overlay */}
+      {debugOn && (
+        <div
+          style={{
+            position: "fixed",
+            top: 10,
+            right: 10,
+            zIndex: 200,
+            padding: "8px 10px",
+            borderRadius: 12,
+            background: "rgba(0,0,0,0.55)",
+            border: "1px solid rgba(255,255,255,0.10)",
+            backdropFilter: "blur(10px)",
+            color: "rgba(255,255,255,0.92)",
+            fontSize: 12,
+            fontWeight: 800,
+            pointerEvents: "none",
+          }}
+        >
+          <div>debug=1</div>
+          <div>chips scrollLeft: {Math.round(debugScrollLeft)}</div>
+          <div>snapX: {debugSnap}</div>
+        </div>
+      )}
+
+      {/* ✅ CSS: esconder scrollbars/indicadores e remover highlight */}
+      <style>{`
+        /* esconder scrollbar (webKit) */
+        .fy-scroll-x::-webkit-scrollbar {
+          width: 0px;
+          height: 0px;
+          display: none;
+        }
+
+        /* firefox / edge */
+        .fy-scroll-x {
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+        }
+
+        /* tirar "tap highlight" e foco feio */
+        button, a {
+          -webkit-tap-highlight-color: transparent;
+        }
+        button:focus, button:focus-visible, a:focus, a:focus-visible {
+          outline: none;
+        }
+      `}</style>
     </main>
-  );
-}
-
-function FooterBucket({ links }: { links: FooterLink[] }) {
-  return (
-    <div
-      style={{
-        pointerEvents: "auto",
-        display: "flex",
-        gap: 10,
-        padding: "10px 12px",
-        borderRadius: 999,
-        background: "rgba(255,255,255,0.06)",
-        border: "1px solid rgba(255,255,255,0.10)",
-        backdropFilter: "blur(14px)",
-      }}
-    >
-      {links.map((l) => (
-        <FooterBtn key={l.key} label={l.label} href={l.href} icon={l.icon} />
-      ))}
-    </div>
-  );
-}
-
-function FooterBtn({ label, href, icon }: { label: string; href: string; icon: string }) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noreferrer"
-      style={{
-        textDecoration: "none",
-        color: "#fff",
-        display: "grid",
-        placeItems: "center",
-        width: 48,
-        height: 48,
-        borderRadius: 16,
-        background: "rgba(0,0,0,0.20)",
-        border: "1px solid rgba(255,255,255,0.10)",
-      }}
-      aria-label={label}
-      title={label}
-    >
-      <span style={{ fontSize: 18 }}>{icon}</span>
-    </a>
   );
 }
 
@@ -474,12 +469,26 @@ function HorizontalProducts({
   items,
   variant,
   onOpen,
+  debugOn,
+  onDebugSnap,
 }: {
   items: Product[];
   variant: "active" | "inactive";
   onOpen: (p: Product, index: number) => void;
+  debugOn: boolean;
+  onDebugSnap: (v: "ON" | "OFF") => void;
 }) {
   const scrollerRef = useRef<HTMLDivElement | null>(null);
+
+  // ✅ Fix travadinha:
+  // - Snap "proximity" (não mandatory)
+  // - Desliga snap durante drag (pointer/touch), reativa ao soltar
+  const [snapEnabled, setSnapEnabled] = useState(true);
+  const draggingRef = useRef(false);
+
+  useEffect(() => {
+    onDebugSnap(snapEnabled ? "ON" : "OFF");
+  }, [snapEnabled, onDebugSnap]);
 
   useEffect(() => {
     const el = scrollerRef.current;
@@ -487,7 +496,11 @@ function HorizontalProducts({
 
     const cards = () => Array.from(el.querySelectorAll<HTMLElement>("[data-card='1']"));
 
+    let raf = 0;
+
     const update = () => {
+      raf = 0;
+
       const rect = el.getBoundingClientRect();
       const centerX = rect.left + rect.width / 2;
 
@@ -496,7 +509,6 @@ function HorizontalProducts({
         const cardCenter = r.left + r.width / 2;
         const dist = Math.abs(centerX - cardCenter);
         const max = rect.width * 0.55;
-
         const t = Math.max(0, 1 - dist / max);
 
         const base = variant === "active" ? 0.93 : 0.82;
@@ -506,31 +518,70 @@ function HorizontalProducts({
         const alpha =
           (variant === "active" ? 0.72 : 0.48) + t * (variant === "active" ? 0.28 : 0.24);
 
-        c.style.transform = `scale(${scale})`;
+        c.style.transform = `translateZ(0) scale(${scale})`;
         c.style.opacity = String(alpha);
       }
     };
 
+    const schedule = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(update);
+    };
+
     requestAnimationFrame(() => {
       const first = cards()[0];
-      if (first)
-        el.scrollLeft = Math.max(0, first.offsetLeft - el.clientWidth / 2 + first.clientWidth / 2);
+      if (first) {
+        el.scrollLeft = Math.max(
+          0,
+          first.offsetLeft - el.clientWidth / 2 + first.clientWidth / 2
+        );
+      }
       update();
     });
 
-    el.addEventListener("scroll", update, { passive: true });
-    window.addEventListener("resize", update);
-    return () => {
-      el.removeEventListener("scroll", update);
-      window.removeEventListener("resize", update);
+    const onScroll = () => {
+      schedule();
+      if (debugOn) {
+        // logs leves
+        // eslint-disable-next-line no-console
+        console.log("[scrollX]", { scrollLeft: Math.round(el.scrollLeft), snapEnabled });
+      }
     };
-  }, [variant]);
+
+    el.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", schedule);
+
+    return () => {
+      if (raf) cancelAnimationFrame(raf);
+      el.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", schedule);
+    };
+  }, [variant, debugOn, snapEnabled]);
+
+  function dragStart() {
+    draggingRef.current = true;
+    setSnapEnabled(false);
+    if (debugOn) console.log("[drag start]");
+  }
+
+  function dragEnd() {
+    draggingRef.current = false;
+    // reativa snap no próximo tick (deixa o gesto terminar)
+    setTimeout(() => setSnapEnabled(true), 0);
+    if (debugOn) console.log("[drag end]");
+  }
 
   const W = variant === "active" ? 250 : 180;
 
   return (
     <div
       ref={scrollerRef}
+      className="fy-scroll-x"
+      onPointerDownCapture={dragStart}
+      onPointerUpCapture={dragEnd}
+      onPointerCancel={dragEnd}
+      onTouchStartCapture={dragStart}
+      onTouchEndCapture={dragEnd}
       style={{
         display: "flex",
         justifyContent: "center",
@@ -540,19 +591,22 @@ function HorizontalProducts({
         paddingTop: 14,
         paddingBottom: 12,
         WebkitOverflowScrolling: "touch",
-        scrollSnapType: "x mandatory",
         paddingLeft: variant === "active" ? 26 : 18,
         paddingRight: variant === "active" ? 26 : 18,
+        overscrollBehaviorX: "contain",
+        touchAction: "pan-x",
+
+        // ✅ snap controlado (resolve engasgo)
+        scrollSnapType: snapEnabled ? "x proximity" : "none",
       }}
     >
       {items.map((p, idx) => {
-        const min = p.price_type === "variable" ? minVariationPrice(p) : null;
-
+        const minVar = p.price_type === "variable" ? getMinVariationPrice(p) : null;
         const priceLabel =
           p.price_type === "fixed"
             ? moneyBR(p.base_price)
-            : min !== null
-              ? `A partir de ${moneyBR(min)}`
+            : minVar !== null
+              ? `A partir de ${moneyBR(minVar)}`
               : "Preço variável";
 
         return (
@@ -573,6 +627,9 @@ function HorizontalProducts({
               cursor: "pointer",
               transition: "transform 140ms ease, opacity 140ms ease",
               scrollSnapAlign: "center",
+              willChange: "transform, opacity",
+              transform: "translateZ(0)",
+              outline: "none",
             }}
           >
             <div
@@ -610,6 +667,7 @@ function HorizontalProducts({
                 </div>
               )}
 
+              {/* ✅ degradê (não mexer) */}
               <div
                 style={{
                   position: "absolute",
@@ -663,7 +721,8 @@ function HorizontalProducts({
   );
 }
 
-// ---- Modal ----
+// ---- Modal (mantido igual ao seu; só colei o que você já tinha) ----
+
 function ProductModal({
   list,
   index,
@@ -677,6 +736,37 @@ function ProductModal({
 }) {
   const product = list[index];
   const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  const vars = useMemo(() => {
+    const arr = (product.variations ?? []).slice();
+    arr.sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0));
+    return arr;
+  }, [product.id, product.variations]);
+
+  const [selectedVarId, setSelectedVarId] = useState<string>("");
+
+  useEffect(() => {
+    if (product.price_type !== "variable") {
+      setSelectedVarId("");
+      return;
+    }
+    const first = vars[0]?.id ?? "";
+    setSelectedVarId(first);
+  }, [product.id, product.price_type, vars]);
+
+  const selectedVar = useMemo(() => {
+    if (product.price_type !== "variable") return null;
+    return vars.find((v) => v.id === selectedVarId) ?? null;
+  }, [product.price_type, vars, selectedVarId]);
+
+  const displayPrice =
+    product.price_type === "fixed"
+      ? moneyBR(product.base_price)
+      : selectedVar
+        ? moneyBR(selectedVar.price)
+        : vars.length
+          ? `A partir de ${moneyBR(getMinVariationPrice(product) ?? 0)}`
+          : "Preço variável";
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -752,17 +842,6 @@ function ProductModal({
     end(t.clientX, t.clientY);
   }
 
-  const vars = product.variations ?? [];
-  const hasVars = product.price_type === "variable" && vars.length > 0;
-  const min = product.price_type === "variable" ? minVariationPrice(product) : null;
-
-  const priceLabel =
-    product.price_type === "fixed"
-      ? moneyBR(product.base_price)
-      : min !== null
-        ? `A partir de ${moneyBR(min)}`
-        : "Preço variável";
-
   return (
     <div
       onClick={onClose}
@@ -830,6 +909,7 @@ function ProductModal({
             fontWeight: 900,
             zIndex: 5,
             backdropFilter: "blur(10px)",
+            outline: "none",
           }}
         >
           Fechar
@@ -891,15 +971,7 @@ function ProductModal({
             }}
           />
 
-          <div
-            style={{
-              position: "absolute",
-              left: 18,
-              right: 18,
-              bottom: 18,
-              textAlign: "center",
-            }}
-          >
+          <div style={{ position: "absolute", left: 18, right: 18, bottom: 18, textAlign: "center" }}>
             <div
               style={{
                 fontWeight: 950,
@@ -933,38 +1005,47 @@ function ProductModal({
               </div>
             )}
 
-            {/* ✅ PREÇO */}
-            <div style={{ marginTop: 10, fontSize: 20, fontWeight: 950 }}>{priceLabel}</div>
+            <div style={{ marginTop: 10, fontSize: 20, fontWeight: 950 }}>{displayPrice}</div>
 
-            {/* ✅ LISTA DE VARIAÇÕES */}
-            {hasVars && (
+            {product.price_type === "variable" && vars.length > 0 && (
               <div
                 style={{
                   marginTop: 10,
-                  display: "grid",
-                  gap: 6,
-                  textAlign: "left",
-                  background: "rgba(255,255,255,0.06)",
-                  border: "1px solid rgba(255,255,255,0.10)",
-                  borderRadius: 14,
-                  padding: "10px 12px",
+                  display: "flex",
+                  gap: 8,
+                  justifyContent: "center",
+                  flexWrap: "wrap",
                 }}
               >
-                {vars.map((v) => (
-                  <div
-                    key={v.id}
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      gap: 10,
-                      fontSize: 14,
-                      fontWeight: 800,
-                    }}
-                  >
-                    <span style={{ opacity: 0.95 }}>{v.name}</span>
-                    <span style={{ opacity: 0.95 }}>{moneyBR(Number(v.price ?? 0))}</span>
-                  </div>
-                ))}
+                {vars.map((v) => {
+                  const active = v.id === selectedVarId;
+                  return (
+                    <button
+                      key={v.id}
+                      onClick={() => setSelectedVarId(v.id)}
+                      style={{
+                        padding: "8px 12px",
+                        borderRadius: 999,
+                        border: `1px solid ${
+                          active ? "rgba(255,255,255,0.26)" : "rgba(255,255,255,0.12)"
+                        }`,
+                        background: active ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.06)",
+                        color: "#fff",
+                        cursor: "pointer",
+                        fontWeight: 900,
+                        fontSize: 12,
+                        display: "flex",
+                        gap: 8,
+                        alignItems: "center",
+                        opacity: active ? 1 : 0.86,
+                        outline: "none",
+                      }}
+                    >
+                      <span>{v.name}</span>
+                      <span style={{ opacity: 0.85 }}>{moneyBR(v.price)}</span>
+                    </button>
+                  );
+                })}
               </div>
             )}
 

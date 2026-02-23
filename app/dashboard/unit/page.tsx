@@ -1,128 +1,107 @@
-// FILE: /app/dashboard/unit/page.tsx
-// ACTION: REPLACE ENTIRE FILE
+// app/dashboard/unit/page.tsx
 
-import { createClient } from "@/lib/supabase/server";
-import { updateUnit } from "../actions";
-import UnitLogoUploader from "./UnitLogoUploader";
+"use client";
 
-export default async function UnitPage() {
-  const supabase = await createClient();
+import { useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { useRouter } from "next/navigation";
 
-  // MVP: primeira unit
-  const { data: unit, error } = await supabase
-    .from("units")
-    .select("id, name, slug, address, instagram, whatsapp, logo_url")
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
+export default function CreateUnitPage() {
+  const supabase = createClient();
+  const router = useRouter();
 
-  if (error || !unit) {
-    return (
-      <main style={{ padding: 16 }}>
-        <h1>Unidade</h1>
-        <p>Erro ao carregar unidade (MVP).</p>
-        {error && <pre style={{ whiteSpace: "pre-wrap" }}>{JSON.stringify(error, null, 2)}</pre>}
-      </main>
-    );
+  const [name, setName] = useState("");
+  const [slug, setSlug] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  async function handleCreateUnit() {
+    setLoading(true);
+    setError(null);
+
+    // 1️⃣ Buscar restaurant do usuário
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+
+    const { data: restaurant } = await supabase
+      .from("restaurants")
+      .select("id")
+      .eq("owner_id", user.id)
+      .single();
+
+    if (!restaurant) {
+      setError("Restaurante não encontrado.");
+      setLoading(false);
+      return;
+    }
+
+    // 2️⃣ Tentar inserir unit
+    const { error: insertError } = await supabase.from("units").insert({
+      name,
+      slug: slug.trim().replace(/\n|\r/g, ""),
+      restaurant_id: restaurant.id,
+    });
+
+    if (insertError) {
+      // 🔒 Tratamento específico do plano Basic
+      if (
+        insertError.message.includes("Plano BASIC permite apenas 1 unidade")
+      ) {
+        setError(
+          "Seu plano BASIC permite apenas 1 unidade. Faça upgrade para PRO para adicionar mais unidades."
+        );
+      } else {
+        setError(insertError.message);
+      }
+
+      setLoading(false);
+      return;
+    }
+
+    router.push("/dashboard");
   }
 
   return (
-    <main style={{ padding: 16, display: "grid", gap: 14 }}>
-      <div>
-        <h1 style={{ marginBottom: 6 }}>Unidade</h1>
-        <div style={{ opacity: 0.75, fontSize: 13 }}>
-          Aqui você edita os dados que aparecem no público (rodapé / links / slug).
-        </div>
-      </div>
+    <div className="p-8 space-y-6 max-w-xl">
+      <h1 className="text-2xl font-bold">Criar Nova Unidade</h1>
 
-      {/* Upload de logo */}
-      <UnitLogoUploader unitId={unit.id} initialUrl={unit.logo_url ?? ""} />
+      <div className="space-y-4">
+        <input
+          type="text"
+          placeholder="Nome da unidade"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="w-full border rounded p-2"
+        />
 
-      {/* Form da unidade (server action) */}
-      <form
-        action={updateUnit}
-        style={{
-          border: "1px solid rgba(255,255,255,0.12)",
-          borderRadius: 14,
-          padding: 14,
-          background: "rgba(255,255,255,0.03)",
-          display: "grid",
-          gap: 10,
-        }}
-      >
-        <input type="hidden" name="unit_id" value={unit.id} />
+        <input
+          type="text"
+          placeholder="Slug (ex: pedacci-bueno)"
+          value={slug}
+          onChange={(e) => setSlug(e.target.value)}
+          className="w-full border rounded p-2"
+        />
 
-        <div style={{ display: "grid", gap: 6 }}>
-          <div style={{ fontWeight: 800 }}>Nome da empresa/unidade</div>
-          <input name="name" defaultValue={unit.name ?? ""} placeholder="Ex: Pedacci" style={inputStyle} />
-        </div>
-
-        <div style={{ display: "grid", gap: 6 }}>
-          <div style={{ fontWeight: 800 }}>Slug (link público)</div>
-          <input
-            name="slug"
-            defaultValue={unit.slug ?? ""}
-            placeholder="Ex: pedacci-setor-oeste"
-            style={inputStyle}
-          />
-          <div style={{ opacity: 0.7, fontSize: 12 }}>
-            Isso vira: <b>/u/{unit.slug ?? ""}</b>
+        {error && (
+          <div className="bg-red-100 text-red-700 p-3 rounded">
+            {error}
           </div>
-        </div>
+        )}
 
-        <div style={{ display: "grid", gap: 6 }}>
-          <div style={{ fontWeight: 800 }}>Endereço (ou link do Maps)</div>
-          <input
-            name="address"
-            defaultValue={unit.address ?? ""}
-            placeholder="Ex: Rua X, Setor Y, Goiânia"
-            style={inputStyle}
-          />
-        </div>
-
-        <div style={{ display: "grid", gap: 6 }}>
-          <div style={{ fontWeight: 800 }}>Instagram</div>
-          <input
-            name="instagram"
-            defaultValue={unit.instagram ?? ""}
-            placeholder="@seuinstagram"
-            style={inputStyle}
-          />
-        </div>
-
-        <div style={{ display: "grid", gap: 6 }}>
-          <div style={{ fontWeight: 800 }}>WhatsApp da empresa</div>
-          <input
-            name="whatsapp"
-            defaultValue={unit.whatsapp ?? ""}
-            placeholder="Ex: 62999999999"
-            style={inputStyle}
-          />
-        </div>
-
-        <button style={btnStyle} type="submit">
-          Salvar dados da unidade
+        <button
+          onClick={handleCreateUnit}
+          disabled={loading}
+          className="bg-black text-white px-4 py-2 rounded"
+        >
+          {loading ? "Criando..." : "Criar Unidade"}
         </button>
-      </form>
-    </main>
+      </div>
+    </div>
   );
 }
-
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  padding: "12px 12px",
-  borderRadius: 12,
-  border: "1px solid rgba(255,255,255,0.14)",
-  background: "rgba(255,255,255,0.06)",
-  color: "inherit",
-  outline: "none",
-};
-
-const btnStyle: React.CSSProperties = {
-  padding: "12px 12px",
-  borderRadius: 12,
-  border: "1px solid rgba(255,255,255,0.18)",
-  background: "rgba(255,255,255,0.10)",
-  cursor: "pointer",
-  fontWeight: 900,
-};
