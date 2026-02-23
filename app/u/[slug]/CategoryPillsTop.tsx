@@ -74,20 +74,18 @@ export default function CategoryPillsTop({
       ref={wrapRef}
       className="fy-scroll-x"
       style={{
-        display: "flex",
-        gap: 10,
-        overflowX: "auto",
-        paddingBottom: 8,
-        paddingTop: 2,
-        paddingLeft: 18,
-        paddingRight: 18,
-        WebkitOverflowScrolling: "touch",
-        scrollPaddingLeft: 60,
-        scrollPaddingRight: 60,
-
-        touchAction: "pan-x",
-        overscrollBehaviorX: "contain",
-      }}
+  display: "flex",
+  gap: 10,
+  overflowX: "auto",
+  paddingBottom: 8,
+  paddingTop: 2,
+  paddingLeft: 18,
+  paddingRight: 18,
+  WebkitOverflowScrolling: "touch",
+  scrollPaddingLeft: 60,
+  scrollPaddingRight: 60,
+  touchAction: "auto",
+}}
       onPointerDownCapture={onDragStart}
       onPointerUpCapture={onDragEnd}
       onPointerCancel={onDragEnd}
