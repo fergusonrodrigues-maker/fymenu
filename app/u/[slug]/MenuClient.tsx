@@ -255,22 +255,19 @@ export default function MenuClient({
           minHeight: "100vh",
           background: bg,
           color: text,
-          paddingBottom: bottomPad,
-          overscrollBehaviorY: "auto",
+          paddingBottom: 190,
         }}
       >
-        {/* ===== HEADER FIXO (somente pílulas) ===== */}
+        {/* HEADER */}
         <div
           style={{
             position: "sticky",
             top: 0,
-            zIndex: 50,
-            padding: "14px 14px 10px",
-            backdropFilter: "blur(16px)",
-            // ✅ sem linha/corte: gradiente suave até transparente
+            zIndex: 60,
+            padding: "14px",
+            backdropFilter: "blur(18px)",
             background:
-              "linear-gradient(rgba(11,11,11,0.92) 0%, rgba(11,11,11,0.78) 55%, rgba(11,11,11,0.00) 100%)",
-            borderBottom: "none",
+              "linear-gradient(rgba(11,11,11,0.92) 0%, rgba(11,11,11,0.78) 52%, rgba(11,11,11,0.00) 100%)",
           }}
         >
           <CategoryPillsTop
@@ -283,56 +280,61 @@ export default function MenuClient({
           />
         </div>
 
-        {/* ===== CONTEÚDO ===== */}
+        {/* CONTEÚDO */}
         <div style={{ padding: 14, display: "flex", flexDirection: "column", gap: 22 }}>
           {featuredCategory && (
             <div
               ref={(el) => {
                 sectionRefs.current[featuredCategory.id] = el;
               }}
-              style={{ scrollMarginTop: 140 }}
+              style={{ scrollMarginTop: 160 }}
             >
               <FeaturedCarousel
                 items={featuredItems}
-                onOpen={(p, idx) => setModal({ list: featuredItems, index: idx })}
+                onOpen={(p, originalIndex) =>
+                  setModal({ list: featuredItems, index: originalIndex })
+                }
               />
             </div>
           )}
 
           {otherCategories.map((cat) => {
-  const items = grouped.get(cat.id) ?? [];
-  if (!items.length) return null;
+            const items = grouped.get(cat.id) ?? [];
+            if (!items.length) return null;
 
-  return (
-    <div
-      key={cat.id}
-      ref={(el) => {
-        sectionRefs.current[cat.id] = el;
-      }}
-      style={{ scrollMarginTop: 160 }}
-    >
-      <CategoryCarousel
-        items={items}
-        compact={true}
-        onOpen={(p, idx) =>
-          setModal({ list: items, index: idx })
-        }
-      />
-    </div>
-  );
-})}
+            return (
+              <div
+                key={cat.id}
+                ref={(el) => {
+                  sectionRefs.current[cat.id] = el;
+                }}
+                style={{ scrollMarginTop: 160 }}
+              >
+                <CategoryCarousel
+                  items={items}
+                  compact={true}
+                  onOpen={(p, idx) =>
+                    setModal({ list: items, index: idx })
+                  }
+                />
+              </div>
+            );
+          })}
+        </div>
+
         <BottomGlassBar unit={unit} />
 
         {modal && (
           <ProductModal
             list={modal.list}
             index={modal.index}
-            onChangeIndex={(idx) => setModal({ list: modal.list, index: idx })}
+            onChangeIndex={(idx) =>
+              setModal({ list: modal.list, index: idx })
+            }
             onClose={() => setModal(null)}
           />
         )}
 
-        {/* helpers visuais */}
         <style>{`
           .fy-scroll-x::-webkit-scrollbar { width: 0px; height: 0px; display: none; }
           .fy-scroll-x { scrollbar-width: none; -ms-overflow-style: none; }
