@@ -9,17 +9,20 @@ export type Unit = {
   name: string;
   slug: string;
 
-  // ✅ existe no seu banco (você usa no BottomGlassBar)
-  address: string | null;
-
   city: string | null;
   neighborhood: string | null;
 
   whatsapp: string | null;
   instagram: string | null;
 
-  // se existir no futuro, ok; se não existir, deixa null
   maps_url: string | null;
+
+  /**
+   * address NÃO é confirmado no banco.
+   * Então deixamos opcional para não quebrar TS/build.
+   * Se você criar a coluna depois, basta preencher no page.tsx.
+   */
+  address?: string | null;
 
   logo_url: string | null;
 };
@@ -30,18 +33,18 @@ export type Category = {
   name: string;
 
   /**
-   * No seu banco NÃO tem slug em categories.
-   * A gente gera sempre no mapper do page.tsx.
+   * Importante:
+   * - No seu banco pode NÃO existir slug em category.
+   * - Então a gente GARANTE aqui um slug sempre (gerado do name) no mapper do page.tsx.
    */
   slug: string;
 
   /**
-   * No seu banco NÃO tem type confirmado.
-   * A gente seta null (ou 'featured' se você quiser depois).
+   * type vem do banco como string|null, e não pode virar undefined (Vercel quebra).
+   * No seu banco não está confirmado, então fica null.
    */
   type: string | null;
 
-  // UI usa sort_order, DB usa order_index -> page.tsx converte
   sort_order: number;
 };
 
@@ -50,8 +53,6 @@ export type ProductVariation = {
   product_id: UUID;
   name: string;
   price: number | null;
-
-  // UI usa sort_order, DB usa order_index -> page.tsx converte
   sort_order: number;
 };
 
@@ -59,24 +60,13 @@ export type Product = {
   id: UUID;
   category_id: UUID;
   unit_id: UUID;
-
   name: string;
   description: string | null;
-
-  // UI usa price, DB usa base_price -> page.tsx converte
   price: number | null;
-
-  // UI usa image_url, DB usa thumbnail_url -> page.tsx converte
   image_url: string | null;
-
   video_url: string | null;
-
-  // se não existir no DB, a gente default true no page.tsx
   is_active: boolean;
-
-  // UI usa sort_order, DB usa order_index -> page.tsx converte
   sort_order: number;
-
   variations: ProductVariation[];
 };
 
