@@ -289,6 +289,7 @@ export default function MenuClient({
 
                 <CategoryCarousel
   items={items}
+  compact={true}
   onOpen={(_, idx) => setModal({ list: items, index: idx })}
 />
               </div>
