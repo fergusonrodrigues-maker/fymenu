@@ -8,11 +8,19 @@ export type Unit = {
   restaurant_id: UUID | null;
   name: string;
   slug: string;
+
+  // ✅ existe no seu banco (você usa no BottomGlassBar)
+  address: string | null;
+
   city: string | null;
   neighborhood: string | null;
+
   whatsapp: string | null;
   instagram: string | null;
+
+  // se existir no futuro, ok; se não existir, deixa null
   maps_url: string | null;
+
   logo_url: string | null;
 };
 
@@ -20,16 +28,20 @@ export type Category = {
   id: UUID;
   unit_id: UUID;
   name: string;
+
   /**
-   * Importante:
-   * - No seu banco pode NÃO existir slug em category.
-   * - Então a gente GARANTE aqui um slug sempre (gerado do name) no mapper do page.tsx.
+   * No seu banco NÃO tem slug em categories.
+   * A gente gera sempre no mapper do page.tsx.
    */
   slug: string;
+
   /**
-   * type vem do banco como string|null, e não pode virar undefined (Vercel quebra).
+   * No seu banco NÃO tem type confirmado.
+   * A gente seta null (ou 'featured' se você quiser depois).
    */
   type: string | null;
+
+  // UI usa sort_order, DB usa order_index -> page.tsx converte
   sort_order: number;
 };
 
@@ -38,6 +50,8 @@ export type ProductVariation = {
   product_id: UUID;
   name: string;
   price: number | null;
+
+  // UI usa sort_order, DB usa order_index -> page.tsx converte
   sort_order: number;
 };
 
@@ -45,13 +59,24 @@ export type Product = {
   id: UUID;
   category_id: UUID;
   unit_id: UUID;
+
   name: string;
   description: string | null;
+
+  // UI usa price, DB usa base_price -> page.tsx converte
   price: number | null;
+
+  // UI usa image_url, DB usa thumbnail_url -> page.tsx converte
   image_url: string | null;
+
   video_url: string | null;
+
+  // se não existir no DB, a gente default true no page.tsx
   is_active: boolean;
+
+  // UI usa sort_order, DB usa order_index -> page.tsx converte
   sort_order: number;
+
   variations: ProductVariation[];
 };
 
@@ -77,5 +102,5 @@ export function slugify(input: string): string {
  * Normaliza slug vindo da URL (evita bug de \n, espaços etc)
  */
 export function normalizePublicSlug(raw: string): string {
-  return (raw ?? "").toString().trim().replace(/\s+/g, ""); // remove espaços internos também
+  return (raw ?? "").toString().trim().replace(/\s+/g, "");
 }
