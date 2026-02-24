@@ -4,12 +4,13 @@ import React, { useEffect, useRef } from "react";
 
 type Product = {
   id: string;
+  category_id?: string;
   name: string;
-  description: string;
+  description: string | null;
   price_type: "fixed" | "variable";
   base_price: number;
-  thumbnail_url: string;
-  video_url: string;
+  thumbnail_url: string | null;
+  video_url: string | null;
 };
 
 export default function FeaturedCarousel({
@@ -21,6 +22,7 @@ export default function FeaturedCarousel({
 }) {
   const scrollerRef = useRef<HTMLDivElement | null>(null);
 
+  // ✅ Centraliza HERO ao abrir
   useEffect(() => {
     const el = scrollerRef.current;
     if (!el || !items.length) return;
@@ -31,6 +33,7 @@ export default function FeaturedCarousel({
 
       const heroIndex = Math.floor(children.length / 2);
       const hero = children[heroIndex];
+      if (!hero) return;
 
       const heroCenter = hero.offsetLeft + hero.offsetWidth / 2;
       const target = heroCenter - el.clientWidth / 2;
@@ -39,6 +42,7 @@ export default function FeaturedCarousel({
     });
   }, [items.length]);
 
+  // ✅ Snap nearest ao soltar
   useEffect(() => {
     const el = scrollerRef.current;
     if (!el) return;
@@ -57,7 +61,6 @@ export default function FeaturedCarousel({
       for (const c of children) {
         const cCenter = c.offsetLeft + c.offsetWidth / 2;
         const dist = Math.abs(cCenter - center);
-
         if (dist < bestDist) {
           bestDist = dist;
           best = c;
@@ -69,6 +72,7 @@ export default function FeaturedCarousel({
       const bestCenter = best.offsetLeft + best.offsetWidth / 2;
       const target = bestCenter - el.clientWidth / 2;
 
+      // Smooth só aqui (programático), nunca no gesto
       el.scrollTo({ left: target, behavior: "smooth" });
     };
 
@@ -100,7 +104,7 @@ export default function FeaturedCarousel({
           overflowX: "auto",
           padding: "12px 14px",
           WebkitOverflowScrolling: "touch",
-          touchAction: "auto",
+          touchAction: "auto", // ✅ não trava no iOS
         }}
       >
         {items.map((p, i) => (
@@ -114,7 +118,7 @@ export default function FeaturedCarousel({
             }}
             onClick={() => onOpen(p, i)}
           >
-            {/* seu ProductCard aqui (mantém o design interno) */}
+            {/* Aqui continua seu card real (se você já tinha) */}
             <div style={{ height: 520, background: "#222", borderRadius: 24 }} />
           </div>
         ))}

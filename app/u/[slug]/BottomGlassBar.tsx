@@ -1,59 +1,77 @@
 "use client";
 
-import React, { useMemo } from "react";
+// FILE: /app/u/[slug]/BottomGlassBar.tsx
+// ACTION: REPLACE ENTIRE FILE
 
-type Unit = {
-  name: string;
-  address: string;
-  instagram: string;
-  whatsapp: string;
-  logo_url: string;
-  city?: string;
-  neighborhood?: string;
+import React, { useMemo } from "react";
+import type { Unit } from "./menuTypes";
+
+type FooterLink = {
+  key: "instagram" | "maps" | "whatsapp";
+  label: string;
+  href: string;
+  icon: string;
 };
 
-function normalizeInstagram(v: string) {
-  const raw = (v ?? "").trim();
-  if (!raw) return "";
-  if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
-  const handle = raw.replace(/^@/, "");
+function normalizeInstagram(raw: string) {
+  const v = String(raw ?? "").trim();
+  if (!v) return "";
+  if (v.startsWith("http://") || v.startsWith("https://")) return v;
+  const handle = v.replace(/^@/, "");
   return `https://instagram.com/${handle}`;
 }
 
-function mapsFromAddress(addr: string) {
-  const a = (addr ?? "").trim();
-  if (!a) return "";
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a)}`;
+function normalizeWhatsappToWaMe(raw: string) {
+  const digits = String(raw ?? "").replace(/\D/g, "");
+  if (!digits) return "";
+  // se vier sem DDI, assume BR
+  const withCountry = digits.length <= 11 ? `55${digits}` : digits;
+  return `https://wa.me/${withCountry}`;
 }
 
-function normalizeWhatsappToWaMe(v: string) {
-  const raw = (v ?? "").trim();
-  if (!raw) return "";
-  const digits = raw.replace(/\D/g, "");
-  // se já vier com 55 ok; se não, tenta prefixar (Brasil)
-  const final = digits.startsWith("55") ? digits : `55${digits}`;
-  return `https://wa.me/${final}`;
+function mapsFromAddress(raw: string) {
+  const q = String(raw ?? "").trim();
+  if (!q) return "";
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
+}
+
+function buildLinks(unit: Unit): FooterLink[] {
+  const links: FooterLink[] = [];
+
+  const ig = normalizeInstagram(unit.instagram || "");
+  const maps = mapsFromAddress(unit.address || "");
+  const wa = normalizeWhatsappToWaMe(unit.whatsapp || "");
+
+  if (ig) links.push({ key: "instagram", label: "Instagram", href: ig, icon: "📷" });
+  if (maps) links.push({ key: "maps", label: "Maps", href: maps, icon: "📍" });
+  if (wa) links.push({ key: "whatsapp", label: "WhatsApp", href: wa, icon: "💬" });
+
+  return links;
+}
+
+function miniGlassBtn(isWA: boolean) {
+  return {
+    display: "grid",
+    placeItems: "center",
+    width: 44,
+    height: 44,
+    borderRadius: 16,
+    border: "1px solid rgba(255,255,255,0.16)",
+    background: isWA ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.10)",
+    color: "#fff",
+    textDecoration: "none",
+    transform: "scale(1)",
+    transition: "transform 140ms ease, background 140ms ease",
+    backdropFilter: "blur(14px)",
+    WebkitBackdropFilter: "blur(14px)",
+  } as React.CSSProperties;
 }
 
 export default function BottomGlassBar({ unit }: { unit: Unit }) {
-  const infoText = useMemo(() => {
-    const city = (unit.city ?? "").trim();
-    const neigh = (unit.neighborhood ?? "").trim();
-    if (city && neigh) return `${city} - Unidade: ${neigh}`;
-    if (city) return city;
-    if (neigh) return `Unidade: ${neigh}`;
-    return unit.name || "Unidade";
-  }, [unit.city, unit.neighborhood, unit.name]);
+  const links = useMemo(() => buildLinks(unit), [unit]);
+  const hasLogo = Boolean(unit.logo_url && String(unit.logo_url).trim());
 
-  const instagramUrl = useMemo(() => normalizeInstagram(unit.instagram), [unit.instagram]);
-  const mapsUrl = useMemo(() => mapsFromAddress(unit.address), [unit.address]);
-  const whatsappUrl = useMemo(() => normalizeWhatsappToWaMe(unit.whatsapp), [unit.whatsapp]);
-
-  const buttons = [
-    { key: "ig", label: "Instagram", url: instagramUrl },
-    { key: "maps", label: "Maps", url: mapsUrl },
-    { key: "wa", label: "WhatsApp", url: whatsappUrl },
-  ].filter((b) => !!b.url);
+  if (!links.length && !hasLogo) return null;
 
   return (
     <div
@@ -61,101 +79,85 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
         position: "fixed",
         left: 0,
         right: 0,
-        bottom: 14,
-        zIndex: 60,
+        bottom: 0,
+        zIndex: 40,
         display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: 10,
+        justifyContent: "center",
+        padding: "10px 12px 18px",
         pointerEvents: "none",
       }}
     >
-      {/* Barra superior pequena */}
       <div
         style={{
-          pointerEvents: "none",
-          padding: "8px 14px",
-          borderRadius: 999,
-          background: "rgba(0,0,0,0.30)",
-          border: "1px solid rgba(255,255,255,0.10)",
-          boxShadow: "0 16px 40px rgba(0,0,0,0.35)",
-          backdropFilter: "blur(14px)",
-          WebkitBackdropFilter: "blur(14px)",
-          color: "rgba(255,255,255,0.90)",
-          fontSize: 12,
-          fontWeight: 900,
-          textAlign: "center",
-          maxWidth: "92%",
-        }}
-      >
-        {infoText}
-      </div>
-
-      {/* Barra principal */}
-      <div
-        style={{
-          width: "92%",
+          width: "100%",
           maxWidth: 480,
-          borderRadius: 28,
-          padding: "12px 14px",
-          background: "rgba(0,0,0,0.40)",
-          border: "1px solid rgba(255,255,255,0.10)",
-          boxShadow: "0 22px 60px rgba(0,0,0,0.55)",
-          backdropFilter: "blur(18px)",
-          WebkitBackdropFilter: "blur(18px)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 12,
           pointerEvents: "auto",
         }}
       >
-        {/* Logo */}
-        <div style={{ display: "flex", alignItems: "center", minWidth: 92 }}>
-          {!!unit.logo_url ? (
-            <img
-              src={unit.logo_url}
-              alt={unit.name}
-              style={{
-                maxHeight: 44,
-                maxWidth: 120,
-                objectFit: "contain",
-                filter: "drop-shadow(0 8px 18px rgba(0,0,0,0.35))",
-              }}
-            />
-          ) : (
-            <div style={{ color: "rgba(255,255,255,0.85)", fontWeight: 950, fontSize: 12 }}>
-              {unit.name}
-            </div>
-          )}
-        </div>
+        <div
+          style={{
+            borderRadius: 22,
+            border: "1px solid rgba(255,255,255,0.10)",
+            background: "rgba(0,0,0,0.55)",
+            boxShadow: "0 16px 40px rgba(0,0,0,0.45)",
+            backdropFilter: "blur(18px)",
+            WebkitBackdropFilter: "blur(18px)",
+            padding: "12px 12px",
+          }}
+        >
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: hasLogo ? "1fr auto auto auto" : "auto auto auto",
+              alignItems: "center",
+              gap: 10,
+            }}
+          >
+            {hasLogo && (
+              <div style={{ display: "flex", alignItems: "center", minWidth: 0, paddingLeft: 6 }}>
+                <img
+                  src={unit.logo_url}
+                  alt="Logo"
+                  style={{
+                    maxHeight: 48,
+                    width: "auto",
+                    maxWidth: 130,
+                    objectFit: "contain",
+                    display: "block",
+                  }}
+                />
+              </div>
+            )}
 
-        {/* Botões */}
-        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-          {buttons.map((b) => (
-            <a
-              key={b.key}
-              href={b.url}
-              target="_blank"
-              rel="noreferrer"
-              style={{
-                textDecoration: "none",
-                color: "#fff",
-                fontWeight: 950,
-                fontSize: 12,
-                padding: "10px 12px",
-                borderRadius: 18,
-                background: "rgba(255,255,255,0.10)",
-                border: "1px solid rgba(255,255,255,0.10)",
-                backdropFilter: "blur(10px)",
-                WebkitBackdropFilter: "blur(10px)",
-                boxShadow: "0 14px 34px rgba(0,0,0,0.35)",
-                transform: "translateZ(0)",
-              }}
-            >
-              {b.label}
-            </a>
-          ))}
+            {links.map((l) => {
+              const isWA = l.key === "whatsapp";
+              return (
+                <a
+                  key={l.key}
+                  href={l.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={l.label}
+                  title={l.label}
+                  style={miniGlassBtn(isWA)}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLAnchorElement).style.transform = "scale(1.05)";
+                    (e.currentTarget as HTMLAnchorElement).style.background = isWA
+                      ? "rgba(255,255,255,0.18)"
+                      : "rgba(255,255,255,0.16)";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLAnchorElement).style.transform = "scale(1)";
+                    (e.currentTarget as HTMLAnchorElement).style.background = isWA
+                      ? "rgba(255,255,255,0.14)"
+                      : "rgba(255,255,255,0.10)";
+                  }}
+                >
+                  <span style={{ fontSize: 18 }}>{l.icon}</span>
+                </a>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>

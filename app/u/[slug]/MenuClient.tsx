@@ -30,19 +30,21 @@ type Unit = {
 type Category = {
   id: string;
   name: string;
-  type: string;
-  slug?: string;
+  // ✅ no banco pode vir null
+  type: string | null;
+  // ✅ pode não existir no DB / pode vir null se você adicionar depois
+  slug?: string | null;
 };
 
 type Product = {
   id: string;
   category_id: string;
   name: string;
-  description: string;
+  description: string | null;
   price_type: "fixed" | "variable";
   base_price: number;
-  thumbnail_url: string;
-  video_url: string;
+  thumbnail_url: string | null;
+  video_url: string | null;
   variations?: Variation[];
 };
 
@@ -531,7 +533,7 @@ function ProductModal({
           position: "relative",
           animation: "fyModalIn 260ms cubic-bezier(.22,.9,.3,1)",
           transformOrigin: "center center",
-          touchAction: "auto",
+          touchAction: "pan-y pan-x",
         }}
       >
         <button
@@ -612,17 +614,37 @@ function ProductModal({
             }}
           />
 
-          <div style={{ position: "absolute", left: 18, right: 18, bottom: 18, textAlign: "center" }}>
+          <div
+            style={{
+              position: "absolute",
+              left: 18,
+              right: 18,
+              bottom: 18,
+              textAlign: "center",
+            }}
+          >
             <div style={{ fontWeight: 950, fontSize: 20 }}>{product.name}</div>
 
             {!!product.description && (
-              <div style={{ marginTop: 8, opacity: 0.9, fontSize: 13 }}>{product.description}</div>
+              <div style={{ marginTop: 8, opacity: 0.9, fontSize: 13 }}>
+                {product.description}
+              </div>
             )}
 
-            <div style={{ marginTop: 10, fontSize: 20, fontWeight: 950 }}>{displayPrice}</div>
+            <div style={{ marginTop: 10, fontSize: 20, fontWeight: 950 }}>
+              {displayPrice}
+            </div>
 
             {product.price_type === "variable" && vars.length > 0 && (
-              <div style={{ marginTop: 10, display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
+              <div
+                style={{
+                  marginTop: 10,
+                  display: "flex",
+                  gap: 8,
+                  justifyContent: "center",
+                  flexWrap: "wrap",
+                }}
+              >
                 {vars.map((v) => {
                   const active = v.id === selectedVarId;
                   return (
@@ -632,7 +654,9 @@ function ProductModal({
                       style={{
                         padding: "8px 12px",
                         borderRadius: 999,
-                        border: `1px solid ${active ? "rgba(255,255,255,0.26)" : "rgba(255,255,255,0.12)"}`,
+                        border: `1px solid ${
+                          active ? "rgba(255,255,255,0.26)" : "rgba(255,255,255,0.12)"
+                        }`,
                         background: active ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.06)",
                         color: "#fff",
                         cursor: "pointer",

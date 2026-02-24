@@ -14,11 +14,11 @@ type Product = {
   id: string;
   category_id: string;
   name: string;
-  description: string;
+  description: string | null;
   price_type: "fixed" | "variable";
   base_price: number;
-  thumbnail_url: string;
-  video_url: string;
+  thumbnail_url: string | null;
+  video_url: string | null;
   variations?: Variation[];
 };
 
@@ -53,6 +53,7 @@ function ProductCard({ p, compact }: { p: Product; compact?: boolean }) {
         boxShadow: "0 18px 40px rgba(0,0,0,0.45)",
       }}
     >
+      {/* Media */}
       {p.video_url ? (
         <video
           src={p.video_url}
@@ -101,6 +102,7 @@ function ProductCard({ p, compact }: { p: Product; compact?: boolean }) {
         </div>
       )}
 
+      {/* Overlay gradient */}
       <div
         style={{
           position: "absolute",
@@ -111,6 +113,7 @@ function ProductCard({ p, compact }: { p: Product; compact?: boolean }) {
         }}
       />
 
+      {/* Text */}
       <div
         style={{
           position: "absolute",
@@ -171,6 +174,7 @@ export default function CategoryCarousel({
 }) {
   const scrollerRef = useRef<HTMLDivElement | null>(null);
 
+  // ✅ Centraliza HERO inicial (meio) sem smooth (evita engasgo no iOS)
   useEffect(() => {
     const el = scrollerRef.current;
     if (!el || !items.length) return;
@@ -181,6 +185,7 @@ export default function CategoryCarousel({
 
       const heroIndex = Math.floor(children.length / 2);
       const hero = children[heroIndex];
+      if (!hero) return;
 
       const heroCenter = hero.offsetLeft + hero.offsetWidth / 2;
       const target = heroCenter - el.clientWidth / 2;
@@ -188,6 +193,7 @@ export default function CategoryCarousel({
     });
   }, [items.length]);
 
+  // ✅ Snap NEAREST ao soltar
   useEffect(() => {
     const el = scrollerRef.current;
     if (!el) return;
@@ -234,7 +240,7 @@ export default function CategoryCarousel({
 
   const heroW = compact ? 260 : 290;
   const sideW = compact ? 220 : 250;
-  const heroIdx = Math.floor(items.length / 2);
+  const heroIndex = Math.floor(items.length / 2);
 
   return (
     <div style={{ position: "relative" }}>
@@ -249,7 +255,7 @@ export default function CategoryCarousel({
           padding: compact ? "10px 12px" : "12px 14px",
           scrollBehavior: "auto",
           WebkitOverflowScrolling: "touch",
-          touchAction: "auto",
+          touchAction: "pan-y pinch-zoom", // ✅ não trava vertical no iOS
         }}
       >
         {items.map((p, idx) => (
@@ -257,8 +263,8 @@ export default function CategoryCarousel({
             key={p.id}
             data-carousel-item
             style={{
-              flex: `0 0 ${idx === heroIdx ? heroW : sideW}px`,
-              transform: `scale(${idx === heroIdx ? 1 : 0.94})`,
+              flex: `0 0 ${idx === heroIndex ? heroW : sideW}px`,
+              transform: `scale(${idx === heroIndex ? 1 : 0.94})`,
               transformOrigin: "center",
               transition: "transform 160ms ease",
             }}
