@@ -1,17 +1,17 @@
+// FILE: /app/u/[slug]/page.tsx
+// ACTION: REPLACE ENTIRE FILE
+
 import MenuClient from "./MenuClient";
 import { createClient } from "@/lib/supabase/server";
-
-type PageProps = {
-  params: { slug: string };
-};
+import { headers } from "next/headers";
 
 type UnitRow = {
   id: string;
   name: string | null;
   address: string | null;
   instagram: string | null;
-  whatsapp: string | null;
-  logo_url: string | null;
+  whatsapp?: string | null;
+  logo_url?: string | null;
   slug: string | null;
 };
 
@@ -39,26 +39,52 @@ type VariationRow = {
   name: string;
   price: number;
   order_index: number | null;
+  created_at?: string | null;
 };
 
-export default async function Page({ params }: PageProps) {
+function extractSlugFromPath(path: string) {
+  const clean = (path || "").split("?")[0].split("#")[0];
+  const idx = clean.indexOf("/u/");
+  if (idx === -1) return "";
+  const after = clean.slice(idx + 3);
+  const slug = after.split("/")[0] ?? "";
+  return slug;
+}
+
+export default async function Page({ params }: { params: { slug?: string } }) {
   const supabase = await createClient();
 
-  const rawSlug = params?.slug ?? "";
+  let rawSlug = params?.slug ?? "";
 
-  // higiene extra: trim + remove \n / \r
+  // ✅ Next 16: headers() é async — isso corrigiu o erro do build
+  if (!rawSlug) {
+    const h = await headers();
+    const maybePath =
+      h.get("x-invoke-path") ||
+      h.get("x-matched-path") ||
+      h.get("next-url") ||
+      "";
+    rawSlug = extractSlugFromPath(maybePath);
+  }
+
   const slug = String(rawSlug).trim().replace(/[\r\n]/g, "");
 
   if (!slug) {
     return (
-      <main style={{ padding: 16 }}>
+      <main
+        style={{
+          padding: 16,
+          color: "#fff",
+          background: "#0b0b0b",
+          minHeight: "100vh",
+        }}
+      >
         <h1>Cardápio não encontrado</h1>
         <p>Slug vazio.</p>
       </main>
     );
   }
 
-  // 1) Unit pelo slug (fallback de \n / \r\n só por segurança)
   const { data: unit, error: unitError } = await supabase
     .from("units")
     .select("id, name, address, instagram, whatsapp, logo_url, slug")
@@ -68,17 +94,25 @@ export default async function Page({ params }: PageProps) {
 
   if (unitError || !unit) {
     return (
-      <main style={{ padding: 16 }}>
+      <main
+        style={{
+          padding: 16,
+          color: "#fff",
+          background: "#0b0b0b",
+          minHeight: "100vh",
+        }}
+      >
         <h1>Cardápio não encontrado</h1>
         <p>Slug recebido: {slug}</p>
         {unitError && (
-          <pre style={{ whiteSpace: "pre-wrap" }}>{JSON.stringify(unitError, null, 2)}</pre>
+          <pre style={{ whiteSpace: "pre-wrap" }}>
+            {JSON.stringify(unitError, null, 2)}
+          </pre>
         )}
       </main>
     );
   }
 
-  // 2) Categorias da unidade
   const { data: categoriesRaw, error: catError } = await supabase
     .from("categories")
     .select("id, name, order_index")
@@ -88,9 +122,18 @@ export default async function Page({ params }: PageProps) {
 
   if (catError) {
     return (
-      <main style={{ padding: 16 }}>
+      <main
+        style={{
+          padding: 16,
+          color: "#fff",
+          background: "#0b0b0b",
+          minHeight: "100vh",
+        }}
+      >
         <h1>Erro ao carregar categorias</h1>
-        <pre style={{ whiteSpace: "pre-wrap" }}>{JSON.stringify(catError, null, 2)}</pre>
+        <pre style={{ whiteSpace: "pre-wrap" }}>
+          {JSON.stringify(catError, null, 2)}
+        </pre>
       </main>
     );
   }
@@ -98,19 +141,34 @@ export default async function Page({ params }: PageProps) {
   const categories = categoriesRaw ?? [];
   const categoryIds = categories.map((c) => c.id);
 
-  // 3) Produtos dessas categorias
   const { data: productsRaw, error: prodError } = await supabase
     .from("products")
-    .select("id, category_id, name, description, price_type, base_price, thumbnail_url, video_url, order_index")
-    .in("category_id", categoryIds.length ? categoryIds : ["00000000-0000-0000-0000-000000000000"])
+    .select(
+      "id, category_id, name, description, price_type, base_price, thumbnail_url, video_url, order_index"
+    )
+    .in(
+      "category_id",
+      categoryIds.length
+        ? categoryIds
+        : ["00000000-0000-0000-0000-000000000000"]
+    )
     .order("order_index", { ascending: true })
     .returns<ProductRow[]>();
 
   if (prodError) {
     return (
-      <main style={{ padding: 16 }}>
+      <main
+        style={{
+          padding: 16,
+          color: "#fff",
+          background: "#0b0b0b",
+          minHeight: "100vh",
+        }}
+      >
         <h1>Erro ao carregar produtos</h1>
-        <pre style={{ whiteSpace: "pre-wrap" }}>{JSON.stringify(prodError, null, 2)}</pre>
+        <pre style={{ whiteSpace: "pre-wrap" }}>
+          {JSON.stringify(prodError, null, 2)}
+        </pre>
       </main>
     );
   }
@@ -118,26 +176,37 @@ export default async function Page({ params }: PageProps) {
   const products = productsRaw ?? [];
   const productIds = products.map((p) => p.id);
 
-  // 4) Variações
   const { data: variationsRaw, error: varError } = await supabase
     .from("product_variations")
-    .select("id, product_id, name, price, order_index")
-    .in("product_id", productIds.length ? productIds : ["00000000-0000-0000-0000-000000000000"])
+    .select("id, product_id, name, price, order_index, created_at")
+    .in(
+      "product_id",
+      productIds.length
+        ? productIds
+        : ["00000000-0000-0000-0000-000000000000"]
+    )
     .order("order_index", { ascending: true })
     .returns<VariationRow[]>();
 
   if (varError) {
     return (
-      <main style={{ padding: 16 }}>
+      <main
+        style={{
+          padding: 16,
+          color: "#fff",
+          background: "#0b0b0b",
+          minHeight: "100vh",
+        }}
+      >
         <h1>Erro ao carregar variações</h1>
-        <pre style={{ whiteSpace: "pre-wrap" }}>{JSON.stringify(varError, null, 2)}</pre>
+        <pre style={{ whiteSpace: "pre-wrap" }}>
+          {JSON.stringify(varError, null, 2)}
+        </pre>
       </main>
     );
   }
 
   const variations = variationsRaw ?? [];
-
-  // Map: product_id -> variations[]
   const variationsByProductId = new Map<string, VariationRow[]>();
   for (const v of variations) {
     const arr = variationsByProductId.get(v.product_id) ?? [];
@@ -145,13 +214,16 @@ export default async function Page({ params }: PageProps) {
     variationsByProductId.set(v.product_id, arr);
   }
 
-  // ✅ NÃO exibir categorias vazias (server)
+  // esconde categorias vazias
   const categoryIdsWithProducts = new Set(products.map((p) => p.category_id));
-  const categoriesFiltered = categories.filter((c) => categoryIdsWithProducts.has(c.id));
+  const categoriesFiltered = categories.filter((c) =>
+    categoryIdsWithProducts.has(c.id)
+  );
 
-  // ✅ filtra produtos para somente categorias visíveis
   const allowedCategoryIds = new Set(categoriesFiltered.map((c) => c.id));
-  const productsFiltered = products.filter((p) => allowedCategoryIds.has(p.category_id));
+  const productsFiltered = products.filter((p) =>
+    allowedCategoryIds.has(p.category_id)
+  );
 
   return (
     <MenuClient
@@ -170,9 +242,9 @@ export default async function Page({ params }: PageProps) {
         type: "normal",
       }))}
       products={productsFiltered.map((p) => {
-        const priceType: "fixed" | "variable" = p.price_type === "variable" ? "variable" : "fixed";
+        const priceType: "fixed" | "variable" =
+          p.price_type === "variable" ? "variable" : "fixed";
         const basePrice = typeof p.base_price === "number" ? p.base_price : 0;
-
         const vars = variationsByProductId.get(p.id) ?? [];
 
         return {
