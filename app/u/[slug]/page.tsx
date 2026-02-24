@@ -2,203 +2,134 @@
 // ACTION: REPLACE ENTIRE FILE
 
 import MenuClient from "./MenuClient";
+import type {
+  Category,
+  Product,
+  ProductVariation,
+  Unit,
+} from "./menuTypes";
+import { slugify, normalizePublicSlug } from "./menuTypes";
+
 import { createClient } from "@/lib/supabase/server";
-import type { Category, Product, Unit, Variation } from "./menuTypes";
+import { notFound } from "next/navigation";
 
 type PageProps = {
-  params: { slug: string } | Promise<{ slug: string }>;
+  params: Promise<{ slug: string }>;
 };
-
-type UnitRow = {
-  id: string;
-  name: string | null;
-  address: string | null;
-  instagram: string | null;
-  whatsapp: string | null;
-  logo_url: string | null;
-  slug: string | null;
-  city?: string | null;
-  neighborhood?: string | null;
-};
-
-type CategoryRow = {
-  id: string;
-  name: string | null;
-  order_index: number | null;
-  type?: string | null; // se não existir na tabela, ignoramos
-  slug?: string | null; // se não existir na tabela, ignoramos
-};
-
-type ProductRow = {
-  id: string;
-  category_id: string;
-  name: string | null;
-  description: string | null;
-  price_type: "fixed" | "variable" | null;
-  base_price: number | null;
-  thumbnail_url: string | null;
-  video_url: string | null;
-  order_index: number | null;
-};
-
-type VariationRow = {
-  id: string;
-  product_id: string;
-  name: string | null;
-  price: number | null;
-  order_index: number | null;
-};
-
-function cleanSlug(v: string) {
-  return String(v ?? "")
-    .trim()
-    .replace(/[\r\n]/g, "");
-}
 
 export default async function Page({ params }: PageProps) {
+  const { slug } = await params;
+  const publicSlug = normalizePublicSlug(slug);
+
+  if (!publicSlug) return notFound();
+
   const supabase = await createClient();
 
-  // Next 16: params pode ser Promise
-  const resolvedParams = await Promise.resolve(params);
-  const slug = cleanSlug(resolvedParams?.slug ?? "");
-
-  if (!slug) {
-    return (
-      <main style={{ padding: 16 }}>
-        <h1>Cardápio não encontrado</h1>
-        <p>Slug vazio.</p>
-      </main>
-    );
-  }
-
-  // 1) Unit por slug (mantém fallback \n / \r\n só por segurança)
-  const { data: unitRow, error: unitError } = await supabase
+  // 1) UNIT (slug público)
+  const { data: unitRow, error: unitErr } = await supabase
     .from("units")
-    .select("id, name, address, instagram, whatsapp, logo_url, slug, city, neighborhood")
-    .in("slug", [slug, `${slug}\n`, `${slug}\r\n`])
-    .limit(1)
-    .maybeSingle<UnitRow>();
+    .select(
+      "id, restaurant_id, name, slug, city, neighborhood, whatsapp, instagram, maps_url, logo_url"
+    )
+    .eq("slug", publicSlug)
+    .maybeSingle();
 
-  if (unitError || !unitRow) {
-    return (
-      <main style={{ padding: 16 }}>
-        <h1>Cardápio não encontrado</h1>
-        <p>Slug recebido: {slug}</p>
-        {unitError && (
-          <pre style={{ whiteSpace: "pre-wrap" }}>{JSON.stringify(unitError, null, 2)}</pre>
-        )}
-      </main>
-    );
-  }
+  if (unitErr || !unitRow) return notFound();
 
   const unit: Unit = {
     id: unitRow.id,
-    name: unitRow.name ?? "Unidade",
-    address: unitRow.address ?? "",
-    instagram: unitRow.instagram ?? "",
-    whatsapp: unitRow.whatsapp ?? "",
-    logo_url: unitRow.logo_url ?? "",
-    slug: unitRow.slug ?? slug,
-    city: unitRow.city ?? "",
-    neighborhood: unitRow.neighborhood ?? "",
+    restaurant_id: unitRow.restaurant_id ?? null,
+    name: unitRow.name,
+    slug: unitRow.slug,
+    city: unitRow.city ?? null,
+    neighborhood: unitRow.neighborhood ?? null,
+    whatsapp: unitRow.whatsapp ?? null,
+    instagram: unitRow.instagram ?? null,
+    maps_url: unitRow.maps_url ?? null,
+    logo_url: unitRow.logo_url ?? null,
   };
 
-  // 2) Categorias
-  const { data: categoriesRaw, error: catError } = await supabase
+  // 2) CATEGORIES
+  const { data: catRows, error: catErr } = await supabase
     .from("categories")
-    .select("id, name, order_index")
+    .select("id, unit_id, name, slug, type, sort_order")
     .eq("unit_id", unit.id)
-    .order("order_index", { ascending: true })
-    .returns<CategoryRow[]>();
+    .order("sort_order", { ascending: true });
 
-  if (catError) {
-    return (
-      <main style={{ padding: 16 }}>
-        <h1>Erro ao carregar categorias</h1>
-        <pre style={{ whiteSpace: "pre-wrap" }}>{JSON.stringify(catError, null, 2)}</pre>
-      </main>
-    );
+  if (catErr) {
+    // se der erro real, tratamos como notFound pra não quebrar build/render
+    return notFound();
   }
 
-  const categoriesRows = categoriesRaw ?? [];
-  const categoryIds = categoriesRows.map((c) => c.id);
-
-  // 3) Produtos
-  const { data: productsRaw, error: prodError } = await supabase
-    .from("products")
-    .select("id, category_id, name, description, price_type, base_price, thumbnail_url, video_url, order_index")
-    .in("category_id", categoryIds.length ? categoryIds : ["00000000-0000-0000-0000-000000000000"])
-    .order("order_index", { ascending: true })
-    .returns<ProductRow[]>();
-
-  if (prodError) {
-    return (
-      <main style={{ padding: 16 }}>
-        <h1>Erro ao carregar produtos</h1>
-        <pre style={{ whiteSpace: "pre-wrap" }}>{JSON.stringify(prodError, null, 2)}</pre>
-      </main>
-    );
-  }
-
-  const productsRows = productsRaw ?? [];
-  const productIds = productsRows.map((p) => p.id);
-
-  // 4) Variações
-  const { data: variationsRaw, error: varError } = await supabase
-    .from("product_variations")
-    .select("id, product_id, name, price, order_index")
-    .in("product_id", productIds.length ? productIds : ["00000000-0000-0000-0000-000000000000"])
-    .order("order_index", { ascending: true })
-    .returns<VariationRow[]>();
-
-  if (varError) {
-    return (
-      <main style={{ padding: 16 }}>
-        <h1>Erro ao carregar variações</h1>
-        <pre style={{ whiteSpace: "pre-wrap" }}>{JSON.stringify(varError, null, 2)}</pre>
-      </main>
-    );
-  }
-
-  const variationsRows = variationsRaw ?? [];
-
-  // Map product_id => variations
-  const variationsByProductId = new Map<string, Variation[]>();
-  for (const v of variationsRows) {
-    const arr = variationsByProductId.get(v.product_id) ?? [];
-    arr.push({
-      id: v.id,
-      product_id: v.product_id,
-      name: v.name ?? "Variação",
-      price: Number(v.price ?? 0),
-      order_index: v.order_index ?? undefined, // <- NUNCA null
-    });
-    variationsByProductId.set(v.product_id, arr);
-  }
-
-  // ✅ NÃO exibir categorias vazias
-  const categoryIdsWithProducts = new Set(productsRows.map((p) => p.category_id));
-  const categoriesFilteredRows = categoriesRows.filter((c) => categoryIdsWithProducts.has(c.id));
-
-  const categories: Category[] = categoriesFilteredRows.map((c) => ({
+  const categories: Category[] = (catRows ?? []).map((c) => ({
     id: c.id,
-    name: c.name ?? "Categoria",
-    type: "normal",
+    unit_id: c.unit_id,
+    name: c.name,
+    // ✅ slug sempre obrigatório no type — se não vier do banco, geramos pelo name
+    slug: (c.slug && String(c.slug).trim()) ? String(c.slug).trim() : slugify(c.name),
+    // ✅ type nunca pode virar undefined
+    type: c.type ?? null,
+    sort_order: c.sort_order ?? 0,
   }));
 
-  const allowedCategoryIds = new Set(categories.map((c) => c.id));
-  const productsFilteredRows = productsRows.filter((p) => allowedCategoryIds.has(p.category_id));
+  // Se não tem categoria, ainda renderiza só o topo
+  if (categories.length === 0) {
+    return <MenuClient unit={unit} categories={[]} products={[]} />;
+  }
 
-  const products: Product[] = productsFilteredRows.map((p) => ({
+  // 3) PRODUCTS
+  const { data: prodRows, error: prodErr } = await supabase
+    .from("products")
+    .select(
+      "id, category_id, unit_id, name, description, price, image_url, video_url, is_active, sort_order"
+    )
+    .eq("unit_id", unit.id)
+    .order("sort_order", { ascending: true });
+
+  if (prodErr) {
+    return <MenuClient unit={unit} categories={categories} products={[]} />;
+  }
+
+  const productIds = (prodRows ?? []).map((p) => p.id);
+
+  // 4) VARIATIONS (opcional)
+  let variationsByProduct = new Map<string, ProductVariation[]>();
+
+  if (productIds.length > 0) {
+    const { data: varRows } = await supabase
+      .from("product_variations")
+      .select("id, product_id, name, price, sort_order")
+      .in("product_id", productIds)
+      .order("sort_order", { ascending: true });
+
+    variationsByProduct = new Map<string, ProductVariation[]>();
+    for (const v of varRows ?? []) {
+      const item: ProductVariation = {
+        id: v.id,
+        product_id: v.product_id,
+        name: v.name,
+        price: v.price ?? null,
+        sort_order: v.sort_order ?? 0,
+      };
+
+      const list = variationsByProduct.get(v.product_id) ?? [];
+      list.push(item);
+      variationsByProduct.set(v.product_id, list);
+    }
+  }
+
+  const products: Product[] = (prodRows ?? []).map((p) => ({
     id: p.id,
     category_id: p.category_id,
-    name: p.name ?? "Produto",
-    description: p.description ?? "",
-    price_type: p.price_type === "variable" ? "variable" : "fixed",
-    base_price: Number(p.base_price ?? 0),
-    thumbnail_url: p.thumbnail_url ?? "",
-    video_url: p.video_url ?? "",
-    variations: variationsByProductId.get(p.id) ?? [],
+    unit_id: p.unit_id,
+    name: p.name,
+    description: p.description ?? null,
+    price: p.price ?? null,
+    image_url: p.image_url ?? null,
+    video_url: p.video_url ?? null,
+    is_active: p.is_active ?? true,
+    sort_order: p.sort_order ?? 0,
+    variations: variationsByProduct.get(p.id) ?? [],
   }));
 
   return <MenuClient unit={unit} categories={categories} products={products} />;
