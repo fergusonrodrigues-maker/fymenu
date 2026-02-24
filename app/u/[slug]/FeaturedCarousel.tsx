@@ -14,22 +14,12 @@ export default function FeaturedCarousel({
   items: Product[];
   onOpen: (p: Product, originalIndex: number) => void;
 }) {
-  // Só reaproveita o CategoryCarousel, mas com compact=false (maior)
   return (
     <div style={{ width: "100%" }}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "baseline",
-          justifyContent: "space-between",
-        }}
-      >
-        <div style={{ fontWeight: 950, fontSize: 16 }}>Destaque</div>
-      </div>
-
       <CategoryCarousel
         items={items}
-        compact={false}
+        compact={false}       // ✅ destaque maior
+        initialIndex={1}      // ✅ começa no card 2 como HERO
         onOpen={(p, idx) => onOpen(p, idx)}
       />
     </div>

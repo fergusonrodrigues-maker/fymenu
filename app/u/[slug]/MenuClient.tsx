@@ -243,58 +243,48 @@ export default function MenuClient({
           )}
 
           {/* ===== OUTRAS CATEGORIAS ===== */}
-          {otherCategories.map((cat) => {
-            const items = grouped.get(cat.id) ?? [];
-            if (!items.length) return null;
+         {otherCategories.map((cat) => {
+  const items = grouped.get(cat.id) ?? [];
+  if (!items.length) return null;
 
-            return (
-              <div
-                key={cat.id}
-                ref={(el) => {
-                  sectionRefs.current[cat.id] = el;
-                }}
-                style={{
-                  scrollMarginTop: 140,
-                  position: "relative",
-                  paddingTop: 8,
-                }}
-              >
-                {/* badge do meio (mantém seu estilo) */}
-                <div
-                  style={{
-                    position: "absolute",
-                    left: 0,
-                    right: 0,
-                    top: -2,
-                    zIndex: 10,
-                    display: "flex",
-                    justifyContent: "center",
-                    pointerEvents: "none",
-                  }}
-                >
-                  <div
-                    style={{
-                      padding: "8px 14px",
-                      borderRadius: 999,
-                      background: "rgba(255,255,255,0.90)",
-                      color: "#0b0b0b",
-                      fontWeight: 950,
-                      fontSize: 13,
-                      boxShadow: "0 10px 26px rgba(0,0,0,0.35)",
-                    }}
-                  >
-                    {cat.name}
-                  </div>
-                </div>
+  return (
+    <div
+      key={cat.id}
+      ref={(el) => {
+        sectionRefs.current[cat.id] = el;
+      }}
+      style={{
+        scrollMarginTop: 140,
+        position: "relative",
+        paddingTop: 8,
+      }}
+    >
+      {/* ✅ PILL NO FLUXO (não corta mais o HERO) */}
+      <div style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}>
+        <div
+          style={{
+            padding: "8px 14px",
+            borderRadius: 999,
+            background: "rgba(255,255,255,0.90)",
+            color: "#0b0b0b",
+            fontWeight: 950,
+            fontSize: 13,
+            boxShadow: "0 10px 26px rgba(0,0,0,0.35)",
+          }}
+        >
+          {cat.name}
+        </div>
+      </div>
 
-                <CategoryCarousel
-  items={items}
-  compact={true}
-  onOpen={(_, idx) => setModal({ list: items, index: idx })}
-/>
-              </div>
-            );
-          })}
+      <CategoryCarousel
+        items={items}
+        compact={true}
+        onOpen={(p, idx) => setModal({ list: items, index: idx })}
+        initialIndex={1} // ✅ começa no card 2 como HERO
+      />
+    </div>
+  );
+})}
         </div>
 
         {/* ===== BARRA INFERIOR ===== */}
