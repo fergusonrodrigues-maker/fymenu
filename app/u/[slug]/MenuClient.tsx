@@ -1,55 +1,15 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-
+import type { Category, Product, Unit } from "./menuTypes";
 import BottomGlassBar from "./BottomGlassBar";
 import CategoryPillsTop from "./CategoryPillsTop";
 import FeaturedCarousel from "./FeaturedCarousel";
 import CategoryCarousel from "./CategoryCarousel";
 
-type Variation = {
-  id: string;
-  product_id: string;
-  name: string;
-  price: number;
-  order_index?: number;
-};
-
-type Unit = {
-  id: string;
-  name: string;
-  address: string;
-  instagram: string;
-  slug: string;
-  whatsapp: string;
-  logo_url: string;
-  city?: string;
-  neighborhood?: string;
-};
-
-type Category = {
-  id: string;
-  name: string;
-  // ✅ no banco pode vir null
-  type: string | null;
-  // ✅ pode não existir no DB / pode vir null se você adicionar depois
-  slug?: string | null;
-};
-
-type Product = {
-  id: string;
-  category_id: string;
-  name: string;
-  description: string | null;
-  price_type: "fixed" | "variable";
-  base_price: number;
-  thumbnail_url: string | null;
-  video_url: string | null;
-  variations?: Variation[];
-};
-
-function moneyBR(v: number) {
-  return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+function moneyBRL(value: number | null) {
+  if (value == null || Number.isNaN(value)) return "";
+  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
 type ModalState =
@@ -66,13 +26,13 @@ function normKey(v: string) {
 function findFeaturedCategory(categories: Category[]): Category | null {
   if (!categories.length) return null;
 
-  const bySlugOrName = categories.find((c) => {
+  const byNameOrSlug = categories.find((c) => {
     const n = normKey(c.name);
     const s = normKey(c.slug ?? "");
     return n === "destaque" || s === "destaque";
   });
 
-  return bySlugOrName ?? categories[0] ?? null;
+  return byNameOrSlug ?? categories[0] ?? null;
 }
 
 export default function MenuClient({
@@ -88,6 +48,7 @@ export default function MenuClient({
   const text = "#fff";
   const bottomPad = 190;
 
+  // só categorias que têm pelo menos 1 produto
   const visibleCategories = useMemo(() => {
     const has = new Set<string>();
     for (const p of products) has.add(p.category_id);
@@ -127,6 +88,7 @@ export default function MenuClient({
     return arr;
   }, [featuredCategory, otherCategories]);
 
+  // refs por seção pra scrollTo
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [activeCategoryId, setActiveCategoryId] = useState<string>(
     featuredId || otherCategories[0]?.id || ""
@@ -140,7 +102,7 @@ export default function MenuClient({
 
   const [modal, setModal] = useState<ModalState>(null);
 
-  // trava o fundo quando modal abre
+  // trava scroll do body quando abre modal
   useEffect(() => {
     if (!modal) return;
     const prev = document.body.style.overflow;
@@ -166,7 +128,6 @@ export default function MenuClient({
           .sort((a, b) => (b.intersectionRatio ?? 0) - (a.intersectionRatio ?? 0))[0];
 
         if (!best?.target) return;
-
         const foundId = ids.find((id) => sectionRefs.current[id] === best.target);
         if (foundId) setActiveCategoryId(foundId);
       },
@@ -221,13 +182,12 @@ export default function MenuClient({
     );
   }
 
-  // CSS global local (scrollbar invisível + remove highlight)
+  // CSS local: scrollbar invisível + remove highlight + animações premium do modal
   const css = [
     ".fy-scroll-x::-webkit-scrollbar{width:0;height:0;display:none;}",
     ".fy-scroll-x{scrollbar-width:none;-ms-overflow-style:none;}",
     ".fy-no-highlight,button,a{-webkit-tap-highlight-color:transparent;}",
     ".fy-no-highlight:focus,.fy-no-highlight:focus-visible,button:focus,button:focus-visible,a:focus,a:focus-visible{outline:none;}",
-    // motion do modal
     "@keyframes fyModalIn{0%{transform:scale(.92);opacity:0;}100%{transform:scale(1);opacity:1;}}",
     "@keyframes fyModalOut{0%{transform:scale(1);opacity:1;}100%{transform:scale(.92);opacity:0;}}",
     "@keyframes fyBackdropIn{0%{opacity:0;}100%{opacity:1;}}",
@@ -246,7 +206,7 @@ export default function MenuClient({
       <main
         style={{
           width: "100%",
-          maxWidth: 480, // trava “visual mobile”
+          maxWidth: 480,
           minHeight: "100vh",
           background: bg,
           color: text,
@@ -265,6 +225,7 @@ export default function MenuClient({
 
         {/* ===== CONTEÚDO ===== */}
         <div style={{ padding: 14, display: "flex", flexDirection: "column", gap: 22 }}>
+          {/* ===== DESTAQUE ===== */}
           {featuredCategory && (
             <div
               ref={(el) => {
@@ -273,14 +234,15 @@ export default function MenuClient({
               style={{ scrollMarginTop: 140 }}
             >
               <FeaturedCarousel
-                items={featuredItems}
-                onOpen={(p, originalIndex) =>
-                  setModal({ list: featuredItems, index: originalIndex })
-                }
+  items={featuredItems}
+  onOpen={(_, idx) =>
+    setModal({ list: featuredItems, index: idx })
+  }
               />
             </div>
           )}
 
+          {/* ===== OUTRAS CATEGORIAS ===== */}
           {otherCategories.map((cat) => {
             const items = grouped.get(cat.id) ?? [];
             if (!items.length) return null;
@@ -297,7 +259,7 @@ export default function MenuClient({
                   paddingTop: 8,
                 }}
               >
-                {/* Badge do meio (se quiser remover, apaga esse bloco) */}
+                {/* badge do meio (mantém seu estilo) */}
                 <div
                   style={{
                     position: "absolute",
@@ -326,10 +288,9 @@ export default function MenuClient({
                 </div>
 
                 <CategoryCarousel
-                  items={items}
-                  compact={true}
-                  onOpen={(p, idx) => setModal({ list: items, index: idx })}
-                />
+  items={items}
+  onOpen={(_, idx) => setModal({ list: items, index: idx })}
+/>
               </div>
             );
           })}
@@ -368,42 +329,11 @@ function ProductModal({
   const product = list[index];
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
-  // refs para animar saída sem “teleporte”
   const cardRef = useRef<HTMLDivElement | null>(null);
   const backdropRef = useRef<HTMLDivElement | null>(null);
   const closingRef = useRef(false);
 
-  const vars = useMemo(() => {
-    const arr = (product.variations ?? []).slice();
-    arr.sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0));
-    return arr;
-  }, [product.id, product.variations]);
-
-  const [selectedVarId, setSelectedVarId] = useState<string>("");
-
-  useEffect(() => {
-    if (product.price_type !== "variable") {
-      setSelectedVarId("");
-      return;
-    }
-    const first = vars[0]?.id ?? "";
-    setSelectedVarId(first);
-  }, [product.id, product.price_type, vars]);
-
-  const selectedVar = useMemo(() => {
-    if (product.price_type !== "variable") return null;
-    return vars.find((v) => v.id === selectedVarId) ?? null;
-  }, [product.price_type, vars, selectedVarId]);
-
-  const displayPrice =
-    product.price_type === "fixed"
-      ? moneyBR(product.base_price)
-      : selectedVar
-        ? moneyBR(selectedVar.price)
-        : vars.length
-          ? `A partir de ${moneyBR(Math.min(...vars.map((v) => v.price)))}`
-          : "Preço variável";
-
+  // abrir: autoplay dentro do modal (mutado)
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
@@ -421,7 +351,6 @@ function ProductModal({
     }
   }, [product?.id, product?.video_url]);
 
-  // fechar premium (com animação)
   function handleClose() {
     if (closingRef.current) return;
     closingRef.current = true;
@@ -432,12 +361,10 @@ function ProductModal({
     if (card) card.style.animation = "fyModalOut 200ms ease-in forwards";
     if (backdrop) backdrop.style.animation = "fyBackdropOut 200ms ease-in forwards";
 
-    setTimeout(() => {
-      onClose();
-    }, 180);
+    setTimeout(() => onClose(), 180);
   }
 
-  // swipe no modal (troca / fecha)
+  // swipe gestures (↑/↓ fecha, ←/→ troca)
   const startRef = useRef<{ x: number; y: number } | null>(null);
   const TH_X = 70;
   const TH_Y = 70;
@@ -456,13 +383,11 @@ function ProductModal({
     const ax = Math.abs(dx);
     const ay = Math.abs(dy);
 
-    // swipe vertical fecha
     if (ay > TH_Y && ay > ax) {
       handleClose();
       return;
     }
 
-    // swipe horizontal troca
     if (ax > TH_X && ax > ay) {
       if (dx < 0) onChangeIndex(Math.min(list.length - 1, index + 1));
       else onChangeIndex(Math.max(0, index - 1));
@@ -475,7 +400,6 @@ function ProductModal({
   function onPointerUpCapture(e: React.PointerEvent) {
     end(e.clientX, e.clientY);
   }
-
   function onTouchStartCapture(e: React.TouchEvent) {
     const t = e.touches[0];
     if (!t) return;
@@ -487,7 +411,7 @@ function ProductModal({
     end(t.clientX, t.clientY);
   }
 
-  // ESC fecha
+  // ESC + setas
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") handleClose();
@@ -497,6 +421,9 @@ function ProductModal({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [index, list.length, onChangeIndex]);
+
+  const priceText = product.price != null ? moneyBRL(product.price) : "Consultar";
+  const counter = `${index + 1}/${list.length}`;
 
   return (
     <div
@@ -523,13 +450,12 @@ function ProductModal({
         onTouchStartCapture={onTouchStartCapture}
         onTouchEndCapture={onTouchEndCapture}
         style={{
-          width: "100%",
-          maxWidth: 380, // ~10% menor (premium)
+          width: "min(90vw, 380px)", // ✅ ~10% menor + sobra overlay clicável
+          aspectRatio: "9 / 16",
           borderRadius: 28,
           border: "1px solid rgba(255,255,255,0.12)",
           background: "rgba(20,20,20,0.90)",
           overflow: "hidden",
-          aspectRatio: "9 / 16",
           position: "relative",
           animation: "fyModalIn 260ms cubic-bezier(.22,.9,.3,1)",
           transformOrigin: "center center",
@@ -558,6 +484,26 @@ function ProductModal({
           Fechar
         </button>
 
+        <div
+          style={{
+            position: "absolute",
+            left: 14,
+            top: 14,
+            zIndex: 6,
+            fontSize: 12,
+            fontWeight: 900,
+            padding: "6px 10px",
+            borderRadius: 999,
+            background: "rgba(0,0,0,0.35)",
+            border: "1px solid rgba(255,255,255,0.10)",
+            color: "rgba(255,255,255,0.90)",
+            backdropFilter: "blur(10px)",
+            WebkitBackdropFilter: "blur(10px)",
+          }}
+        >
+          {counter}
+        </div>
+
         <div style={{ position: "absolute", inset: 0, background: "#000" }}>
           {product.video_url ? (
             <video
@@ -570,7 +516,7 @@ function ProductModal({
               playsInline
               preload="metadata"
               controls={false}
-              poster={product.thumbnail_url || undefined}
+              poster={product.image_url || undefined}
               style={{
                 position: "absolute",
                 inset: 0,
@@ -579,9 +525,10 @@ function ProductModal({
                 objectFit: "cover",
               }}
             />
-          ) : product.thumbnail_url ? (
+          ) : product.image_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={product.thumbnail_url}
+              src={product.image_url}
               alt={product.name}
               style={{
                 position: "absolute",
@@ -632,50 +579,47 @@ function ProductModal({
             )}
 
             <div style={{ marginTop: 10, fontSize: 20, fontWeight: 950 }}>
-              {displayPrice}
+              {priceText}
             </div>
 
-            {product.price_type === "variable" && vars.length > 0 && (
+            {product.variations?.length ? (
               <div
                 style={{
-                  marginTop: 10,
+                  marginTop: 12,
                   display: "flex",
                   gap: 8,
                   justifyContent: "center",
                   flexWrap: "wrap",
                 }}
               >
-                {vars.map((v) => {
-                  const active = v.id === selectedVarId;
-                  return (
-                    <button
-                      key={v.id}
-                      onClick={() => setSelectedVarId(v.id)}
-                      style={{
-                        padding: "8px 12px",
-                        borderRadius: 999,
-                        border: `1px solid ${
-                          active ? "rgba(255,255,255,0.26)" : "rgba(255,255,255,0.12)"
-                        }`,
-                        background: active ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.06)",
-                        color: "#fff",
-                        cursor: "pointer",
-                        fontWeight: 900,
-                        fontSize: 12,
-                        display: "flex",
-                        gap: 8,
-                        alignItems: "center",
-                        opacity: active ? 1 : 0.86,
-                        outline: "none",
-                      }}
-                    >
-                      <span>{v.name}</span>
-                      <span style={{ opacity: 0.85 }}>{moneyBR(v.price)}</span>
-                    </button>
-                  );
-                })}
+                {product.variations.map((v) => (
+                  <div
+                    key={v.id}
+                    style={{
+                      padding: "8px 12px",
+                      borderRadius: 999,
+                      border: "1px solid rgba(255,255,255,0.12)",
+                      background: "rgba(255,255,255,0.06)",
+                      color: "#fff",
+                      fontWeight: 900,
+                      fontSize: 12,
+                      display: "flex",
+                      gap: 8,
+                      alignItems: "center",
+                      opacity: 0.92,
+                    }}
+                  >
+                    <span>{v.name}</span>
+                    <span style={{ opacity: 0.85 }}>{moneyBRL(v.price)}</span>
+                  </div>
+                ))}
               </div>
-            )}
+            ) : null}
+
+            {/* ✅ dica/ajuda voltou */}
+            <div style={{ marginTop: 12, fontSize: 12, opacity: 0.82 }}>
+              swipe ←/→ para trocar • swipe ↑/↓ para fechar • toque fora para fechar
+            </div>
           </div>
         </div>
       </div>
