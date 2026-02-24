@@ -52,11 +52,13 @@ function cleanSlug(input: string) {
 export default async function Page({
   params,
 }: {
-  params: { slug?: string };
+  params: Promise<{ slug?: string }>;
 }) {
+  const { slug: rawSlug } = await params;
+
   const supabase = await createClient();
 
-  const slug = cleanSlug(params?.slug || "");
+  const slug = cleanSlug(rawSlug || "");
 
   if (!slug) {
     return (
