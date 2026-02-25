@@ -1,6 +1,3 @@
-// FILE: /app/u/[slug]/FeaturedCarousel.tsx
-// ACTION: REPLACE ENTIRE FILE
-
 "use client";
 
 import React from "react";
@@ -15,11 +12,12 @@ export default function FeaturedCarousel({
   onOpen: (p: Product, originalIndex: number) => void;
 }) {
   return (
-    <div style={{ width: "100%" }}>
+    <div style={{ width: "100%", overflow: "visible" }}>
       <CategoryCarousel
         items={items}
-        compact={false}       // ✅ destaque maior
-        initialIndex={1}      // ✅ começa no card 2 como HERO
+        compact={false}
+        variant="featured"
+        initialHeroIndex={1}
         onOpen={(p, idx) => onOpen(p, idx)}
       />
     </div>
