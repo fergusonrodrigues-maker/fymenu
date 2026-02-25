@@ -1,26 +1,25 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import type { Unit, Product } from "./menuTypes";
+import type {
+  Unit,
+  Product as DbProduct,
+  Category as DbCategory,
+  ProductVariation,
+} from "./menuTypes";
 
+import CategoryPillsTop from "./CategoryPillsTop";
 import FeaturedCarousel from "./FeaturedCarousel";
 import CategoryCarousel from "./CategoryCarousel";
-import CategoryPillsTop from "./CategoryPillsTop";
 import BottomGlassBar from "./BottomGlassBar";
 
-type Variation = {
-  id: string;
-  product_id: string;
-  name: string;
-  price: number;
-  order_index?: number;
+type Category = DbCategory & {
+  type?: string | null;
+  slug?: string | null;
 };
 
-type Category = {
-  id: string;
-  name: string;
-  type: string | null;
-  slug?: string | null;
+type Product = DbProduct & {
+  variations?: ProductVariation[];
 };
 
 function moneyBR(v: number) {
@@ -42,12 +41,39 @@ function findFeaturedCategory(categories: Category[]): Category | null {
   if (!categories.length) return null;
 
   const bySlugOrName = categories.find((c) => {
-    const n = normKey(c.name);
-    const s = normKey(c.slug ?? "");
+    const n = normKey((c as any).name ?? "");
+    const s = normKey((c as any).slug ?? "");
     return n === "destaque" || s === "destaque";
   });
 
   return bySlugOrName ?? categories[0] ?? null;
+}
+
+// ✅ Helpers blindados (seu DB pode ter nomes diferentes)
+function getPriceType(p: Product): "fixed" | "variable" {
+  const anyP = p as any;
+  const v = anyP?.price_type ?? anyP?.priceType ?? "fixed";
+  return v === "variable" ? "variable" : "fixed";
+}
+
+function getBasePrice(p: Product): number {
+  const anyP = p as any;
+  const v = anyP?.base_price ?? anyP?.basePrice ?? anyP?.price ?? 0;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function getName(p: Product): string {
+  return ((p as any)?.name ?? "Produto") as string;
+}
+
+function getDesc(p: Product): string | null {
+  return ((p as any)?.description ?? null) as string | null;
+}
+
+function varPrice(v: ProductVariation): number | null {
+  const n = Number((v as any)?.price);
+  return Number.isFinite(n) ? n : null;
 }
 
 export default function MenuClient({
@@ -65,16 +91,17 @@ export default function MenuClient({
 
   const visibleCategories = useMemo(() => {
     const has = new Set<string>();
-    for (const p of products) has.add(p.category_id);
-    return categories.filter((c) => has.has(c.id));
+    for (const p of products) has.add((p as any).category_id);
+    return categories.filter((c) => has.has((c as any).id));
   }, [categories, products]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, Product[]>();
-    for (const c of visibleCategories) map.set(c.id, []);
+    for (const c of visibleCategories) map.set((c as any).id, []);
     for (const p of products) {
-      if (!map.has(p.category_id)) continue;
-      map.get(p.category_id)!.push(p);
+      const cid = (p as any).category_id as string;
+      if (!map.has(cid)) continue;
+      map.get(cid)!.push(p);
     }
     return map;
   }, [visibleCategories, products]);
@@ -83,7 +110,8 @@ export default function MenuClient({
     () => findFeaturedCategory(visibleCategories),
     [visibleCategories]
   );
-  const featuredId = featuredCategory?.id ?? "";
+
+  const featuredId = (featuredCategory as any)?.id ?? "";
 
   const featuredItems = useMemo(() => {
     if (!featuredId) return [];
@@ -92,23 +120,25 @@ export default function MenuClient({
 
   const otherCategories = useMemo(() => {
     if (!featuredId) return visibleCategories;
-    return visibleCategories.filter((c) => c.id !== featuredId);
+    return visibleCategories.filter((c) => (c as any).id !== featuredId);
   }, [visibleCategories, featuredId]);
 
   const pillsCategories = useMemo(() => {
-    const arr: Category[] = [];
-    if (featuredCategory) arr.push(featuredCategory);
-    for (const c of otherCategories) arr.push(c);
+    const arr: { id: string; name: string }[] = [];
+    if (featuredCategory)
+      arr.push({ id: (featuredCategory as any).id, name: (featuredCategory as any).name });
+    for (const c of otherCategories)
+      arr.push({ id: (c as any).id, name: (c as any).name });
     return arr;
   }, [featuredCategory, otherCategories]);
 
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [activeCategoryId, setActiveCategoryId] = useState<string>(
-    featuredId || otherCategories[0]?.id || ""
+    featuredId || (otherCategories[0] as any)?.id || ""
   );
 
   useEffect(() => {
-    const next = featuredId || otherCategories[0]?.id || "";
+    const next = featuredId || (otherCategories[0] as any)?.id || "";
     if (next && next !== activeCategoryId) setActiveCategoryId(next);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [featuredId, otherCategories.length]);
@@ -125,7 +155,7 @@ export default function MenuClient({
   }, [modal]);
 
   useEffect(() => {
-    const ids = [featuredId, ...otherCategories.map((c) => c.id)].filter(Boolean);
+    const ids = [featuredId, ...otherCategories.map((c) => (c as any).id)].filter(Boolean);
     const els = ids
       .map((id) => sectionRefs.current[id])
       .filter(Boolean) as HTMLDivElement[];
@@ -160,6 +190,17 @@ export default function MenuClient({
     el.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
+  const css = [
+    ".fy-scroll-x::-webkit-scrollbar{width:0;height:0;display:none;}",
+    ".fy-scroll-x{scrollbar-width:none;-ms-overflow-style:none;}",
+    ".fy-no-highlight,button,a{-webkit-tap-highlight-color:transparent;}",
+    ".fy-no-highlight:focus,.fy-no-highlight:focus-visible,button:focus,button:focus-visible,a:focus,a:focus-visible{outline:none;}",
+    "@keyframes fyModalIn{0%{transform:scale(.92);opacity:0;}100%{transform:scale(1);opacity:1;}}",
+    "@keyframes fyModalOut{0%{transform:scale(1);opacity:1;}100%{transform:scale(.92);opacity:0;}}",
+    "@keyframes fyBackdropIn{0%{opacity:0;}100%{opacity:1;}}",
+    "@keyframes fyBackdropOut{0%{opacity:1;}100%{opacity:0;}}",
+  ].join("\n");
+
   if (!visibleCategories.length) {
     return (
       <div style={{ minHeight: "100vh", background: bg, display: "flex", justifyContent: "center" }}>
@@ -187,17 +228,6 @@ export default function MenuClient({
     );
   }
 
-  const css = [
-    ".fy-scroll-x::-webkit-scrollbar{width:0;height:0;display:none;}",
-    ".fy-scroll-x{scrollbar-width:none;-ms-overflow-style:none;}",
-    ".fy-no-highlight,button,a{-webkit-tap-highlight-color:transparent;}",
-    ".fy-no-highlight:focus,.fy-no-highlight:focus-visible,button:focus,button:focus-visible,a:focus,a:focus-visible{outline:none;}",
-    "@keyframes fyModalIn{0%{transform:scale(.92);opacity:0;}100%{transform:scale(1);opacity:1;}}",
-    "@keyframes fyModalOut{0%{transform:scale(1);opacity:1;}100%{transform:scale(.92);opacity:0;}}",
-    "@keyframes fyBackdropIn{0%{opacity:0;}100%{opacity:1;}}",
-    "@keyframes fyBackdropOut{0%{opacity:1;}100%{opacity:0;}}",
-  ].join("\n");
-
   return (
     <div style={{ minHeight: "100vh", background: bg, display: "flex", justifyContent: "center" }}>
       <main
@@ -219,105 +249,64 @@ export default function MenuClient({
           }}
         />
 
-        <div style={{ padding: 14, display: "flex", flexDirection: "column", gap: 26 }}>
+        <div style={{ padding: 14, display: "flex", flexDirection: "column", gap: 22 }}>
           {featuredCategory && (
             <div
               ref={(el) => {
-                sectionRefs.current[featuredCategory.id] = el;
+                sectionRefs.current[(featuredCategory as any).id] = el;
               }}
-              style={{ scrollMarginTop: 140, position: "relative" }}
+              style={{ scrollMarginTop: 140 }}
             >
-              <div
-                style={{
-                  position: "absolute",
-                  left: 0,
-                  right: 0,
-                  top: 6,
-                  zIndex: 12,
-                  display: "flex",
-                  justifyContent: "center",
-                  pointerEvents: "none",
-                  opacity: activeCategoryId === featuredCategory.id ? 0 : 1,
-                  transform: `translateY(${activeCategoryId === featuredCategory.id ? -6 : 0}px)`,
-                  transition: "opacity 200ms ease, transform 200ms ease",
-                }}
-              >
-                <div
-                  style={{
-                    padding: "8px 14px",
-                    borderRadius: 999,
-                    background: "rgba(255,255,255,0.92)",
-                    color: "#0b0b0b",
-                    fontWeight: 950,
-                    fontSize: 13,
-                    boxShadow: "0 10px 26px rgba(0,0,0,0.35)",
-                  }}
-                >
-                  {featuredCategory.name}
-                </div>
-              </div>
-
               <FeaturedCarousel
                 items={featuredItems}
-                onOpen={(p, originalIndex) =>
-                  setModal({ list: featuredItems, index: originalIndex })
-                }
+                onOpen={(_, originalIndex) => setModal({ list: featuredItems, index: originalIndex })}
               />
             </div>
           )}
 
           {otherCategories.map((cat) => {
-            const items = grouped.get(cat.id) ?? [];
+            const items = grouped.get((cat as any).id) ?? [];
             if (!items.length) return null;
 
             return (
               <div
-                key={cat.id}
+                key={(cat as any).id}
                 ref={(el) => {
-                  sectionRefs.current[cat.id] = el;
+                  sectionRefs.current[(cat as any).id] = el;
                 }}
-                style={{
-                  scrollMarginTop: 140,
-                  position: "relative",
-                  paddingTop: 10,
-                  overflow: "visible",
-                }}
+                style={{ scrollMarginTop: 140, position: "relative", paddingTop: 8 }}
               >
                 <div
                   style={{
                     position: "absolute",
                     left: 0,
                     right: 0,
-                    top: 6,
-                    zIndex: 12,
+                    top: -2,
+                    zIndex: 10,
                     display: "flex",
                     justifyContent: "center",
                     pointerEvents: "none",
-                    opacity: activeCategoryId === cat.id ? 0 : 1,
-                    transform: `translateY(${activeCategoryId === cat.id ? -6 : 0}px)`,
-                    transition: "opacity 200ms ease, transform 200ms ease",
                   }}
                 >
                   <div
                     style={{
                       padding: "8px 14px",
                       borderRadius: 999,
-                      background: "rgba(255,255,255,0.92)",
+                      background: "rgba(255,255,255,0.90)",
                       color: "#0b0b0b",
                       fontWeight: 950,
                       fontSize: 13,
                       boxShadow: "0 10px 26px rgba(0,0,0,0.35)",
                     }}
                   >
-                    {cat.name}
+                    {(cat as any).name}
                   </div>
                 </div>
 
                 <CategoryCarousel
                   items={items}
                   compact={true}
-                  initialHeroIndex={1}
-                  onOpen={(p, idx) => setModal({ list: items, index: idx })}
+                  onOpen={(_, idx) => setModal({ list: items, index: idx })}
                 />
               </div>
             );
@@ -341,8 +330,6 @@ export default function MenuClient({
   );
 }
 
-/* ===== MODAL: mantém o seu (não mexi) ===== */
-
 function ProductModal({
   list,
   index,
@@ -362,35 +349,45 @@ function ProductModal({
   const closingRef = useRef(false);
 
   const vars = useMemo(() => {
-    const arr = (product.variations ?? []).slice() as unknown as Variation[];
-    arr.sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0));
+    const arr = (((product as any).variations ?? []) as ProductVariation[]).slice();
+    arr.sort((a: any, b: any) => (a.order_index ?? 0) - (b.order_index ?? 0));
     return arr;
-  }, [product.id, product.variations]);
+  }, [(product as any)?.id, (product as any)?.variations]);
 
   const [selectedVarId, setSelectedVarId] = useState<string>("");
 
   useEffect(() => {
-    if (product.price_type !== "variable") {
+    if (getPriceType(product) !== "variable") {
       setSelectedVarId("");
       return;
     }
-    const first = vars[0]?.id ?? "";
+    const first = (vars[0] as any)?.id ?? "";
     setSelectedVarId(first);
-  }, [product.id, product.price_type, vars]);
+  }, [(product as any)?.id, vars, product]);
 
   const selectedVar = useMemo(() => {
-    if (product.price_type !== "variable") return null;
-    return vars.find((v) => v.id === selectedVarId) ?? null;
-  }, [product.price_type, vars, selectedVarId]);
+    if (getPriceType(product) !== "variable") return null;
+    return (vars.find((v: any) => v.id === selectedVarId) as ProductVariation) ?? null;
+  }, [vars, selectedVarId, product]);
+
+  const fixedPrice = getBasePrice(product);
+
+  const variableMin = useMemo(() => {
+    const prices = vars
+      .map((v) => varPrice(v))
+      .filter((p): p is number => typeof p === "number" && Number.isFinite(p));
+    if (!prices.length) return null;
+    return Math.min(...prices);
+  }, [vars]);
 
   const displayPrice =
-    product.price_type === "fixed"
-      ? moneyBR(product.base_price)
-      : selectedVar
-      ? moneyBR(selectedVar.price)
-      : vars.length
-      ? `A partir de ${moneyBR(Math.min(...vars.map((v) => v.price)))}`
-      : "Preço variável";
+    getPriceType(product) === "fixed"
+      ? moneyBR(fixedPrice)
+      : selectedVar && varPrice(selectedVar) != null
+        ? moneyBR(varPrice(selectedVar) as number)
+        : variableMin != null
+          ? `A partir de ${moneyBR(variableMin)}`
+          : "Preço variável";
 
   useEffect(() => {
     const v = videoRef.current;
@@ -405,7 +402,7 @@ function ProductModal({
 
     const p = v.play();
     if (p && typeof (p as any).catch === "function") (p as any).catch(() => {});
-  }, [product?.id, product?.video_url]);
+  }, [(product as any)?.id, (product as any)?.video_url]);
 
   function handleClose() {
     if (closingRef.current) return;
@@ -417,9 +414,7 @@ function ProductModal({
     if (card) card.style.animation = "fyModalOut 200ms ease-in forwards";
     if (backdrop) backdrop.style.animation = "fyBackdropOut 200ms ease-in forwards";
 
-    setTimeout(() => {
-      onClose();
-    }, 180);
+    setTimeout(() => onClose(), 180);
   }
 
   const startRef = useRef<{ x: number; y: number } | null>(null);
@@ -444,6 +439,7 @@ function ProductModal({
       handleClose();
       return;
     }
+
     if (ax > TH_X && ax > ay) {
       if (dx < 0) onChangeIndex(Math.min(list.length - 1, index + 1));
       else onChangeIndex(Math.max(0, index - 1));
@@ -468,15 +464,10 @@ function ProductModal({
     end(t.clientX, t.clientY);
   }
 
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") handleClose();
-      if (e.key === "ArrowLeft") onChangeIndex(Math.max(0, index - 1));
-      if (e.key === "ArrowRight") onChangeIndex(Math.min(list.length - 1, index + 1));
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [index, list.length, onChangeIndex]);
+  const name = getName(product);
+  const desc = getDesc(product);
+  const videoUrl = ((product as any).video_url ?? null) as string | null;
+  const thumb = ((product as any).thumbnail_url ?? (product as any).image_url ?? null) as string | null;
 
   return (
     <div
@@ -539,48 +530,28 @@ function ProductModal({
         </button>
 
         <div style={{ position: "absolute", inset: 0, background: "#000" }}>
-          {product.video_url ? (
+          {videoUrl ? (
             <video
-              key={product.video_url}
+              key={videoUrl}
               ref={videoRef}
-              src={product.video_url}
+              src={videoUrl}
               autoPlay
               loop
               muted
               playsInline
               preload="metadata"
               controls={false}
-              poster={product.thumbnail_url || undefined}
-              style={{
-                position: "absolute",
-                inset: 0,
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-              }}
+              poster={thumb || undefined}
+              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
             />
-          ) : product.thumbnail_url ? (
+          ) : thumb ? (
             <img
-              src={product.thumbnail_url}
-              alt={product.name}
-              style={{
-                position: "absolute",
-                inset: 0,
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-              }}
+              src={thumb}
+              alt={name}
+              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
             />
           ) : (
-            <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                display: "grid",
-                placeItems: "center",
-                opacity: 0.65,
-              }}
-            >
+            <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", opacity: 0.65 }}>
               Sem mídia
             </div>
           )}
@@ -595,24 +566,17 @@ function ProductModal({
           />
 
           <div style={{ position: "absolute", left: 18, right: 18, bottom: 18, textAlign: "center" }}>
-            <div style={{ fontWeight: 950, fontSize: 20 }}>{product.name}</div>
+            <div style={{ fontWeight: 950, fontSize: 20 }}>{name}</div>
 
-            {!!product.description && (
-              <div style={{ marginTop: 8, opacity: 0.9, fontSize: 13 }}>
-                {product.description}
-              </div>
-            )}
+            {!!desc && <div style={{ marginTop: 8, opacity: 0.9, fontSize: 13 }}>{desc}</div>}
 
             <div style={{ marginTop: 10, fontSize: 20, fontWeight: 950 }}>{displayPrice}</div>
 
-            <div style={{ marginTop: 10, opacity: 0.75, fontSize: 12 }}>
-              swipe ←/→ para trocar • swipe ↑/↓ para fechar • toque fora para fechar
-            </div>
-
-            {product.price_type === "variable" && vars.length > 0 && (
+            {getPriceType(product) === "variable" && vars.length > 0 && (
               <div style={{ marginTop: 10, display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
-                {vars.map((v) => {
+                {vars.map((v: any) => {
                   const active = v.id === selectedVarId;
+                  const p = varPrice(v);
                   return (
                     <button
                       key={v.id}
@@ -634,7 +598,7 @@ function ProductModal({
                       }}
                     >
                       <span>{v.name}</span>
-                      <span style={{ opacity: 0.85 }}>{moneyBR(v.price)}</span>
+                      <span style={{ opacity: 0.85 }}>{p != null ? moneyBR(p) : "—"}</span>
                     </button>
                   );
                 })}
@@ -643,13 +607,6 @@ function ProductModal({
           </div>
         </div>
       </div>
-
-      <style>{`
-        @keyframes fyModalIn{0%{transform:scale(.92);opacity:0;}100%{transform:scale(1);opacity:1;}}
-        @keyframes fyModalOut{0%{transform:scale(1);opacity:1;}100%{transform:scale(.92);opacity:0;}}
-        @keyframes fyBackdropIn{0%{opacity:0;}100%{opacity:1;}}
-        @keyframes fyBackdropOut{0%{opacity:1;}100%{opacity:0;}}
-      `}</style>
     </div>
   );
 }
