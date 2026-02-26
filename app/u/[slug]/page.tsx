@@ -2,33 +2,21 @@
 // ACTION: REPLACE ENTIRE FILE
 
 import MenuClient from "./MenuClient";
-import type {
-  CategoryWithProducts,
-  Product,
-  ProductVariation,
-  Unit,
-} from "./menuTypes";
+import type { CategoryWithProducts, Product, ProductVariation, Unit } from "./menuTypes";
 import { normalizePublicSlug, slugify, toNumberOrNull } from "./menuTypes";
 import { createClient } from "@/lib/supabase/server";
 
 export const revalidate = 0;
 
-export default async function Page({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
-  const { slug } = await params;
-  const publicSlug = normalizePublicSlug(slug);
+export default async function Page({ params }: { params: { slug: string } }) {
+  const publicSlug = normalizePublicSlug(params.slug);
 
   const supabase = await createClient();
 
   // 1) UNIT
   const { data: unitData, error: unitErr } = await supabase
     .from("units")
-    .select(
-      "id, restaurant_id, name, slug, city, neighborhood, whatsapp, instagram, maps_url, logo_url"
-    )
+    .select("id, restaurant_id, name, slug, city, neighborhood, whatsapp, instagram, maps_url, logo_url")
     .eq("slug", publicSlug)
     .maybeSingle();
 
@@ -104,9 +92,7 @@ export default async function Page({
   // 3) PRODUCTS (sem is_active no banco)
   const { data: productsData, error: prodErr } = await supabase
     .from("products")
-    .select(
-      "id, category_id, name, description, price_type, base_price, thumbnail_url, video_url, order_index"
-    )
+    .select("id, category_id, name, description, price_type, base_price, thumbnail_url, video_url, order_index")
     .in("category_id", Array.from(validCategoryIds))
     .order("order_index", { ascending: true, nullsFirst: false });
 
@@ -154,7 +140,7 @@ export default async function Page({
     variationsByProduct.set(v.product_id, list);
   }
 
-  // 5) PRODUCTS mapped
+  // 5) PRODUCTS mapped (base_price -> price)
   const products: Product[] = (productsData ?? [])
     .filter((p: any) => validCategoryIds.has(p.category_id))
     .map((p: any) => ({
@@ -162,10 +148,8 @@ export default async function Page({
       category_id: p.category_id,
       name: (p.name ?? "").toString(),
       description: p.description ?? null,
-      price_type: (p.price_type === "variable" ? "variable" : "fixed") as
-        | "fixed"
-        | "variable",
-      base_price: toNumberOrNull(p.base_price),
+      price_type: p.price_type === "variable" ? "variable" : "fixed",
+      price: toNumberOrNull(p.base_price),
       thumbnail_url: p.thumbnail_url ?? null,
       video_url: p.video_url ?? null,
       order_index: typeof p.order_index === "number" ? p.order_index : null,
@@ -185,5 +169,5 @@ export default async function Page({
     products: productsByCategory.get(c.id) ?? [],
   }));
 
-  return <MenuClient unit={unit} categories={payloadCategories} />;
+  return <MenuClient categories={payloadCategories} />;
 }
