@@ -1,20 +1,23 @@
 // FILE: /app/u/[slug]/page.tsx
 // ACTION: REPLACE ENTIRE FILE
 
-import type { Category, MenuPayload, Product, ProductVariation, Unit } from "./menuTypes";
-import { normalizePublicSlug, slugify } from "./menuTypes";
 import MenuClient from "./MenuClient";
+import type {
+  CategoryWithProducts,
+  Product,
+  ProductVariation,
+  Unit,
+} from "./menuTypes";
+import { normalizePublicSlug, slugify, toNumberOrNull } from "./menuTypes";
 import { createClient } from "@/lib/supabase/server";
 
 export const revalidate = 0;
 
-function toNumberOrNull(value: unknown): number | null {
-  if (value === null || value === undefined) return null;
-  const n = typeof value === "number" ? value : Number(value);
-  return Number.isFinite(n) ? n : null;
-}
-
-export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
   const { slug } = await params;
   const publicSlug = normalizePublicSlug(slug);
 
@@ -66,7 +69,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
     logo_url: unitData.logo_url ?? null,
   };
 
-  // 2) CATEGORIES (sem slug/type no banco)
+  // 2) CATEGORIES
   const { data: categoriesData, error: catErr } = await supabase
     .from("categories")
     .select("id, unit_id, name, order_index")
@@ -84,24 +87,26 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
     );
   }
 
-  const categories: Category[] = (categoriesData ?? []).map((c: any, idx: number) => {
+  const categories = (categoriesData ?? []).map((c: any, idx: number) => {
     const name = (c?.name ?? "").toString();
     return {
       id: c.id,
       unit_id: c.unit_id,
       name,
+      order_index: typeof c.order_index === "number" ? c.order_index : idx,
       slug: slugify(name || `categoria-${idx + 1}`),
-      type: null, // não existe no banco
-      sort_order: typeof c.order_index === "number" ? c.order_index : idx,
+      type: null as string | null,
     };
   });
 
   const validCategoryIds = new Set(categories.map((c) => c.id));
 
-  // 3) PRODUCTS (⚠️ removido is_active do select)
+  // 3) PRODUCTS (sem is_active no banco)
   const { data: productsData, error: prodErr } = await supabase
     .from("products")
-    .select("id, name, category_id, description, base_price, thumbnail_url, video_url, order_index")
+    .select(
+      "id, category_id, name, description, price_type, base_price, thumbnail_url, video_url, order_index"
+    )
     .in("category_id", Array.from(validCategoryIds))
     .order("order_index", { ascending: true, nullsFirst: false });
 
@@ -144,29 +149,41 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
       product_id: v.product_id,
       name: (v.name ?? "").toString(),
       price: toNumberOrNull(v.price),
-      sort_order: typeof v.order_index === "number" ? v.order_index : 0,
+      order_index: typeof v.order_index === "number" ? v.order_index : null,
     });
     variationsByProduct.set(v.product_id, list);
   }
 
-  // 5) MAPPER FINAL
+  // 5) PRODUCTS mapped
   const products: Product[] = (productsData ?? [])
     .filter((p: any) => validCategoryIds.has(p.category_id))
-    .map((p: any, idx: number) => ({
+    .map((p: any) => ({
       id: p.id,
       category_id: p.category_id,
-      unit_id: unit.id,
       name: (p.name ?? "").toString(),
       description: p.description ?? null,
-      price: toNumberOrNull(p.base_price),
-      image_url: p.thumbnail_url ?? null,
+      price_type: (p.price_type === "variable" ? "variable" : "fixed") as
+        | "fixed"
+        | "variable",
+      base_price: toNumberOrNull(p.base_price),
+      thumbnail_url: p.thumbnail_url ?? null,
       video_url: p.video_url ?? null,
-      is_active: true, // ✅ sem coluna no banco, ativo por padrão
-      sort_order: typeof p.order_index === "number" ? p.order_index : idx,
+      order_index: typeof p.order_index === "number" ? p.order_index : null,
       variations: variationsByProduct.get(p.id) ?? [],
     }));
 
-  const payload: MenuPayload = { unit, categories, products };
+  // 6) Group: CategoryWithProducts[]
+  const productsByCategory = new Map<string, Product[]>();
+  for (const cat of categories) productsByCategory.set(cat.id, []);
+  for (const p of products) {
+    const arr = productsByCategory.get(p.category_id);
+    if (arr) arr.push(p);
+  }
 
-  return <MenuClient unit={payload.unit} categories={payload.categories} products={payload.products} />;
+  const payloadCategories: CategoryWithProducts[] = categories.map((c) => ({
+    ...c,
+    products: productsByCategory.get(c.id) ?? [],
+  }));
+
+  return <MenuClient unit={unit} categories={payloadCategories} />;
 }

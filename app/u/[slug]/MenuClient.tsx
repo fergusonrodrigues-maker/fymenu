@@ -4,20 +4,22 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import type { CategoryWithProducts, Product } from "./menuTypes";
+import type { CategoryWithProducts, Product, Unit } from "./menuTypes";
 import CategoryPillsTop from "./CategoryPillsTop";
 import FeaturedCarousel from "./FeaturedCarousel";
 import CategoryCarousel from "./CategoryCarousel";
 
 type Props = {
+  unit: Unit;
   categories: CategoryWithProducts[];
 };
 
-function moneyBR(v: number) {
-  return `R$ ${v.toFixed(2).replace(".", ",")}`;
+function moneyBR(v: number | null) {
+  if (v == null || Number.isNaN(v)) return "";
+  return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-export default function MenuClient({ categories }: Props) {
+export default function MenuClient({ unit, categories }: Props) {
   const orderedCategories = useMemo(() => {
     const arr = categories ?? [];
     return [...arr].sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0));
@@ -27,18 +29,15 @@ export default function MenuClient({ categories }: Props) {
     orderedCategories[0]?.id ?? null
   );
 
-  // modal board
   const [modal, setModal] = useState<null | { list: Product[]; index: number }>(null);
 
-  // mantém activeCategoryId válido
   useEffect(() => {
     if (!activeCategoryId && orderedCategories[0]?.id) setActiveCategoryId(orderedCategories[0].id);
   }, [activeCategoryId, orderedCategories]);
 
-  // seleção pelo topo (scroll vertical ainda é “padrão” — se você já tem anchors, plugamos depois)
   const onSelectCategory = (categoryId: string) => {
     setActiveCategoryId(categoryId);
-    // Se você tiver IDs/anchors por categoria, amanhã plugamos scroll suave aqui.
+    // amanhã a gente pluga scroll suave por anchor aqui (e centraliza o pill 100%)
   };
 
   // categoria 1 = destaque
@@ -47,20 +46,20 @@ export default function MenuClient({ categories }: Props) {
 
   return (
     <div style={{ width: "100%", minHeight: "100vh", background: "#000" }}>
-      {/* Topo pills */}
       <CategoryPillsTop
+        unit={unit}
         categories={orderedCategories}
         activeCategoryId={activeCategoryId}
         onSelect={onSelectCategory}
       />
 
       <div style={{ paddingBottom: 24 }}>
-        {/* Destaque (sem texto "Destaque" fixo) */}
+        {/* Destaque */}
         {featuredCategory ? (
           <div style={{ paddingTop: 8 }}>
             <FeaturedCarousel
               items={featuredCategory.products}
-              onOpen={(p, idx) => setModal({ list: featuredCategory.products, index: idx })}
+              onOpen={(_, idx) => setModal({ list: featuredCategory.products, index: idx })}
             />
           </div>
         ) : null}
@@ -68,7 +67,7 @@ export default function MenuClient({ categories }: Props) {
         {/* Demais categorias */}
         {otherCategories.map((cat) => (
           <div key={cat.id} style={{ paddingTop: 10 }}>
-            {/* pill por categoria dentro do feed (você pode remover depois) */}
+            {/* badge central (se quiser remover depois, é aqui) */}
             <div style={{ display: "flex", justifyContent: "center", padding: "6px 0 0" }}>
               <div
                 style={{
@@ -87,13 +86,12 @@ export default function MenuClient({ categories }: Props) {
             <CategoryCarousel
               items={cat.products}
               compact={true}
-              onOpen={(p, idx) => setModal({ list: cat.products, index: idx })}
+              onOpen={(_, idx) => setModal({ list: cat.products, index: idx })}
             />
           </div>
         ))}
       </div>
 
-      {/* MODAL / BOARD */}
       {modal ? (
         <ProductBoardModal
           list={modal.list}
@@ -118,7 +116,6 @@ function ProductBoardModal({
   onIndexChange: (nextIndex: number) => void;
 }) {
   const product = list[index];
-
   const [videoReady, setVideoReady] = useState(false);
 
   useEffect(() => {
@@ -129,6 +126,11 @@ function ProductBoardModal({
 
   const video = product.video_url ?? null;
   const thumb = product.thumbnail_url ?? null;
+
+  const displayPrice =
+    product.price_type === "variable"
+      ? "Preço variável"
+      : moneyBR(product.base_price);
 
   return (
     <div
@@ -159,7 +161,7 @@ function ProductBoardModal({
           boxShadow: "0 30px 80px rgba(0,0,0,0.55)",
         }}
       >
-        {/* contador (volta o 2/10) */}
+        {/* contador */}
         <div
           style={{
             position: "absolute",
@@ -216,8 +218,10 @@ function ProductBoardModal({
           <video
             src={video}
             autoPlay
+            loop
             muted
             playsInline
+            controls={false}
             style={{
               position: "absolute",
               inset: 0,
@@ -266,16 +270,15 @@ function ProductBoardModal({
             </div>
           ) : null}
 
-          <div style={{ color: "#fff", fontWeight: 950, fontSize: 26 }}>
-            {product.price_type === "variable"
-              ? "Preço variável"
-              : product.price != null
-              ? moneyBR(Number(product.price))
-              : ""}
+          <div style={{ color: "#fff", fontWeight: 950, fontSize: 26 }}>{displayPrice}</div>
+
+          {/* dica (voltou) */}
+          <div style={{ fontSize: 12, fontWeight: 800, opacity: 0.7 }}>
+            swipe ←/→ para trocar • toque fora para fechar
           </div>
         </div>
 
-        {/* navegação (simples) */}
+        {/* navegação */}
         <div
           style={{
             position: "absolute",
@@ -301,7 +304,7 @@ function ProductBoardModal({
               cursor: "pointer",
             }}
           >
-            ◀
+            ◀️
           </button>
 
           <button
@@ -317,7 +320,7 @@ function ProductBoardModal({
               cursor: "pointer",
             }}
           >
-            ▶
+            ▶️
           </button>
         </div>
       </div>

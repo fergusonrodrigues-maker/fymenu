@@ -3,213 +3,243 @@
 
 "use client";
 
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import type { Product } from "./menuTypes";
 
-type Props = {
+export default function CategoryCarousel({
+  items,
+  compact,
+  onOpen,
+}: {
   items: Product[];
-  compact: boolean; // <- obrigatório (resolve seu erro)
+  compact: boolean;
   onOpen: (p: Product, originalIndex: number) => void;
-
-  // Destaque (quando true, escala 30%)
-  isFeatured?: boolean;
-};
-
-function clamp(n: number, min: number, max: number) {
-  return Math.max(min, Math.min(max, n));
-}
-
-export default function CategoryCarousel({ items, compact, onOpen, isFeatured }: Props) {
+}) {
   const scrollerRef = useRef<HTMLDivElement | null>(null);
-  const cardRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const rafRef = useRef<number | null>(null);
 
   const list = useMemo(() => items ?? [], [items]);
 
-  // --- tamanhos (9:16 sempre)
-  // base: hero 9:16 e cards 9:16
-  // destaque: +30% (hero + cards)
-  const scale = isFeatured ? 1.3 : 1;
+  const [heroIndex, setHeroIndex] = useState(0);
 
-  const heroWidth = Math.round((compact ? 220 : 260) * scale);
-  const heroHeight = Math.round((heroWidth * 16) / 9); // 9:16
-  const sideWidth = Math.round((compact ? 160 : 190) * scale);
-  const sideHeight = Math.round((sideWidth * 16) / 9);
-
-  // snap + “não ficar torto”
+  // começa no card 2 como HERO (index 1), mas sem travar depois.
   useEffect(() => {
-    const root = scrollerRef.current;
-    if (!root) return;
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+    if (list.length < 2) return;
 
-    let t: any = null;
+    // esperar layout
+    const t = setTimeout(() => {
+      const el = cardRefs.current[1];
+      if (!el) return;
+      el.scrollIntoView({ behavior: "instant" as any, inline: "center", block: "nearest" });
+      setHeroIndex(1);
+    }, 60);
 
-    const onEnd = () => {
-      if (t) clearTimeout(t);
-      t = setTimeout(() => {
-        const r = root.getBoundingClientRect();
-        const centerX = r.left + r.width / 2;
+    return () => clearTimeout(t);
+  }, [list.length]);
 
-        let bestIdx = 0;
-        let bestDist = Number.POSITIVE_INFINITY;
+  function computeHero() {
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
 
-        cardRefs.current.forEach((el, idx) => {
-          if (!el) return;
-          const b = el.getBoundingClientRect();
-          const cx = b.left + b.width / 2;
-          const d = Math.abs(cx - centerX);
-          if (d < bestDist) {
-            bestDist = d;
-            bestIdx = idx;
-          }
-        });
+    const sr = scroller.getBoundingClientRect();
+    const center = sr.left + sr.width / 2;
 
-        const el = cardRefs.current[bestIdx];
-        if (el) el.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
-      }, 80);
-    };
+    let best = 0;
+    let bestDist = Infinity;
 
-    root.addEventListener("touchend", onEnd, { passive: true });
-    root.addEventListener("mouseup", onEnd);
+    for (let i = 0; i < list.length; i++) {
+      const el = cardRefs.current[i];
+      if (!el) continue;
+      const r = el.getBoundingClientRect();
+      const c = r.left + r.width / 2;
+      const d = Math.abs(c - center);
+      if (d < bestDist) {
+        bestDist = d;
+        best = i;
+      }
+    }
 
-    return () => {
-      root.removeEventListener("touchend", onEnd as any);
-      root.removeEventListener("mouseup", onEnd as any);
-      if (t) clearTimeout(t);
-    };
-  }, []);
+    setHeroIndex(best);
+  }
+
+  function onScroll() {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    rafRef.current = requestAnimationFrame(computeHero);
+  }
+
+  useEffect(() => {
+    computeHero();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [list.length]);
+
+  // sizing
+  const baseWidth = compact ? 170 : 220;
+  const heroScale = compact ? 1.14 : 1.22;
 
   return (
-    <div style={{ width: "100%", overflow: "visible" }}>
+    <div style={{ width: "100%", paddingTop: 10, paddingBottom: 8 }}>
       <div
         ref={scrollerRef}
+        onScroll={onScroll}
         style={{
           display: "flex",
-          gap: 14,
-          padding: "12px 14px 18px",
+          gap: 12,
           overflowX: "auto",
-          overflowY: "visible", // <- evita cortar o hero
+          overflowY: "visible",
+          padding: "10px 14px 18px",
           WebkitOverflowScrolling: "touch",
-
           scrollSnapType: "x mandatory",
-          scrollPaddingLeft: "50%",
-          scrollPaddingRight: "50%",
-
-          // sem “travamento torto”
-          overscrollBehaviorX: "contain",
+          touchAction: "pan-y pan-x",
+          scrollbarWidth: "none",
         }}
       >
         {list.map((p, idx) => {
-          // por padrão: card 2 como hero (idx 1)
-          // (você pode mudar depois com intro/fim)
-          const heroIndex = 1;
           const isHero = idx === heroIndex;
 
-          const w = isHero ? heroWidth : sideWidth;
-          const h = isHero ? heroHeight : sideHeight;
-
-          const thumb = p.thumbnail_url ?? null;
-
           return (
-            <button
+            <div
               key={p.id}
               ref={(el) => {
                 cardRefs.current[idx] = el;
               }}
-              onClick={() => onOpen(p, idx)}
               style={{
                 flex: "0 0 auto",
-                width: w,
-                height: h,
-                borderRadius: 28,
-                border: "1px solid rgba(255,255,255,0.10)",
-                background: "rgba(255,255,255,0.03)",
-                padding: 0,
-                position: "relative",
-                overflow: "hidden",
-                cursor: "pointer",
-
+                width: baseWidth,
                 scrollSnapAlign: "center",
-
-                transform: "translateZ(0)",
-                transition: "transform 260ms cubic-bezier(.22,.9,.3,1)",
+                transform: isHero ? `scale(${heroScale})` : "scale(0.96)",
+                transformOrigin: "center center",
+                transition: "transform 220ms ease",
+                zIndex: isHero ? 5 : 1,
               }}
             >
-              {/* Thumb (sem misturar com vídeo aqui — só imagem no card) */}
-              {thumb ? (
-                <img
-                  src={thumb}
-                  alt={p.name}
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
-                    filter: "saturate(1.05)",
-                    opacity: 0.95,
-                  }}
-                />
-              ) : (
-                <div
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    background:
-                      "linear-gradient(140deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02))",
-                  }}
-                />
-              )}
-
-              {/* overlay */}
-              <div
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  background:
-                    "linear-gradient(to top, rgba(0,0,0,0.80) 0%, rgba(0,0,0,0.35) 42%, rgba(0,0,0,0.10) 72%, rgba(0,0,0,0.00) 100%)",
-                }}
-              />
-
-              {/* Texto */}
-              <div
-                style={{
-                  position: "absolute",
-                  left: 16,
-                  right: 16,
-                  bottom: 16,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 8,
-                  textAlign: "left",
-                }}
-              >
-                <div
-                  style={{
-                    color: "white",
-                    fontWeight: 900,
-                    fontSize: clamp(isHero ? 22 : 16, 14, 24),
-                    lineHeight: 1.05,
-                    textShadow: "0 10px 30px rgba(0,0,0,0.6)",
-                  }}
-                >
-                  {p.name}
-                </div>
-
-                <div
-                  style={{
-                    color: "rgba(255,255,255,0.90)",
-                    fontWeight: 900,
-                    fontSize: clamp(isHero ? 26 : 18, 16, 28),
-                    lineHeight: 1,
-                    textShadow: "0 10px 30px rgba(0,0,0,0.6)",
-                  }}
-                >
-                  {p.price_type === "variable" ? "Preço variável" : p.price != null ? `R$ ${Number(p.price).toFixed(2).replace(".", ",")}` : ""}
-                </div>
-              </div>
-            </button>
+              <MediaCard product={p} hero={isHero} onOpen={() => onOpen(p, idx)} />
+            </div>
           );
         })}
       </div>
     </div>
+  );
+}
+
+function MediaCard({
+  product,
+  hero,
+  onOpen,
+}: {
+  product: Product;
+  hero: boolean;
+  onOpen: () => void;
+}) {
+  const [videoReady, setVideoReady] = useState(false);
+  const readyTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    setVideoReady(false);
+    if (readyTimerRef.current) window.clearTimeout(readyTimerRef.current);
+    readyTimerRef.current = null;
+  }, [product.id, hero]);
+
+  const showVideo = hero && !!product.video_url;
+
+  return (
+    <button
+      onClick={onOpen}
+      style={{
+        width: "100%",
+        aspectRatio: "9 / 16",
+        borderRadius: 22,
+        border: "1px solid rgba(255,255,255,0.12)",
+        overflow: "hidden",
+        background: "rgba(255,255,255,0.06)",
+        position: "relative",
+        padding: 0,
+        cursor: "pointer",
+      }}
+    >
+      {/* thumb */}
+      {product.thumbnail_url ? (
+        <img
+          src={product.thumbnail_url}
+          alt={product.name}
+          style={{
+            position: "absolute",
+            inset: 0,
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            opacity: showVideo && videoReady ? 0 : 1,
+            transition: "opacity 240ms ease",
+          }}
+        />
+      ) : (
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            display: "grid",
+            placeItems: "center",
+            opacity: 0.55,
+            color: "#fff",
+            fontWeight: 800,
+            fontSize: 12,
+          }}
+        >
+          Sem thumb
+        </div>
+      )}
+
+      {/* vídeo só no HERO */}
+      {showVideo ? (
+        <video
+          src={product.video_url!}
+          autoPlay
+          loop
+          muted
+          playsInline
+          controls={false}
+          preload="metadata"
+          style={{
+            position: "absolute",
+            inset: 0,
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+          }}
+          onPlay={() => {
+            if (readyTimerRef.current) window.clearTimeout(readyTimerRef.current);
+            readyTimerRef.current = window.setTimeout(() => setVideoReady(true), 1000);
+          }}
+        />
+      ) : null}
+
+      {/* gradient */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background:
+            "linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.35) 45%, rgba(0,0,0,0.08) 76%, rgba(0,0,0,0.00) 100%)",
+        }}
+      />
+
+      {/* text */}
+      <div
+        style={{
+          position: "absolute",
+          left: 12,
+          right: 12,
+          bottom: 12,
+          textAlign: "left",
+          color: "#fff",
+        }}
+      >
+        <div style={{ fontWeight: 950, fontSize: 14, lineHeight: 1.1 }}>
+          {product.name}
+        </div>
+      </div>
+    </button>
   );
 }
