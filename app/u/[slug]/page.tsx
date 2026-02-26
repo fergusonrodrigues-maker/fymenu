@@ -169,5 +169,5 @@ export default async function Page({ params }: { params: { slug: string } }) {
     products: productsByCategory.get(c.id) ?? [],
   }));
 
-  return <MenuClient categories={payloadCategories} />;
+  return <MenuClient unit={unit} categories={payloadCategories} />;
 }

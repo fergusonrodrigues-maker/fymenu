@@ -19,7 +19,8 @@ export default function FeaturedCarousel({ items, onOpen }: Props) {
         items={items}
         compact={false}
         onOpen={(p, idx) => onOpen(p, idx)}
-      />
+
+/>
     </div>
   );
 }
