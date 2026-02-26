@@ -1,610 +1,324 @@
+// FILE: /app/u/[slug]/MenuClient.tsx
+// ACTION: REPLACE ENTIRE FILE
+
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import type {
-  Unit,
-  Product as DbProduct,
-  Category as DbCategory,
-  ProductVariation,
-} from "./menuTypes";
-
+import React, { useEffect, useMemo, useState } from "react";
+import type { CategoryWithProducts, Product } from "./menuTypes";
 import CategoryPillsTop from "./CategoryPillsTop";
 import FeaturedCarousel from "./FeaturedCarousel";
 import CategoryCarousel from "./CategoryCarousel";
-import BottomGlassBar from "./BottomGlassBar";
 
-type Category = DbCategory & {
-  type?: string | null;
-  slug?: string | null;
-};
-
-type Product = DbProduct & {
-  variations?: ProductVariation[];
+type Props = {
+  categories: CategoryWithProducts[];
 };
 
 function moneyBR(v: number) {
-  return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  return `R$ ${v.toFixed(2).replace(".", ",")}`;
 }
 
-type ModalState =
-  | {
-      list: Product[];
-      index: number;
-    }
-  | null;
+export default function MenuClient({ categories }: Props) {
+  const orderedCategories = useMemo(() => {
+    const arr = categories ?? [];
+    return [...arr].sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0));
+  }, [categories]);
 
-function normKey(v: string) {
-  return (v ?? "").trim().toLowerCase();
-}
-
-function findFeaturedCategory(categories: Category[]): Category | null {
-  if (!categories.length) return null;
-
-  const bySlugOrName = categories.find((c) => {
-    const n = normKey((c as any).name ?? "");
-    const s = normKey((c as any).slug ?? "");
-    return n === "destaque" || s === "destaque";
-  });
-
-  return bySlugOrName ?? categories[0] ?? null;
-}
-
-// ✅ Helpers blindados (seu DB pode ter nomes diferentes)
-function getPriceType(p: Product): "fixed" | "variable" {
-  const anyP = p as any;
-  const v = anyP?.price_type ?? anyP?.priceType ?? "fixed";
-  return v === "variable" ? "variable" : "fixed";
-}
-
-function getBasePrice(p: Product): number {
-  const anyP = p as any;
-  const v = anyP?.base_price ?? anyP?.basePrice ?? anyP?.price ?? 0;
-  const n = Number(v);
-  return Number.isFinite(n) ? n : 0;
-}
-
-function getName(p: Product): string {
-  return ((p as any)?.name ?? "Produto") as string;
-}
-
-function getDesc(p: Product): string | null {
-  return ((p as any)?.description ?? null) as string | null;
-}
-
-function varPrice(v: ProductVariation): number | null {
-  const n = Number((v as any)?.price);
-  return Number.isFinite(n) ? n : null;
-}
-
-export default function MenuClient({
-  unit,
-  categories,
-  products,
-}: {
-  unit: Unit;
-  categories: Category[];
-  products: Product[];
-}) {
-  const bg = "#0b0b0b";
-  const text = "#fff";
-  const bottomPad = 190;
-
-  const visibleCategories = useMemo(() => {
-    const has = new Set<string>();
-    for (const p of products) has.add((p as any).category_id);
-    return categories.filter((c) => has.has((c as any).id));
-  }, [categories, products]);
-
-  const grouped = useMemo(() => {
-    const map = new Map<string, Product[]>();
-    for (const c of visibleCategories) map.set((c as any).id, []);
-    for (const p of products) {
-      const cid = (p as any).category_id as string;
-      if (!map.has(cid)) continue;
-      map.get(cid)!.push(p);
-    }
-    return map;
-  }, [visibleCategories, products]);
-
-  const featuredCategory = useMemo(
-    () => findFeaturedCategory(visibleCategories),
-    [visibleCategories]
+  const [activeCategoryId, setActiveCategoryId] = useState<string | null>(
+    orderedCategories[0]?.id ?? null
   );
 
-  const featuredId = (featuredCategory as any)?.id ?? "";
+  // modal board
+  const [modal, setModal] = useState<null | { list: Product[]; index: number }>(null);
 
-  const featuredItems = useMemo(() => {
-    if (!featuredId) return [];
-    return grouped.get(featuredId) ?? [];
-  }, [grouped, featuredId]);
-
-  const otherCategories = useMemo(() => {
-    if (!featuredId) return visibleCategories;
-    return visibleCategories.filter((c) => (c as any).id !== featuredId);
-  }, [visibleCategories, featuredId]);
-
-  const pillsCategories = useMemo(() => {
-    const arr: { id: string; name: string }[] = [];
-    if (featuredCategory)
-      arr.push({ id: (featuredCategory as any).id, name: (featuredCategory as any).name });
-    for (const c of otherCategories)
-      arr.push({ id: (c as any).id, name: (c as any).name });
-    return arr;
-  }, [featuredCategory, otherCategories]);
-
-  const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  const [activeCategoryId, setActiveCategoryId] = useState<string>(
-    featuredId || (otherCategories[0] as any)?.id || ""
-  );
-
+  // mantém activeCategoryId válido
   useEffect(() => {
-    const next = featuredId || (otherCategories[0] as any)?.id || "";
-    if (next && next !== activeCategoryId) setActiveCategoryId(next);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [featuredId, otherCategories.length]);
+    if (!activeCategoryId && orderedCategories[0]?.id) setActiveCategoryId(orderedCategories[0].id);
+  }, [activeCategoryId, orderedCategories]);
 
-  const [modal, setModal] = useState<ModalState>(null);
+  // seleção pelo topo (scroll vertical ainda é “padrão” — se você já tem anchors, plugamos depois)
+  const onSelectCategory = (categoryId: string) => {
+    setActiveCategoryId(categoryId);
+    // Se você tiver IDs/anchors por categoria, amanhã plugamos scroll suave aqui.
+  };
 
-  useEffect(() => {
-    if (!modal) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, [modal]);
-
-  useEffect(() => {
-    const ids = [featuredId, ...otherCategories.map((c) => (c as any).id)].filter(Boolean);
-    const els = ids
-      .map((id) => sectionRefs.current[id])
-      .filter(Boolean) as HTMLDivElement[];
-
-    if (!els.length) return;
-
-    const io = new IntersectionObserver(
-      (entries) => {
-        const best = entries
-          .filter((e) => e.isIntersecting)
-          .sort((a, b) => (b.intersectionRatio ?? 0) - (a.intersectionRatio ?? 0))[0];
-
-        if (!best?.target) return;
-
-        const foundId = ids.find((id) => sectionRefs.current[id] === best.target);
-        if (foundId) setActiveCategoryId(foundId);
-      },
-      {
-        root: null,
-        threshold: [0.25, 0.4, 0.55],
-        rootMargin: "-140px 0px -55% 0px",
-      }
-    );
-
-    els.forEach((el) => io.observe(el));
-    return () => io.disconnect();
-  }, [featuredId, otherCategories]);
-
-  function scrollToCategory(id: string) {
-    const el = sectionRefs.current[id];
-    if (!el) return;
-    el.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
-
-  const css = [
-    ".fy-scroll-x::-webkit-scrollbar{width:0;height:0;display:none;}",
-    ".fy-scroll-x{scrollbar-width:none;-ms-overflow-style:none;}",
-    ".fy-no-highlight,button,a{-webkit-tap-highlight-color:transparent;}",
-    ".fy-no-highlight:focus,.fy-no-highlight:focus-visible,button:focus,button:focus-visible,a:focus,a:focus-visible{outline:none;}",
-    "@keyframes fyModalIn{0%{transform:scale(.92);opacity:0;}100%{transform:scale(1);opacity:1;}}",
-    "@keyframes fyModalOut{0%{transform:scale(1);opacity:1;}100%{transform:scale(.92);opacity:0;}}",
-    "@keyframes fyBackdropIn{0%{opacity:0;}100%{opacity:1;}}",
-    "@keyframes fyBackdropOut{0%{opacity:1;}100%{opacity:0;}}",
-  ].join("\n");
-
-  if (!visibleCategories.length) {
-    return (
-      <div style={{ minHeight: "100vh", background: bg, display: "flex", justifyContent: "center" }}>
-        <main
-          style={{
-            width: "100%",
-            maxWidth: 480,
-            minHeight: "100vh",
-            background: bg,
-            color: text,
-            display: "grid",
-            placeItems: "center",
-            padding: 20,
-            textAlign: "center",
-          }}
-        >
-          <div style={{ maxWidth: 420 }}>
-            <div style={{ fontSize: 18, fontWeight: 950 }}>Cardápio</div>
-            <div style={{ marginTop: 10, opacity: 0.7 }}>
-              Ainda não há itens publicados neste cardápio.
-            </div>
-          </div>
-        </main>
-      </div>
-    );
-  }
+  // categoria 1 = destaque
+  const featuredCategory = orderedCategories[0] ?? null;
+  const otherCategories = featuredCategory ? orderedCategories.slice(1) : orderedCategories;
 
   return (
-    <div style={{ minHeight: "100vh", background: bg, display: "flex", justifyContent: "center" }}>
-      <main
-        style={{
-          width: "100%",
-          maxWidth: 480,
-          minHeight: "100vh",
-          background: bg,
-          color: text,
-          paddingBottom: bottomPad,
-        }}
-      >
-        <CategoryPillsTop
-          categories={pillsCategories}
-          activeCategoryId={activeCategoryId}
-          onSelectCategory={(id) => {
-            setActiveCategoryId(id);
-            scrollToCategory(id);
-          }}
-        />
+    <div style={{ width: "100%", minHeight: "100vh", background: "#000" }}>
+      {/* Topo pills */}
+      <CategoryPillsTop
+        categories={orderedCategories}
+        activeCategoryId={activeCategoryId}
+        onSelect={onSelectCategory}
+      />
 
-        <div style={{ padding: 14, display: "flex", flexDirection: "column", gap: 22 }}>
-          {featuredCategory && (
-            <div
-              ref={(el) => {
-                sectionRefs.current[(featuredCategory as any).id] = el;
-              }}
-              style={{ scrollMarginTop: 140 }}
-            >
-              <FeaturedCarousel
-                items={featuredItems}
-                onOpen={(_, originalIndex) => setModal({ list: featuredItems, index: originalIndex })}
-              />
-            </div>
-          )}
+      <div style={{ paddingBottom: 24 }}>
+        {/* Destaque (sem texto "Destaque" fixo) */}
+        {featuredCategory ? (
+          <div style={{ paddingTop: 8 }}>
+            <FeaturedCarousel
+              items={featuredCategory.products}
+              onOpen={(p, idx) => setModal({ list: featuredCategory.products, index: idx })}
+            />
+          </div>
+        ) : null}
 
-          {otherCategories.map((cat) => {
-            const items = grouped.get((cat as any).id) ?? [];
-            if (!items.length) return null;
-
-            return (
+        {/* Demais categorias */}
+        {otherCategories.map((cat) => (
+          <div key={cat.id} style={{ paddingTop: 10 }}>
+            {/* pill por categoria dentro do feed (você pode remover depois) */}
+            <div style={{ display: "flex", justifyContent: "center", padding: "6px 0 0" }}>
               <div
-                key={(cat as any).id}
-                ref={(el) => {
-                  sectionRefs.current[(cat as any).id] = el;
+                style={{
+                  padding: "10px 18px",
+                  borderRadius: 999,
+                  background: "rgba(255,255,255,0.85)",
+                  color: "#111",
+                  fontWeight: 900,
+                  fontSize: 16,
                 }}
-                style={{ scrollMarginTop: 140, position: "relative", paddingTop: 8 }}
               >
-                <div
-                  style={{
-                    position: "absolute",
-                    left: 0,
-                    right: 0,
-                    top: -2,
-                    zIndex: 10,
-                    display: "flex",
-                    justifyContent: "center",
-                    pointerEvents: "none",
-                  }}
-                >
-                  <div
-                    style={{
-                      padding: "8px 14px",
-                      borderRadius: 999,
-                      background: "rgba(255,255,255,0.90)",
-                      color: "#0b0b0b",
-                      fontWeight: 950,
-                      fontSize: 13,
-                      boxShadow: "0 10px 26px rgba(0,0,0,0.35)",
-                    }}
-                  >
-                    {(cat as any).name}
-                  </div>
-                </div>
-
-                <CategoryCarousel
-                  items={items}
-                  compact={true}
-                  onOpen={(_, idx) => setModal({ list: items, index: idx })}
-                />
+                {cat.name}
               </div>
-            );
-          })}
-        </div>
+            </div>
 
-        <BottomGlassBar unit={unit} />
+            <CategoryCarousel
+              items={cat.products}
+              compact={true}
+              onOpen={(p, idx) => setModal({ list: cat.products, index: idx })}
+            />
+          </div>
+        ))}
+      </div>
 
-        {modal && (
-          <ProductModal
-            list={modal.list}
-            index={modal.index}
-            onChangeIndex={(idx) => setModal({ list: modal.list, index: idx })}
-            onClose={() => setModal(null)}
-          />
-        )}
-
-        <style>{css}</style>
-      </main>
+      {/* MODAL / BOARD */}
+      {modal ? (
+        <ProductBoardModal
+          list={modal.list}
+          index={modal.index}
+          onClose={() => setModal(null)}
+          onIndexChange={(i) => setModal((m) => (m ? { ...m, index: i } : m))}
+        />
+      ) : null}
     </div>
   );
 }
 
-function ProductModal({
+function ProductBoardModal({
   list,
   index,
-  onChangeIndex,
   onClose,
+  onIndexChange,
 }: {
   list: Product[];
   index: number;
-  onChangeIndex: (idx: number) => void;
   onClose: () => void;
+  onIndexChange: (nextIndex: number) => void;
 }) {
   const product = list[index];
-  const videoRef = useRef<HTMLVideoElement | null>(null);
 
-  const cardRef = useRef<HTMLDivElement | null>(null);
-  const backdropRef = useRef<HTMLDivElement | null>(null);
-  const closingRef = useRef(false);
-
-  const vars = useMemo(() => {
-    const arr = (((product as any).variations ?? []) as ProductVariation[]).slice();
-    arr.sort((a: any, b: any) => (a.order_index ?? 0) - (b.order_index ?? 0));
-    return arr;
-  }, [(product as any)?.id, (product as any)?.variations]);
-
-  const [selectedVarId, setSelectedVarId] = useState<string>("");
+  const [videoReady, setVideoReady] = useState(false);
 
   useEffect(() => {
-    if (getPriceType(product) !== "variable") {
-      setSelectedVarId("");
-      return;
-    }
-    const first = (vars[0] as any)?.id ?? "";
-    setSelectedVarId(first);
-  }, [(product as any)?.id, vars, product]);
+    setVideoReady(false);
+  }, [index]);
 
-  const selectedVar = useMemo(() => {
-    if (getPriceType(product) !== "variable") return null;
-    return (vars.find((v: any) => v.id === selectedVarId) as ProductVariation) ?? null;
-  }, [vars, selectedVarId, product]);
+  if (!product) return null;
 
-  const fixedPrice = getBasePrice(product);
-
-  const variableMin = useMemo(() => {
-    const prices = vars
-      .map((v) => varPrice(v))
-      .filter((p): p is number => typeof p === "number" && Number.isFinite(p));
-    if (!prices.length) return null;
-    return Math.min(...prices);
-  }, [vars]);
-
-  const displayPrice =
-    getPriceType(product) === "fixed"
-      ? moneyBR(fixedPrice)
-      : selectedVar && varPrice(selectedVar) != null
-        ? moneyBR(varPrice(selectedVar) as number)
-        : variableMin != null
-          ? `A partir de ${moneyBR(variableMin)}`
-          : "Preço variável";
-
-  useEffect(() => {
-    const v = videoRef.current;
-    if (!v) return;
-
-    v.muted = true;
-    v.playsInline = true;
-
-    try {
-      v.currentTime = 0;
-    } catch {}
-
-    const p = v.play();
-    if (p && typeof (p as any).catch === "function") (p as any).catch(() => {});
-  }, [(product as any)?.id, (product as any)?.video_url]);
-
-  function handleClose() {
-    if (closingRef.current) return;
-    closingRef.current = true;
-
-    const card = cardRef.current;
-    const backdrop = backdropRef.current;
-
-    if (card) card.style.animation = "fyModalOut 200ms ease-in forwards";
-    if (backdrop) backdrop.style.animation = "fyBackdropOut 200ms ease-in forwards";
-
-    setTimeout(() => onClose(), 180);
-  }
-
-  const startRef = useRef<{ x: number; y: number } | null>(null);
-  const TH_X = 70;
-  const TH_Y = 70;
-
-  function begin(x: number, y: number) {
-    startRef.current = { x, y };
-  }
-  function end(x: number, y: number) {
-    const s = startRef.current;
-    startRef.current = null;
-    if (!s) return;
-
-    const dx = x - s.x;
-    const dy = y - s.y;
-
-    const ax = Math.abs(dx);
-    const ay = Math.abs(dy);
-
-    if (ay > TH_Y && ay > ax) {
-      handleClose();
-      return;
-    }
-
-    if (ax > TH_X && ax > ay) {
-      if (dx < 0) onChangeIndex(Math.min(list.length - 1, index + 1));
-      else onChangeIndex(Math.max(0, index - 1));
-    }
-  }
-
-  function onPointerDownCapture(e: React.PointerEvent) {
-    begin(e.clientX, e.clientY);
-  }
-  function onPointerUpCapture(e: React.PointerEvent) {
-    end(e.clientX, e.clientY);
-  }
-
-  function onTouchStartCapture(e: React.TouchEvent) {
-    const t = e.touches[0];
-    if (!t) return;
-    begin(t.clientX, t.clientY);
-  }
-  function onTouchEndCapture(e: React.TouchEvent) {
-    const t = e.changedTouches[0];
-    if (!t) return;
-    end(t.clientX, t.clientY);
-  }
-
-  const name = getName(product);
-  const desc = getDesc(product);
-  const videoUrl = ((product as any).video_url ?? null) as string | null;
-  const thumb = ((product as any).thumbnail_url ?? (product as any).image_url ?? null) as string | null;
+  const video = product.video_url ?? null;
+  const thumb = product.thumbnail_url ?? null;
 
   return (
     <div
-      ref={backdropRef}
-      onClick={handleClose}
+      onClick={onClose}
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(0,0,0,0.55)",
-        backdropFilter: "blur(12px)",
-        WebkitBackdropFilter: "blur(12px)",
-        zIndex: 100,
-        display: "grid",
-        placeItems: "center",
-        padding: 16,
-        animation: "fyBackdropIn 220ms ease-out",
+        zIndex: 999,
+        background: "rgba(0,0,0,0.60)",
+        backdropFilter: "blur(10px)",
+        WebkitBackdropFilter: "blur(10px)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 14,
       }}
     >
       <div
-        ref={cardRef}
         onClick={(e) => e.stopPropagation()}
-        onPointerDownCapture={onPointerDownCapture}
-        onPointerUpCapture={onPointerUpCapture}
-        onTouchStartCapture={onTouchStartCapture}
-        onTouchEndCapture={onTouchEndCapture}
         style={{
-          width: "100%",
-          maxWidth: 380,
-          borderRadius: 28,
-          border: "1px solid rgba(255,255,255,0.12)",
-          background: "rgba(20,20,20,0.90)",
-          overflow: "hidden",
+          width: "min(520px, 92vw)",
           aspectRatio: "9 / 16",
+          borderRadius: 28,
+          border: "1px solid rgba(255,255,255,0.10)",
+          overflow: "hidden",
           position: "relative",
-          animation: "fyModalIn 260ms cubic-bezier(.22,.9,.3,1)",
-          transformOrigin: "center center",
-          touchAction: "pan-y pan-x",
+          background: "#000",
+          boxShadow: "0 30px 80px rgba(0,0,0,0.55)",
         }}
       >
+        {/* contador (volta o 2/10) */}
+        <div
+          style={{
+            position: "absolute",
+            top: 14,
+            left: 18,
+            zIndex: 5,
+            fontSize: 12,
+            fontWeight: 900,
+            opacity: 0.75,
+            color: "rgba(255,255,255,0.95)",
+          }}
+        >
+          {index + 1} / {list.length}
+        </div>
+
         <button
-          onClick={handleClose}
+          onClick={onClose}
           style={{
             position: "absolute",
             top: 12,
             right: 12,
-            padding: "8px 12px",
-            borderRadius: 999,
-            border: "1px solid rgba(255,255,255,0.14)",
-            background: "rgba(255,255,255,0.10)",
-            color: "#fff",
-            cursor: "pointer",
-            fontWeight: 900,
             zIndex: 5,
-            backdropFilter: "blur(10px)",
-            WebkitBackdropFilter: "blur(10px)",
-            outline: "none",
+            borderRadius: 999,
+            border: "1px solid rgba(255,255,255,0.15)",
+            background: "rgba(255,255,255,0.10)",
+            color: "rgba(255,255,255,0.92)",
+            padding: "10px 14px",
+            fontWeight: 900,
+            cursor: "pointer",
           }}
         >
           Fechar
         </button>
 
-        <div style={{ position: "absolute", inset: 0, background: "#000" }}>
-          {videoUrl ? (
-            <video
-              key={videoUrl}
-              ref={videoRef}
-              src={videoUrl}
-              autoPlay
-              loop
-              muted
-              playsInline
-              preload="metadata"
-              controls={false}
-              poster={thumb || undefined}
-              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
-            />
-          ) : thumb ? (
-            <img
-              src={thumb}
-              alt={name}
-              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
-            />
-          ) : (
-            <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", opacity: 0.65 }}>
-              Sem mídia
-            </div>
-          )}
-
-          <div
+        {/* Thumb (some 100% após 1s de vídeo) */}
+        {thumb ? (
+          <img
+            src={thumb}
+            alt={product.name}
             style={{
               position: "absolute",
               inset: 0,
-              background:
-                "linear-gradient(rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.00) 30%, rgba(0,0,0,0.70) 70%, rgba(0,0,0,0.92) 100%)",
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              opacity: video && videoReady ? 0 : 1,
+              transition: "opacity 240ms ease",
             }}
           />
+        ) : null}
 
-          <div style={{ position: "absolute", left: 18, right: 18, bottom: 18, textAlign: "center" }}>
-            <div style={{ fontWeight: 950, fontSize: 20 }}>{name}</div>
+        {/* vídeo */}
+        {video ? (
+          <video
+            src={video}
+            autoPlay
+            muted
+            playsInline
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              opacity: 1,
+            }}
+            onTimeUpdate={(e) => {
+              const v = e.currentTarget;
+              if (!videoReady && v.currentTime >= 1) setVideoReady(true);
+            }}
+          />
+        ) : null}
 
-            {!!desc && <div style={{ marginTop: 8, opacity: 0.9, fontSize: 13 }}>{desc}</div>}
+        {/* overlay */}
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            background:
+              "linear-gradient(to top, rgba(0,0,0,0.80) 0%, rgba(0,0,0,0.35) 46%, rgba(0,0,0,0.10) 72%, rgba(0,0,0,0.00) 100%)",
+          }}
+        />
 
-            <div style={{ marginTop: 10, fontSize: 20, fontWeight: 950 }}>{displayPrice}</div>
-
-            {getPriceType(product) === "variable" && vars.length > 0 && (
-              <div style={{ marginTop: 10, display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
-                {vars.map((v: any) => {
-                  const active = v.id === selectedVarId;
-                  const p = varPrice(v);
-                  return (
-                    <button
-                      key={v.id}
-                      onClick={() => setSelectedVarId(v.id)}
-                      style={{
-                        padding: "8px 12px",
-                        borderRadius: 999,
-                        border: `1px solid ${active ? "rgba(255,255,255,0.26)" : "rgba(255,255,255,0.12)"}`,
-                        background: active ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.06)",
-                        color: "#fff",
-                        cursor: "pointer",
-                        fontWeight: 900,
-                        fontSize: 12,
-                        display: "flex",
-                        gap: 8,
-                        alignItems: "center",
-                        opacity: active ? 1 : 0.86,
-                        outline: "none",
-                      }}
-                    >
-                      <span>{v.name}</span>
-                      <span style={{ opacity: 0.85 }}>{p != null ? moneyBR(p) : "—"}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+        {/* texto */}
+        <div
+          style={{
+            position: "absolute",
+            left: 18,
+            right: 18,
+            bottom: 18,
+            zIndex: 4,
+            display: "flex",
+            flexDirection: "column",
+            gap: 10,
+          }}
+        >
+          <div style={{ color: "#fff", fontWeight: 950, fontSize: 22, lineHeight: 1.1 }}>
+            {product.name}
           </div>
+
+          {product.description ? (
+            <div style={{ color: "rgba(255,255,255,0.80)", fontWeight: 700, fontSize: 13 }}>
+              {product.description}
+            </div>
+          ) : null}
+
+          <div style={{ color: "#fff", fontWeight: 950, fontSize: 26 }}>
+            {product.price_type === "variable"
+              ? "Preço variável"
+              : product.price != null
+              ? moneyBR(Number(product.price))
+              : ""}
+          </div>
+        </div>
+
+        {/* navegação (simples) */}
+        <div
+          style={{
+            position: "absolute",
+            left: 12,
+            right: 12,
+            bottom: 12,
+            zIndex: 6,
+            display: "flex",
+            justifyContent: "space-between",
+            pointerEvents: "none",
+          }}
+        >
+          <button
+            onClick={() => onIndexChange(Math.max(0, index - 1))}
+            style={{
+              pointerEvents: "auto",
+              borderRadius: 999,
+              border: "1px solid rgba(255,255,255,0.15)",
+              background: "rgba(0,0,0,0.25)",
+              color: "rgba(255,255,255,0.92)",
+              padding: "10px 14px",
+              fontWeight: 900,
+              cursor: "pointer",
+            }}
+          >
+            ◀
+          </button>
+
+          <button
+            onClick={() => onIndexChange(Math.min(list.length - 1, index + 1))}
+            style={{
+              pointerEvents: "auto",
+              borderRadius: 999,
+              border: "1px solid rgba(255,255,255,0.15)",
+              background: "rgba(0,0,0,0.25)",
+              color: "rgba(255,255,255,0.92)",
+              padding: "10px 14px",
+              fontWeight: 900,
+              cursor: "pointer",
+            }}
+          >
+            ▶
+          </button>
         </div>
       </div>
     </div>

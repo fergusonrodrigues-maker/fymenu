@@ -1,3 +1,6 @@
+// FILE: /app/u/[slug]/FeaturedCarousel.tsx
+// ACTION: REPLACE ENTIRE FILE
+
 "use client";
 
 import React from "react";
@@ -16,8 +19,7 @@ export default function FeaturedCarousel({
       <CategoryCarousel
         items={items}
         compact={false}
-        variant="featured"
-        initialHeroIndex={1}
+        isFeatured
         onOpen={(p, idx) => onOpen(p, idx)}
       />
     </div>
