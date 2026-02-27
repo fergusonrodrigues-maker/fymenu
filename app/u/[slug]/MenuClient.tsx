@@ -1,6 +1,3 @@
-// FILE: /app/u/[slug]/MenuClient.tsx
-// ACTION: REPLACE ENTIRE FILE
-
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
@@ -28,9 +25,8 @@ export default function MenuClient({ unit, categories }: Props) {
     orderedCategories[0]?.id ?? null
   );
 
-  const [modal, setModal] = useState<null | { list: Product[]; index: number; categoryName?: string }>(
-    null
-  );
+  // modal board
+  const [modal, setModal] = useState<null | { list: Product[]; index: number }>(null);
 
   useEffect(() => {
     if (!activeCategoryId && orderedCategories[0]?.id) setActiveCategoryId(orderedCategories[0].id);
@@ -38,95 +34,51 @@ export default function MenuClient({ unit, categories }: Props) {
 
   const onSelectCategory = (categoryId: string) => {
     setActiveCategoryId(categoryId);
-    // amanhã: plugar scroll suave/anchor por categoria
+    // amanhã: se tiver anchors por categoria, plugamos scroll suave aqui SEM mexer nas animações
   };
 
-  // categoria 1 = destaque (mantém como estava)
+  // 1ª categoria = destaque
   const featuredCategory = orderedCategories[0] ?? null;
   const otherCategories = featuredCategory ? orderedCategories.slice(1) : orderedCategories;
 
   return (
-    <div style={{ width: "100%", minHeight: "100vh", background: "#000" }}>
-      {/* Topo (título + pills) */}
-      <div style={{ paddingTop: 10 }}>
-        <div style={{ padding: "10px 16px 0" }}>
-          <div style={{ color: "#fff", fontWeight: 950, fontSize: 22, lineHeight: 1.1 }}>
-            {unit?.name ?? ""}
-          </div>
-          <div style={{ color: "rgba(255,255,255,0.70)", fontWeight: 750, fontSize: 13, marginTop: 4 }}>
-            {(unit?.city ?? "")}
-            {unit?.neighborhood ? ` • ${unit.neighborhood}` : ""}
-          </div>
-        </div>
-
-        <CategoryPillsTop
+    <div
+      style={{
+        width: "100%",
+        minHeight: "100vh",
+        background: "#000",
+        overflowX: "hidden",
+      }}
+    >
+      <CategoryPillsTop
   unit={unit}
   categories={orderedCategories}
   activeCategoryId={activeCategoryId}
   onSelect={onSelectCategory}
 />
-      </div>
-
-      <div style={{ paddingBottom: 90 }}>
-        {/* Destaque */}
+      {/* ✅ reduzimos gaps aqui */}
+      <div style={{ paddingBottom: 16 }}>
         {featuredCategory ? (
-          <div style={{ paddingTop: 8 }}>
+          <div style={{ paddingTop: 6 }}>
             <FeaturedCarousel
               items={featuredCategory.products}
-              onOpen={(_p, idx) =>
-                setModal({ list: featuredCategory.products, index: idx, categoryName: featuredCategory.name })
-              }
+              onOpen={(_, idx) => setModal({ list: featuredCategory.products, index: idx })}
             />
           </div>
         ) : null}
 
-        {/* Demais categorias */}
+        {/* ✅ SEM “pill” interna no meio do feed (era isso que criava as faixas pretas) */}
         {otherCategories.map((cat) => (
-          <div key={cat.id} style={{ paddingTop: 10 }}>
-            {/* ✅ REMOVIDO o “header/pill” que criava a faixa preta */}
-            {/* Agora o label vira OVERLAY dentro do container do carrossel */}
-            <div style={{ position: "relative" }}>
-              <div
-                style={{
-                  position: "absolute",
-                  top: 10,
-                  left: 0,
-                  right: 0,
-                  display: "flex",
-                  justifyContent: "center",
-                  zIndex: 3,
-                  pointerEvents: "none",
-                }}
-              >
-                <div
-                  style={{
-                    padding: "10px 18px",
-                    borderRadius: 999,
-                    background: "rgba(255,255,255,0.85)",
-                    color: "#111",
-                    fontWeight: 900,
-                    fontSize: 16,
-                    boxShadow: "0 10px 30px rgba(0,0,0,0.35)",
-                  }}
-                >
-                  {cat.name}
-                </div>
-              </div>
-
-              <CategoryCarousel
-                items={cat.products}
-                compact={true}
-                onOpen={(_p, idx) => setModal({ list: cat.products, index: idx, categoryName: cat.name })}
-              />
-            </div>
+          <div key={cat.id} style={{ paddingTop: 6 }}>
+            <CategoryCarousel
+              items={cat.products}
+              compact={true}
+              onOpen={(_, idx) => setModal({ list: cat.products, index: idx })}
+            />
           </div>
         ))}
       </div>
 
-      {/* ✅ GLASS BAR (voltou) */}
-      <GlassBar unit={unit} />
-
-      {/* MODAL / BOARD */}
       {modal ? (
         <ProductBoardModal
           list={modal.list}
@@ -135,100 +87,6 @@ export default function MenuClient({ unit, categories }: Props) {
           onIndexChange={(i) => setModal((m) => (m ? { ...m, index: i } : m))}
         />
       ) : null}
-    </div>
-  );
-}
-
-function GlassBar({ unit }: { unit: Unit }) {
-  const cityLine =
-    (unit?.city ?? "") + (unit?.neighborhood ? ` • ${unit.neighborhood}` : "");
-
-  const links = [
-    unit?.instagram ? { label: "Instagram", href: unit.instagram } : null,
-    unit?.maps_url ? { label: "Maps", href: unit.maps_url } : null,
-    unit?.whatsapp ? { label: "WhatsApp", href: unit.whatsapp } : null,
-  ].filter(Boolean) as { label: string; href: string }[];
-
-  return (
-    <div
-      style={{
-        position: "fixed",
-        left: 12,
-        right: 12,
-        bottom: 12,
-        zIndex: 50,
-        display: "flex",
-        flexDirection: "column",
-        gap: 8,
-        pointerEvents: "none",
-      }}
-    >
-      {/* barra pequena */}
-      <div
-        style={{
-          pointerEvents: "auto",
-          height: 34,
-          borderRadius: 999,
-          background: "rgba(0,0,0,0.35)",
-          border: "1px solid rgba(255,255,255,0.12)",
-          backdropFilter: "blur(14px)",
-          WebkitBackdropFilter: "blur(14px)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "0 14px",
-          color: "rgba(255,255,255,0.82)",
-          fontWeight: 800,
-          fontSize: 12,
-        }}
-      >
-        {cityLine}
-      </div>
-
-      {/* barra maior */}
-      <div
-        style={{
-          pointerEvents: "auto",
-          height: 54,
-          borderRadius: 18,
-          background: "rgba(0,0,0,0.42)",
-          border: "1px solid rgba(255,255,255,0.12)",
-          backdropFilter: "blur(16px)",
-          WebkitBackdropFilter: "blur(16px)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "0 14px",
-          gap: 10,
-        }}
-      >
-        <div style={{ color: "rgba(255,255,255,0.90)", fontWeight: 950, fontSize: 12 }}>
-          {unit?.name ?? ""}
-        </div>
-
-        <div style={{ display: "flex", gap: 8 }}>
-          {links.map((l) => (
-            <a
-              key={l.label}
-              href={l.href}
-              target="_blank"
-              rel="noreferrer"
-              style={{
-                color: "rgba(255,255,255,0.92)",
-                textDecoration: "none",
-                fontWeight: 900,
-                fontSize: 12,
-                padding: "10px 12px",
-                borderRadius: 999,
-                border: "1px solid rgba(255,255,255,0.12)",
-                background: "rgba(255,255,255,0.08)",
-              }}
-            >
-              {l.label}
-            </a>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
@@ -247,7 +105,7 @@ function ProductBoardModal({
   const product = list[index];
   const [videoReady, setVideoReady] = useState(false);
 
-  // ✅ swipe handlers
+  // swipe (sem setas)
   const startRef = useRef<{ x: number; y: number; t: number } | null>(null);
 
   useEffect(() => {
@@ -259,36 +117,40 @@ function ProductBoardModal({
   const video = product.video_url ?? null;
   const thumb = product.thumbnail_url ?? null;
 
-  const onPointerDown = (e: React.PointerEvent) => {
-    startRef.current = { x: e.clientX, y: e.clientY, t: Date.now() };
+  const goPrev = () => onIndexChange(Math.max(0, index - 1));
+  const goNext = () => onIndexChange(Math.min(list.length - 1, index + 1));
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0];
+    startRef.current = { x: t.clientX, y: t.clientY, t: Date.now() };
   };
 
-  const onPointerUp = (e: React.PointerEvent) => {
+  const onTouchEnd = (e: React.TouchEvent) => {
     const s = startRef.current;
-    startRef.current = null;
     if (!s) return;
 
-    const dx = e.clientX - s.x;
-    const dy = e.clientY - s.y;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - s.x;
+    const dy = t.clientY - s.y;
 
-    const adx = Math.abs(dx);
-    const ady = Math.abs(dy);
+    const ax = Math.abs(dx);
+    const ay = Math.abs(dy);
 
     // thresholds
-    const SWIPE_X = 40;
-    const SWIPE_Y = 60;
+    const H = 45; // lateral troca produto
+    const V = 55; // vertical fecha
 
-    // vertical swipe => fechar
-    if (ady > adx && ady >= SWIPE_Y) {
+    // decide eixo dominante
+    if (ay > ax && ay > V) {
+      // swipe vertical => fechar
       onClose();
       return;
     }
 
-    // horizontal swipe => trocar
-    if (adx > ady && adx >= SWIPE_X) {
-      if (dx < 0) onIndexChange(Math.min(list.length - 1, index + 1));
-      else onIndexChange(Math.max(0, index - 1));
-      return;
+    if (ax > ay && ax > H) {
+      // swipe horizontal => trocar produto
+      if (dx < 0) goNext();
+      else goPrev();
     }
   };
 
@@ -310,8 +172,8 @@ function ProductBoardModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        onPointerDown={onPointerDown}
-        onPointerUp={onPointerUp}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
         style={{
           width: "min(520px, 92vw)",
           aspectRatio: "9 / 16",
@@ -333,7 +195,7 @@ function ProductBoardModal({
             zIndex: 5,
             fontSize: 12,
             fontWeight: 900,
-            opacity: 0.75,
+            opacity: 0.8,
             color: "rgba(255,255,255,0.95)",
           }}
         >
@@ -359,7 +221,7 @@ function ProductBoardModal({
           Fechar
         </button>
 
-        {/* Thumb (some 100% após 1s de vídeo) */}
+        {/* Thumb: some 100% após ~1s de vídeo (sem “mescla”) */}
         {thumb ? (
           <img
             src={thumb}
@@ -371,12 +233,12 @@ function ProductBoardModal({
               height: "100%",
               objectFit: "cover",
               opacity: video && videoReady ? 0 : 1,
-              transition: "opacity 240ms ease",
+              visibility: video && videoReady ? "hidden" : "visible",
+              transition: "opacity 220ms ease",
             }}
           />
         ) : null}
 
-        {/* vídeo */}
         {video ? (
           <video
             src={video}
@@ -389,7 +251,6 @@ function ProductBoardModal({
               width: "100%",
               height: "100%",
               objectFit: "cover",
-              opacity: 1,
             }}
             onTimeUpdate={(e) => {
               const v = e.currentTarget;
@@ -432,14 +293,13 @@ function ProductBoardModal({
           ) : null}
 
           <div style={{ color: "#fff", fontWeight: 950, fontSize: 26 }}>
-            {product.price_type === "variable"
-              ? "Preço variável"
-              : product.price != null
-              ? moneyBR(Number(product.price))
-              : ""}
+           {product.price_type === "variable"
+  ? "Preço variável"
+  : product.price != null
+    ? moneyBR(Number(product.price))
+    : ""}
           </div>
-
-          {/* dica de navegação (sem setas) */}
+          {/* hint de gestos */}
           <div style={{ color: "rgba(255,255,255,0.65)", fontWeight: 800, fontSize: 12 }}>
             swipe ←/→ para trocar • swipe ↑/↓ para fechar • toque fora para fechar
           </div>
