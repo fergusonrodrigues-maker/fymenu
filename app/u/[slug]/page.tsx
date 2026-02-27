@@ -19,11 +19,14 @@ export default async function Page({
 
   const supabase = await createClient();
 
-  // 1) UNIT  const { data: unitData, error: unitErr } = await supabase
-    .from("units")
-    .select("id, restaurant_id, name, slug, city, neighborhood, whatsapp, instagram, maps_url, logo_url")
-    .eq("slug", publicSlug)
-    .maybeSingle();
+  // 1) UNIT
+const { data: unitData, error: unitErr } = await supabase
+  .from("units")
+  .select(
+    "id, restaurant_id, name, slug, city, neighborhood, whatsapp, instagram, maps_url, logo_url"
+  )
+  .eq("slug", publicSlug)
+  .maybeSingle();
 
   if (unitErr) {
     return (
