@@ -8,8 +8,14 @@ import { createClient } from "@/lib/supabase/server";
 
 export const revalidate = 0;
 
-export default async function Page({ params }: { params: { slug: string } }) {
-  const publicSlug = normalizePublicSlug(params.slug);
+export default async function Page({
+  params,
+}: {
+  params: { slug: string };
+}) {
+  const { slug } = params;
+
+  const publicSlug = normalizePublicSlug(slug);
 
   const supabase = await createClient();
 
