@@ -75,9 +75,6 @@ export default function MenuClient({ unit, categories }: Props) {
                 width: "100%",
                 display: "flex",
                 justifyContent: "center",
-                paddingTop: 18,
-                paddingBottom: 8,
-                position: "relative",
                 zIndex: 10,
               }}
             >
