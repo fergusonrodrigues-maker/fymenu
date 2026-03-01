@@ -76,6 +76,9 @@ export default function MenuClient({ unit, categories }: Props) {
                 display: "flex",
                 justifyContent: "center",
                 zIndex: 10,
+                paddingTop: 0,
+                paddingBottom: 0,
+                margin: 0,
               }}
             >
               <span
