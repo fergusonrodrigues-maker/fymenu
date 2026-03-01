@@ -18,6 +18,7 @@ export default function CategoryCarousel({
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
   const rafRef = useRef<number | null>(null);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
   const list = useMemo(() => items ?? [], [items]);
 
@@ -75,6 +76,26 @@ export default function CategoryCarousel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [list.length]);
 
+  // Listener com passive: false para poder chamar preventDefault no iOS Safari
+  useEffect(() => {
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+
+    function handleTouchMove(e: TouchEvent) {
+      const start = touchStartRef.current;
+      if (!start) return;
+      const t = e.touches[0];
+      const dx = Math.abs(t.clientX - start.x);
+      const dy = Math.abs(t.clientY - start.y);
+      if (dx > dy) {
+        e.preventDefault(); // horizontal dominante: bloqueia scroll da página
+      }
+    }
+
+    scroller.addEventListener("touchmove", handleTouchMove, { passive: false });
+    return () => scroller.removeEventListener("touchmove", handleTouchMove);
+  }, []);
+
   // sizing
   const baseWidth = compact ? 170 : 220;
   const heroScale = compact ? 1.14 : 1.22;
@@ -84,6 +105,10 @@ export default function CategoryCarousel({
       <div
         ref={scrollerRef}
         onScroll={onScroll}
+        onTouchStart={(e) => {
+          const t = e.touches[0];
+          touchStartRef.current = { x: t.clientX, y: t.clientY };
+        }}
         style={{
           display: "flex",
           gap: 12,
