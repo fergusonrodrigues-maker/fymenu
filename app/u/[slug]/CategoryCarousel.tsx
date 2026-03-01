@@ -18,7 +18,8 @@ export default function CategoryCarousel({
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
   const rafRef = useRef<number | null>(null);
-  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const touchStartRef = useRef<{ x: number; y: number; scrollLeft: number } | null>(null);
+  const gestureLockRef = useRef<"h" | "v" | null>(null);
 
   const list = useMemo(() => items ?? [], [items]);
 
@@ -76,25 +77,6 @@ export default function CategoryCarousel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [list.length]);
 
-  // Listener com passive: false para poder chamar preventDefault no iOS Safari
-  useEffect(() => {
-    const scroller = scrollerRef.current;
-    if (!scroller) return;
-
-    function handleTouchMove(e: TouchEvent) {
-      const start = touchStartRef.current;
-      if (!start) return;
-      const t = e.touches[0];
-      const dx = Math.abs(t.clientX - start.x);
-      const dy = Math.abs(t.clientY - start.y);
-      if (dx > dy) {
-        e.preventDefault(); // horizontal dominante: bloqueia scroll da página
-      }
-    }
-
-    scroller.addEventListener("touchmove", handleTouchMove, { passive: false });
-    return () => scroller.removeEventListener("touchmove", handleTouchMove);
-  }, []);
 
   // sizing
   const baseWidth = compact ? 170 : 220;
@@ -107,7 +89,34 @@ export default function CategoryCarousel({
         onScroll={onScroll}
         onTouchStart={(e) => {
           const t = e.touches[0];
-          touchStartRef.current = { x: t.clientX, y: t.clientY };
+          touchStartRef.current = {
+            x: t.clientX,
+            y: t.clientY,
+            scrollLeft: scrollerRef.current?.scrollLeft ?? 0,
+          };
+          gestureLockRef.current = null;
+        }}
+        onTouchMove={(e) => {
+          const start = touchStartRef.current;
+          const scroller = scrollerRef.current;
+          if (!start || !scroller) return;
+          const t = e.touches[0];
+          const dx = t.clientX - start.x;
+          const dy = t.clientY - start.y;
+          if (gestureLockRef.current === null) {
+            if (Math.abs(dx) > Math.abs(dy) + 5) {
+              gestureLockRef.current = "h";
+            } else if (Math.abs(dy) > Math.abs(dx) + 5) {
+              gestureLockRef.current = "v";
+            }
+          }
+          if (gestureLockRef.current === "h") {
+            scroller.scrollLeft = start.scrollLeft - dx;
+          }
+        }}
+        onTouchEnd={() => {
+          touchStartRef.current = null;
+          gestureLockRef.current = null;
         }}
         style={{
           display: "flex",
@@ -117,7 +126,7 @@ export default function CategoryCarousel({
           padding: "10px 14px 18px",
           WebkitOverflowScrolling: "touch",
           scrollSnapType: "x mandatory",
-          touchAction: "pan-y pan-x",
+          touchAction: "pan-y",
           scrollbarWidth: "none",
         }}
       >
