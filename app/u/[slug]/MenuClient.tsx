@@ -69,16 +69,21 @@ export default function MenuClient({ unit, categories }: Props) {
 
         {/* ✅ SEM “pill” interna no meio do feed (era isso que criava as faixas pretas) */}
         {otherCategories.map((cat) => (
-          <div key={cat.id} style={{ paddingTop: 6 }}>
+          <div key={cat.id} style={{ paddingTop: 6, position: "relative" }}>
             <div
               style={{
+                position: "absolute",
+                top: 10,
+                left: 0,
+                right: 0,
+                textAlign: "center",
                 fontSize: 13,
                 fontWeight: 800,
-                color: "rgba(255,255,255,0.55)",
-                letterSpacing: "0.04em",
+                color: "rgba(255,255,255,0.70)",
+                letterSpacing: "0.06em",
                 textTransform: "uppercase",
-                paddingLeft: 16,
-                paddingBottom: 6,
+                zIndex: 10,
+                pointerEvents: "none",
               }}
             >
               {cat.name}
