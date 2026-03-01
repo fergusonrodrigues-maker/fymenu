@@ -26,26 +26,28 @@ export default function CategoryCarousel({
   // heroIndex 1 = primeiro produto (após o card guia de início)
   const [heroIndex, setHeroIndex] = useState(1);
 
-  // scroll inicial via IntersectionObserver — só executa quando o carrossel entra na viewport
-  useEffect(() => {
+  function centralizeCard(index: number) {
     const scroller = scrollerRef.current;
-    if (!scroller) return;
+    const card = cardRefs.current[index];
+    if (!scroller || !card) return;
+    const scrollLeft = card.offsetLeft - scroller.offsetWidth / 2 + card.offsetWidth / 2;
+    scroller.scrollLeft = scrollLeft;
+  }
 
-    const observer = new IntersectionObserver((entries) => {
-      if (!entries[0].isIntersecting) return;
-      requestAnimationFrame(() => {
-        const s = scrollerRef.current;
-        const card = cardRefs.current[1];
-        if (!s || !card) return;
-        const scrollLeft = card.offsetLeft - s.offsetWidth / 2 + card.offsetWidth / 2;
-        s.scrollLeft = scrollLeft;
-        setHeroIndex(1);
-        observer.disconnect();
-      });
-    });
+  function centralizeCardSmooth(index: number) {
+    const scroller = scrollerRef.current;
+    const card = cardRefs.current[index];
+    if (!scroller || !card) return;
+    const scrollLeft = card.offsetLeft - scroller.offsetWidth / 2 + card.offsetWidth / 2;
+    scroller.scrollTo({ left: scrollLeft, behavior: "smooth" });
+  }
 
-    observer.observe(scroller);
-    return () => observer.disconnect();
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      centralizeCard(1);
+      setHeroIndex(1);
+    }, 200);
+    return () => clearTimeout(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -76,13 +78,9 @@ export default function CategoryCarousel({
     // bounce-back: se card guia virou hero, volta para o produto mais próximo
     if (bounceTimerRef.current) clearTimeout(bounceTimerRef.current);
     if (best === 0) {
-      bounceTimerRef.current = setTimeout(() => {
-        cardRefs.current[1]?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
-      }, 50);
+      bounceTimerRef.current = setTimeout(() => centralizeCardSmooth(1), 80);
     } else if (best === total - 1) {
-      bounceTimerRef.current = setTimeout(() => {
-        cardRefs.current[total - 2]?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
-      }, 50);
+      bounceTimerRef.current = setTimeout(() => centralizeCardSmooth(total - 2), 80);
     }
   }
 
