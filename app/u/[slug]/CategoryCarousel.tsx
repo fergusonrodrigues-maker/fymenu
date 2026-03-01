@@ -26,18 +26,26 @@ export default function CategoryCarousel({
   // heroIndex 1 = primeiro produto (após o card guia de início)
   const [heroIndex, setHeroIndex] = useState(1);
 
-  // posiciona no primeiro produto ao montar (executa uma vez)
+  // scroll inicial via IntersectionObserver — só executa quando o carrossel entra na viewport
   useEffect(() => {
-    const t = setTimeout(() => {
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+
+    const observer = new IntersectionObserver((entries) => {
+      if (!entries[0].isIntersecting) return;
       requestAnimationFrame(() => {
-        if (list.length < 1) return;
-        const el = cardRefs.current[1];
-        if (!el) return;
-        el.scrollIntoView({ behavior: "instant" as any, inline: "center", block: "nearest" });
+        const s = scrollerRef.current;
+        const card = cardRefs.current[1];
+        if (!s || !card) return;
+        const scrollLeft = card.offsetLeft - s.offsetWidth / 2 + card.offsetWidth / 2;
+        s.scrollLeft = scrollLeft;
         setHeroIndex(1);
+        observer.disconnect();
       });
-    }, 120);
-    return () => clearTimeout(t);
+    });
+
+    observer.observe(scroller);
+    return () => observer.disconnect();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
