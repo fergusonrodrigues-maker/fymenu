@@ -18,20 +18,17 @@ export default function CategoryCarousel({
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
   const rafRef = useRef<number | null>(null);
-  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
-  const dominantAxisRef = useRef<"horizontal" | "vertical" | null>(null);
 
   const list = useMemo(() => items ?? [], [items]);
 
   const [heroIndex, setHeroIndex] = useState(0);
 
-  // começa no card 2 como HERO (index 1), mas sem travar depois.
+  // começa no card 2 como HERO (index 1)
   useEffect(() => {
     const scroller = scrollerRef.current;
     if (!scroller) return;
     if (list.length < 2) return;
 
-    // esperar layout
     const t = setTimeout(() => {
       const el = cardRefs.current[1];
       if (!el) return;
@@ -77,66 +74,8 @@ export default function CategoryCarousel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [list.length]);
 
-  // Listener passive: false para poder chamar preventDefault no iOS Safari
-  useEffect(() => {
-    const scroller = scrollerRef.current;
-    if (!scroller) return;
-
-    function onTouchStart(e: TouchEvent) {
-      const t = e.touches[0];
-      touchStartRef.current = { x: t.clientX, y: t.clientY };
-      dominantAxisRef.current = null;
-    }
-
-    function onTouchMove(e: TouchEvent) {
-      const start = touchStartRef.current;
-      if (!start) return;
-      const t = e.touches[0];
-      const dx = Math.abs(t.clientX - start.x);
-      const dy = Math.abs(t.clientY - start.y);
-      if (dominantAxisRef.current === null) {
-        if (dx > dy + 8) dominantAxisRef.current = "horizontal";
-        else if (dy > dx + 8) dominantAxisRef.current = "vertical";
-      }
-      if (dominantAxisRef.current === "horizontal") {
-        e.preventDefault();
-      }
-    }
-
-    function onTouchEnd() {
-      touchStartRef.current = null;
-      dominantAxisRef.current = null;
-      // snap garantido: scrollIntoView no card mais próximo
-      requestAnimationFrame(() => {
-        const scroller = scrollerRef.current;
-        if (!scroller) return;
-        const sr = scroller.getBoundingClientRect();
-        const center = sr.left + sr.width / 2;
-        let best = 0;
-        let bestDist = Infinity;
-        cardRefs.current.forEach((el, i) => {
-          if (!el) return;
-          const r = el.getBoundingClientRect();
-          const d = Math.abs(r.left + r.width / 2 - center);
-          if (d < bestDist) { bestDist = d; best = i; }
-        });
-        cardRefs.current[best]?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
-      });
-    }
-
-    scroller.addEventListener("touchstart", onTouchStart, { passive: true });
-    scroller.addEventListener("touchmove", onTouchMove, { passive: false });
-    scroller.addEventListener("touchend", onTouchEnd, { passive: true });
-    return () => {
-      scroller.removeEventListener("touchstart", onTouchStart);
-      scroller.removeEventListener("touchmove", onTouchMove);
-      scroller.removeEventListener("touchend", onTouchEnd);
-    };
-  }, []);
-
   // sizing
   const baseWidth = compact ? 170 : 220;
-  const heroScale = compact ? 1.14 : 1.22;
 
   return (
     <div style={{ width: "100%" }}>
@@ -151,6 +90,7 @@ export default function CategoryCarousel({
           padding: "10px 14px 18px",
           WebkitOverflowScrolling: "touch",
           scrollSnapType: "x mandatory",
+          scrollBehavior: "smooth",
           touchAction: "pan-x pan-y",
           scrollbarWidth: "none",
         }}
@@ -168,9 +108,11 @@ export default function CategoryCarousel({
                 flex: "0 0 auto",
                 width: baseWidth,
                 scrollSnapAlign: "center",
-                transform: isHero ? `scale(${heroScale})` : "scale(0.96)",
+                transform: isHero ? "scale(1.13)" : "scale(0.92)",
                 transformOrigin: "center center",
-                transition: "transform 220ms ease",
+                transition: isHero
+                  ? "transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1)"
+                  : "transform 300ms ease",
                 zIndex: isHero ? 5 : 1,
               }}
             >
