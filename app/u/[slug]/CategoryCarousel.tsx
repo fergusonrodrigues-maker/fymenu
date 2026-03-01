@@ -26,16 +26,20 @@ export default function CategoryCarousel({
   // heroIndex 1 = primeiro produto (após o card guia de início)
   const [heroIndex, setHeroIndex] = useState(1);
 
-  // posiciona no primeiro produto ao montar / ao mudar a lista
+  // posiciona no primeiro produto ao montar (executa uma vez)
   useEffect(() => {
     const t = setTimeout(() => {
-      const el = cardRefs.current[1];
-      if (!el) return;
-      el.scrollIntoView({ behavior: "instant" as any, inline: "center", block: "nearest" });
-      setHeroIndex(1);
-    }, 60);
+      requestAnimationFrame(() => {
+        if (list.length < 1) return;
+        const el = cardRefs.current[1];
+        if (!el) return;
+        el.scrollIntoView({ behavior: "instant" as any, inline: "center", block: "nearest" });
+        setHeroIndex(1);
+      });
+    }, 120);
     return () => clearTimeout(t);
-  }, [list.length]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function computeHero() {
     const scroller = scrollerRef.current;
@@ -78,9 +82,6 @@ export default function CategoryCarousel({
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
     rafRef.current = requestAnimationFrame(computeHero);
   }
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-
 
   // sizing
   const baseWidth = compact ? 170 : 220;
