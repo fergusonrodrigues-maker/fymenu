@@ -28,6 +28,8 @@ const { data: unitData, error: unitErr } = await supabase
   .eq("slug", publicSlug)
   .maybeSingle();
 
+console.log("🔍 DEBUG:", { publicSlug, unitData, unitErr });
+
   if (unitErr) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
