@@ -16,26 +16,24 @@ export default function CategoryCarousel({
   onOpen: (p: Product, originalIndex: number) => void;
 }) {
   const scrollerRef = useRef<HTMLDivElement | null>(null);
+  // cardRefs: index 0 = guia início, 1..list.length = produtos, list.length+1 = guia fim
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
   const rafRef = useRef<number | null>(null);
+  const bounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const list = useMemo(() => items ?? [], [items]);
 
-  const [heroIndex, setHeroIndex] = useState(0);
+  // heroIndex 1 = primeiro produto (após o card guia de início)
+  const [heroIndex, setHeroIndex] = useState(1);
 
-  // começa no card 2 como HERO (index 1)
+  // posiciona no primeiro produto ao montar / ao mudar a lista
   useEffect(() => {
-    const scroller = scrollerRef.current;
-    if (!scroller) return;
-    if (list.length < 2) return;
-
     const t = setTimeout(() => {
       const el = cardRefs.current[1];
       if (!el) return;
       el.scrollIntoView({ behavior: "instant" as any, inline: "center", block: "nearest" });
       setHeroIndex(1);
     }, 60);
-
     return () => clearTimeout(t);
   }, [list.length]);
 
@@ -46,15 +44,15 @@ export default function CategoryCarousel({
     const sr = scroller.getBoundingClientRect();
     const center = sr.left + sr.width / 2;
 
-    let best = 0;
+    const total = list.length + 2; // guia início + produtos + guia fim
+    let best = 1;
     let bestDist = Infinity;
 
-    for (let i = 0; i < list.length; i++) {
+    for (let i = 0; i < total; i++) {
       const el = cardRefs.current[i];
       if (!el) continue;
       const r = el.getBoundingClientRect();
-      const c = r.left + r.width / 2;
-      const d = Math.abs(c - center);
+      const d = Math.abs(r.left + r.width / 2 - center);
       if (d < bestDist) {
         bestDist = d;
         best = i;
@@ -62,6 +60,18 @@ export default function CategoryCarousel({
     }
 
     setHeroIndex(best);
+
+    // bounce-back: se card guia virou hero, volta para o produto mais próximo
+    if (bounceTimerRef.current) clearTimeout(bounceTimerRef.current);
+    if (best === 0) {
+      bounceTimerRef.current = setTimeout(() => {
+        cardRefs.current[1]?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+      }, 120);
+    } else if (best === total - 1) {
+      bounceTimerRef.current = setTimeout(() => {
+        cardRefs.current[total - 2]?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+      }, 120);
+    }
   }
 
   function onScroll() {
@@ -76,6 +86,21 @@ export default function CategoryCarousel({
 
   // sizing
   const baseWidth = compact ? 170 : 220;
+
+  function cardStyle(renderedIdx: number) {
+    const isHero = renderedIdx === heroIndex;
+    return {
+      flex: "0 0 auto" as const,
+      width: baseWidth,
+      scrollSnapAlign: "center" as const,
+      transform: isHero ? "scale(1.13)" : "scale(0.92)",
+      transformOrigin: "center center" as const,
+      transition: isHero
+        ? "transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1)"
+        : "transform 300ms ease",
+      zIndex: isHero ? 5 : 1,
+    };
+  }
 
   return (
     <div style={{ width: "100%" }}>
@@ -95,32 +120,64 @@ export default function CategoryCarousel({
           scrollbarWidth: "none",
         }}
       >
-        {list.map((p, idx) => {
-          const isHero = idx === heroIndex;
+        {/* card guia início */}
+        <div
+          key="guide-start"
+          ref={(el) => { cardRefs.current[0] = el; }}
+          style={{ ...cardStyle(0), pointerEvents: "none" }}
+        >
+          <GuideCard text="← Deslize para explorar" />
+        </div>
 
+        {/* produtos */}
+        {list.map((p, idx) => {
+          const renderedIdx = idx + 1;
+          const isHero = renderedIdx === heroIndex;
           return (
             <div
               key={p.id}
-              ref={(el) => {
-                cardRefs.current[idx] = el;
-              }}
-              style={{
-                flex: "0 0 auto",
-                width: baseWidth,
-                scrollSnapAlign: "center",
-                transform: isHero ? "scale(1.13)" : "scale(0.92)",
-                transformOrigin: "center center",
-                transition: isHero
-                  ? "transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1)"
-                  : "transform 300ms ease",
-                zIndex: isHero ? 5 : 1,
-              }}
+              ref={(el) => { cardRefs.current[renderedIdx] = el; }}
+              style={cardStyle(renderedIdx)}
             >
               <MediaCard product={p} hero={isHero} onOpen={() => onOpen(p, idx)} />
             </div>
           );
         })}
+
+        {/* card guia fim */}
+        <div
+          key="guide-end"
+          ref={(el) => { cardRefs.current[list.length + 1] = el; }}
+          style={{ ...cardStyle(list.length + 1), pointerEvents: "none" }}
+        >
+          <GuideCard text="Deslize para voltar →" />
+        </div>
       </div>
+    </div>
+  );
+}
+
+function GuideCard({ text }: { text: string }) {
+  return (
+    <div
+      style={{
+        width: "100%",
+        aspectRatio: "9 / 16",
+        borderRadius: 22,
+        border: "1px solid rgba(255,255,255,0.12)",
+        background: "rgba(255,255,255,0.06)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        textAlign: "center",
+        color: "#fff",
+        fontWeight: 800,
+        fontSize: 13,
+        opacity: 0.7,
+        padding: "0 16px",
+      }}
+    >
+      {text}
     </div>
   );
 }
@@ -160,7 +217,6 @@ function MediaCard({
         cursor: "pointer",
       }}
     >
-      {/* thumb */}
       {product.thumbnail_url ? (
         <img
           src={product.thumbnail_url}
@@ -192,7 +248,6 @@ function MediaCard({
         </div>
       )}
 
-      {/* vídeo só no HERO */}
       {showVideo ? (
         <video
           src={product.video_url!}
@@ -216,7 +271,6 @@ function MediaCard({
         />
       ) : null}
 
-      {/* gradient */}
       <div
         style={{
           position: "absolute",
@@ -226,7 +280,6 @@ function MediaCard({
         }}
       />
 
-      {/* text */}
       <div
         style={{
           position: "absolute",
