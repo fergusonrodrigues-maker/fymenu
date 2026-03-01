@@ -92,7 +92,7 @@ export default function CategoryCarousel({
           padding: "10px 14px 18px",
           WebkitOverflowScrolling: "touch",
           scrollSnapType: "x mandatory",
-          touchAction: "pan-x",
+          touchAction: "pan-y pan-x",
           scrollbarWidth: "none",
         }}
       >
