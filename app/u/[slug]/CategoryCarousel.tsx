@@ -26,20 +26,13 @@ export default function CategoryCarousel({
   // heroIndex 1 = primeiro produto (após o card guia de início)
   const [heroIndex, setHeroIndex] = useState(1);
 
-  function centralizeCard(index: number) {
+  function centralizeCard(index: number, smooth = false) {
     const scroller = scrollerRef.current;
     const card = cardRefs.current[index];
     if (!scroller || !card) return;
-    const scrollLeft = card.offsetLeft - scroller.offsetWidth / 2 + card.offsetWidth / 2;
-    scroller.scrollLeft = scrollLeft;
-  }
-
-  function centralizeCardSmooth(index: number) {
-    const scroller = scrollerRef.current;
-    const card = cardRefs.current[index];
-    if (!scroller || !card) return;
-    const scrollLeft = card.offsetLeft - scroller.offsetWidth / 2 + card.offsetWidth / 2;
-    scroller.scrollTo({ left: scrollLeft, behavior: "smooth" });
+    const left = card.offsetLeft - scroller.offsetWidth / 2 + card.offsetWidth / 2;
+    if (smooth) scroller.scrollTo({ left, behavior: "smooth" });
+    else scroller.scrollLeft = left;
   }
 
   useEffect(() => {
@@ -78,9 +71,9 @@ export default function CategoryCarousel({
     // bounce-back: se card guia virou hero, volta para o produto mais próximo
     if (bounceTimerRef.current) clearTimeout(bounceTimerRef.current);
     if (best === 0) {
-      bounceTimerRef.current = setTimeout(() => centralizeCardSmooth(1), 80);
+      bounceTimerRef.current = setTimeout(() => centralizeCard(1, true), 80);
     } else if (best === total - 1) {
-      bounceTimerRef.current = setTimeout(() => centralizeCardSmooth(total - 2), 80);
+      bounceTimerRef.current = setTimeout(() => centralizeCard(total - 2, true), 80);
     }
   }
 
