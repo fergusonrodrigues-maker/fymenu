@@ -30,9 +30,11 @@ export default function CategoryCarousel({
     const scroller = scrollerRef.current;
     const card = cardRefs.current[index];
     if (!scroller || !card) return;
-    const left = card.offsetLeft - scroller.offsetWidth / 2 + card.offsetWidth / 2;
-    if (smooth) scroller.scrollTo({ left, behavior: "smooth" });
-    else scroller.scrollLeft = left;
+    const scrollerRect = scroller.getBoundingClientRect();
+    const cardRect = card.getBoundingClientRect();
+    const offset = cardRect.left - scrollerRect.left - scrollerRect.width / 2 + cardRect.width / 2;
+    if (smooth) scroller.scrollTo({ left: scroller.scrollLeft + offset, behavior: "smooth" });
+    else scroller.scrollLeft = scroller.scrollLeft + offset;
   }
 
   useEffect(() => {
