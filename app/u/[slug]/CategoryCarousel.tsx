@@ -66,11 +66,11 @@ export default function CategoryCarousel({
     if (best === 0) {
       bounceTimerRef.current = setTimeout(() => {
         cardRefs.current[1]?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
-      }, 120);
+      }, 50);
     } else if (best === total - 1) {
       bounceTimerRef.current = setTimeout(() => {
         cardRefs.current[total - 2]?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
-      }, 120);
+      }, 50);
     }
   }
 
@@ -79,10 +79,8 @@ export default function CategoryCarousel({
     rafRef.current = requestAnimationFrame(computeHero);
   }
 
-  useEffect(() => {
-    computeHero();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [list.length]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+
 
   // sizing
   const baseWidth = compact ? 170 : 220;
