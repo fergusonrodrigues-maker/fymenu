@@ -11,9 +11,9 @@ export const revalidate = 0;
 export default async function Page({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
-  const { slug } = params;
+  const { slug } = await params;
 
   const publicSlug = normalizePublicSlug(slug);
 
