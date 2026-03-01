@@ -70,6 +70,19 @@ export default function MenuClient({ unit, categories }: Props) {
         {/* ✅ SEM “pill” interna no meio do feed (era isso que criava as faixas pretas) */}
         {otherCategories.map((cat) => (
           <div key={cat.id} style={{ paddingTop: 6 }}>
+            <div
+              style={{
+                fontSize: 13,
+                fontWeight: 800,
+                color: "rgba(255,255,255,0.55)",
+                letterSpacing: "0.04em",
+                textTransform: "uppercase",
+                paddingLeft: 16,
+                paddingBottom: 6,
+              }}
+            >
+              {cat.name}
+            </div>
             <CategoryCarousel
               items={cat.products}
               compact={true}
