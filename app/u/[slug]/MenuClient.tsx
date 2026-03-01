@@ -59,7 +59,7 @@ export default function MenuClient({ unit, categories }: Props) {
       {/* ✅ reduzimos gaps aqui */}
       <div style={{ paddingBottom: 16 }}>
         {featuredCategory ? (
-          <div style={{ paddingTop: 6 }}>
+          <div>
             <FeaturedCarousel
               items={featuredCategory.products}
               onOpen={(_, idx) => setModal({ list: featuredCategory.products, index: idx })}
@@ -69,7 +69,7 @@ export default function MenuClient({ unit, categories }: Props) {
 
         {/* ✅ SEM “pill” interna no meio do feed (era isso que criava as faixas pretas) */}
         {otherCategories.map((cat) => (
-          <div key={cat.id} style={{ paddingTop: 6, position: "relative" }}>
+          <div key={cat.id} style={{ position: "relative" }}>
             <div
               style={{
                 position: "absolute",

@@ -80,7 +80,7 @@ export default function CategoryCarousel({
   const heroScale = compact ? 1.14 : 1.22;
 
   return (
-    <div style={{ width: "100%", paddingTop: 10, paddingBottom: 8 }}>
+    <div style={{ width: "100%", paddingTop: 0, paddingBottom: 8 }}>
       <div
         ref={scrollerRef}
         onScroll={onScroll}
