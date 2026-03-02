@@ -177,24 +177,60 @@ export default function MenuClient({ unit, categories }: Props) {
   );
 }
 
+const modalCss = `
+  @keyframes modal-in {
+    from { opacity: 0; transform: scale(0.82); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  @keyframes modal-out {
+    from { opacity: 1; transform: scale(1); }
+    to   { opacity: 0; transform: scale(0.82); }
+  }
+  @keyframes slide-left-in {
+    from { opacity: 0; transform: scale(0.88) translateX(80px); }
+    to   { opacity: 1; transform: scale(1) translateX(0); }
+  }
+  @keyframes slide-right-in {
+    from { opacity: 0; transform: scale(0.88) translateX(-80px); }
+    to   { opacity: 1; transform: scale(1) translateX(0); }
+  }
+`;
+
 function ProductBoardModal({
   list, index, onClose, onIndexChange,
 }: {
   list: Product[]; index: number; onClose: () => void; onIndexChange: (i: number) => void;
 }) {
-  const product = list[index];
   const [videoReady, setVideoReady] = useState(false);
-  const startRef = useRef<{ x: number; y: number; t: number } | null>(null);
+  const [closing, setClosing] = useState(false);
+  const [slideDir, setSlideDir] = useState<"left" | "right" | null>(null);
+  const [displayIndex, setDisplayIndex] = useState(index);
+  const startRef = useRef<{ x: number; y: number } | null>(null);
 
-  useEffect(() => { setVideoReady(false); }, [index]);
-  if (!product) return null;
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, []);
 
-  const video = product.video_url ?? null;
-  const thumb = product.thumbnail_url ?? null;
+  useEffect(() => { setVideoReady(false); }, [displayIndex]);
+
+  function goTo(next: number, dir: "left" | "right") {
+    if (next < 0 || next > list.length - 1) return;
+    setSlideDir(dir);
+    setDisplayIndex(next);
+    onIndexChange(next);
+    setTimeout(() => setSlideDir(null), 380);
+  }
+
+  function handleClose() {
+    setClosing(true);
+    setTimeout(() => onClose(), 300);
+  }
 
   const onTouchStart = (e: React.TouchEvent) => {
     const t = e.touches[0];
-    startRef.current = { x: t.clientX, y: t.clientY, t: Date.now() };
+    startRef.current = { x: t.clientX, y: t.clientY };
   };
 
   const onTouchEnd = (e: React.TouchEvent) => {
@@ -202,71 +238,126 @@ function ProductBoardModal({
     const t = e.changedTouches[0];
     const dx = t.clientX - s.x, dy = t.clientY - s.y;
     const ax = Math.abs(dx), ay = Math.abs(dy);
-    if (ay > ax && ay > 55) { onClose(); return; }
+    if (ay > ax && ay > 55) { handleClose(); return; }
     if (ax > ay && ax > 45) {
-      if (dx < 0) onIndexChange(Math.min(list.length - 1, index + 1));
-      else onIndexChange(Math.max(0, index - 1));
+      if (dx < 0) goTo(displayIndex + 1, "left");
+      else goTo(displayIndex - 1, "right");
     }
   };
 
+  const currentProduct = list[displayIndex];
+  if (!currentProduct) return null;
+
+  const video = currentProduct.video_url ?? null;
+  const thumb = currentProduct.thumbnail_url ?? null;
+
+  const slideAnim = slideDir === "left"
+    ? "slide-left-in 360ms cubic-bezier(0.34,1.56,0.64,1) forwards"
+    : slideDir === "right"
+    ? "slide-right-in 360ms cubic-bezier(0.34,1.56,0.64,1) forwards"
+    : undefined;
+
   return (
-    <div onClick={onClose} style={{
-      position: "fixed", inset: 0, zIndex: 999,
-      background: "rgba(0,0,0,0.60)",
-      backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
-      display: "flex", alignItems: "center", justifyContent: "center", padding: 14,
-    }}>
-      <div onClick={(e) => e.stopPropagation()}
-        onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}
+    <div
+      onClick={handleClose}
+      style={{
+        position: "fixed", inset: 0, zIndex: 999,
+        background: closing ? "rgba(0,0,0,0)" : "rgba(0,0,0,0.70)",
+        backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        padding: 14,
+        transition: "background 300ms ease",
+        touchAction: "none",
+      }}
+    >
+      <style>{modalCss}</style>
+
+      <div
+        onClick={(e) => e.stopPropagation()}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
         style={{
-          width: "min(520px, 92vw)", aspectRatio: "9/16",
-          borderRadius: 28, border: "1px solid rgba(255,255,255,0.10)",
-          overflow: "hidden", position: "relative",
-          background: "#000", boxShadow: "0 30px 80px rgba(0,0,0,0.55)",
+          width: "min(460px, 82vw)",
+          aspectRatio: "9/16",
+          borderRadius: 28,
+          overflow: "hidden",
+          position: "relative",
+          background: "#000",
+          boxShadow: "0 30px 80px rgba(0,0,0,0.60)",
           touchAction: "pan-y pan-x",
+          animation: closing
+            ? "modal-out 300ms cubic-bezier(0.34,1.56,0.64,1) forwards"
+            : "modal-in 340ms cubic-bezier(0.34,1.56,0.64,1) forwards",
+        }}
+      >
+        <div style={{
+          position: "absolute", top: 14, left: 18, zIndex: 5,
+          fontSize: 12, fontWeight: 900, color: "rgba(255,255,255,0.80)",
         }}>
-        <div style={{ position: "absolute", top: 14, left: 18, zIndex: 5, fontSize: 12, fontWeight: 900, color: "rgba(255,255,255,0.95)" }}>
-          {index + 1} / {list.length}
+          {displayIndex + 1} / {list.length}
         </div>
-        <button onClick={onClose} style={{
+
+        <button onClick={handleClose} style={{
           position: "absolute", top: 12, right: 12, zIndex: 5,
           borderRadius: 999, border: "1px solid rgba(255,255,255,0.15)",
           background: "rgba(255,255,255,0.10)", color: "rgba(255,255,255,0.92)",
           padding: "10px 14px", fontWeight: 900, cursor: "pointer",
-        }}>Fechar</button>
+        }}>✕</button>
 
-        {thumb && (
-          <img src={thumb} alt={product.name} style={{
-            position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover",
-            opacity: video && videoReady ? 0 : 1,
-            visibility: video && videoReady ? "hidden" : "visible",
-            transition: "opacity 220ms ease",
-          }} />
-        )}
-
-        {video && (
-          <video src={video} autoPlay muted playsInline style={{
-            position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover",
-          }} onTimeUpdate={(e) => {
-            if (!videoReady && e.currentTarget.currentTime >= 1) setVideoReady(true);
-          }} />
-        )}
-
-        <div style={{
+        <div key={displayIndex} style={{
           position: "absolute", inset: 0,
-          background: "linear-gradient(to top, rgba(0,0,0,0.80) 0%, rgba(0,0,0,0.35) 46%, rgba(0,0,0,0.10) 72%, transparent 100%)",
-        }} />
-
-        <div style={{ position: "absolute", left: 18, right: 18, bottom: 18, zIndex: 4, display: "flex", flexDirection: "column", gap: 10 }}>
-          <div style={{ color: "#fff", fontWeight: 950, fontSize: 22, lineHeight: 1.1 }}>{product.name}</div>
-          {product.description && (
-            <div style={{ color: "rgba(255,255,255,0.80)", fontWeight: 700, fontSize: 13 }}>{product.description}</div>
+          animation: slideAnim,
+        }}>
+          {thumb && (
+            <img src={thumb} alt={currentProduct.name} style={{
+              position: "absolute", inset: 0,
+              width: "100%", height: "100%", objectFit: "cover",
+              opacity: video && videoReady ? 0 : 1,
+              visibility: video && videoReady ? "hidden" : "visible",
+              transition: "opacity 220ms ease",
+            }} />
           )}
-          <div style={{ color: "#fff", fontWeight: 950, fontSize: 26 }}>
-            {product.price_type === "variable" ? "Preço variável" : product.price != null ? moneyBR(Number(product.price)) : ""}
-          </div>
-          <div style={{ color: "rgba(255,255,255,0.65)", fontWeight: 800, fontSize: 12 }}>
-            swipe ←/→ para trocar • swipe ↑/↓ para fechar • toque fora para fechar
+
+          {video && (
+            <video src={video} autoPlay muted playsInline style={{
+              position: "absolute", inset: 0,
+              width: "100%", height: "100%", objectFit: "cover",
+            }} onTimeUpdate={(e) => {
+              if (!videoReady && e.currentTarget.currentTime >= 1) setVideoReady(true);
+            }} />
+          )}
+
+          <div style={{
+            position: "absolute", inset: 0,
+            background: "linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.35) 46%, rgba(0,0,0,0.08) 72%, transparent 100%)",
+          }} />
+
+          <div style={{
+            position: "absolute", left: 18, right: 18, bottom: 18,
+            zIndex: 4, display: "flex", flexDirection: "column", gap: 8,
+          }}>
+            <div style={{ color: "#fff", fontWeight: 950, fontSize: 22, lineHeight: 1.1 }}>
+              {currentProduct.name}
+            </div>
+            {currentProduct.description && (
+              <div style={{ color: "rgba(255,255,255,0.80)", fontWeight: 700, fontSize: 13 }}>
+                {currentProduct.description}
+              </div>
+            )}
+            <div style={{ color: "#fff", fontWeight: 950, fontSize: 26 }}>
+              {currentProduct.price_type === "variable"
+                ? "Preço variável"
+                : currentProduct.price != null
+                ? moneyBR(Number(currentProduct.price))
+                : ""}
+            </div>
+            <div style={{
+              color: "rgba(255,255,255,0.40)",
+              fontWeight: 700, fontSize: 10,
+              textAlign: "center", letterSpacing: 0.3,
+            }}>
+              ←/→ trocar · ↓ fechar
+            </div>
           </div>
         </div>
       </div>
