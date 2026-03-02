@@ -28,9 +28,29 @@ export default function MenuClient({ unit, categories }: Props) {
   // modal board
   const [modal, setModal] = useState<null | { list: Product[]; index: number }>(null);
 
+  // refs para cada seção de categoria
+  const sectionRefs = useRef<(HTMLDivElement | null)[]>([]);
+
   useEffect(() => {
     if (!activeCategoryId && orderedCategories[0]?.id) setActiveCategoryId(orderedCategories[0].id);
   }, [activeCategoryId, orderedCategories]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const id = (entry.target as HTMLElement).dataset.categoryId;
+            if (id) setActiveCategoryId(id);
+          }
+        });
+      },
+      { threshold: 0.4 }
+    );
+
+    sectionRefs.current.forEach((el) => { if (el) observer.observe(el); });
+    return () => observer.disconnect();
+  }, [orderedCategories]);
 
   const onSelectCategory = (categoryId: string) => {
     setActiveCategoryId(categoryId);
@@ -59,7 +79,10 @@ export default function MenuClient({ unit, categories }: Props) {
       {/* ✅ reduzimos gaps aqui */}
       <div style={{ paddingBottom: 16 }}>
         {featuredCategory ? (
-          <div>
+          <div
+            ref={(el) => { sectionRefs.current[0] = el; }}
+            data-category-id={featuredCategory.id}
+          >
             <FeaturedCarousel
               items={featuredCategory.products}
               onOpen={(_, idx) => setModal({ list: featuredCategory.products, index: idx })}
@@ -68,8 +91,13 @@ export default function MenuClient({ unit, categories }: Props) {
         ) : null}
 
         {/* ✅ SEM “pill” interna no meio do feed (era isso que criava as faixas pretas) */}
-        {otherCategories.map((cat) => (
-          <div key={cat.id} style={{ overflow: "visible", position: "relative" }}>
+        {otherCategories.map((cat, i) => (
+          <div
+            key={cat.id}
+            ref={(el) => { sectionRefs.current[i + 1] = el; }}
+            data-category-id={cat.id}
+            style={{ overflow: "visible", position: "relative" }}
+          >
             <div
               style={{
                 width: "100%",
