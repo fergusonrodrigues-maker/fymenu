@@ -133,7 +133,7 @@ export default function CategoryCarousel({
           gap: 12,
           overflowX: "auto",
           overflowY: "hidden",
-          padding: "10px 14px 18px",
+          padding: "18px 14px 24px",
           WebkitOverflowScrolling: "touch",
           scrollSnapType: "none",
           scrollBehavior: "smooth",
