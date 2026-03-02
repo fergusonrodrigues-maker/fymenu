@@ -5,11 +5,9 @@ import type { CategoryWithProducts, Product, Unit } from "./menuTypes";
 import CategoryPillsTop from "./CategoryPillsTop";
 import FeaturedCarousel from "./FeaturedCarousel";
 import CategoryCarousel from "./CategoryCarousel";
+import BottomGlassBar from "./BottomGlassBar";
 
-type Props = {
-  unit: Unit;
-  categories: CategoryWithProducts[];
-};
+type Props = { unit: Unit; categories: CategoryWithProducts[] };
 
 function moneyBR(v: number) {
   return `R$ ${v.toFixed(2).replace(".", ",")}`;
@@ -21,23 +19,21 @@ export default function MenuClient({ unit, categories }: Props) {
     return [...arr].sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0));
   }, [categories]);
 
+  // ✅ FIX 1: sempre inicia na categoria destaque (index 0)
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(
     orderedCategories[0]?.id ?? null
   );
 
-  // modal board
   const [modal, setModal] = useState<null | { list: Product[]; index: number }>(null);
-
-  // refs para cada seção de categoria
   const sectionRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const ignoreObserverRef = useRef(false);
 
-  useEffect(() => {
-    if (!activeCategoryId && orderedCategories[0]?.id) setActiveCategoryId(orderedCategories[0].id);
-  }, [activeCategoryId, orderedCategories]);
-
+  // ✅ FIX 2: IntersectionObserver com rootMargin apertado — só ativa quando
+  // a seção cruza o topo da tela, evitando Cat2 disparar no load
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
+        if (ignoreObserverRef.current) return;
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             const id = (entry.target as HTMLElement).dataset.categoryId;
@@ -45,7 +41,7 @@ export default function MenuClient({ unit, categories }: Props) {
           }
         });
       },
-      { threshold: 0.4 }
+      { threshold: 0, rootMargin: "-30% 0px -65% 0px" }
     );
 
     sectionRefs.current.forEach((el) => { if (el) observer.observe(el); });
@@ -53,34 +49,35 @@ export default function MenuClient({ unit, categories }: Props) {
   }, [orderedCategories]);
 
   const onSelectCategory = (categoryId: string) => {
+    // bloqueia observer por 1s enquanto faz scroll programático
+    ignoreObserverRef.current = true;
     setActiveCategoryId(categoryId);
     const idx = orderedCategories.findIndex((c) => c.id === categoryId);
     const el = sectionRefs.current[idx];
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    setTimeout(() => { ignoreObserverRef.current = false; }, 1000);
   };
 
-  // 1ª categoria = destaque
   const featuredCategory = orderedCategories[0] ?? null;
   const otherCategories = featuredCategory ? orderedCategories.slice(1) : orderedCategories;
 
   return (
-    <div
-      style={{
-        width: "100%",
-        minHeight: "100vh",
-        background: "#000",
-        overflowX: "hidden",
-      }}
-    >
+    // ✅ FIX 3: overflow: clip ao invés de hidden — não bloqueia position:sticky
+    <div style={{ width: "100%", minHeight: "100vh", background: "#000", overflowX: "clip" }}>
+
+      {/* ✅ FIX 4: sticky funciona porque o pai não tem overflow:hidden */}
       <CategoryPillsTop
-  unit={unit}
-  categories={orderedCategories}
-  activeCategoryId={activeCategoryId}
-  onSelect={onSelectCategory}
-/>
-      {/* ✅ reduzimos gaps aqui */}
-      <div style={{ paddingBottom: 16 }}>
-        {featuredCategory ? (
+        unit={unit}
+        categories={orderedCategories}
+        activeCategoryId={activeCategoryId}
+        onSelect={onSelectCategory}
+      />
+
+      {/* ✅ paddingBottom para GlassBar não cobrir conteúdo */}
+      <div style={{ paddingBottom: 100 }}>
+
+        {/* Featured — sem pill, é a Destaque */}
+        {featuredCategory && (
           <div
             ref={(el) => { sectionRefs.current[0] = el; }}
             data-category-id={featuredCategory.id}
@@ -90,45 +87,49 @@ export default function MenuClient({ unit, categories }: Props) {
               onOpen={(_, idx) => setModal({ list: featuredCategory.products, index: idx })}
             />
           </div>
-        ) : null}
+        )}
 
-        {/* ✅ SEM “pill” interna no meio do feed (era isso que criava as faixas pretas) */}
         {otherCategories.map((cat, i) => (
           <div
             key={cat.id}
             ref={(el) => { sectionRefs.current[i + 1] = el; }}
             data-category-id={cat.id}
-            style={{ overflow: "visible", position: "relative" }}
+            style={{ position: "relative", overflow: "visible" }}
           >
-            <div
-              style={{
-                width: "100%",
-                display: "flex",
-                justifyContent: "center",
-                position: "relative",
-                zIndex: 20,
-                marginTop: -20,
-                marginBottom: 8,
-              }}
-            >
-              <span
-                style={{
-                  display: "inline-block",
-                  background: "rgba(0,0,0,0.55)",
-                  color: "#fff",
-                  fontWeight: 800,
-                  fontSize: 15,
-                  borderRadius: 999,
-                  padding: "8px 20px",
-                  boxShadow: "0 2px 12px rgba(0,0,0,0.35)",
-                  backdropFilter: "blur(12px)",
-                  WebkitBackdropFilter: "blur(12px)",
-                  border: "1px solid rgba(255,255,255,0.12)",
-                }}
-              >
+            {/* ✅ FIX 5: pill pertence à categoria de baixo, sobe sobre a de cima */}
+            <div style={{
+              width: "100%",
+              display: "flex",
+              justifyContent: "center",
+              position: "relative",
+              zIndex: 20,
+              marginTop: -20,
+              marginBottom: 8,
+            }}>
+              <span style={{
+                display: "inline-block",
+                background: "rgba(0,0,0,0.60)",
+                color: "#fff",
+                fontWeight: 800,
+                fontSize: 15,
+                borderRadius: 999,
+                // ✅ FIX 6: responsivo — mínimo atual, máximo 50vw
+                minWidth: 80,
+                maxWidth: "50vw",
+                padding: "8px 20px",
+                textAlign: "center",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                backdropFilter: "blur(12px)",
+                WebkitBackdropFilter: "blur(12px)",
+                border: "1px solid rgba(255,255,255,0.14)",
+                boxShadow: "0 2px 16px rgba(0,0,0,0.4)",
+              }}>
                 {cat.name}
               </span>
             </div>
+
             <CategoryCarousel
               items={cat.products}
               compact={true}
@@ -138,46 +139,35 @@ export default function MenuClient({ unit, categories }: Props) {
         ))}
       </div>
 
-      {modal ? (
+      {/* ✅ FIX 7: GlassBar renderizando */}
+      <BottomGlassBar unit={unit} />
+
+      {modal && (
         <ProductBoardModal
           list={modal.list}
           index={modal.index}
           onClose={() => setModal(null)}
           onIndexChange={(i) => setModal((m) => (m ? { ...m, index: i } : m))}
         />
-      ) : null}
+      )}
     </div>
   );
 }
 
 function ProductBoardModal({
-  list,
-  index,
-  onClose,
-  onIndexChange,
+  list, index, onClose, onIndexChange,
 }: {
-  list: Product[];
-  index: number;
-  onClose: () => void;
-  onIndexChange: (nextIndex: number) => void;
+  list: Product[]; index: number; onClose: () => void; onIndexChange: (i: number) => void;
 }) {
   const product = list[index];
   const [videoReady, setVideoReady] = useState(false);
-
-  // swipe (sem setas)
   const startRef = useRef<{ x: number; y: number; t: number } | null>(null);
 
-  useEffect(() => {
-    setVideoReady(false);
-  }, [index]);
-
+  useEffect(() => { setVideoReady(false); }, [index]);
   if (!product) return null;
 
   const video = product.video_url ?? null;
   const thumb = product.thumbnail_url ?? null;
-
-  const goPrev = () => onIndexChange(Math.max(0, index - 1));
-  const goNext = () => onIndexChange(Math.min(list.length - 1, index + 1));
 
   const onTouchStart = (e: React.TouchEvent) => {
     const t = e.touches[0];
@@ -185,180 +175,73 @@ function ProductBoardModal({
   };
 
   const onTouchEnd = (e: React.TouchEvent) => {
-    const s = startRef.current;
-    if (!s) return;
-
+    const s = startRef.current; if (!s) return;
     const t = e.changedTouches[0];
-    const dx = t.clientX - s.x;
-    const dy = t.clientY - s.y;
-
-    const ax = Math.abs(dx);
-    const ay = Math.abs(dy);
-
-    // thresholds
-    const H = 45; // lateral troca produto
-    const V = 55; // vertical fecha
-
-    // decide eixo dominante
-    if (ay > ax && ay > V) {
-      // swipe vertical => fechar
-      onClose();
-      return;
-    }
-
-    if (ax > ay && ax > H) {
-      // swipe horizontal => trocar produto
-      if (dx < 0) goNext();
-      else goPrev();
+    const dx = t.clientX - s.x, dy = t.clientY - s.y;
+    const ax = Math.abs(dx), ay = Math.abs(dy);
+    if (ay > ax && ay > 55) { onClose(); return; }
+    if (ax > ay && ax > 45) {
+      if (dx < 0) onIndexChange(Math.min(list.length - 1, index + 1));
+      else onIndexChange(Math.max(0, index - 1));
     }
   };
 
   return (
-    <div
-      onClick={onClose}
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 999,
-        background: "rgba(0,0,0,0.60)",
-        backdropFilter: "blur(10px)",
-        WebkitBackdropFilter: "blur(10px)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 14,
-      }}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
+    <div onClick={onClose} style={{
+      position: "fixed", inset: 0, zIndex: 999,
+      background: "rgba(0,0,0,0.60)",
+      backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
+      display: "flex", alignItems: "center", justifyContent: "center", padding: 14,
+    }}>
+      <div onClick={(e) => e.stopPropagation()}
+        onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}
         style={{
-          width: "min(520px, 92vw)",
-          aspectRatio: "9 / 16",
-          borderRadius: 28,
-          border: "1px solid rgba(255,255,255,0.10)",
-          overflow: "hidden",
-          position: "relative",
-          background: "#000",
-          boxShadow: "0 30px 80px rgba(0,0,0,0.55)",
+          width: "min(520px, 92vw)", aspectRatio: "9/16",
+          borderRadius: 28, border: "1px solid rgba(255,255,255,0.10)",
+          overflow: "hidden", position: "relative",
+          background: "#000", boxShadow: "0 30px 80px rgba(0,0,0,0.55)",
           touchAction: "pan-y pan-x",
-        }}
-      >
-        {/* contador */}
-        <div
-          style={{
-            position: "absolute",
-            top: 14,
-            left: 18,
-            zIndex: 5,
-            fontSize: 12,
-            fontWeight: 900,
-            opacity: 0.8,
-            color: "rgba(255,255,255,0.95)",
-          }}
-        >
+        }}>
+        <div style={{ position: "absolute", top: 14, left: 18, zIndex: 5, fontSize: 12, fontWeight: 900, color: "rgba(255,255,255,0.95)" }}>
           {index + 1} / {list.length}
         </div>
+        <button onClick={onClose} style={{
+          position: "absolute", top: 12, right: 12, zIndex: 5,
+          borderRadius: 999, border: "1px solid rgba(255,255,255,0.15)",
+          background: "rgba(255,255,255,0.10)", color: "rgba(255,255,255,0.92)",
+          padding: "10px 14px", fontWeight: 900, cursor: "pointer",
+        }}>Fechar</button>
 
-        <button
-          onClick={onClose}
-          style={{
-            position: "absolute",
-            top: 12,
-            right: 12,
-            zIndex: 5,
-            borderRadius: 999,
-            border: "1px solid rgba(255,255,255,0.15)",
-            background: "rgba(255,255,255,0.10)",
-            color: "rgba(255,255,255,0.92)",
-            padding: "10px 14px",
-            fontWeight: 900,
-            cursor: "pointer",
-          }}
-        >
-          Fechar
-        </button>
+        {thumb && (
+          <img src={thumb} alt={product.name} style={{
+            position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover",
+            opacity: video && videoReady ? 0 : 1,
+            visibility: video && videoReady ? "hidden" : "visible",
+            transition: "opacity 220ms ease",
+          }} />
+        )}
 
-        {/* Thumb: some 100% após ~1s de vídeo (sem “mescla”) */}
-        {thumb ? (
-          <img
-            src={thumb}
-            alt={product.name}
-            style={{
-              position: "absolute",
-              inset: 0,
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-              opacity: video && videoReady ? 0 : 1,
-              visibility: video && videoReady ? "hidden" : "visible",
-              transition: "opacity 220ms ease",
-            }}
-          />
-        ) : null}
+        {video && (
+          <video src={video} autoPlay muted playsInline style={{
+            position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover",
+          }} onTimeUpdate={(e) => {
+            if (!videoReady && e.currentTarget.currentTime >= 1) setVideoReady(true);
+          }} />
+        )}
 
-        {video ? (
-          <video
-            src={video}
-            autoPlay
-            muted
-            playsInline
-            style={{
-              position: "absolute",
-              inset: 0,
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-            }}
-            onTimeUpdate={(e) => {
-              const v = e.currentTarget;
-              if (!videoReady && v.currentTime >= 1) setVideoReady(true);
-            }}
-          />
-        ) : null}
+        <div style={{
+          position: "absolute", inset: 0,
+          background: "linear-gradient(to top, rgba(0,0,0,0.80) 0%, rgba(0,0,0,0.35) 46%, rgba(0,0,0,0.10) 72%, transparent 100%)",
+        }} />
 
-        {/* overlay */}
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            background:
-              "linear-gradient(to top, rgba(0,0,0,0.80) 0%, rgba(0,0,0,0.35) 46%, rgba(0,0,0,0.10) 72%, rgba(0,0,0,0.00) 100%)",
-          }}
-        />
-
-        {/* texto */}
-        <div
-          style={{
-            position: "absolute",
-            left: 18,
-            right: 18,
-            bottom: 18,
-            zIndex: 4,
-            display: "flex",
-            flexDirection: "column",
-            gap: 10,
-          }}
-        >
-          <div style={{ color: "#fff", fontWeight: 950, fontSize: 22, lineHeight: 1.1 }}>
-            {product.name}
-          </div>
-
-          {product.description ? (
-            <div style={{ color: "rgba(255,255,255,0.80)", fontWeight: 700, fontSize: 13 }}>
-              {product.description}
-            </div>
-          ) : null}
-
+        <div style={{ position: "absolute", left: 18, right: 18, bottom: 18, zIndex: 4, display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ color: "#fff", fontWeight: 950, fontSize: 22, lineHeight: 1.1 }}>{product.name}</div>
+          {product.description && (
+            <div style={{ color: "rgba(255,255,255,0.80)", fontWeight: 700, fontSize: 13 }}>{product.description}</div>
+          )}
           <div style={{ color: "#fff", fontWeight: 950, fontSize: 26 }}>
-           {product.price_type === "variable"
-  ? "Preço variável"
-  : product.price != null
-    ? moneyBR(Number(product.price))
-    : ""}
+            {product.price_type === "variable" ? "Preço variável" : product.price != null ? moneyBR(Number(product.price)) : ""}
           </div>
-          {/* hint de gestos */}
           <div style={{ color: "rgba(255,255,255,0.65)", fontWeight: 800, fontSize: 12 }}>
             swipe ←/→ para trocar • swipe ↑/↓ para fechar • toque fora para fechar
           </div>
