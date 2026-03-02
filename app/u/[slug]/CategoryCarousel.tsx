@@ -154,13 +154,14 @@ export default function CategoryCarousel({
         {list.map((p, idx) => {
           const renderedIdx = idx + 1;
           const isHero = renderedIdx === heroIndex;
+          const isAdjacent = Math.abs(renderedIdx - heroIndex) === 1;
           return (
             <div
               key={p.id}
               ref={(el) => { cardRefs.current[renderedIdx] = el; }}
               style={cardStyle(renderedIdx)}
             >
-              <MediaCard product={p} hero={isHero} onOpen={() => onOpen(p, idx)} />
+              <MediaCard product={p} hero={isHero} adjacent={isAdjacent} onOpen={() => onOpen(p, idx)} />
             </div>
           );
         })}
@@ -206,10 +207,12 @@ function GuideCard({ text }: { text: string }) {
 function MediaCard({
   product,
   hero,
+  adjacent,
   onOpen,
 }: {
   product: Product;
   hero: boolean;
+  adjacent: boolean;
   onOpen: () => void;
 }) {
   const [videoReady, setVideoReady] = useState(false);
@@ -221,6 +224,8 @@ function MediaCard({
     readyTimerRef.current = null;
   }, [product.id, hero]);
 
+  // pré-carrega no adjacente, mas exibe/autoPlay só quando hero
+  const loadVideo = (hero || adjacent) && !!product.video_url;
   const showVideo = hero && !!product.video_url;
 
   return (
@@ -269,21 +274,22 @@ function MediaCard({
         </div>
       )}
 
-      {showVideo ? (
+      {loadVideo ? (
         <video
           src={product.video_url!}
-          autoPlay
+          autoPlay={showVideo}
           loop
           muted
           playsInline
           controls={false}
-          preload="metadata"
+          preload={showVideo ? "auto" : "metadata"}
           style={{
             position: "absolute",
             inset: 0,
             width: "100%",
             height: "100%",
             objectFit: "cover",
+            opacity: showVideo ? 1 : 0,
           }}
           onPlay={() => {
             if (readyTimerRef.current) window.clearTimeout(readyTimerRef.current);
