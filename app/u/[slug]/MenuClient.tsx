@@ -40,6 +40,8 @@ export default function MenuClient({ unit, categories }: Props) {
   const pillSpanRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const ignoreObserverRef = useRef(false);
 
+  const lastCategoryId = orderedCategories[orderedCategories.length - 1]?.id;
+
   // ✅ FIX 2: IntersectionObserver com rootMargin apertado — só ativa quando
   // a seção cruza o topo da tela, evitando Cat2 disparar no load
   useEffect(() => {
@@ -132,7 +134,6 @@ export default function MenuClient({ unit, categories }: Props) {
 
   const featuredCategory = orderedCategories[0] ?? null;
 
-  const lastCategoryId = orderedCategories[orderedCategories.length - 1]?.id;
   const otherCategories = featuredCategory ? orderedCategories.slice(1) : orderedCategories;
 
   return (
