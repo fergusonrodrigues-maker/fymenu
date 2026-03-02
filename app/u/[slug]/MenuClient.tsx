@@ -84,14 +84,16 @@ export default function MenuClient({ unit, categories }: Props) {
               <span
                 style={{
                   display: "inline-block",
-                  background: "rgba(255,255,255,0.92)",
-                  color: "#000",
+                  background: "rgba(0,0,0,0.55)",
+                  color: "#fff",
                   fontWeight: 800,
                   fontSize: 15,
                   borderRadius: 999,
                   padding: "8px 20px",
-                  boxShadow: "0 2px 12px rgba(0,0,0,0.18)",
-                  backdropFilter: "blur(8px)",
+                  boxShadow: "0 2px 12px rgba(0,0,0,0.35)",
+                  backdropFilter: "blur(12px)",
+                  WebkitBackdropFilter: "blur(12px)",
+                  border: "1px solid rgba(255,255,255,0.12)",
                 }}
               >
                 {cat.name}
