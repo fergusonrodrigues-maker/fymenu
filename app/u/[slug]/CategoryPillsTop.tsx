@@ -43,16 +43,16 @@ export default function CategoryPillsTop({
   return (
     <div
       style={{
-        position: "sticky",
+        position: "fixed",
         top: 0,
+        left: 0,
+        width: "100%",
         zIndex: 50,
-        background: "rgba(0,0,0,0.75)",
-        backdropFilter: "blur(10px)",
-        WebkitBackdropFilter: "blur(10px)",
-        borderBottom: "1px solid rgba(255,255,255,0.08)",
+        background: "linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%)",
+        pointerEvents: "none",
       }}
     >
-      <div style={{ padding: "10px 14px" }}>
+      <div style={{ padding: "10px 14px 24px" }}>
         {/* scroller com position relative para o highlight absoluto */}
         <div
           ref={scrollerRef}
@@ -64,6 +64,7 @@ export default function CategoryPillsTop({
             paddingBottom: 6,
             WebkitOverflowScrolling: "touch",
             scrollbarWidth: "none",
+            pointerEvents: "auto",
           }}
         >
           {/* highlight deslizante */}

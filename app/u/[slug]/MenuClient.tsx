@@ -26,6 +26,7 @@ export default function MenuClient({ unit, categories }: Props) {
 
   const [modal, setModal] = useState<null | { list: Product[]; index: number }>(null);
   const sectionRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const pillSpanRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const ignoreObserverRef = useRef(false);
 
   // ✅ FIX 2: IntersectionObserver com rootMargin apertado — só ativa quando
@@ -47,6 +48,28 @@ export default function MenuClient({ unit, categories }: Props) {
     sectionRefs.current.forEach((el) => { if (el) observer.observe(el); });
     return () => observer.disconnect();
   }, [orderedCategories]);
+
+  // Fade-out das pills divisórias ao subir até a top bar
+  useEffect(() => {
+    const handleScroll = () => {
+      pillSpanRefs.current.forEach((pill) => {
+        if (!pill) return;
+        const rect = pill.getBoundingClientRect();
+        if (rect.top < 50) {
+          pill.style.opacity = "0";
+          pill.style.pointerEvents = "none";
+        } else if (rect.top < 150) {
+          pill.style.opacity = String((rect.top - 50) / 100);
+          pill.style.pointerEvents = "auto";
+        } else {
+          pill.style.opacity = "1";
+          pill.style.pointerEvents = "auto";
+        }
+      });
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const onSelectCategory = (categoryId: string) => {
     // bloqueia observer por 1s enquanto faz scroll programático
@@ -72,8 +95,8 @@ export default function MenuClient({ unit, categories }: Props) {
         onSelect={onSelectCategory}
       />
 
-      {/* ✅ paddingBottom para GlassBar não cobrir conteúdo */}
-      <div style={{ paddingBottom: 100 }}>
+      {/* paddingTop: afasta do fixed top bar; paddingBottom: GlassBar não cobre */}
+      <div style={{ paddingTop: 80, paddingBottom: 100 }}>
 
         {/* Featured — sem pill, é a Destaque */}
         {featuredCategory && (
@@ -93,38 +116,39 @@ export default function MenuClient({ unit, categories }: Props) {
             key={cat.id}
             ref={(el) => { sectionRefs.current[i + 1] = el; }}
             data-category-id={cat.id}
-            style={{ position: "relative", overflow: "visible" }}
+            style={{ position: "relative", overflow: "visible", paddingTop: 24 }}
           >
-            {/* ✅ FIX 5: pill pertence à categoria de baixo, sobe sobre a de cima */}
+            {/* Pill ancorado na borda do topo — metade acima, metade abaixo */}
             <div style={{
-              width: "100%",
-              display: "flex",
-              justifyContent: "center",
-              position: "relative",
+              position: "absolute",
+              top: 0,
+              left: "50%",
+              transform: "translate(-50%, -50%)",
               zIndex: 20,
-              marginTop: 12,
-              marginBottom: 8,
             }}>
-              <span style={{
-                display: "inline-block",
-                background: "rgba(0,0,0,0.60)",
-                color: "#fff",
-                fontWeight: 800,
-                fontSize: 15,
-                borderRadius: 999,
-                // ✅ FIX 6: responsivo — mínimo atual, máximo 50vw
-                minWidth: 80,
-                maxWidth: "50vw",
-                padding: "8px 20px",
-                textAlign: "center",
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                backdropFilter: "blur(12px)",
-                WebkitBackdropFilter: "blur(12px)",
-                border: "1px solid rgba(255,255,255,0.14)",
-                boxShadow: "0 2px 16px rgba(0,0,0,0.4)",
-              }}>
+              <span
+                ref={(el) => { pillSpanRefs.current[i] = el; }}
+                style={{
+                  display: "inline-block",
+                  background: "rgba(0,0,0,0.60)",
+                  color: "#fff",
+                  fontWeight: 800,
+                  fontSize: 15,
+                  borderRadius: 999,
+                  minWidth: 80,
+                  maxWidth: "50vw",
+                  padding: "8px 20px",
+                  textAlign: "center",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  backdropFilter: "blur(12px)",
+                  WebkitBackdropFilter: "blur(12px)",
+                  border: "1px solid rgba(255,255,255,0.14)",
+                  boxShadow: "0 2px 16px rgba(0,0,0,0.4)",
+                  transition: "opacity 0.2s ease-out",
+                }}
+              >
                 {cat.name}
               </span>
             </div>
