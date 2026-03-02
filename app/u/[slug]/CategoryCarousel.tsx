@@ -7,46 +7,29 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import type { Product } from "./menuTypes";
 
 const css = `
-  @property --bg-angle {
-    syntax: "<angle>";
-    inherits: true;
-    initial-value: 0deg;
-  }
   @keyframes neon-spin {
-    0%   { --bg-angle: 0deg; }
-    100% { --bg-angle: 360deg; }
+    0%   { background-position: top center; }
+    100% { background-position: bottom center; }
   }
   .neon-border {
     position: absolute;
     inset: -1px;
     border-radius: inherit;
-    background: conic-gradient(
-      from var(--bg-angle),
-      transparent 0deg,
-      transparent 300deg,
-      #FF8888 300deg,
-      #FFEE99 360deg,
-      transparent 360deg
-    );
-    animation: neon-spin 3s linear infinite;
+    background: linear-gradient(0deg, #FF0000, #FFD700);
+    background-size: 100% 200%;
+    animation: neon-spin 2s infinite alternate;
     z-index: 0;
   }
   .neon-glow {
     position: absolute;
     inset: -1px;
     border-radius: inherit;
-    background: conic-gradient(
-      from var(--bg-angle),
-      transparent 0deg,
-      transparent 300deg,
-      #FF8888 300deg,
-      #FFEE99 360deg,
-      transparent 360deg
-    );
-    animation: neon-spin 3s linear infinite;
+    background: linear-gradient(0deg, #FF0000, #FFD700);
+    background-size: 100% 200%;
+    animation: neon-spin 2s infinite alternate;
     z-index: -1;
-    filter: blur(6px);
-    opacity: 0.6;
+    filter: blur(8px);
+    opacity: 0.4;
   }
 `;
 
