@@ -3,7 +3,7 @@
 
 "use client";
 
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useRef, useMemo } from "react";
 import type { CategoryWithProducts, Unit } from "./menuTypes";
 
 export default function CategoryPillsTop({
@@ -18,22 +18,36 @@ export default function CategoryPillsTop({
   onSelect: (id: string) => void;
 }) {
   const scrollerRef = useRef<HTMLDivElement | null>(null);
+  const highlightRef = useRef<HTMLDivElement | null>(null);
+  const activeButtonRef = useRef<HTMLButtonElement | null>(null);
 
   const pills = useMemo(() => categories ?? [], [categories]);
 
+  // Atualiza clip-path e centraliza pill ativa
   useEffect(() => {
     const scroller = scrollerRef.current;
-    if (!scroller || !activeCategoryId) return;
+    const highlight = highlightRef.current;
+    const activeBtn = activeButtonRef.current;
+    if (!scroller || !highlight || !activeBtn) return;
 
-    const el = scroller.querySelector<HTMLButtonElement>(`button[data-id="${activeCategoryId}"]`);
-    if (!el) return;
-
-    const r = el.getBoundingClientRect();
+    // centraliza pill ativa no scroll
     const sr = scroller.getBoundingClientRect();
-    const elCenter = r.left + r.width / 2;
+    const br = activeBtn.getBoundingClientRect();
+    const elCenter = br.left + br.width / 2;
     const scCenter = sr.left + sr.width / 2;
-
     scroller.scrollBy({ left: elCenter - scCenter, behavior: "smooth" });
+
+    // clip-path: relativo ao container highlight (mesma largura do scroller)
+    const containerLeft = sr.left - scroller.scrollLeft;
+    const offsetLeft = br.left - containerLeft;
+    const clipLeft = offsetLeft;
+    const clipRight = offsetLeft + br.width;
+    const totalWidth = highlight.scrollWidth;
+
+    const leftPct = ((clipLeft) / totalWidth * 100).toFixed(1);
+    const rightPct = (100 - (clipRight / totalWidth * 100)).toFixed(1);
+
+    highlight.style.clipPath = `inset(0 ${rightPct}% 0 ${leftPct}% round 999px)`;
   }, [activeCategoryId]);
 
   return (
@@ -56,45 +70,85 @@ export default function CategoryPillsTop({
           {(unit.city || "") + (unit.neighborhood ? ` • ${unit.neighborhood}` : "")}
         </div>
 
-        <div
-          ref={scrollerRef}
-          style={{
-            marginTop: 10,
-            display: "flex",
-            gap: 10,
-            overflowX: "auto",
-            paddingBottom: 6,
-            WebkitOverflowScrolling: "touch",
-            scrollbarWidth: "none",
-          }}
-        >
-          {pills.map((c) => {
-            const active = c.id === activeCategoryId;
+        {/* Container relativo para o clip-path */}
+        <div style={{ marginTop: 10, position: "relative" }}>
 
-            return (
-              <button
+          {/* Camada highlight (clip-path deslizante) */}
+          <div
+            ref={highlightRef}
+            style={{
+              position: "absolute",
+              inset: 0,
+              zIndex: 10,
+              pointerEvents: "none",
+              display: "flex",
+              gap: 8,
+              overflowX: "visible",
+              clipPath: "inset(0 100% 0 0% round 999px)",
+              transition: "clip-path 0.28s cubic-bezier(0.34, 1.56, 0.64, 1)",
+              background: "rgba(255,255,255,0.92)",
+              borderRadius: 999,
+            }}
+          >
+            {/* Pills fantasma — só pra ocupar espaço e alinhar com a base */}
+            {pills.map((c) => (
+              <div
                 key={c.id}
-                data-id={c.id}
-                onClick={() => onSelect(c.id)}
                 style={{
                   flex: "0 0 auto",
                   borderRadius: 999,
-                  border: "1px solid rgba(255,255,255,0.16)",
-                  background: active ? "rgba(255,255,255,0.92)" : "rgba(255,255,255,0.08)",
-                  color: active ? "#111" : "rgba(255,255,255,0.92)",
                   padding: "10px 14px",
                   fontWeight: 950,
                   fontSize: 13,
-                  transform: active ? "scale(1.14)" : "scale(0.96)",
-                  transition: "transform 200ms ease, background 200ms ease, color 200ms ease",
-                  cursor: "pointer",
                   whiteSpace: "nowrap",
+                  color: "#111",
+                  visibility: "hidden",
                 }}
               >
                 {c.name}
-              </button>
-            );
-          })}
+              </div>
+            ))}
+          </div>
+
+          {/* Camada base (scrollável, interativa) */}
+          <div
+            ref={scrollerRef}
+            style={{
+              display: "flex",
+              gap: 8,
+              overflowX: "auto",
+              paddingBottom: 6,
+              WebkitOverflowScrolling: "touch",
+              scrollbarWidth: "none",
+            }}
+          >
+            {pills.map((c) => {
+              const active = c.id === activeCategoryId;
+              return (
+                <button
+                  key={c.id}
+                  ref={active ? activeButtonRef : null}
+                  data-id={c.id}
+                  onClick={() => onSelect(c.id)}
+                  style={{
+                    flex: "0 0 auto",
+                    borderRadius: 999,
+                    border: "1px solid rgba(255,255,255,0.16)",
+                    background: "rgba(255,255,255,0.08)",
+                    color: active ? "transparent" : "rgba(255,255,255,0.92)",
+                    padding: "10px 14px",
+                    fontWeight: 950,
+                    fontSize: 13,
+                    whiteSpace: "nowrap",
+                    cursor: "pointer",
+                    transition: "color 0.28s ease",
+                  }}
+                >
+                  {c.name}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>
