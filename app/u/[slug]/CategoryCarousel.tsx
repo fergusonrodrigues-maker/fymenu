@@ -20,6 +20,7 @@ export default function CategoryCarousel({
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
   const rafRef = useRef<number | null>(null);
   const bounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scrollEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const list = useMemo(() => items ?? [], [items]);
 
@@ -51,14 +52,14 @@ export default function CategoryCarousel({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function computeHero() {
+  function computeHero(snapAfter = false) {
     const scroller = scrollerRef.current;
     if (!scroller) return;
 
     const sr = scroller.getBoundingClientRect();
     const center = sr.left + sr.width / 2;
 
-    const total = list.length + 2; // guia início + produtos + guia fim
+    const total = list.length + 2;
     let best = 1;
     let bestDist = Infinity;
 
@@ -67,26 +68,31 @@ export default function CategoryCarousel({
       if (!el) continue;
       const r = el.getBoundingClientRect();
       const d = Math.abs(r.left + r.width / 2 - center);
-      if (d < bestDist) {
-        bestDist = d;
-        best = i;
-      }
+      if (d < bestDist) { bestDist = d; best = i; }
     }
 
     setHeroIndex(best);
 
-    // bounce-back: se card guia virou hero, volta para o produto mais próximo
-    if (bounceTimerRef.current) clearTimeout(bounceTimerRef.current);
-    if (best === 0) {
-      bounceTimerRef.current = setTimeout(() => centralizeCard(1, true), 80);
-    } else if (best === total - 1) {
-      bounceTimerRef.current = setTimeout(() => centralizeCard(total - 2, true), 80);
+    if (snapAfter) {
+      if (bounceTimerRef.current) clearTimeout(bounceTimerRef.current);
+      // se for guia, volta pro produto adjacente; senão, centraliza o próprio card
+      if (best === 0) {
+        bounceTimerRef.current = setTimeout(() => centralizeCard(1, true), 80);
+      } else if (best === total - 1) {
+        bounceTimerRef.current = setTimeout(() => centralizeCard(total - 2, true), 80);
+      } else {
+        bounceTimerRef.current = setTimeout(() => centralizeCard(best, true), 80);
+      }
     }
   }
 
   function onScroll() {
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    rafRef.current = requestAnimationFrame(computeHero);
+    rafRef.current = requestAnimationFrame(() => computeHero(false));
+
+    // detecta fim do scroll
+    if (scrollEndTimerRef.current) clearTimeout(scrollEndTimerRef.current);
+    scrollEndTimerRef.current = setTimeout(() => computeHero(true), 120);
   }
 
   // sizing
