@@ -161,7 +161,7 @@ export default function CategoryCarousel({
           gap: 12,
           overflowX: "auto",
           overflowY: "hidden",
-          padding: "18px 14px 24px",
+          padding: "36px 14px 44px", // Padding generoso para o neon e a escala não cortarem
           WebkitOverflowScrolling: "touch",
           scrollSnapType: "none",
           scrollBehavior: "smooth",
@@ -175,7 +175,7 @@ export default function CategoryCarousel({
           ref={(el) => { cardRefs.current[0] = el; }}
           style={{ ...cardStyle(0), pointerEvents: "none" }}
         >
-          <GuideCard text="← Deslize para explorar" />
+          <GuideCard text="← Deslize" />
         </div>
 
         {/* produtos */}
@@ -214,7 +214,7 @@ export default function CategoryCarousel({
           ref={(el) => { cardRefs.current[list.length + 1] = el; }}
           style={{ ...cardStyle(list.length + 1), pointerEvents: "none" }}
         >
-          <GuideCard text="Deslize para voltar →" />
+          <GuideCard text="Voltar →" />
         </div>
       </div>
     </div>

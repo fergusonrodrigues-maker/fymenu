@@ -144,45 +144,42 @@ export default function MenuClient({ unit, categories }: Props) {
               data-category-id={cat.id}
               style={{
                 position: "relative",
-                overflow: "visible",
-                paddingTop: 24,
+                width: "100%",
+                marginTop: i === 0 ? 12 : 32,
                 transform: isVigente ? "scale(1)" : "scale(0.95)",
                 opacity: isVigente ? 1 : 0.8,
-                transition: "transform 0.5s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.5s cubic-bezier(0.25, 0.8, 0.25, 1)",
+                transition: "all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1)",
               }}
             >
-              {/* Pill ancorado na borda do topo — metade acima, metade abaixo */}
+              {/* Pill ancorado na borda exata do topo do carrossel (top=36 = padding-top do CategoryCarousel) */}
               {/* Quando vigente: sobe e some. Quando não: aparece centralizado na borda */}
               <div style={{
                 position: "absolute",
-                top: 0,
+                top: 36,
                 left: "50%",
                 transform: isVigente ? "translate(-50%, -100%)" : "translate(-50%, -50%)",
                 opacity: isVigente ? 0 : 1,
                 pointerEvents: isVigente ? "none" : "auto",
                 zIndex: 20,
-                transition: "transform 0.3s ease-out, opacity 0.3s ease-out",
+                transition: "transform 0.4s ease-out, opacity 0.3s ease-out",
               }}>
                 <span
                   ref={(el) => { pillSpanRefs.current[i] = el; }}
                   style={{
                     display: "inline-block",
-                    background: "rgba(0,0,0,0.60)",
+                    background: "rgba(0,0,0,0.65)",
                     color: "#fff",
                     fontWeight: 800,
-                    fontSize: 15,
+                    fontSize: 14,
                     borderRadius: 999,
-                    minWidth: 80,
-                    maxWidth: "50vw",
-                    padding: "8px 20px",
+                    minWidth: 100,
+                    padding: "8px 24px",
                     textAlign: "center",
                     whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
                     backdropFilter: "blur(12px)",
                     WebkitBackdropFilter: "blur(12px)",
-                    border: "1px solid rgba(255,255,255,0.14)",
-                    boxShadow: "0 2px 16px rgba(0,0,0,0.4)",
+                    border: "1px solid rgba(255,255,255,0.15)",
+                    boxShadow: "0 4px 16px rgba(0,0,0,0.5)",
                     transition: "opacity 0.2s ease-out",
                   }}
                 >

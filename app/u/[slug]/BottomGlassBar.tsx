@@ -33,96 +33,92 @@ export default function BottomGlassBar({ unit }: Props) {
   const ig = useMemo(() => normalizeInstagram(unit.instagram || ""), [unit.instagram]);
   const maps = useMemo(() => mapsUrl(unit), [unit]);
 
+  const cityLabel = [unit.city].filter(Boolean).join(" - ");
+  const neighborhoodLabel = unit.neighborhood || "";
+
   return (
-    <div style={{
-      position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50,
-      padding: "0 12px 14px",
-    }}>
-      <div style={{
-        maxWidth: 480, margin: "0 auto",
-        borderRadius: 22,
-        border: "1px solid rgba(255,255,255,0.12)",
-        background: "rgba(0,0,0,0.72)",
-        backdropFilter: "blur(20px)",
-        WebkitBackdropFilter: "blur(20px)",
-        boxShadow: "0 8px 32px rgba(0,0,0,0.45)",
-        display: "flex",
-        alignItems: "center",
-        padding: "10px 14px",
-        gap: 10,
-      }}>
+    <div className="fixed bottom-6 left-0 right-0 flex justify-center items-center z-50 px-4 pointer-events-none">
 
-        {/* Esquerda: Maps */}
-        <div style={{ flex: 1, display: "flex", justifyContent: "flex-start" }}>
-          {maps && (
-            <a href={maps} target="_blank" rel="noreferrer" style={{
-              display: "flex", flexDirection: "column", alignItems: "center",
-              gap: 3, color: "#fff", textDecoration: "none",
-              background: "rgba(255,255,255,0.08)",
-              border: "1px solid rgba(255,255,255,0.12)",
-              borderRadius: 14, padding: "8px 12px",
-            }}>
-              <span style={{ fontSize: 20 }}>📍</span>
-              <span style={{ fontSize: 10, fontWeight: 800, opacity: 0.8, whiteSpace: "nowrap" }}>
-                {unit.neighborhood || unit.city || "Maps"}
-              </span>
-            </a>
+      {/* Barra principal (Liquid Glass) */}
+      <div className="flex items-center h-[80px] bg-black/70 backdrop-blur-xl rounded-[24px] px-3 gap-3 pointer-events-auto border border-white/10 shadow-2xl">
+
+        {/* Ícone 1: Mapa/Local */}
+        {maps ? (
+          <a
+            href={maps}
+            target="_blank"
+            rel="noreferrer"
+            className="flex justify-center items-center w-[64px] h-[64px] bg-[#e63232] rounded-[18px] active:scale-95 transition-transform overflow-hidden"
+          >
+            {/* Substitua o src pelo ícone do seu bucket */}
+            <span style={{ fontSize: 28 }}>📍</span>
+          </a>
+        ) : (
+          <div className="flex justify-center items-center w-[64px] h-[64px] bg-[#e63232] rounded-[18px] overflow-hidden">
+            <span style={{ fontSize: 28 }}>📍</span>
+          </div>
+        )}
+
+        {/* Texto: Cidade/Bairro */}
+        <div className="flex flex-col justify-center items-start w-[140px] h-[64px] bg-white text-black px-3 rounded-[18px]">
+          <strong className="text-[14px] font-black leading-tight tracking-tight">
+            {cityLabel || unit.name}
+          </strong>
+          {neighborhoodLabel && (
+            <span className="text-[11px] font-medium tracking-tight leading-tight mt-[2px]">
+              unidade:<br />{neighborhoodLabel}
+            </span>
           )}
         </div>
 
-        {/* Centro: Logo + nome */}
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-          {unit.logo_url ? (
-            <img src={unit.logo_url} alt={unit.name}
-              style={{
-                width: 52, height: 52, borderRadius: 14,
-                objectFit: "cover",
-                border: "1px solid rgba(255,255,255,0.15)",
-                boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
-              }} />
-          ) : (
-            <div style={{
-              width: 52, height: 52, borderRadius: 14,
-              background: "rgba(255,255,255,0.12)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 22,
-            }}>🍽️</div>
-          )}
-          <div style={{ color: "#fff", fontWeight: 950, fontSize: 11, textAlign: "center", lineHeight: 1.1 }}>
-            {unit.name}
-          </div>
-          <div style={{ color: "rgba(255,255,255,0.55)", fontWeight: 700, fontSize: 10, textAlign: "center" }}>
-            {unit.city || ""}
+        {/* Ícone Central (Logo da Unidade flutuando) */}
+        <div className="relative flex justify-center items-center w-[104px] h-[104px] bg-white rounded-[30px] shadow-xl -mt-8 flex-shrink-0">
+          <div className="flex justify-center items-center w-[92px] h-[92px] bg-[#1a9cff] rounded-[24px] overflow-hidden">
+            {unit.logo_url ? (
+              <img
+                src={unit.logo_url}
+                alt={unit.name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <span style={{ fontSize: 36 }}>🍽️</span>
+            )}
           </div>
         </div>
 
-        {/* Direita: WhatsApp + Instagram */}
-        <div style={{ flex: 1, display: "flex", justifyContent: "flex-end", gap: 8 }}>
-          {wa && (
-            <a href={wa} target="_blank" rel="noreferrer" style={{
-              display: "flex", flexDirection: "column", alignItems: "center",
-              gap: 3, color: "#fff", textDecoration: "none",
-              background: "rgba(255,255,255,0.08)",
-              border: "1px solid rgba(255,255,255,0.12)",
-              borderRadius: 14, padding: "8px 12px",
-            }}>
-              <span style={{ fontSize: 20 }}>💬</span>
-              <span style={{ fontSize: 10, fontWeight: 800, opacity: 0.8 }}>WhatsApp</span>
-            </a>
-          )}
-          {ig && (
-            <a href={ig} target="_blank" rel="noreferrer" style={{
-              display: "flex", flexDirection: "column", alignItems: "center",
-              gap: 3, color: "#fff", textDecoration: "none",
-              background: "rgba(255,255,255,0.08)",
-              border: "1px solid rgba(255,255,255,0.12)",
-              borderRadius: 14, padding: "8px 12px",
-            }}>
-              <span style={{ fontSize: 20 }}>📷</span>
-              <span style={{ fontSize: 10, fontWeight: 800, opacity: 0.8 }}>Instagram</span>
-            </a>
-          )}
-        </div>
+        {/* Ícone 2: WhatsApp */}
+        {wa ? (
+          <a
+            href={wa}
+            target="_blank"
+            rel="noreferrer"
+            className="flex justify-center items-center w-[64px] h-[64px] bg-[#1db954] rounded-[18px] active:scale-95 transition-transform overflow-hidden"
+          >
+            {/* Substitua o src pelo ícone do seu bucket */}
+            <span style={{ fontSize: 28 }}>💬</span>
+          </a>
+        ) : (
+          <div className="flex justify-center items-center w-[64px] h-[64px] bg-[#1db954] rounded-[18px] overflow-hidden opacity-30">
+            <span style={{ fontSize: 28 }}>💬</span>
+          </div>
+        )}
+
+        {/* Ícone 3: Instagram */}
+        {ig ? (
+          <a
+            href={ig}
+            target="_blank"
+            rel="noreferrer"
+            className="flex justify-center items-center w-[64px] h-[64px] rounded-[18px] active:scale-95 transition-transform bg-gradient-to-tr from-[#fdf497] via-[#fd5949] to-[#285AEB] overflow-hidden"
+          >
+            {/* Substitua o src pelo ícone do seu bucket */}
+            <span style={{ fontSize: 28 }}>📷</span>
+          </a>
+        ) : (
+          <div className="flex justify-center items-center w-[64px] h-[64px] rounded-[18px] bg-gradient-to-tr from-[#fdf497] via-[#fd5949] to-[#285AEB] overflow-hidden opacity-30">
+            <span style={{ fontSize: 28 }}>📷</span>
+          </div>
+        )}
 
       </div>
     </div>
