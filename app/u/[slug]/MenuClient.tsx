@@ -106,6 +106,10 @@ export default function MenuClient({ unit, categories }: Props) {
   };
 
   const featuredCategory = orderedCategories[0] ?? null;
+
+  // Calcula se a categoria vigente é a última — aciona o modo expandido da GlassBar
+  const lastCategoryId = orderedCategories[orderedCategories.length - 1]?.id;
+  const isLastCategoryActive = vigenteId === lastCategoryId;
   const otherCategories = featuredCategory ? orderedCategories.slice(1) : orderedCategories;
 
   return (
@@ -198,7 +202,7 @@ export default function MenuClient({ unit, categories }: Props) {
       </div>
 
       {/* ✅ FIX 7: GlassBar renderizando */}
-      <BottomGlassBar unit={unit} />
+      <BottomGlassBar isMaximized={isLastCategoryActive} />
 
       {modal && (
         <ProductBoardModal
