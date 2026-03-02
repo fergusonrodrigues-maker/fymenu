@@ -45,6 +45,8 @@ export default function CategoryCarousel({
   // heroIndex 1 = primeiro produto (após o card guia de início)
   const [heroIndex, setHeroIndex] = useState(1);
   const heroIndexRef = useRef(1);
+  // impede computeHero durante transição de largura (isVigente muda)
+  const isResizingRef = useRef(false);
 
   function centralizeCard(index: number, smooth = false) {
     const scroller = scrollerRef.current;
@@ -83,6 +85,7 @@ export default function CategoryCarousel({
   }, []);
 
   function computeHero(snapAfter = false) {
+    if (isResizingRef.current) return; // ignora durante transição de largura
     const scroller = scrollerRef.current;
     if (!scroller) return;
 
@@ -137,8 +140,12 @@ export default function CategoryCarousel({
   }, [heroIndex]);
 
   useEffect(() => {
-    const t = setTimeout(() => centralizeCard(heroIndexRef.current, false), 520);
-    return () => clearTimeout(t);
+    isResizingRef.current = true;
+    const t = setTimeout(() => {
+      centralizeCard(heroIndexRef.current, false);
+      isResizingRef.current = false;
+    }, 520);
+    return () => { clearTimeout(t); isResizingRef.current = false; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [baseWidth]);
 

@@ -151,7 +151,8 @@ export default function MenuClient({ unit, categories }: Props) {
       {/* Isso permite a última categoria rolar até o topo da tela */}
       <div style={{
         paddingTop: 52,
-        paddingBottom: vigenteId === lastCategoryId ? 360 : 100,
+        // GlassBar compacta ~72px + bottom:20px = 92px visível; 120px dá margem confortável
+        paddingBottom: isLastCategoryActive ? 120 : 30,
         transition: "padding-bottom 700ms cubic-bezier(0.34,1.56,0.64,1)",
       }}>
 
