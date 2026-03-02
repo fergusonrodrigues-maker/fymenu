@@ -24,6 +24,12 @@ export default function MenuClient({ unit, categories }: Props) {
     orderedCategories[0]?.id ?? null
   );
 
+  // Vigente: qual seção está em destaque visual (scale + pill fade)
+  // Inicia na primeira categoria não-destaque (index 1)
+  const [vigenteId, setVigenteId] = useState<string | null>(
+    orderedCategories[1]?.id ?? null
+  );
+
   const [modal, setModal] = useState<null | { list: Product[]; index: number }>(null);
   const sectionRefs = useRef<(HTMLDivElement | null)[]>([]);
   const pillSpanRefs = useRef<(HTMLSpanElement | null)[]>([]);
@@ -46,6 +52,24 @@ export default function MenuClient({ unit, categories }: Props) {
     );
 
     sectionRefs.current.forEach((el) => { if (el) observer.observe(el); });
+    return () => observer.disconnect();
+  }, [orderedCategories]);
+
+  // Observer para efeito vigente: seção com 60%+ visível vira destaque
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const id = (entry.target as HTMLElement).dataset.categoryId;
+            if (id) setVigenteId(id);
+          }
+        });
+      },
+      { threshold: 0.6 }
+    );
+    // Observa apenas as seções de outras categorias (pula index 0 = destaque)
+    sectionRefs.current.slice(1).forEach((el) => { if (el) observer.observe(el); });
     return () => observer.disconnect();
   }, [orderedCategories]);
 
@@ -111,55 +135,69 @@ export default function MenuClient({ unit, categories }: Props) {
           </div>
         )}
 
-        {otherCategories.map((cat, i) => (
-          <div
-            key={cat.id}
-            ref={(el) => { sectionRefs.current[i + 1] = el; }}
-            data-category-id={cat.id}
-            style={{ position: "relative", overflow: "visible", paddingTop: 24 }}
-          >
-            {/* Pill ancorado na borda do topo — metade acima, metade abaixo */}
-            <div style={{
-              position: "absolute",
-              top: 0,
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-              zIndex: 20,
-            }}>
-              <span
-                ref={(el) => { pillSpanRefs.current[i] = el; }}
-                style={{
-                  display: "inline-block",
-                  background: "rgba(0,0,0,0.60)",
-                  color: "#fff",
-                  fontWeight: 800,
-                  fontSize: 15,
-                  borderRadius: 999,
-                  minWidth: 80,
-                  maxWidth: "50vw",
-                  padding: "8px 20px",
-                  textAlign: "center",
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  backdropFilter: "blur(12px)",
-                  WebkitBackdropFilter: "blur(12px)",
-                  border: "1px solid rgba(255,255,255,0.14)",
-                  boxShadow: "0 2px 16px rgba(0,0,0,0.4)",
-                  transition: "opacity 0.2s ease-out",
-                }}
-              >
-                {cat.name}
-              </span>
-            </div>
+        {otherCategories.map((cat, i) => {
+          const isVigente = cat.id === vigenteId;
+          return (
+            <div
+              key={cat.id}
+              ref={(el) => { sectionRefs.current[i + 1] = el; }}
+              data-category-id={cat.id}
+              style={{
+                position: "relative",
+                overflow: "visible",
+                paddingTop: 24,
+                transform: isVigente ? "scale(1)" : "scale(0.95)",
+                opacity: isVigente ? 1 : 0.8,
+                transition: "transform 0.5s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.5s cubic-bezier(0.25, 0.8, 0.25, 1)",
+              }}
+            >
+              {/* Pill ancorado na borda do topo — metade acima, metade abaixo */}
+              {/* Quando vigente: sobe e some. Quando não: aparece centralizado na borda */}
+              <div style={{
+                position: "absolute",
+                top: 0,
+                left: "50%",
+                transform: isVigente ? "translate(-50%, -100%)" : "translate(-50%, -50%)",
+                opacity: isVigente ? 0 : 1,
+                pointerEvents: isVigente ? "none" : "auto",
+                zIndex: 20,
+                transition: "transform 0.3s ease-out, opacity 0.3s ease-out",
+              }}>
+                <span
+                  ref={(el) => { pillSpanRefs.current[i] = el; }}
+                  style={{
+                    display: "inline-block",
+                    background: "rgba(0,0,0,0.60)",
+                    color: "#fff",
+                    fontWeight: 800,
+                    fontSize: 15,
+                    borderRadius: 999,
+                    minWidth: 80,
+                    maxWidth: "50vw",
+                    padding: "8px 20px",
+                    textAlign: "center",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    backdropFilter: "blur(12px)",
+                    WebkitBackdropFilter: "blur(12px)",
+                    border: "1px solid rgba(255,255,255,0.14)",
+                    boxShadow: "0 2px 16px rgba(0,0,0,0.4)",
+                    transition: "opacity 0.2s ease-out",
+                  }}
+                >
+                  {cat.name}
+                </span>
+              </div>
 
-            <CategoryCarousel
-              items={cat.products}
-              compact={true}
-              onOpen={(_, idx) => setModal({ list: cat.products, index: idx })}
-            />
-          </div>
-        ))}
+              <CategoryCarousel
+                items={cat.products}
+                compact={true}
+                onOpen={(_, idx) => setModal({ list: cat.products, index: idx })}
+              />
+            </div>
+          );
+        })}
       </div>
 
       {/* ✅ FIX 7: GlassBar renderizando */}
