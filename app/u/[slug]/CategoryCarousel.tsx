@@ -30,7 +30,14 @@ export default function CategoryCarousel({
     const scroller = scrollerRef.current;
     const card = cardRefs.current[index];
     if (!scroller || !card) return;
-    const left = card.offsetLeft - (scroller.offsetWidth / 2) + (card.offsetWidth / 2);
+
+    const scrollerRect = scroller.getBoundingClientRect();
+    const cardRect = card.getBoundingClientRect();
+
+    // posição real do centro do card relativa ao scroll atual
+    const cardCenter = scroller.scrollLeft + (cardRect.left - scrollerRect.left) + cardRect.width / 2;
+    const left = cardCenter - scroller.offsetWidth / 2;
+
     if (smooth) scroller.scrollTo({ left, behavior: "smooth" });
     else scroller.scrollLeft = left;
   }
