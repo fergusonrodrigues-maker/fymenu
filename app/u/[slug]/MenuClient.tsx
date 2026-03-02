@@ -54,7 +54,9 @@ export default function MenuClient({ unit, categories }: Props) {
 
   const onSelectCategory = (categoryId: string) => {
     setActiveCategoryId(categoryId);
-    // amanhã: se tiver anchors por categoria, plugamos scroll suave aqui SEM mexer nas animações
+    const idx = orderedCategories.findIndex((c) => c.id === categoryId);
+    const el = sectionRefs.current[idx];
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   // 1ª categoria = destaque
