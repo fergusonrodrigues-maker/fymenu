@@ -44,11 +44,22 @@ export default function CategoryCarousel({
   }
 
   useEffect(() => {
-    const timer = setTimeout(() => {
+    // Primeiro: posiciona sem animação (instantâneo)
+    const t1 = setTimeout(() => {
       centralizeCard(1);
       setHeroIndex(1);
-    }, 200);
-    return () => clearTimeout(timer);
+    }, 50);
+
+    // Segundo: confirma após layout completo
+    const t2 = setTimeout(() => {
+      centralizeCard(1);
+      setHeroIndex(1);
+    }, 350);
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
