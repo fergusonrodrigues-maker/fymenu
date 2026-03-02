@@ -150,8 +150,8 @@ export default function MenuClient({ unit, categories }: Props) {
       {/* paddingBottom dinâmico: 360px quando GlassBar expandida, 100px normal */}
       {/* Isso permite a última categoria rolar até o topo da tela */}
       <div style={{
-        paddingTop: 80,
-        paddingBottom: isLastCategoryActive ? 360 : 100,
+        paddingTop: 52,
+        paddingBottom: vigenteId === lastCategoryId ? 360 : 100,
         transition: "padding-bottom 700ms cubic-bezier(0.34,1.56,0.64,1)",
       }}>
 
@@ -179,9 +179,8 @@ export default function MenuClient({ unit, categories }: Props) {
                 position: "relative",
                 width: "100%",
                 marginTop: i === 0 ? 12 : 32,
-                transform: isVigente ? "scale(1)" : "scale(0.95)",
-                opacity: isVigente ? 1 : 0.8,
-                transition: "all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1)",
+                opacity: isVigente ? 1 : 0.72,
+                transition: "opacity 0.5s cubic-bezier(0.25, 0.8, 0.25, 1)",
               }}
             >
               {/* top: 10 compensa o crescimento scale(1.13) do card hero que expande para cima */}
@@ -223,6 +222,7 @@ export default function MenuClient({ unit, categories }: Props) {
               <CategoryCarousel
                 items={cat.products}
                 compact={true}
+                isVigente={isVigente}
                 onOpen={(_, idx) => setModal({ list: cat.products, index: idx })}
               />
             </div>

@@ -13,33 +13,24 @@ const css = `
   }
   .neon-border {
     position: absolute;
-    inset: -1px;
+    inset: -0.5px;
     border-radius: inherit;
     background: linear-gradient(0deg, #FF0000, #FFD700);
     background-size: 100% 200%;
     animation: neon-spin 2s infinite alternate;
     z-index: 0;
   }
-  .neon-glow {
-    position: absolute;
-    inset: -1px;
-    border-radius: inherit;
-    background: linear-gradient(0deg, #FF0000, #FFD700);
-    background-size: 100% 200%;
-    animation: neon-spin 2s infinite alternate;
-    z-index: -1;
-    filter: blur(8px);
-    opacity: 0.4;
-  }
 `;
 
 export default function CategoryCarousel({
   items,
   compact,
+  isVigente = false,
   onOpen,
 }: {
   items: Product[];
   compact: boolean;
+  isVigente?: boolean;
   onOpen: (p: Product, originalIndex: number) => void;
 }) {
   const scrollerRef = useRef<HTMLDivElement | null>(null);
@@ -53,6 +44,7 @@ export default function CategoryCarousel({
 
   // heroIndex 1 = primeiro produto (após o card guia de início)
   const [heroIndex, setHeroIndex] = useState(1);
+  const heroIndexRef = useRef(1);
 
   function centralizeCard(index: number, smooth = false) {
     const scroller = scrollerRef.current;
@@ -133,8 +125,22 @@ export default function CategoryCarousel({
     scrollEndTimerRef.current = setTimeout(() => computeHero(true), 120);
   }
 
-  // sizing
-  const baseWidth = compact ? 170 : 220;
+  // sizing: vigente cresce até o tamanho da categoria destaque
+  const baseWidth = compact ? (isVigente ? 220 : 150) : 220;
+
+  // largura do card guia para centralizar o primeiro card no centro da tela
+  const guideWidth = `calc(50vw - ${12 + baseWidth / 2}px)`;
+
+  // re-centraliza após a transição de largura completar
+  useEffect(() => {
+    heroIndexRef.current = heroIndex;
+  }, [heroIndex]);
+
+  useEffect(() => {
+    const t = setTimeout(() => centralizeCard(heroIndexRef.current, false), 520);
+    return () => clearTimeout(t);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [baseWidth]);
 
   function cardStyle(renderedIdx: number) {
     const isHero = renderedIdx === heroIndex;
@@ -144,8 +150,8 @@ export default function CategoryCarousel({
       transform: isHero ? "scale(1.13)" : "scale(0.92)",
       transformOrigin: "center center" as const,
       transition: isHero
-        ? "transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1)"
-        : "transform 300ms ease",
+        ? "width 0.5s cubic-bezier(0.25, 0.8, 0.25, 1), transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1)"
+        : "width 0.5s cubic-bezier(0.25, 0.8, 0.25, 1), transform 300ms ease",
       zIndex: isHero ? 5 : 1,
     };
   }
@@ -161,7 +167,7 @@ export default function CategoryCarousel({
           gap: 12,
           overflowX: "auto",
           overflowY: "hidden",
-          padding: "36px 14px 44px", // Padding generoso para o neon e a escala não cortarem
+          padding: "36px 0 44px", // padding horizontal zero: guide cards cuidam da centralização
           WebkitOverflowScrolling: "touch",
           scrollSnapType: "none",
           scrollBehavior: "smooth",
@@ -169,11 +175,18 @@ export default function CategoryCarousel({
           scrollbarWidth: "none",
         }}
       >
-        {/* card guia início */}
+        {/* card guia início — largura calculada para centralizar o 1º produto */}
         <div
           key="guide-start"
           ref={(el) => { cardRefs.current[0] = el; }}
-          style={{ ...cardStyle(0), pointerEvents: "none" }}
+          style={{
+            flex: "0 0 auto",
+            width: guideWidth,
+            minWidth: 8,
+            transition: "width 0.5s cubic-bezier(0.25, 0.8, 0.25, 1)",
+            pointerEvents: "none",
+            zIndex: 1,
+          }}
         >
           <GuideCard text="← Deslize" />
         </div>
@@ -198,21 +211,24 @@ export default function CategoryCarousel({
                 opacity: isHero ? 1 : 0,
                 transition: "opacity 350ms ease",
               }} />
-              <div className="neon-glow" style={{
-                opacity: isHero ? 1 : 0,
-                transition: "opacity 350ms ease",
-              }} />
               <MediaCard product={p} hero={isHero} adjacent={isAdjacent}
                 onOpen={() => onOpen(p, idx)} />
             </div>
           );
         })}
 
-        {/* card guia fim */}
+        {/* card guia fim — mesma largura para centralizar o último produto */}
         <div
           key="guide-end"
           ref={(el) => { cardRefs.current[list.length + 1] = el; }}
-          style={{ ...cardStyle(list.length + 1), pointerEvents: "none" }}
+          style={{
+            flex: "0 0 auto",
+            width: guideWidth,
+            minWidth: 8,
+            transition: "width 0.5s cubic-bezier(0.25, 0.8, 0.25, 1)",
+            pointerEvents: "none",
+            zIndex: 1,
+          }}
         >
           <GuideCard text="Voltar →" />
         </div>
