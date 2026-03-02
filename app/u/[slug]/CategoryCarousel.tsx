@@ -283,6 +283,8 @@ function MediaCard({
         position: "relative",
         padding: 0,
         cursor: "pointer",
+        // Hack para forçar recorte arredondado no iOS/Safari
+        WebkitMaskImage: "-webkit-radial-gradient(white, black)",
       }}
     >
       {product.thumbnail_url ? (
@@ -295,6 +297,7 @@ function MediaCard({
             width: "100%",
             height: "100%",
             objectFit: "cover",
+            borderRadius: "inherit", // Força a curva na imagem
             opacity: showVideo && videoReady ? 0 : 1,
             transition: "opacity 240ms ease",
           }}
@@ -331,6 +334,7 @@ function MediaCard({
             width: "100%",
             height: "100%",
             objectFit: "cover",
+            borderRadius: "inherit", // Força a curva no vídeo
             opacity: showVideo ? 1 : 0,
           }}
           onPlay={() => {
@@ -344,8 +348,9 @@ function MediaCard({
         style={{
           position: "absolute",
           inset: 0,
+          borderRadius: "inherit",
           background:
-            "linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.35) 45%, rgba(0,0,0,0.08) 76%, rgba(0,0,0,0.00) 100%)",
+            "linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.35) 45%, transparent 76%)",
         }}
       />
 
@@ -357,6 +362,7 @@ function MediaCard({
           bottom: 12,
           textAlign: "left",
           color: "#fff",
+          zIndex: 10,
         }}
       >
         <div style={{ fontWeight: 950, fontSize: 14, lineHeight: 1.1 }}>

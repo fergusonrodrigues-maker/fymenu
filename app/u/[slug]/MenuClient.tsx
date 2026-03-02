@@ -155,11 +155,11 @@ export default function MenuClient({ unit, categories }: Props) {
                 transition: "all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1)",
               }}
             >
-              {/* Pill ancorado na borda exata do topo do carrossel (top=36 = padding-top do CategoryCarousel) */}
+              {/* top: 10 compensa o crescimento scale(1.13) do card hero que expande para cima */}
               {/* Quando vigente: sobe e some. Quando não: aparece centralizado na borda */}
               <div style={{
                 position: "absolute",
-                top: 36,
+                top: 10,
                 left: "50%",
                 transform: isVigente ? "translate(-50%, -100%)" : "translate(-50%, -50%)",
                 opacity: isVigente ? 0 : 1,
