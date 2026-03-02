@@ -39,7 +39,7 @@ export default function BottomGlassBar({ isMaximized = false }: { isMaximized?: 
         className={`relative transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] pointer-events-auto flex justify-center
         ${isMaximized
           ? "w-[90vw] max-w-[340px] h-[320px] rounded-[32px]"
-          : "rounded-[26px]"
+          : "w-[96vw] max-w-[360px] h-[72px] rounded-[22px]"
         }`}
         style={glassBarStyle}
       >
@@ -83,13 +83,13 @@ export default function BottomGlassBar({ isMaximized = false }: { isMaximized?: 
 
         {/* ── ESTADO MINIMIZADO ── */}
         <div
-          className={`flex items-center gap-2 px-3 py-[10px] transition-opacity duration-300
+          className={`flex items-center gap-1.5 px-2 transition-opacity duration-300
           ${isMaximized ? "opacity-0 pointer-events-none" : "opacity-100 delay-300 pointer-events-auto"}`}
         >
           {/* Maps */}
           <button
             className="flex-shrink-0 flex items-center justify-center rounded-[16px] active:scale-95 transition-transform"
-            style={{ width: 58, height: 58, background: "#E53935", boxShadow: "0 4px 14px rgba(229,57,53,0.45)" }}
+            style={{ width: 52, height: 52, background: "#E53935", boxShadow: "0 4px 14px rgba(229,57,53,0.45)" }}
           >
             <IconMaps />
           </button>
@@ -97,30 +97,29 @@ export default function BottomGlassBar({ isMaximized = false }: { isMaximized?: 
           {/* Endereço */}
           <div
             className="flex-shrink-0 flex flex-col justify-center items-start rounded-[16px]"
-            style={{ width: 130, height: 58, background: "rgba(255,255,255,0.93)", padding: "0 14px", boxShadow: "0 2px 10px rgba(0,0,0,0.35)" }}
+            style={{ width: 96, height: 52, background: "rgba(255,255,255,0.93)", padding: "0 10px", boxShadow: "0 2px 10px rgba(0,0,0,0.35)" }}
           >
-            <span style={{ fontSize: 12.5, fontWeight: 700, color: "#111", whiteSpace: "nowrap" }}>Goiânia - Go</span>
-            <span style={{ fontSize: 10, fontWeight: 500, color: "#777", whiteSpace: "nowrap" }}>unidade:</span>
-            <span style={{ fontSize: 11, fontWeight: 700, color: "#111", whiteSpace: "nowrap" }}>bairro são francisco</span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: "#111", whiteSpace: "nowrap" }}>Goiânia - Go</span>
+            <span style={{ fontSize: 9, fontWeight: 500, color: "#777", whiteSpace: "nowrap" }}>unidade:</span>
+            <span style={{ fontSize: 10, fontWeight: 700, color: "#111", whiteSpace: "nowrap" }}>são francisco</span>
           </div>
 
-          {/* Espaço reservado para a logo (86px = 76px logo + 5px padding × 2) */}
-          <div className="flex-shrink-0" style={{ width: 86 }} />
+          {/* Espaço reservado para a logo */}
+          <div className="flex-shrink-0" style={{ width: 70 }} />
 
           {/* WhatsApp */}
-          <div
-            className="flex-shrink-0 flex items-center justify-center gap-2 rounded-[16px] cursor-pointer active:scale-95 transition-transform"
-            style={{ width: 130, height: 58, background: "#25D366", padding: "0 14px", boxShadow: "0 4px 14px rgba(37,211,102,0.45)" }}
+          <button
+            className="flex-shrink-0 flex items-center justify-center rounded-[16px] active:scale-95 transition-transform"
+            style={{ width: 52, height: 52, background: "#25D366", boxShadow: "0 4px 14px rgba(37,211,102,0.45)" }}
           >
             <IconWhatsApp />
-            <span style={{ fontSize: 12, fontWeight: 700, color: "white", whiteSpace: "nowrap" }}>WhatsApp</span>
-          </div>
+          </button>
 
           {/* Instagram */}
           <button
             className="flex-shrink-0 flex items-center justify-center rounded-[16px] active:scale-95 transition-transform"
             style={{
-              width: 58, height: 58,
+              width: 52, height: 52,
               background: "linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)",
               boxShadow: "0 4px 14px rgba(220,39,67,0.4)",
             }}
