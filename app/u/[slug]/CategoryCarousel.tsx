@@ -97,7 +97,6 @@ export default function CategoryCarousel({
     return {
       flex: "0 0 auto" as const,
       width: baseWidth,
-      scrollSnapAlign: "center" as const,
       transform: isHero ? "scale(1.13)" : "scale(0.92)",
       transformOrigin: "center center" as const,
       transition: isHero
@@ -119,7 +118,7 @@ export default function CategoryCarousel({
           overflowY: "hidden",
           padding: "10px 14px 18px",
           WebkitOverflowScrolling: "touch",
-          scrollSnapType: "x mandatory",
+          scrollSnapType: "none",
           scrollBehavior: "smooth",
           touchAction: "pan-x pan-y",
           scrollbarWidth: "none",
