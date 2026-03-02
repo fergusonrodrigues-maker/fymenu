@@ -6,6 +6,33 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import type { Product } from "./menuTypes";
 
+const css = `
+  @keyframes neon-spin {
+    0%   { background-position: top center; }
+    100% { background-position: bottom center; }
+  }
+  .neon-border {
+    position: absolute;
+    inset: -2px;
+    border-radius: inherit;
+    background: linear-gradient(0deg, #FF0000, #FFD700);
+    background-size: 100% 200%;
+    animation: neon-spin 2s infinite alternate;
+    z-index: 0;
+  }
+  .neon-glow {
+    position: absolute;
+    inset: -2px;
+    border-radius: inherit;
+    background: linear-gradient(0deg, #FF0000, #FFD700);
+    background-size: 100% 200%;
+    animation: neon-spin 2s infinite alternate;
+    z-index: -1;
+    filter: blur(18px);
+    opacity: 0.85;
+  }
+`;
+
 export default function CategoryCarousel({
   items,
   compact,
@@ -125,6 +152,7 @@ export default function CategoryCarousel({
 
   return (
     <div style={{ width: "100%" }}>
+      <style>{css}</style>
       <div
         ref={scrollerRef}
         onScroll={onScroll}
@@ -154,14 +182,28 @@ export default function CategoryCarousel({
         {list.map((p, idx) => {
           const renderedIdx = idx + 1;
           const isHero = renderedIdx === heroIndex;
-          const isAdjacent = Math.abs(renderedIdx - heroIndex) === 1;
+          const isAdjacent = renderedIdx === heroIndex - 1 || renderedIdx === heroIndex + 1;
           return (
             <div
               key={p.id}
               ref={(el) => { cardRefs.current[renderedIdx] = el; }}
-              style={cardStyle(renderedIdx)}
+              style={{
+                ...cardStyle(renderedIdx),
+                position: "relative",
+                borderRadius: 24,
+                padding: 2,
+              }}
             >
-              <MediaCard product={p} hero={isHero} adjacent={isAdjacent} onOpen={() => onOpen(p, idx)} />
+              <div className="neon-border" style={{
+                opacity: isHero ? 1 : 0,
+                transition: "opacity 350ms ease",
+              }} />
+              <div className="neon-glow" style={{
+                opacity: isHero ? 1 : 0,
+                transition: "opacity 350ms ease",
+              }} />
+              <MediaCard product={p} hero={isHero} adjacent={isAdjacent}
+                onOpen={() => onOpen(p, idx)} />
             </div>
           );
         })}
