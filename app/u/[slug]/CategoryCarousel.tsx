@@ -18,33 +18,35 @@ const css = `
   }
   .neon-border {
     position: absolute;
-    inset: -2px;
+    inset: -1px;
     border-radius: inherit;
     background: conic-gradient(
       from var(--bg-angle),
       transparent 0deg,
-      transparent 240deg,
-      #FF0000 300deg,
-      #FFD700 360deg
+      transparent 300deg,
+      #FF8888 300deg,
+      #FFEE99 360deg,
+      transparent 360deg
     );
-    animation: neon-spin 2.5s linear infinite;
+    animation: neon-spin 3s linear infinite;
     z-index: 0;
   }
   .neon-glow {
     position: absolute;
-    inset: -2px;
+    inset: -1px;
     border-radius: inherit;
     background: conic-gradient(
       from var(--bg-angle),
       transparent 0deg,
-      transparent 240deg,
-      #FF0000 300deg,
-      #FFD700 360deg
+      transparent 300deg,
+      #FF8888 300deg,
+      #FFEE99 360deg,
+      transparent 360deg
     );
-    animation: neon-spin 2.5s linear infinite;
+    animation: neon-spin 3s linear infinite;
     z-index: -1;
-    filter: blur(18px);
-    opacity: 0.85;
+    filter: blur(6px);
+    opacity: 0.6;
   }
 `;
 
@@ -206,7 +208,7 @@ export default function CategoryCarousel({
                 ...cardStyle(renderedIdx),
                 position: "relative",
                 borderRadius: 24,
-                padding: 2,
+                padding: 1,
               }}
             >
               <div className="neon-border" style={{
