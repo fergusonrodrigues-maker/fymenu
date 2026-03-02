@@ -2,15 +2,13 @@
 "use client";
 
 import React, { useEffect, useRef, useMemo } from "react";
-import type { CategoryWithProducts, Unit } from "./menuTypes";
+import type { CategoryWithProducts } from "./menuTypes";
 
 export default function CategoryPillsTop({
-  unit,
   categories,
   activeCategoryId,
   onSelect,
 }: {
-  unit: Unit;
   categories: CategoryWithProducts[];
   activeCategoryId: string | null;
   onSelect: (id: string) => void;
@@ -54,17 +52,11 @@ export default function CategoryPillsTop({
         borderBottom: "1px solid rgba(255,255,255,0.08)",
       }}
     >
-      <div style={{ padding: "12px 14px 10px" }}>
-        <div style={{ fontWeight: 950, color: "#fff", fontSize: 16 }}>{unit.name}</div>
-        <div style={{ marginTop: 4, fontSize: 12, opacity: 0.65, color: "#fff" }}>
-          {(unit.city || "") + (unit.neighborhood ? ` • ${unit.neighborhood}` : "")}
-        </div>
-
+      <div style={{ padding: "10px 14px" }}>
         {/* scroller com position relative para o highlight absoluto */}
         <div
           ref={scrollerRef}
           style={{
-            marginTop: 10,
             position: "relative",
             display: "flex",
             gap: 8,
@@ -105,9 +97,9 @@ export default function CategoryPillsTop({
                   border: "1px solid rgba(255,255,255,0.16)",
                   background: "transparent",
                   color: active ? "#111" : "rgba(255,255,255,0.92)",
-                  padding: "10px 14px",
+                  padding: "11.5px 16px",
                   fontWeight: 950,
-                  fontSize: 13,
+                  fontSize: 15,
                   whiteSpace: "nowrap",
                   cursor: "pointer",
                   transition: "color 0.25s ease",

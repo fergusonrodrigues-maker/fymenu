@@ -67,7 +67,6 @@ export default function MenuClient({ unit, categories }: Props) {
 
       {/* ✅ FIX 4: sticky funciona porque o pai não tem overflow:hidden */}
       <CategoryPillsTop
-        unit={unit}
         categories={orderedCategories}
         activeCategoryId={activeCategoryId}
         onSelect={onSelectCategory}
@@ -103,7 +102,7 @@ export default function MenuClient({ unit, categories }: Props) {
               justifyContent: "center",
               position: "relative",
               zIndex: 20,
-              marginTop: -20,
+              marginTop: 12,
               marginBottom: 8,
             }}>
               <span style={{
