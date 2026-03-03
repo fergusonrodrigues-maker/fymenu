@@ -25,14 +25,12 @@ export default function MenuClient({ unit, categories }: Props) {
   );
 
   // Vigente: qual seção está em destaque visual (scale + pill fade)
-  // Inicia na primeira categoria não-destaque (index 1)
-  const [vigenteId, setVigenteId] = useState<string | null>(
-    orderedCategories[1]?.id ?? null
-  );
+  // Inicia null — o observer define ao scroll
+  const [vigenteId, setVigenteId] = useState<string | null>(null);
 
   // GlassBar: minimiza imediatamente ao scroll, maximiza só quando parado na última categoria
   const [isLastCategoryActive, setIsLastCategoryActive] = useState(false);
-  const vigenteIdRef = useRef<string | null>(orderedCategories[1]?.id ?? null);
+  const vigenteIdRef = useRef<string | null>(null);
   const glassBarTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [modal, setModal] = useState<null | { list: Product[]; index: number }>(null);
