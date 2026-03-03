@@ -28,17 +28,10 @@ export default function MenuClient({ unit, categories }: Props) {
   // Inicia null — o observer define ao scroll
   const [vigenteId, setVigenteId] = useState<string | null>(null);
 
-  // GlassBar: minimiza imediatamente ao scroll, maximiza só quando parado na última categoria
-  const [isLastCategoryActive, setIsLastCategoryActive] = useState(false);
-  const vigenteIdRef = useRef<string | null>(null);
-  const glassBarTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const [modal, setModal] = useState<null | { list: Product[]; index: number }>(null);
   const sectionRefs = useRef<(HTMLDivElement | null)[]>([]);
   const pillSpanRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const ignoreObserverRef = useRef(false);
-
-  const lastCategoryId = orderedCategories[orderedCategories.length - 1]?.id;
 
   // ✅ FIX 2: IntersectionObserver com rootMargin apertado — só ativa quando
   // a seção cruza o topo da tela, evitando Cat2 disparar no load
@@ -78,13 +71,7 @@ export default function MenuClient({ unit, categories }: Props) {
     return () => observer.disconnect();
   }, [orderedCategories]);
 
-  // Mantém vigenteIdRef sincronizado para uso dentro de callbacks
-  useEffect(() => {
-    vigenteIdRef.current = vigenteId;
-  }, [vigenteId]);
-
   // Fade-out das pills divisórias ao subir até a top bar
-  // + minimiza GlassBar imediatamente ao scroll (restaura 400ms após parar)
   useEffect(() => {
     const handleScroll = () => {
       pillSpanRefs.current.forEach((pill) => {
@@ -101,24 +88,10 @@ export default function MenuClient({ unit, categories }: Props) {
           pill.style.pointerEvents = "auto";
         }
       });
-
-      // Minimiza GlassBar imediatamente
-      setIsLastCategoryActive(false);
-
-      // Restaura 400ms após o scroll parar, se ainda estiver na última categoria
-      if (glassBarTimerRef.current) clearTimeout(glassBarTimerRef.current);
-      glassBarTimerRef.current = setTimeout(() => {
-        if (vigenteIdRef.current === lastCategoryId) {
-          setIsLastCategoryActive(true);
-        }
-      }, 400);
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-      if (glassBarTimerRef.current) clearTimeout(glassBarTimerRef.current);
-    };
-  }, [lastCategoryId]);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const onSelectCategory = (categoryId: string) => {
     // bloqueia observer por 1s enquanto faz scroll programático
@@ -145,14 +118,7 @@ export default function MenuClient({ unit, categories }: Props) {
         onSelect={onSelectCategory}
       />
 
-      {/* paddingBottom dinâmico: 360px quando GlassBar expandida, 100px normal */}
-      {/* Isso permite a última categoria rolar até o topo da tela */}
-      <div style={{
-        paddingTop: 52,
-        // GlassBar compacta ~72px + bottom:20px = 92px visível; 120px dá margem confortável
-        paddingBottom: isLastCategoryActive ? 120 : 30,
-        transition: "padding-bottom 700ms cubic-bezier(0.34,1.56,0.64,1)",
-      }}>
+      <div style={{ paddingTop: 52, paddingBottom: 120 }}>
 
         {/* Featured — sem pill, é a Destaque */}
         {featuredCategory && (
@@ -229,8 +195,7 @@ export default function MenuClient({ unit, categories }: Props) {
         })}
       </div>
 
-      {/* ✅ FIX 7: GlassBar renderizando */}
-      <BottomGlassBar isMaximized={isLastCategoryActive} />
+      <BottomGlassBar unit={unit} />
 
       {modal && (
         <ProductBoardModal
