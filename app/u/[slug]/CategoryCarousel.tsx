@@ -19,6 +19,7 @@ const css = `
     background-size: 100% 200%;
     animation: neon-spin 2s infinite alternate;
     z-index: 0;
+    pointer-events: none;
   }
 `;
 
@@ -39,6 +40,7 @@ export default function CategoryCarousel({
   const rafRef = useRef<number | null>(null);
   const bounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scrollEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastScrollLeft = useRef(0);
 
   const list = useMemo(() => items ?? [], [items]);
 
@@ -120,10 +122,16 @@ export default function CategoryCarousel({
   }
 
   function onScroll() {
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+
+    // ignora se não houve movimento horizontal real (ex: scroll vertical da página)
+    if (Math.abs(scroller.scrollLeft - lastScrollLeft.current) < 2) return;
+    lastScrollLeft.current = scroller.scrollLeft;
+
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
     rafRef.current = requestAnimationFrame(() => computeHero(false));
 
-    // detecta fim do scroll
     if (scrollEndTimerRef.current) clearTimeout(scrollEndTimerRef.current);
     scrollEndTimerRef.current = setTimeout(() => computeHero(true), 120);
   }
@@ -154,6 +162,7 @@ export default function CategoryCarousel({
     return {
       flex: "0 0 auto" as const,
       width: baseWidth,
+      maxWidth: 280,
       transform: isHero ? "scale(1.13)" : "scale(0.92)",
       transformOrigin: "center center" as const,
       transition: isHero
