@@ -32,6 +32,7 @@ export default function MenuClient({ unit, categories }: Props) {
   const sectionRefs = useRef<(HTMLDivElement | null)[]>([]);
   const pillSpanRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const ignoreObserverRef = useRef(false);
+  const snapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ✅ FIX 2: IntersectionObserver com rootMargin apertado — só ativa quando
   // a seção cruza o topo da tela, evitando Cat2 disparar no load
@@ -91,6 +92,38 @@ export default function MenuClient({ unit, categories }: Props) {
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // snap vertical — puxa categoria mais próxima ao soltar scroll
+  useEffect(() => {
+    function onScroll() {
+      if (snapTimerRef.current) clearTimeout(snapTimerRef.current);
+      snapTimerRef.current = setTimeout(() => {
+        if (ignoreObserverRef.current) return;
+
+        let best = 0;
+        let bestDist = Infinity;
+        sectionRefs.current.forEach((el, i) => {
+          if (!el) return;
+          const top = el.getBoundingClientRect().top;
+          const dist = Math.abs(top - 80);
+          if (dist < bestDist) { bestDist = dist; best = i; }
+        });
+
+        const el = sectionRefs.current[best];
+        if (el && bestDist > 10) {
+          ignoreObserverRef.current = true;
+          el.scrollIntoView({ behavior: "smooth", block: "start" });
+          setTimeout(() => { ignoreObserverRef.current = false; }, 800);
+        }
+      }, 120);
+    }
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (snapTimerRef.current) clearTimeout(snapTimerRef.current);
+    };
   }, []);
 
   const onSelectCategory = (categoryId: string) => {

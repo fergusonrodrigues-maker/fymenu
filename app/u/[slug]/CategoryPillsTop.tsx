@@ -23,7 +23,6 @@ export default function CategoryPillsTop({
 
   const pills = useMemo(() => categories ?? [], [categories]);
 
-  // largura fixa baseada no nome mais longo
   const heroWidth = useMemo(() => {
     if (typeof document === "undefined") return 140;
     const canvas = document.createElement("canvas");
@@ -36,6 +35,45 @@ export default function CategoryPillsTop({
 
   const sideWidth = Math.round(heroWidth * 0.80);
 
+  function animateSide(
+    el: HTMLButtonElement,
+    newText: string,
+    visible: boolean,
+    opacity: number,
+    goingRight: boolean,
+  ) {
+    if (!visible) {
+      el.style.transition = "opacity 0.2s ease, transform 0.2s ease";
+      el.style.opacity = "0";
+      el.style.transform = "scale(0.7)";
+      setTimeout(() => {
+        el.textContent = "";
+        el.style.visibility = "hidden";
+      }, 200);
+      return;
+    }
+
+    const exitX = goingRight ? -30 : 30;
+    el.style.transition = "opacity 0.15s ease, transform 0.15s ease";
+    el.style.opacity = "0";
+    el.style.transform = `translateX(${exitX}px) scale(0.75)`;
+
+    setTimeout(() => {
+      el.textContent = newText;
+      el.style.visibility = "visible";
+      const enterX = goingRight ? 30 : -30;
+      el.style.transition = "none";
+      el.style.transform = `translateX(${enterX}px) scale(0.75)`;
+      el.style.opacity = "0";
+
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        el.style.transition = "opacity 0.25s ease, transform 0.28s cubic-bezier(0.34,1.56,0.64,1)";
+        el.style.transform = "translateX(0) scale(1)";
+        el.style.opacity = String(opacity);
+      }));
+    }, 150);
+  }
+
   useEffect(() => {
     const heroText = heroTextRef.current;
     if (!heroText || !activeCategoryId) return;
@@ -46,27 +84,33 @@ export default function CategoryPillsTop({
     const prevIdx    = prevIdxRef.current;
     const goingRight = prevIdx >= 0 && activeIdx > prevIdx;
     const newName    = pills[activeIdx]?.name ?? "";
+    const isFirst    = prevIdx < 0 || prevIdx === activeIdx;
 
-    // atualiza pills laterais
-    const setSide = (ref: React.RefObject<HTMLButtonElement | null>, offset: number) => {
+    const sides = [
+      { ref: l2Ref, offset: -2, opacity: 0.35 },
+      { ref: l1Ref, offset: -1, opacity: 0.72 },
+      { ref: r1Ref, offset: +1, opacity: 0.72 },
+      { ref: r2Ref, offset: +2, opacity: 0.35 },
+    ];
+
+    sides.forEach(({ ref, offset, opacity }) => {
       const el = ref.current;
       if (!el) return;
       const idx = activeIdx + offset;
-      if (idx >= 0 && idx < pills.length) {
-        el.textContent    = pills[idx].name;
-        el.style.opacity  = Math.abs(offset) === 1 ? "0.72" : "0.35";
-        el.style.visibility = "visible";
-      } else {
-        el.style.visibility = "hidden";
-      }
-    };
-    setSide(l2Ref, -2);
-    setSide(l1Ref, -1);
-    setSide(r1Ref, +1);
-    setSide(r2Ref, +2);
+      const visible = idx >= 0 && idx < pills.length;
+      const text = visible ? pills[idx].name : "";
 
-    if (prevIdx >= 0 && prevIdx !== activeIdx) {
-      // zoom out → reposiciona do lado oposto → zoom in
+      if (isFirst) {
+        el.textContent = text;
+        el.style.opacity = visible ? String(opacity) : "0";
+        el.style.visibility = visible ? "visible" : "hidden";
+        el.style.transform = "translateX(0) scale(1)";
+      } else {
+        animateSide(el, text, visible, opacity, goingRight);
+      }
+    });
+
+    if (!isFirst) {
       const pillW  = heroWidth + 10;
       const exitTo = pillW * (goingRight ? -1 : 1);
       const enter  = pillW * (goingRight ?  1 : -1);
@@ -108,10 +152,8 @@ export default function CategoryPillsTop({
       padding: "10px 0 28px",
     }}>
       <div style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 8,
+        display: "flex", alignItems: "center",
+        justifyContent: "center", gap: 8,
         pointerEvents: "auto",
       }}>
 
@@ -122,13 +164,11 @@ export default function CategoryPillsTop({
         }} style={{
           width: sideWidth, height: 40, borderRadius: 999,
           border: "1px solid rgba(255,255,255,0.14)",
-          background: "transparent",
-          color: "rgba(255,255,255,0.85)",
+          background: "transparent", color: "rgba(255,255,255,0.85)",
           fontWeight: 800, fontSize: 12,
           whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-          cursor: "pointer", opacity: 0.35,
-          transition: "opacity 0.25s ease",
-          padding: "0 10px",
+          cursor: "pointer", padding: "0 10px",
+          willChange: "transform, opacity",
         }} />
 
         {/* L1 */}
@@ -138,13 +178,11 @@ export default function CategoryPillsTop({
         }} style={{
           width: sideWidth, height: 44, borderRadius: 999,
           border: "1px solid rgba(255,255,255,0.16)",
-          background: "transparent",
-          color: "rgba(255,255,255,0.85)",
+          background: "transparent", color: "rgba(255,255,255,0.85)",
           fontWeight: 800, fontSize: 13,
           whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-          cursor: "pointer", opacity: 0.72,
-          transition: "opacity 0.25s ease",
-          padding: "0 10px",
+          cursor: "pointer", padding: "0 10px",
+          willChange: "transform, opacity",
         }} />
 
         {/* HERO */}
@@ -153,9 +191,7 @@ export default function CategoryPillsTop({
           background: "rgba(255,255,255,0.92)",
           boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
           display: "flex", alignItems: "center", justifyContent: "center",
-          overflow: "hidden",
-          flexShrink: 0,
-          pointerEvents: "none",
+          overflow: "hidden", flexShrink: 0, pointerEvents: "none",
         }}>
           <span ref={heroTextRef} style={{
             fontWeight: 950, fontSize: 15, color: "#111",
@@ -171,13 +207,11 @@ export default function CategoryPillsTop({
         }} style={{
           width: sideWidth, height: 44, borderRadius: 999,
           border: "1px solid rgba(255,255,255,0.16)",
-          background: "transparent",
-          color: "rgba(255,255,255,0.85)",
+          background: "transparent", color: "rgba(255,255,255,0.85)",
           fontWeight: 800, fontSize: 13,
           whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-          cursor: "pointer", opacity: 0.72,
-          transition: "opacity 0.25s ease",
-          padding: "0 10px",
+          cursor: "pointer", padding: "0 10px",
+          willChange: "transform, opacity",
         }} />
 
         {/* R2 */}
@@ -187,13 +221,11 @@ export default function CategoryPillsTop({
         }} style={{
           width: sideWidth, height: 40, borderRadius: 999,
           border: "1px solid rgba(255,255,255,0.14)",
-          background: "transparent",
-          color: "rgba(255,255,255,0.85)",
+          background: "transparent", color: "rgba(255,255,255,0.85)",
           fontWeight: 800, fontSize: 12,
           whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-          cursor: "pointer", opacity: 0.35,
-          transition: "opacity 0.25s ease",
-          padding: "0 10px",
+          cursor: "pointer", padding: "0 10px",
+          willChange: "transform, opacity",
         }} />
 
       </div>
