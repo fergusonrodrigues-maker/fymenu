@@ -36,14 +36,15 @@ function mapsUrl(unit: Unit): string | null {
 export default function BottomGlassBar({ unit }: { unit: Unit }) {
   const [isMaximized, setIsMaximized] = useState(false);
 
-  // Maximiza quando faltam 10% para o fim da página
+  // Maximiza quando faltam ~12% para o fim da página
   useEffect(() => {
     function onScroll() {
       const scrolled = window.scrollY + window.innerHeight;
       const total = document.documentElement.scrollHeight;
-      setIsMaximized(scrolled >= total * 0.90);
+      setIsMaximized(scrolled >= total * 0.88);
     }
     window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll(); // checa no mount
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 

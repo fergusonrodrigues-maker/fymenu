@@ -118,7 +118,7 @@ export default function MenuClient({ unit, categories }: Props) {
         onSelect={onSelectCategory}
       />
 
-      <div style={{ paddingTop: 52, paddingBottom: 120 }}>
+      <div style={{ paddingTop: 52, paddingBottom: 420 }}>
 
         {/* Featured — sem pill, é a Destaque */}
         {featuredCategory && (
@@ -143,7 +143,7 @@ export default function MenuClient({ unit, categories }: Props) {
               style={{
                 position: "relative",
                 width: "100%",
-                marginTop: i === 0 ? 12 : 32,
+                marginTop: 32,
                 opacity: isVigente ? 1 : 0.72,
                 transition: "opacity 0.5s cubic-bezier(0.25, 0.8, 0.25, 1)",
               }}
