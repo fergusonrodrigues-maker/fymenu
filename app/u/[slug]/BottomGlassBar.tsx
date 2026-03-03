@@ -118,26 +118,24 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
           position: "absolute", inset: 0,
           display: "flex", alignItems: "center",
           justifyContent: "space-between",
-          padding: "0 10px", gap: 8,
+          padding: "0 10px", gap: 6,
           opacity: isMaximized ? 0 : 1,
           pointerEvents: isMaximized ? "none" : "auto",
           transition: `opacity 250ms ease ${isMaximized ? "0ms" : "350ms"}`,
         }}>
-          <div style={{ display: "flex", gap: 8 }}>
+          {/* esquerda: maps + unidade — ambos 60x60 */}
+          <div style={{ display: "flex", gap: 6 }}>
             {maps && (
               <a href={maps} target="_blank" rel="noreferrer" style={{
                 width: 60, height: 60, borderRadius: 18,
-                overflow: "hidden", display: "flex",
-                alignItems: "center", justifyContent: "center",
-                flexShrink: 0,
+                overflow: "hidden", flexShrink: 0,
               }}>
                 <img src={ICONS.maps} alt="Maps"
                   style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               </a>
             )}
-
             <div style={{
-              width: 110, height: 60, borderRadius: 18,
+              width: 60, height: 60, borderRadius: 18,
               position: "relative", overflow: "hidden", flexShrink: 0,
             }}>
               <img src={ICONS.unidade} alt=""
@@ -145,25 +143,23 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
               <div style={{
                 position: "relative", zIndex: 1,
                 height: "100%", display: "flex", flexDirection: "column",
-                justifyContent: "center", padding: "0 10px",
+                justifyContent: "center", alignItems: "center", padding: "0 4px",
               }}>
-                <span style={{ fontSize: 11, fontWeight: 900, color: "#1a1a1a", lineHeight: 1.2 }}>
+                <span style={{ fontSize: 9, fontWeight: 900, color: "#1a1a1a", lineHeight: 1.2, textAlign: "center" }}>
                   {unit.city || ""}
                 </span>
-                <span style={{ fontSize: 9, fontWeight: 600, color: "#444", lineHeight: 1.2 }}>
-                  unidade:
-                </span>
-                <span style={{ fontSize: 10, fontWeight: 800, color: "#1a1a1a", lineHeight: 1.2 }}>
+                <span style={{ fontSize: 8, fontWeight: 800, color: "#1a1a1a", lineHeight: 1.2, textAlign: "center" }}>
                   {unit.neighborhood || unit.name}
                 </span>
               </div>
             </div>
           </div>
 
-          {/* espaço central para a logo */}
+          {/* espaço central logo */}
           <div style={{ width: 80, flexShrink: 0 }} />
 
-          <div style={{ display: "flex", gap: 8 }}>
+          {/* direita: whatsapp + instagram — ambos 60x60 */}
+          <div style={{ display: "flex", gap: 6 }}>
             {wa && (
               <a href={wa} target="_blank" rel="noreferrer" style={{
                 width: 60, height: 60, borderRadius: 18,
