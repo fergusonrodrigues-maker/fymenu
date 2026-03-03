@@ -53,20 +53,20 @@ export default function MenuClient({ unit, categories }: Props) {
     return () => observer.disconnect();
   }, [orderedCategories]);
 
-  // Observer para efeito vigente: seção com 60%+ visível vira destaque
+  // Observer para efeito vigente: só a seção colada no topo (abaixo do PillTop) cresce
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const id = (entry.target as HTMLElement).dataset.categoryId;
-            if (id) setVigenteId(id);
-          }
-        });
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        if (visible.length > 0) {
+          const id = (visible[0].target as HTMLElement).dataset.categoryId;
+          if (id) setVigenteId(id);
+        }
       },
-      { threshold: 0.6 }
+      { rootMargin: "-10% 0px -85% 0px", threshold: 0 }
     );
-    // Observa apenas as seções de outras categorias (pula index 0 = destaque)
     sectionRefs.current.slice(1).forEach((el) => { if (el) observer.observe(el); });
     return () => observer.disconnect();
   }, [orderedCategories]);
