@@ -67,7 +67,7 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
       <div style={{
         position: "relative",
         width: isMaximized ? "min(90vw, 340px)" : "min(96vw, 520px)",
-        height: isMaximized ? 280 : 80,
+        height: isMaximized ? 240 : 80,
         borderRadius: isMaximized ? 28 : 24,
         background: "rgba(0,0,0,0.72)",
         backdropFilter: "blur(24px)",
@@ -186,7 +186,7 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
           position: "absolute", inset: 0,
           padding: "60px 16px 16px",
           display: "flex", flexDirection: "column",
-          justifyContent: "center", gap: 12,
+          justifyContent: "center", gap: 8,
           opacity: isMaximized ? 1 : 0,
           pointerEvents: isMaximized ? "auto" : "none",
           transition: `opacity 250ms ease ${isMaximized ? "350ms" : "0ms"}`,
@@ -194,7 +194,7 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
           {wa && (
             <a href={wa} target="_blank" rel="noreferrer" style={{
               display: "flex", alignItems: "center",
-              width: "100%", height: 56, borderRadius: 18,
+              width: "100%", height: 46, borderRadius: 16,
               background: "#25D366", padding: "0 16px", gap: 10,
               textDecoration: "none",
             }}>
@@ -206,7 +206,7 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
           {ig && (
             <a href={ig} target="_blank" rel="noreferrer" style={{
               display: "flex", alignItems: "center",
-              width: "100%", height: 56, borderRadius: 18,
+              width: "100%", height: 46, borderRadius: 16,
               background: "linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)",
               padding: "0 16px", gap: 10, textDecoration: "none",
             }}>
@@ -218,7 +218,7 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
           {maps && (
             <a href={maps} target="_blank" rel="noreferrer" style={{
               display: "flex", alignItems: "center",
-              width: "100%", height: 56, borderRadius: 18,
+              width: "100%", height: 46, borderRadius: 16,
               background: "#E53935", padding: "0 16px", gap: 10,
               textDecoration: "none",
             }}>

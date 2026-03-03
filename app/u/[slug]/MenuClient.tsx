@@ -151,7 +151,7 @@ export default function MenuClient({ unit, categories }: Props) {
         onSelect={onSelectCategory}
       />
 
-      <div style={{ paddingTop: 52, paddingBottom: 500 }}>
+      <div style={{ paddingTop: 80, paddingBottom: 500 }}>
 
         {/* Featured — sem pill, é a Destaque */}
         {featuredCategory && (
@@ -176,22 +176,18 @@ export default function MenuClient({ unit, categories }: Props) {
               style={{
                 position: "relative",
                 width: "100%",
-                marginTop: 32,
+                marginTop: 48,
                 opacity: isVigente ? 1 : 0.72,
                 transition: "opacity 0.5s cubic-bezier(0.25, 0.8, 0.25, 1)",
               }}
             >
-              {/* top: 10 compensa o crescimento scale(1.13) do card hero que expande para cima */}
-              {/* Quando vigente: sobe e some. Quando não: aparece centralizado na borda */}
               <div style={{
                 position: "absolute",
-                top: 10,
+                top: 0,
                 left: "50%",
-                transform: isVigente ? "translate(-50%, -100%)" : "translate(-50%, -50%)",
-                opacity: isVigente ? 0 : 1,
-                pointerEvents: isVigente ? "none" : "auto",
+                transform: "translate(-50%, -50%)",
                 zIndex: 20,
-                transition: "transform 0.4s ease-out, opacity 0.3s ease-out",
+                pointerEvents: "auto",
               }}>
                 <span
                   ref={(el) => { pillSpanRefs.current[i] = el; }}
