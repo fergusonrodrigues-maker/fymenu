@@ -96,21 +96,11 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
           transition: `all ${DUR} ${EASE}`,
           overflow: "hidden",
         }}>
-          {logo ? (
-            <img src={logo} alt={unit.name} style={{
-              width: "100%", height: "100%", objectFit: "cover",
-              borderRadius: "inherit",
-            }} />
-          ) : (
-            <div style={{
-              width: "100%", height: "100%",
-              background: "#1a9cff",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 36, fontWeight: 900, color: "#fff",
-            }}>
-              {unit.name?.[0] ?? "🍽️"}
-            </div>
-          )}
+          <img
+            src={logo ?? "https://rjfbavmupiypxiqzksxo.supabase.co/storage/v1/object/public/GLASSBAR%20MESTRE/PERFIL-BOTOM-MEIO.png"}
+            alt={unit.name}
+            style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit" }}
+          />
         </div>
 
         {/* ── MINIMIZADO (horizontal) ── */}
