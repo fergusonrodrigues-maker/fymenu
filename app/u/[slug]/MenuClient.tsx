@@ -118,7 +118,7 @@ export default function MenuClient({ unit, categories }: Props) {
         onSelect={onSelectCategory}
       />
 
-      <div style={{ paddingTop: 52, paddingBottom: 420 }}>
+      <div style={{ paddingTop: 52, paddingBottom: 500 }}>
 
         {/* Featured — sem pill, é a Destaque */}
         {featuredCategory && (

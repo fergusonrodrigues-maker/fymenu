@@ -67,8 +67,8 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
       <div style={{
         position: "relative",
         width: isMaximized ? "min(90vw, 340px)" : "min(96vw, 520px)",
-        height: isMaximized ? 350 : 80,
-        borderRadius: isMaximized ? 36 : 24,
+        height: isMaximized ? 280 : 80,
+        borderRadius: isMaximized ? 28 : 24,
         background: "rgba(0,0,0,0.72)",
         backdropFilter: "blur(24px)",
         WebkitBackdropFilter: "blur(24px)",
@@ -85,10 +85,10 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
         <div style={{
           position: "absolute",
           left: "50%", transform: "translateX(-50%)",
-          top: isMaximized ? -56 : -8,
-          width: isMaximized ? 124 : 96,
-          height: isMaximized ? 124 : 96,
-          borderRadius: isMaximized ? 34 : 28,
+          top: isMaximized ? -40 : -8,
+          width: 96,
+          height: 96,
+          borderRadius: isMaximized ? 26 : 28,
           background: "rgba(255,255,255,0.95)",
           boxShadow: "0 8px 28px rgba(0,0,0,0.5)",
           display: "flex", alignItems: "center", justifyContent: "center",
@@ -184,7 +184,7 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
         {/* ── MAXIMIZADO (vertical) ── */}
         <div style={{
           position: "absolute", inset: 0,
-          padding: "80px 20px 20px",
+          padding: "60px 16px 16px",
           display: "flex", flexDirection: "column",
           justifyContent: "center", gap: 12,
           opacity: isMaximized ? 1 : 0,
