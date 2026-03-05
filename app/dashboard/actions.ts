@@ -29,20 +29,40 @@ function parsePrice(input: string): number | null {
   return num;
 }
 
-async function getUnitIdOrThrow() {
+async function getUnitIdOrThrow(unitIdFromForm?: string) {
   const supabase = await createClient();
+
+  // se veio unit_id explícito no form, valida que pertence ao dono
+  if (unitIdFromForm) {
+    const { data, error } = await supabase
+      .from("units")
+      .select("id")
+      .eq("id", unitIdFromForm)
+      .maybeSingle();
+    if (error || !data?.id) throw new Error("Unidade não encontrada ou sem permissão.");
+    return data.id as string;
+  }
+
+  // fallback: pega a primeira unit DO restaurante do usuário logado
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Não autenticado.");
+
+  const { data: restaurant } = await supabase
+    .from("restaurants")
+    .select("id")
+    .eq("owner_id", user.id)
+    .maybeSingle();
+  if (!restaurant?.id) throw new Error("Restaurante não encontrado.");
 
   const { data: unit, error } = await supabase
     .from("units")
     .select("id")
+    .eq("restaurant_id", restaurant.id)
     .order("created_at", { ascending: true })
     .limit(1)
-    .single();
+    .maybeSingle();
 
-  if (error || !unit?.id) {
-    throw new Error(error?.message || "Nenhuma unidade encontrada.");
-  }
-
+  if (error || !unit?.id) throw new Error("Nenhuma unidade encontrada.");
   return unit.id as string;
 }
 
@@ -53,7 +73,9 @@ async function getUnitIdOrThrow() {
 export async function updateUnit(formData: FormData): Promise<void> {
   const supabase = await createClient();
 
-  const unitId = String(formData.get("unit_id") ?? "") || (await getUnitIdOrThrow());
+  const unitId = await getUnitIdOrThrow(
+    String(formData.get("unit_id") ?? "") || undefined
+  );
 
   const name = normalizeName(String(formData.get("name") ?? ""));
   const slug = normalizeSlug(String(formData.get("slug") ?? ""));
@@ -94,7 +116,9 @@ export async function uploadLogoAction(
     const supabase = await createClient();
 
     const file = formData.get("file");
-    const unitId = String(formData.get("unitId") ?? "") || (await getUnitIdOrThrow());
+    const unitId = await getUnitIdOrThrow(
+      String(formData.get("unitId") ?? "") || undefined
+    );
 
     if (!file || !(file instanceof File)) {
       return { ok: false, message: "Arquivo inválido." };
@@ -154,7 +178,9 @@ export async function createCategory(formData: FormData): Promise<void> {
   const name = normalizeName(String(formData.get("name") ?? ""));
   if (!name) throw new Error("Nome da categoria é obrigatório.");
 
-  const unitId = await getUnitIdOrThrow();
+  const unitId = await getUnitIdOrThrow(
+    String(formData.get("unit_id") ?? "") || undefined
+  );
 
   const { data: last } = await supabase
     .from("categories")
