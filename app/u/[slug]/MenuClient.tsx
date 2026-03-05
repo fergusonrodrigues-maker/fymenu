@@ -109,7 +109,7 @@ export default function MenuClient({ unit, categories }: Props) {
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll();
-    return () => window.removeEventListener(\"scroll\", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   const TOP_OFFSET = 72; // altura da pill bar
