@@ -85,22 +85,22 @@ export default function MenuClient({ unit, categories }: Props) {
     return () => observer.disconnect();
   }, [orderedCategories]);
 
-  // FIX 3: Pill divisório sempre visível — fade apenas quando sobreposição real com top bar
-  // Só esconde se o centro da pill está DENTRO da top bar (< 56px do topo)
+  // Pill divisório: fade out quando entra na zona da top bar
   useEffect(() => {
     const handleScroll = () => {
       pillSpanRefs.current.forEach((pill) => {
         if (!pill) return;
         const rect = pill.getBoundingClientRect();
-        const pillCenter = rect.top + rect.height / 2;
-        if (pillCenter < 56) {
-          // pill está atrás da top bar — fade out
+        // usa a borda inferior da pill — quando ela some atrás da top bar
+        const pillBottom = rect.bottom;
+        const FADE_START = 100; // começa a fazer fade
+        const FADE_END   = 60;  // totalmente invisível (dentro da top bar)
+        if (pillBottom < FADE_END) {
           pill.style.opacity = "0";
           pill.style.pointerEvents = "none";
-        } else if (pillCenter < 90) {
-          // zona de transição
-          pill.style.opacity = String((pillCenter - 56) / 34);
-          pill.style.pointerEvents = "auto";
+        } else if (pillBottom < FADE_START) {
+          pill.style.opacity = String((pillBottom - FADE_END) / (FADE_START - FADE_END));
+          pill.style.pointerEvents = "none";
         } else {
           pill.style.opacity = "1";
           pill.style.pointerEvents = "auto";
@@ -108,8 +108,8 @@ export default function MenuClient({ unit, categories }: Props) {
       });
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll(); // estado inicial
-    return () => window.removeEventListener("scroll", handleScroll);
+    handleScroll();
+    return () => window.removeEventListener(\"scroll\", handleScroll);
   }, []);
 
   const TOP_OFFSET = 72; // altura da pill bar
@@ -197,7 +197,7 @@ export default function MenuClient({ unit, categories }: Props) {
               style={{
                 position: "relative",
                 width: "100%",
-                marginTop: 48,
+                marginTop: 24,
                 opacity: isVigente ? 1 : 0.72,
                 transition: "opacity 0.5s cubic-bezier(0.25, 0.8, 0.25, 1)",
               }}
