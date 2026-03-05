@@ -84,9 +84,31 @@ export default function StepMenu({
         </p>
       </div>
 
-      <button onClick={finish} disabled={saving || done} style={btn}>
-        {saving ? "Criando..." : "Montar meu cardápio →"}
-      </button>
+      <div style={{ display: "grid", gap: 10 }}>
+        {/* Opção 1: teste grátis */}
+        <button onClick={finish} disabled={saving || done} style={{
+          padding: "16px", borderRadius: 14, width: "100%",
+          background: "#fff", color: "#000",
+          fontWeight: 900, fontSize: 16, cursor: "pointer", border: "none",
+        }}>
+          {saving ? "Criando..." : "Testar grátis por 7 dias"}
+        </button>
+
+        {/* Opção 2: já quero ativar plano */}
+        <button onClick={() => window.location.href = "/planos"} style={{
+          padding: "14px", borderRadius: 14, width: "100%",
+          background: "transparent", color: "rgba(255,255,255,0.7)",
+          fontWeight: 800, fontSize: 14, cursor: "pointer",
+          border: "1px solid rgba(255,255,255,0.15)",
+        }}>
+          Já quero ativar um plano
+        </button>
+
+        <p style={{ color: "rgba(255,255,255,0.25)", fontSize: 11,
+          margin: 0, textAlign: "center" }}>
+          No teste você monta tudo. Para publicar e compartilhar, ative um plano.
+        </p>
+      </div>
     </div>
   );
 }
@@ -119,8 +141,3 @@ function PlanCard({
   );
 }
 
-const btn: React.CSSProperties = {
-  padding: "16px", borderRadius: 14, width: "100%",
-  background: "#fff", color: "#000",
-  fontWeight: 900, fontSize: 16, cursor: "pointer", border: "none",
-};
