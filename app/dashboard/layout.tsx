@@ -49,7 +49,7 @@ export default async function DashboardLayout({
 
             <div className="my-1 h-px w-full bg-white/10" />
 
-            <NavIcon href="/dashboard" label="Cardápio" icon="🍽️" />
+            <NavIcon href="/dashboard/cardapio" label="Cardápio" icon="🍽️" />
             <NavIcon href="/dashboard/unit" label="Unidade" icon="🏪" />
             <NavIcon href="/dashboard/account" label="Conta" icon="👤" />
           </nav>

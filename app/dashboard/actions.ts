@@ -201,6 +201,7 @@ export async function createCategory(formData: FormData): Promise<void> {
   if (error) throw new Error(error.message);
 
   revalidatePath("/dashboard");
+  revalidatePath("/dashboard/cardapio");
   revalidatePath("/u");
 }
 
@@ -217,6 +218,7 @@ export async function updateCategory(formData: FormData): Promise<void> {
   if (error) throw new Error(error.message);
 
   revalidatePath("/dashboard");
+  revalidatePath("/dashboard/cardapio");
   revalidatePath("/u");
 }
 
@@ -230,6 +232,7 @@ export async function deleteCategory(formData: FormData): Promise<void> {
   if (error) throw new Error(error.message);
 
   revalidatePath("/dashboard");
+  revalidatePath("/dashboard/cardapio");
   revalidatePath("/u");
 }
 
@@ -279,6 +282,7 @@ export async function createProduct(formData: FormData): Promise<void> {
   if (error) throw new Error(error.message);
 
   revalidatePath("/dashboard");
+  revalidatePath("/dashboard/cardapio");
   revalidatePath("/u");
 }
 
@@ -314,6 +318,7 @@ export async function updateProduct(formData: FormData): Promise<void> {
   if (error) throw new Error(error.message);
 
   revalidatePath("/dashboard");
+  revalidatePath("/dashboard/cardapio");
   revalidatePath("/u");
 }
 
@@ -327,5 +332,6 @@ export async function deleteProduct(formData: FormData): Promise<void> {
   if (error) throw new Error(error.message);
 
   revalidatePath("/dashboard");
+  revalidatePath("/dashboard/cardapio");
   revalidatePath("/u");
 }
