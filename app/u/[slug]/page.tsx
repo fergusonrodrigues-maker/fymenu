@@ -20,13 +20,13 @@ export default async function Page({
   const supabase = await createClient();
 
   // 1) UNIT
-const { data: unitData, error: unitErr } = await supabase
-  .from("units")
-  .select(
-    "id, restaurant_id, name, slug, city, neighborhood, whatsapp, instagram, maps_url, logo_url"
-  )
-  .eq("slug", publicSlug)
-  .maybeSingle();
+  const { data: unitData, error: unitErr } = await supabase
+    .from("units")
+    .select(
+      "id, restaurant_id, name, slug, city, neighborhood, whatsapp, instagram, maps_url, logo_url"
+    )
+    .eq("slug", publicSlug)
+    .maybeSingle();
 
   if (unitErr) {
     return (
@@ -84,9 +84,13 @@ const { data: unitData, error: unitErr } = await supabase
     if (isCanceled || trialExpired) {
       return (
         <div style={{
-          minHeight: "100vh", background: "#0a0a0a",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          padding: 24, fontFamily: "-apple-system, sans-serif",
+          minHeight: "100vh",
+          background: "#0a0a0a",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 24,
+          fontFamily: "-apple-system, sans-serif",
         }}>
           <div style={{ maxWidth: 360, textAlign: "center" }}>
             <div style={{ fontSize: 48, marginBottom: 16 }}>🍽️</div>
@@ -94,22 +98,26 @@ const { data: unitData, error: unitErr } = await supabase
               {unitData.name}
             </div>
             <div style={{
-              fontSize: 15, color: "rgba(255,255,255,0.55)",
-              fontWeight: 500, lineHeight: 1.5,
+              fontSize: 15,
+              color: "rgba(255,255,255,0.55)",
+              fontWeight: 500,
+              lineHeight: 1.5,
             }}>
               {isCanceled
-                ? "Este cardápio está temporariamente indisponível."
-                : "O período de teste deste cardápio expirou."}
+                ? "Este cardapio esta temporariamente indisponivel."
+                : "O periodo de teste deste cardapio expirou."}
             </div>
             {trialExpired && (
               <div style={{
-                marginTop: 24, padding: "12px 24px",
+                marginTop: 24,
+                padding: "12px 24px",
                 background: "rgba(255,255,255,0.06)",
-                borderRadius: 14, fontSize: 13,
+                borderRadius: 14,
+                fontSize: 13,
                 color: "rgba(255,255,255,0.4)",
                 border: "1px solid rgba(255,255,255,0.08)",
               }}>
-                Proprietário: acesse o dashboard para ativar seu plano.
+                Proprietario: acesse o dashboard para ativar seu plano.
               </div>
             )}
           </div>
@@ -150,7 +158,7 @@ const { data: unitData, error: unitErr } = await supabase
 
   const validCategoryIds = new Set(categories.map((c) => c.id));
 
-  // 3) PRODUCTS (sem is_active no banco)
+  // 3) PRODUCTS
   const { data: productsData, error: prodErr } = await supabase
     .from("products")
     .select("id, category_id, name, description, price_type, base_price, thumbnail_url, video_url, order_index")
@@ -181,7 +189,7 @@ const { data: unitData, error: unitErr } = await supabase
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
         <div className="max-w-md w-full">
-          <div className="text-lg font-semibold">Erro ao carregar variações</div>
+          <div className="text-lg font-semibold">Erro ao carregar variacoes</div>
           <div className="mt-2 text-sm text-white/70">{varErr.message}</div>
         </div>
       </div>
@@ -201,7 +209,7 @@ const { data: unitData, error: unitErr } = await supabase
     variationsByProduct.set(v.product_id, list);
   }
 
-  // 5) PRODUCTS mapped (base_price -> price)
+  // 5) PRODUCTS mapped
   const products: Product[] = (productsData ?? [])
     .filter((p: any) => validCategoryIds.has(p.category_id))
     .map((p: any) => ({
