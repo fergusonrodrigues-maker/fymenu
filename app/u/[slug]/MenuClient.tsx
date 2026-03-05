@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import type { CategoryWithProducts, Product, Unit } from "./menuTypes";
+import type { CategoryWithProducts, Product, ProductVariation, Unit } from "./menuTypes";
 import CategoryPillsTop from "./CategoryPillsTop";
 import FeaturedCarousel from "./FeaturedCarousel";
 import CategoryCarousel from "./CategoryCarousel";
@@ -13,19 +13,35 @@ function moneyBR(v: number) {
   return `R$ ${v.toFixed(2).replace(".", ",")}`;
 }
 
+// Retorna o menor preço das variações, ou null
+function minVariationPrice(variations: ProductVariation[] | undefined): number | null {
+  if (!variations || variations.length === 0) return null;
+  const prices = variations.map((v) => v.price).filter((p): p is number => p !== null);
+  if (prices.length === 0) return null;
+  return Math.min(...prices);
+}
+
+// Label de preço para card/modal
+function priceLabel(product: Product): string {
+  if (product.price_type === "variable") {
+    const min = minVariationPrice(product.variations);
+    if (min !== null) return `A partir de ${moneyBR(min)}`;
+    return "A partir de R$ —";
+  }
+  if (product.price != null) return moneyBR(Number(product.price));
+  return "";
+}
+
 export default function MenuClient({ unit, categories }: Props) {
   const orderedCategories = useMemo(() => {
     const arr = categories ?? [];
     return [...arr].sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0));
   }, [categories]);
 
-  // ✅ FIX 1: sempre inicia na categoria destaque (index 0)
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(
     orderedCategories[0]?.id ?? null
   );
 
-  // Vigente: qual seção está em destaque visual (scale + pill fade)
-  // Inicia null — o observer define ao scroll
   const [vigenteId, setVigenteId] = useState<string | null>(null);
 
   const [modal, setModal] = useState<null | { list: Product[]; index: number }>(null);
@@ -34,8 +50,6 @@ export default function MenuClient({ unit, categories }: Props) {
   const ignoreObserverRef = useRef(false);
   const snapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // ✅ FIX 2: IntersectionObserver com rootMargin apertado — só ativa quando
-  // a seção cruza o topo da tela, evitando Cat2 disparar no load
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -54,7 +68,6 @@ export default function MenuClient({ unit, categories }: Props) {
     return () => observer.disconnect();
   }, [orderedCategories]);
 
-  // Observer para efeito vigente: só a seção colada no topo (abaixo do PillTop) cresce
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -72,17 +85,21 @@ export default function MenuClient({ unit, categories }: Props) {
     return () => observer.disconnect();
   }, [orderedCategories]);
 
-  // Fade-out das pills divisórias ao subir até a top bar
+  // FIX 3: Pill divisório sempre visível — fade apenas quando sobreposição real com top bar
+  // Só esconde se o centro da pill está DENTRO da top bar (< 56px do topo)
   useEffect(() => {
     const handleScroll = () => {
       pillSpanRefs.current.forEach((pill) => {
         if (!pill) return;
         const rect = pill.getBoundingClientRect();
-        if (rect.top < 50) {
+        const pillCenter = rect.top + rect.height / 2;
+        if (pillCenter < 56) {
+          // pill está atrás da top bar — fade out
           pill.style.opacity = "0";
           pill.style.pointerEvents = "none";
-        } else if (rect.top < 150) {
-          pill.style.opacity = String((rect.top - 50) / 100);
+        } else if (pillCenter < 90) {
+          // zona de transição
+          pill.style.opacity = String((pillCenter - 56) / 34);
           pill.style.pointerEvents = "auto";
         } else {
           pill.style.opacity = "1";
@@ -91,10 +108,10 @@ export default function MenuClient({ unit, categories }: Props) {
       });
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll(); // estado inicial
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // snap vertical — puxa categoria mais próxima ao soltar scroll
   useEffect(() => {
     function onScroll() {
       if (snapTimerRef.current) clearTimeout(snapTimerRef.current);
@@ -127,7 +144,6 @@ export default function MenuClient({ unit, categories }: Props) {
   }, []);
 
   const onSelectCategory = (categoryId: string) => {
-    // bloqueia observer por 1s enquanto faz scroll programático
     ignoreObserverRef.current = true;
     setActiveCategoryId(categoryId);
     const idx = orderedCategories.findIndex((c) => c.id === categoryId);
@@ -137,23 +153,20 @@ export default function MenuClient({ unit, categories }: Props) {
   };
 
   const featuredCategory = orderedCategories[0] ?? null;
-
   const otherCategories = featuredCategory ? orderedCategories.slice(1) : orderedCategories;
 
   return (
-    // ✅ FIX 3: overflow: clip ao invés de hidden — não bloqueia position:sticky
     <div style={{ width: "100%", minHeight: "100vh", background: "#000", overflowX: "clip" }}>
 
-      {/* ✅ FIX 4: sticky funciona porque o pai não tem overflow:hidden */}
       <CategoryPillsTop
         categories={orderedCategories}
         activeCategoryId={activeCategoryId}
         onSelect={onSelectCategory}
       />
 
-      <div style={{ paddingTop: 80, paddingBottom: 500 }}>
+      {/* FIX 4: paddingTop ajustado para acomodar pills (52px height + 16px margem = 68px) */}
+      <div style={{ paddingTop: 68, paddingBottom: 500 }}>
 
-        {/* Featured — sem pill, é a Destaque */}
         {featuredCategory && (
           <div
             ref={(el) => { sectionRefs.current[0] = el; }}
@@ -266,6 +279,8 @@ function ProductBoardModal({
   const [closing, setClosing] = useState(false);
   const [slideDir, setSlideDir] = useState<"left" | "right" | null>(null);
   const [displayIndex, setDisplayIndex] = useState(index);
+  // FIX 2: variação selecionada
+  const [selectedVariation, setSelectedVariation] = useState<ProductVariation | null>(null);
   const startRef = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
@@ -274,7 +289,11 @@ function ProductBoardModal({
     return () => { document.body.style.overflow = prev; };
   }, []);
 
-  useEffect(() => { setVideoReady(false); }, [displayIndex]);
+  useEffect(() => {
+    setVideoReady(false);
+    // reset variação ao trocar produto
+    setSelectedVariation(null);
+  }, [displayIndex]);
 
   function goTo(next: number, dir: "left" | "right") {
     if (next < 0 || next > list.length - 1) return;
@@ -311,12 +330,18 @@ function ProductBoardModal({
 
   const video = currentProduct.video_url ?? null;
   const thumb = currentProduct.thumbnail_url ?? null;
+  const variations = currentProduct.variations ?? [];
 
   const slideAnim = slideDir === "left"
     ? "slide-left-in 360ms cubic-bezier(0.34,1.56,0.64,1) forwards"
     : slideDir === "right"
     ? "slide-right-in 360ms cubic-bezier(0.34,1.56,0.64,1) forwards"
     : undefined;
+
+  // FIX 1: "A partir de R$" com preço correto
+  const displayPrice = selectedVariation
+    ? moneyBR(selectedVariation.price ?? 0)
+    : priceLabel(currentProduct);
 
   return (
     <div
@@ -390,7 +415,7 @@ function ProductBoardModal({
 
           <div style={{
             position: "absolute", inset: 0,
-            background: "linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.35) 46%, rgba(0,0,0,0.08) 72%, transparent 100%)",
+            background: "linear-gradient(to top, rgba(0,0,0,0.90) 0%, rgba(0,0,0,0.40) 46%, rgba(0,0,0,0.08) 72%, transparent 100%)",
           }} />
 
           <div style={{
@@ -400,22 +425,64 @@ function ProductBoardModal({
             <div style={{ color: "#fff", fontWeight: 950, fontSize: 22, lineHeight: 1.1 }}>
               {currentProduct.name}
             </div>
+
             {currentProduct.description && (
               <div style={{ color: "rgba(255,255,255,0.80)", fontWeight: 700, fontSize: 13 }}>
                 {currentProduct.description}
               </div>
             )}
-            <div style={{ color: "#fff", fontWeight: 950, fontSize: 26 }}>
-              {currentProduct.price_type === "variable"
-                ? "Preço variável"
-                : currentProduct.price != null
-                ? moneyBR(Number(currentProduct.price))
-                : ""}
+
+            {/* FIX 1: preço com "A partir de" */}
+            <div style={{ color: "#fff", fontWeight: 950, fontSize: 22 }}>
+              {displayPrice}
             </div>
+
+            {/* FIX 2: seletor de variações */}
+            {variations.length > 0 && (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 4 }}>
+                {variations.map((v) => {
+                  const active = selectedVariation?.id === v.id;
+                  return (
+                    <button
+                      key={v.id}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedVariation(active ? null : v);
+                      }}
+                      style={{
+                        padding: "7px 14px",
+                        borderRadius: 999,
+                        border: active
+                          ? "1.5px solid rgba(255,255,255,0.90)"
+                          : "1px solid rgba(255,255,255,0.25)",
+                        background: active
+                          ? "rgba(255,255,255,0.18)"
+                          : "rgba(255,255,255,0.07)",
+                        color: active ? "#fff" : "rgba(255,255,255,0.72)",
+                        fontWeight: active ? 800 : 600,
+                        fontSize: 13,
+                        cursor: "pointer",
+                        transition: "all 180ms ease",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {v.name}
+                      {v.price != null && (
+                        <span style={{ marginLeft: 6, opacity: 0.75, fontWeight: 700 }}>
+                          {moneyBR(v.price)}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
             <div style={{
               color: "rgba(255,255,255,0.40)",
               fontWeight: 700, fontSize: 10,
               textAlign: "center", letterSpacing: 0.3,
+              marginTop: 4,
             }}>
               ←/→ trocar · ↓ fechar
             </div>

@@ -23,7 +23,7 @@ export async function getTenantContext() {
     .maybeSingle();
 
   if (!restaurant) {
-    redirect("/login");
+    redirect("/onboarding");
   }
 
   // 3️⃣ Units desse restaurant

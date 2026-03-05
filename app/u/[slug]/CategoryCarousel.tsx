@@ -21,6 +21,16 @@ const css = `
     z-index: 0;
     pointer-events: none;
   }
+  @keyframes hero-squish {
+    0%   { transform: scale(1.13); }
+    28%  { transform: scale(1.09, 1.17); }
+    55%  { transform: scale(1.15, 1.10); }
+    75%  { transform: scale(1.12, 1.14); }
+    100% { transform: scale(1.13); }
+  }
+  .hero-bounce {
+    animation: hero-squish 420ms cubic-bezier(0.34,1.56,0.64,1) forwards;
+  }
 `;
 
 export default function CategoryCarousel({
@@ -47,6 +57,9 @@ export default function CategoryCarousel({
   // heroIndex 1 = primeiro produto (após o card guia de início)
   const [heroIndex, setHeroIndex] = useState(1);
   const heroIndexRef = useRef(1);
+  // FIX 5: bounce key — muda ao trocar hero para re-trigger animação
+  const [heroBounceKey, setHeroBounceKey] = useState(0);
+  const prevHeroRef = useRef(1);
   // impede computeHero durante transição de largura (isVigente muda)
   const isResizingRef = useRef(false);
 
@@ -107,6 +120,10 @@ export default function CategoryCarousel({
     }
 
     setHeroIndex(best);
+    if (best !== prevHeroRef.current) {
+      setHeroBounceKey((k) => k + 1);
+      prevHeroRef.current = best;
+    }
 
     if (snapAfter) {
       if (bounceTimerRef.current) clearTimeout(bounceTimerRef.current);
@@ -227,8 +244,15 @@ export default function CategoryCarousel({
                 opacity: isHero ? 1 : 0,
                 transition: "opacity 350ms ease",
               }} />
-              <MediaCard product={p} hero={isHero} adjacent={isAdjacent}
-                onOpen={() => onOpen(p, idx)} />
+              {/* FIX 5: key muda ao virar hero → re-mount → dispara hero-bounce */}
+              <div
+                key={isHero ? `hero-${heroBounceKey}` : `card-${p.id}`}
+                className={isHero ? "hero-bounce" : ""}
+                style={{ width: "100%", height: "100%" }}
+              >
+                <MediaCard product={p} hero={isHero} adjacent={isAdjacent}
+                  onOpen={() => onOpen(p, idx)} />
+              </div>
             </div>
           );
         })}

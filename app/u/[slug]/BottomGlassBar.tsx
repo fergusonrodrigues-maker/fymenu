@@ -66,8 +66,8 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
     }}>
       <div style={{
         position: "relative",
-        width: isMaximized ? "min(90vw, 340px)" : "min(96vw, 520px)",
-        height: isMaximized ? 240 : 80,
+        width: isMaximized ? "min(84vw, 300px)" : "min(96vw, 520px)",
+        height: isMaximized ? 196 : 80,
         borderRadius: isMaximized ? 28 : 24,
         background: "rgba(0,0,0,0.72)",
         backdropFilter: "blur(24px)",
@@ -85,10 +85,10 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
         <div style={{
           position: "absolute",
           left: "50%", transform: "translateX(-50%)",
-          top: isMaximized ? -40 : -8,
-          width: 96,
-          height: 96,
-          borderRadius: isMaximized ? 26 : 28,
+          top: isMaximized ? -32 : -8,
+          width: isMaximized ? 72 : 96,
+          height: isMaximized ? 72 : 96,
+          borderRadius: isMaximized ? 20 : 28,
           background: "rgba(255,255,255,0.95)",
           boxShadow: "0 8px 28px rgba(0,0,0,0.5)",
           display: "flex", alignItems: "center", justifyContent: "center",
@@ -174,9 +174,9 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
         {/* ── MAXIMIZADO (vertical) ── */}
         <div style={{
           position: "absolute", inset: 0,
-          padding: "60px 16px 16px",
+          padding: "48px 14px 12px",
           display: "flex", flexDirection: "column",
-          justifyContent: "center", gap: 8,
+          justifyContent: "center", gap: 6,
           opacity: isMaximized ? 1 : 0,
           pointerEvents: isMaximized ? "auto" : "none",
           transition: `opacity 250ms ease ${isMaximized ? "350ms" : "0ms"}`,
@@ -184,7 +184,7 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
           {wa && (
             <a href={wa} target="_blank" rel="noreferrer" style={{
               display: "flex", alignItems: "center",
-              width: "100%", height: 46, borderRadius: 16,
+              width: "100%", height: 40, borderRadius: 14,
               background: "#25D366", padding: "0 16px", gap: 10,
               textDecoration: "none",
             }}>
@@ -196,7 +196,7 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
           {ig && (
             <a href={ig} target="_blank" rel="noreferrer" style={{
               display: "flex", alignItems: "center",
-              width: "100%", height: 46, borderRadius: 16,
+              width: "100%", height: 40, borderRadius: 14,
               background: "linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)",
               padding: "0 16px", gap: 10, textDecoration: "none",
             }}>
@@ -208,7 +208,7 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
           {maps && (
             <a href={maps} target="_blank" rel="noreferrer" style={{
               display: "flex", alignItems: "center",
-              width: "100%", height: 46, borderRadius: 16,
+              width: "100%", height: 40, borderRadius: 14,
               background: "#E53935", padding: "0 16px", gap: 10,
               textDecoration: "none",
             }}>
@@ -219,7 +219,7 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
 
           <div style={{
             display: "flex", flexDirection: "column", alignItems: "center",
-            justifyContent: "center", width: "100%", height: 56,
+            justifyContent: "center", width: "100%", height: 44,
             borderRadius: 18, position: "relative", overflow: "hidden",
           }}>
             <img src={ICONS.unidade} alt="" style={{
