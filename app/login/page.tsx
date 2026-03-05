@@ -21,10 +21,21 @@ export default async function LoginPage({
       redirect("/login?err=" + encodeURIComponent("Preencha email e senha."));
     }
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error, data } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
       redirect("/login?err=" + encodeURIComponent(error.message));
+    }
+
+    // Checa se onboarding foi concluído
+    const { data: restaurant } = await supabase
+      .from("restaurants")
+      .select("onboarding_completed")
+      .eq("owner_id", data.user.id)
+      .maybeSingle();
+
+    if (!restaurant || !restaurant.onboarding_completed) {
+      redirect("/onboarding");
     }
 
     redirect("/dashboard");
