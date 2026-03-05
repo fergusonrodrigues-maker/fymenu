@@ -11,8 +11,8 @@ export default async function CardapioPage({
   const { units } = await getTenantContext();
   if (!units || units.length === 0) redirect("/dashboard/unit");
 
-  const sp = await Promise.resolve(searchParams ?? {});
-  const unitId = (await sp).unit ?? units[0].id;
+  const sp: { unit?: string } = searchParams ? await searchParams : {};
+  const unitId = sp.unit ?? units[0].id;
   const activeUnit = units.find((u) => u.id === unitId) ?? units[0];
 
   const supabase = await createClient();
