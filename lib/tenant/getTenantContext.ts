@@ -16,14 +16,14 @@ export async function getTenantContext() {
   }
 
   // 2️⃣ Restaurant do owner
-  const { data: restaurant, error: restaurantError } = await supabase
+  const { data: restaurant } = await supabase
     .from("restaurants")
     .select("*")
     .eq("owner_id", user.id)
-    .single();
+    .maybeSingle();
 
-  if (restaurantError || !restaurant) {
-    throw new Error("Restaurant não encontrado para este usuário.");
+  if (!restaurant) {
+    redirect("/login");
   }
 
   // 3️⃣ Units desse restaurant

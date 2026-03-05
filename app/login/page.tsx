@@ -6,6 +6,11 @@ export default async function LoginPage({
 }: {
   searchParams?: Promise<{ err?: string; ok?: string }>;
 }) {
+  // Se já logado, vai pro dashboard
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user) redirect("/dashboard");
+
   const sp = (await searchParams) || {};
   const err = sp.err ? decodeURIComponent(sp.err) : "";
   const ok = sp.ok ? decodeURIComponent(sp.ok) : "";
