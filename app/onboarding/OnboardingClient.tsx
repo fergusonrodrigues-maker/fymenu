@@ -47,9 +47,7 @@ export default function OnboardingClient({
       padding: 24, fontFamily: "-apple-system, sans-serif",
     }}>
       {/* Progress */}
-      <div style={{
-        display: "flex", gap: 8, marginBottom: 40,
-      }}>
+      <div style={{ display: "flex", gap: 8, marginBottom: 40 }}>
         {[1, 2, 3].map((s) => (
           <div key={s} style={{
             width: s === step ? 32 : 8, height: 8,
@@ -78,6 +76,7 @@ export default function OnboardingClient({
         {step === 3 && (
           <StepMenu
             data={data}
+            userId={userId}
             restaurantId={restaurantId}
           />
         )}
