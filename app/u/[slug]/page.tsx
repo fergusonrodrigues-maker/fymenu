@@ -28,8 +28,6 @@ const { data: unitData, error: unitErr } = await supabase
   .eq("slug", publicSlug)
   .maybeSingle();
 
-console.log("🔍 DEBUG:", { publicSlug, unitData, unitErr });
-
   if (unitErr) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
@@ -66,6 +64,59 @@ console.log("🔍 DEBUG:", { publicSlug, unitData, unitErr });
     maps_url: unitData.maps_url ?? null,
     logo_url: unitData.logo_url ?? null,
   };
+
+  // 1.5) RESTAURANT — valida status e trial
+  if (unit.restaurant_id) {
+    const { data: restaurant } = await supabase
+      .from("restaurants")
+      .select("status, trial_ends_at, plan")
+      .eq("id", unit.restaurant_id)
+      .maybeSingle();
+
+    const now = new Date();
+    const trialExpired =
+      restaurant?.status === "trial" &&
+      restaurant?.trial_ends_at &&
+      new Date(restaurant.trial_ends_at) < now;
+
+    const isCanceled = restaurant?.status === "canceled";
+
+    if (isCanceled || trialExpired) {
+      return (
+        <div style={{
+          minHeight: "100vh", background: "#0a0a0a",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          padding: 24, fontFamily: "-apple-system, sans-serif",
+        }}>
+          <div style={{ maxWidth: 360, textAlign: "center" }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>🍽️</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", marginBottom: 8 }}>
+              {unitData.name}
+            </div>
+            <div style={{
+              fontSize: 15, color: "rgba(255,255,255,0.55)",
+              fontWeight: 500, lineHeight: 1.5,
+            }}>
+              {isCanceled
+                ? "Este cardápio está temporariamente indisponível."
+                : "O período de teste deste cardápio expirou."}
+            </div>
+            {trialExpired && (
+              <div style={{
+                marginTop: 24, padding: "12px 24px",
+                background: "rgba(255,255,255,0.06)",
+                borderRadius: 14, fontSize: 13,
+                color: "rgba(255,255,255,0.4)",
+                border: "1px solid rgba(255,255,255,0.08)",
+              }}>
+                Proprietário: acesse o dashboard para ativar seu plano.
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+  }
 
   // 2) CATEGORIES
   const { data: categoriesData, error: catErr } = await supabase
