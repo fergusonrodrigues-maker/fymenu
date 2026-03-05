@@ -85,10 +85,10 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
         <div style={{
           position: "absolute",
           left: "50%", transform: "translateX(-50%)",
-          top: isMaximized ? -32 : -8,
-          width: isMaximized ? 72 : 96,
-          height: isMaximized ? 72 : 96,
-          borderRadius: isMaximized ? 20 : 28,
+          top: isMaximized ? -32 : -14,
+          width: isMaximized ? 72 : 108,
+          height: isMaximized ? 72 : 108,
+          borderRadius: isMaximized ? 20 : 30,
           background: "rgba(255,255,255,0.95)",
           boxShadow: "0 8px 28px rgba(0,0,0,0.5)",
           display: "flex", alignItems: "center", justifyContent: "center",
@@ -108,7 +108,7 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
           position: "absolute", inset: 0,
           display: "flex", alignItems: "center",
           justifyContent: "space-between",
-          padding: "0 10px", gap: 6,
+          padding: "0 8px", gap: 0,
           opacity: isMaximized ? 0 : 1,
           pointerEvents: isMaximized ? "none" : "auto",
           transition: `opacity 250ms ease ${isMaximized ? "0ms" : "350ms"}`,
@@ -146,7 +146,7 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
           </div>
 
           {/* espaço central logo */}
-          <div style={{ width: 80, flexShrink: 0 }} />
+          <div style={{ flex: 1, flexShrink: 0 }} />
 
           {/* direita: whatsapp + instagram — ambos 60x60 */}
           <div style={{ display: "flex", gap: 6 }}>

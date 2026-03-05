@@ -112,6 +112,14 @@ export default function MenuClient({ unit, categories }: Props) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const TOP_OFFSET = 72; // altura da pill bar
+
+  const scrollToSection = (el: HTMLDivElement) => {
+    const rect = el.getBoundingClientRect();
+    const target = window.scrollY + rect.top - TOP_OFFSET;
+    window.scrollTo({ top: target, behavior: "smooth" });
+  };
+
   useEffect(() => {
     function onScroll() {
       if (snapTimerRef.current) clearTimeout(snapTimerRef.current);
@@ -130,7 +138,7 @@ export default function MenuClient({ unit, categories }: Props) {
         const el = sectionRefs.current[best];
         if (el && bestDist > 10) {
           ignoreObserverRef.current = true;
-          el.scrollIntoView({ behavior: "smooth", block: "start" });
+          scrollToSection(el);
           setTimeout(() => { ignoreObserverRef.current = false; }, 800);
         }
       }, 120);
@@ -148,7 +156,7 @@ export default function MenuClient({ unit, categories }: Props) {
     setActiveCategoryId(categoryId);
     const idx = orderedCategories.findIndex((c) => c.id === categoryId);
     const el = sectionRefs.current[idx];
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (el) scrollToSection(el);
     setTimeout(() => { ignoreObserverRef.current = false; }, 1000);
   };
 
@@ -164,8 +172,8 @@ export default function MenuClient({ unit, categories }: Props) {
         onSelect={onSelectCategory}
       />
 
-      {/* FIX 4: paddingTop ajustado para acomodar pills (52px height + 16px margem = 68px) */}
-      <div style={{ paddingTop: 68, paddingBottom: 500 }}>
+      {/* paddingTop: altura da pill (52) + padding top do container (10) + margem (18) = 80px */}
+      <div style={{ paddingTop: 80, paddingBottom: 500 }}>
 
         {featuredCategory && (
           <div
