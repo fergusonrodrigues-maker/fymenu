@@ -2,14 +2,14 @@
 "use client";
 
 import React, { useEffect, useRef, useMemo } from "react";
-import type { CategoryWithProducts } from "./menuTypes";
+import type { Category } from "./menuTypes";
 
 export default function CategoryPillsTop({
   categories,
   activeCategoryId,
   onSelect,
 }: {
-  categories: CategoryWithProducts[];
+  categories: Category[];
   activeCategoryId: string | null;
   onSelect: (id: string) => void;
 }) {
