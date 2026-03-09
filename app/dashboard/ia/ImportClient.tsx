@@ -91,6 +91,7 @@ export default function ImportClient({
   const router = useRouter();
   const supabase = createClient();
   const fileRef = useRef<HTMLInputElement>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
   const [step, setStep] = useState<"upload" | "preview" | "saving" | "done">(
     "upload"
@@ -113,9 +114,8 @@ export default function ImportClient({
       const formData = new FormData();
 
       if (inputMode === "file") {
-        const file = fileRef.current?.files?.[0];
-        if (!file) throw new Error("Selecione um arquivo.");
-        formData.append("file", file);
+        if (selectedFiles.length === 0) throw new Error("Selecione ao menos um arquivo.");
+        selectedFiles.forEach((f) => formData.append("files", f));
       } else {
         if (!rawText.trim()) throw new Error("Cole o texto do cardápio.");
         formData.append("text", rawText.trim());
@@ -334,23 +334,85 @@ export default function ImportClient({
             </div>
 
             {inputMode === "file" ? (
-              <div
-                onClick={() => fileRef.current?.click()}
-                className="border-2 border-dashed border-gray-300 rounded-2xl p-10 text-center cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition"
-              >
-                <div className="text-4xl mb-3">📸</div>
-                <p className="text-sm font-medium text-gray-700">
-                  Clique para selecionar
-                </p>
-                <p className="text-xs text-gray-400 mt-1">
-                  Foto do cardápio, print, screenshot · Word, Excel, TXT
-                </p>
-                <input
-                  ref={fileRef}
-                  type="file"
-                  accept={ACCEPTED_TYPES}
-                  className="hidden"
-                />
+              <div className="space-y-3">
+                <div
+                  onClick={() => fileRef.current?.click()}
+                  className="border-2 border-dashed border-gray-300 rounded-2xl p-10 text-center cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition"
+                >
+                  <div className="text-4xl mb-3">📸</div>
+                  <p className="text-sm font-medium text-gray-700">
+                    Clique para selecionar
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Até 10 fotos · print, screenshot, Word, Excel, TXT
+                  </p>
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept={ACCEPTED_TYPES}
+                    multiple
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files ?? []).slice(0, 10);
+                      setSelectedFiles(files);
+                    }}
+                    className="hidden"
+                  />
+                </div>
+
+                {selectedFiles.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-gray-500 font-medium">
+                        {selectedFiles.length}/10 arquivo{selectedFiles.length > 1 ? "s" : ""}
+                      </p>
+                      <button
+                        onClick={() => { setSelectedFiles([]); if (fileRef.current) fileRef.current.value = ""; }}
+                        className="text-xs text-gray-400 hover:text-red-500 transition"
+                      >
+                        Limpar tudo
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedFiles.map((f, i) => {
+                        const isImage = f.type.startsWith("image/");
+                        const previewUrl = isImage ? URL.createObjectURL(f) : null;
+                        return (
+                          <div key={i} className="relative group">
+                            {previewUrl ? (
+                              <img
+                                src={previewUrl}
+                                alt={f.name}
+                                className="w-20 h-20 object-cover rounded-xl border border-gray-200"
+                              />
+                            ) : (
+                              <div className="w-20 h-20 bg-gray-100 rounded-xl border border-gray-200 flex flex-col items-center justify-center gap-1">
+                                <span className="text-2xl">📄</span>
+                                <span className="text-[10px] text-gray-500 px-1 text-center">
+                                  {f.name.split(".").pop()?.toUpperCase()}
+                                </span>
+                              </div>
+                            )}
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setSelectedFiles((prev) => prev.filter((_, j) => j !== i)); }}
+                              className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full text-xs hidden group-hover:flex items-center justify-center font-bold"
+                            >×</button>
+                            <p className="text-[10px] text-gray-400 mt-1 w-20 truncate text-center">{f.name}</p>
+                          </div>
+                        );
+                      })}
+                      {selectedFiles.length < 10 && (
+                        <button
+                          type="button"
+                          onClick={() => fileRef.current?.click()}
+                          className="w-20 h-20 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center text-gray-400 hover:border-indigo-400 hover:text-indigo-500 transition"
+                        >
+                          <span className="text-2xl leading-none">+</span>
+                          <span className="text-[10px] mt-1">Adicionar</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <textarea
@@ -601,6 +663,7 @@ export default function ImportClient({
                   setStep("upload");
                   setImportData(null);
                   setRawText("");
+                  setSelectedFiles([]);
                   if (fileRef.current) fileRef.current.value = "";
                 }}
                 className="flex-1 border border-gray-200 text-gray-600 font-medium py-3 rounded-2xl text-sm"
