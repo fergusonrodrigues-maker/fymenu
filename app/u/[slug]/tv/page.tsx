@@ -7,14 +7,15 @@ export const dynamic = "force-dynamic";
 export default async function TVPage({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
+  const { slug } = await params;
   const supabase = await createClient();
 
   const { data: unit } = await supabase
     .from("units")
     .select("id, name, slug, restaurant_id")
-    .eq("slug", params.slug)
+    .eq("slug", slug)
     .eq("is_published", true)
     .single();
 
