@@ -77,7 +77,7 @@ function confidenceBadge(conf: number) {
 }
 
 const ACCEPTED_TYPES =
-  ".pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.jpg,.jpeg,.png,.webp";
+  ".doc,.docx,.xls,.xlsx,.txt,.csv,.jpg,.jpeg,.png,.webp";
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -338,12 +338,12 @@ export default function ImportClient({
                 onClick={() => fileRef.current?.click()}
                 className="border-2 border-dashed border-gray-300 rounded-2xl p-10 text-center cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition"
               >
-                <div className="text-4xl mb-3">📄</div>
+                <div className="text-4xl mb-3">📸</div>
                 <p className="text-sm font-medium text-gray-700">
                   Clique para selecionar
                 </p>
                 <p className="text-xs text-gray-400 mt-1">
-                  PDF, Word, Excel, TXT, imagem
+                  Foto do cardápio, print, screenshot · Word, Excel, TXT
                 </p>
                 <input
                   ref={fileRef}
