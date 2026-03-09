@@ -1,10 +1,10 @@
 // FILE: /app/u/[slug]/page.tsx
-// ACTION: REPLACE ENTIRE FILE
 
-import MenuClient from "./MenuClient";
-import type { CategoryWithProducts, Product, ProductVariation, Unit } from "./menuTypes";
-import { normalizePublicSlug, slugify, toNumberOrNull } from "./menuTypes";
 import { createClient } from "@/lib/supabase/server";
+import MenuClient from "./MenuClient";
+import type { Category, Product, ProductVariation, Unit } from "./menuTypes";
+import { normalizePublicSlug, slugify, toNumberOrNull } from "./menuTypes";
+import type { UpsellSuggestion } from "./UpsellModal";
 
 export const revalidate = 0;
 
@@ -14,43 +14,20 @@ export default async function Page({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-
   const publicSlug = normalizePublicSlug(slug);
-
   const supabase = await createClient();
 
-  // 1) UNIT
+  // ─── 1) UNIT ──────────────────────────────────────────────────────────────
   const { data: unitData, error: unitErr } = await supabase
     .from("units")
     .select(
-      "id, restaurant_id, name, slug, city, neighborhood, whatsapp, instagram, maps_url, logo_url"
+      "id, restaurant_id, name, slug, city, neighborhood, whatsapp, instagram, maps_url, logo_url, order_type, order_link"
     )
     .eq("slug", publicSlug)
     .maybeSingle();
 
-  if (unitErr) {
-    return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
-        <div className="max-w-md w-full">
-          <div className="text-lg font-semibold">Erro ao carregar unidade</div>
-          <div className="mt-2 text-sm text-white/70">{unitErr.message}</div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!unitData) {
-    return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
-        <div className="max-w-md w-full">
-          <div className="text-lg font-semibold">Unidade não encontrada</div>
-          <div className="mt-2 text-sm text-white/70">
-            Slug: <span className="text-white">{publicSlug}</span>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  if (unitErr) return <ErrorScreen message={unitErr.message} />;
+  if (!unitData) return <NotFoundScreen slug={publicSlug} />;
 
   const unit: Unit = {
     id: unitData.id,
@@ -63,180 +40,181 @@ export default async function Page({
     instagram: unitData.instagram ?? null,
     maps_url: unitData.maps_url ?? null,
     logo_url: unitData.logo_url ?? null,
+    order_type: unitData.order_type ?? "whatsapp",
+    order_link: unitData.order_link ?? null,
   };
 
-  // 1.5) RESTAURANT — valida status e trial
-  if (unit.restaurant_id) {
-    const { data: restaurant } = await supabase
-      .from("restaurants")
-      .select("status, trial_ends_at, plan")
-      .eq("id", unit.restaurant_id)
-      .maybeSingle();
-
-    const now = new Date();
-    const trialExpired =
-      restaurant?.status === "trial" &&
-      restaurant?.trial_ends_at &&
-      new Date(restaurant.trial_ends_at) < now;
-
-    const isCanceled = restaurant?.status === "canceled";
-
-    if (isCanceled || trialExpired) {
-      return (
-        <div style={{
-          minHeight: "100vh",
-          background: "#0a0a0a",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: 24,
-          fontFamily: "-apple-system, sans-serif",
-        }}>
-          <div style={{ maxWidth: 360, textAlign: "center" }}>
-            <div style={{ fontSize: 48, marginBottom: 16 }}>🍽️</div>
-            <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", marginBottom: 8 }}>
-              {unitData.name}
-            </div>
-            <div style={{
-              fontSize: 15,
-              color: "rgba(255,255,255,0.55)",
-              fontWeight: 500,
-              lineHeight: 1.5,
-            }}>
-              {isCanceled
-                ? "Este cardapio esta temporariamente indisponivel."
-                : "O periodo de teste deste cardapio expirou."}
-            </div>
-            {trialExpired && (
-              <div style={{
-                marginTop: 24,
-                padding: "12px 24px",
-                background: "rgba(255,255,255,0.06)",
-                borderRadius: 14,
-                fontSize: 13,
-                color: "rgba(255,255,255,0.4)",
-                border: "1px solid rgba(255,255,255,0.08)",
-              }}>
-                Proprietario: acesse o dashboard para ativar seu plano.
-              </div>
-            )}
-          </div>
-        </div>
-      );
-    }
-  }
-
-  // 2) CATEGORIES
-  const { data: categoriesData, error: catErr } = await supabase
+  // ─── 2) CATEGORIES ────────────────────────────────────────────────────────
+  const { data: categoriesData } = await supabase
     .from("categories")
-    .select("id, unit_id, name, order_index")
+    .select("id, unit_id, name, order_index, is_featured, type")
     .eq("unit_id", unit.id)
+    .eq("is_active", true)
     .order("order_index", { ascending: true, nullsFirst: false });
 
-  if (catErr) {
-    return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
-        <div className="max-w-md w-full">
-          <div className="text-lg font-semibold">Erro ao carregar categorias</div>
-          <div className="mt-2 text-sm text-white/70">{catErr.message}</div>
-        </div>
-      </div>
-    );
-  }
-
-  const categories = (categoriesData ?? []).map((c: any, idx: number) => {
+  const categories: Category[] = (categoriesData ?? []).map((c: any, idx: number) => {
     const name = (c?.name ?? "").toString();
     return {
       id: c.id,
       unit_id: c.unit_id,
       name,
       order_index: typeof c.order_index === "number" ? c.order_index : idx,
+      is_featured: c.is_featured === true,
       slug: slugify(name || `categoria-${idx + 1}`),
-      type: null as string | null,
+      type: c.type ?? null,
     };
   });
 
-  const validCategoryIds = new Set(categories.map((c) => c.id));
-
-  // 3) PRODUCTS
-  const { data: productsData, error: prodErr } = await supabase
-    .from("products")
-    .select("id, category_id, name, description, price_type, base_price, thumbnail_url, video_url, order_index")
-    .in("category_id", Array.from(validCategoryIds))
-    .order("order_index", { ascending: true, nullsFirst: false });
-
-  if (prodErr) {
-    return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
-        <div className="max-w-md w-full">
-          <div className="text-lg font-semibold">Erro ao carregar produtos</div>
-          <div className="mt-2 text-sm text-white/70">{prodErr.message}</div>
-        </div>
-      </div>
-    );
+  if (!categories.length) {
+    return <MenuClient unit={unit} categories={[]} products={[]} variations={{}} upsells={{}} />;
   }
 
-  const productIds = (productsData ?? []).map((p: any) => p.id);
+  const validCategoryIds = new Set(categories.map((c) => c.id));
 
-  // 4) VARIATIONS
-  const { data: variationsData, error: varErr } = await supabase
+  // ─── 3) PRODUCTS ──────────────────────────────────────────────────────────
+  const { data: productsData, error: prodErr } = await supabase
+    .from("products")
+    .select(
+      "id, category_id, name, description, price_type, base_price, image_path, thumb_path, video_path, is_active, order_index"
+    )
+    .in("category_id", Array.from(validCategoryIds))
+    .eq("is_active", true)
+    .order("order_index", { ascending: true, nullsFirst: false });
+
+  if (prodErr) return <ErrorScreen message={prodErr.message} />;
+
+  const products: Product[] = (productsData ?? []).map((p: any) => ({
+    id: p.id,
+    category_id: p.category_id,
+    name: (p.name ?? "").toString(),
+    description: p.description ?? null,
+    price_type: p.price_type === "variable" ? "variable" : "fixed",
+    base_price: toNumberOrNull(p.base_price),
+    image_path: p.image_path ?? null,
+    thumb_path: p.thumb_path ?? null,
+    video_path: p.video_path ?? null,
+    is_active: p.is_active !== false,
+    order_index: typeof p.order_index === "number" ? p.order_index : null,
+  }));
+
+  const productIds = products.map((p) => p.id);
+
+  if (!productIds.length) {
+    return <MenuClient unit={unit} categories={categories} products={[]} variations={{}} upsells={{}} />;
+  }
+
+  // ─── 4) VARIATIONS ────────────────────────────────────────────────────────
+  const { data: variationsData } = await supabase
     .from("product_variations")
     .select("id, product_id, name, price, order_index")
     .in("product_id", productIds)
+    .eq("is_active", true)
     .order("order_index", { ascending: true, nullsFirst: false });
 
-  if (varErr) {
-    return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
-        <div className="max-w-md w-full">
-          <div className="text-lg font-semibold">Erro ao carregar variacoes</div>
-          <div className="mt-2 text-sm text-white/70">{varErr.message}</div>
-        </div>
-      </div>
-    );
-  }
-
-  const variationsByProduct = new Map<string, ProductVariation[]>();
+  const variations: Record<string, ProductVariation[]> = {};
   for (const v of variationsData ?? []) {
-    const list = variationsByProduct.get(v.product_id) ?? [];
-    list.push({
+    if (!variations[v.product_id]) variations[v.product_id] = [];
+    variations[v.product_id].push({
       id: v.id,
       product_id: v.product_id,
       name: (v.name ?? "").toString(),
-      price: toNumberOrNull(v.price),
+      price: toNumberOrNull(v.price) ?? 0,
       order_index: typeof v.order_index === "number" ? v.order_index : null,
     });
-    variationsByProduct.set(v.product_id, list);
   }
 
-  // 5) PRODUCTS mapped
-  const products: Product[] = (productsData ?? [])
-    .filter((p: any) => validCategoryIds.has(p.category_id))
-    .map((p: any) => ({
-      id: p.id,
-      category_id: p.category_id,
-      name: (p.name ?? "").toString(),
-      description: p.description ?? null,
-      price_type: p.price_type === "variable" ? "variable" : "fixed",
-      price: toNumberOrNull(p.base_price),
-      thumbnail_url: p.thumbnail_url ?? null,
-      video_url: p.video_url ?? null,
-      order_index: typeof p.order_index === "number" ? p.order_index : null,
-      variations: variationsByProduct.get(p.id) ?? [],
-    }));
+  // ─── 5) UPSELLS ───────────────────────────────────────────────────────────
+  // product_upsells: { id, product_id } — o grupo de upsell de um produto
+  // product_upsell_items: { upsell_id, product_id (do item sugerido), position }
+  // Só buscamos upsells se o destino for WhatsApp (único fluxo que usa upsell completo)
+  const upsells: Record<string, UpsellSuggestion[]> = {};
 
-  // 6) Group: CategoryWithProducts[]
-  const productsByCategory = new Map<string, Product[]>();
-  for (const cat of categories) productsByCategory.set(cat.id, []);
-  for (const p of products) {
-    const arr = productsByCategory.get(p.category_id);
-    if (arr) arr.push(p);
+  if (unit.order_type === "whatsapp" || !unit.order_type) {
+    const { data: upsellGroups } = await supabase
+      .from("product_upsells")
+      .select("id, product_id")
+      .in("product_id", productIds);
+
+    const upsellGroupIds = (upsellGroups ?? []).map((u: any) => u.id);
+
+    if (upsellGroupIds.length > 0) {
+      const { data: upsellItems } = await supabase
+        .from("product_upsell_items")
+        .select("upsell_id, product_id, position")
+        .in("upsell_id", upsellGroupIds)
+        .order("position", { ascending: true });
+
+      // Mapa upsell_id → product_id do grupo
+      const upsellGroupMap = new Map<string, string>(
+        (upsellGroups ?? []).map((u: any) => [u.id, u.product_id])
+      );
+
+      // Mapa product_id → produto (para pegar nome e preço do item sugerido)
+      const productMap = new Map<string, Product>(products.map((p) => [p.id, p]));
+
+      for (const item of upsellItems ?? []) {
+        const ownerProductId = upsellGroupMap.get(item.upsell_id);
+        if (!ownerProductId) continue;
+
+        const suggestedProduct = productMap.get(item.product_id);
+        if (!suggestedProduct) continue;
+
+        if (!upsells[ownerProductId]) upsells[ownerProductId] = [];
+
+        // Evita duplicata
+        if (upsells[ownerProductId].some((u) => u.id === suggestedProduct.id)) continue;
+
+        // Preço do item sugerido: base_price ou menor variação
+        const itemVariations = variations[suggestedProduct.id] ?? [];
+        const suggestedPrice =
+          suggestedProduct.price_type === "variable" && itemVariations.length > 0
+            ? Math.min(...itemVariations.map((v) => v.price))
+            : (suggestedProduct.base_price ?? 0);
+
+        upsells[ownerProductId].push({
+          id: suggestedProduct.id,
+          name: suggestedProduct.name,
+          price: suggestedPrice,
+          image_path: suggestedProduct.thumb_path ?? suggestedProduct.image_path ?? undefined,
+        });
+      }
+    }
   }
 
-  const payloadCategories: CategoryWithProducts[] = categories.map((c) => ({
-    ...c,
-    products: productsByCategory.get(c.id) ?? [],
-  }));
+  // ─── 6) RENDER ────────────────────────────────────────────────────────────
+  return (
+    <MenuClient
+      unit={unit}
+      categories={categories}
+      products={products}
+      variations={variations}
+      upsells={upsells}
+    />
+  );
+}
 
-  return <MenuClient unit={unit} categories={payloadCategories} />;
+// ─── Telas de erro/404 ────────────────────────────────────────────────────────
+
+function ErrorScreen({ message }: { message: string }) {
+  return (
+    <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
+      <div className="max-w-md w-full">
+        <p className="text-lg font-semibold">Erro ao carregar cardápio</p>
+        <p className="mt-2 text-sm text-white/60">{message}</p>
+      </div>
+    </div>
+  );
+}
+
+function NotFoundScreen({ slug }: { slug: string }) {
+  return (
+    <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
+      <div className="max-w-md w-full">
+        <p className="text-lg font-semibold">Cardápio não encontrado</p>
+        <p className="mt-2 text-sm text-white/60">
+          Slug: <span className="text-white">{slug}</span>
+        </p>
+      </div>
+    </div>
+  );
 }

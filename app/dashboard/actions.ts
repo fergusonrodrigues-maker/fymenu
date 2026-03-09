@@ -335,3 +335,75 @@ export async function deleteProduct(formData: FormData): Promise<void> {
   revalidatePath("/dashboard/cardapio");
   revalidatePath("/u");
 }
+
+export async function addUpsellItem(formData: FormData): Promise<void> {
+  const supabase = await createClient();
+
+  const productId = String(formData.get("product_id") ?? "");
+  const upsellProductId = String(formData.get("upsell_product_id") ?? "");
+
+  if (!productId || !upsellProductId) throw new Error("IDs inválidos.");
+
+  // Garante que existe um grupo de upsell para o produto
+  let { data: group } = await supabase
+    .from("product_upsells")
+    .select("id")
+    .eq("product_id", productId)
+    .maybeSingle();
+
+  if (!group) {
+    const { data: created, error: groupErr } = await supabase
+      .from("product_upsells")
+      .insert({ product_id: productId })
+      .select("id")
+      .single();
+    if (groupErr || !created) throw new Error(groupErr?.message ?? "Erro ao criar grupo de upsell.");
+    group = created;
+  }
+
+  // Conta itens existentes
+  const { count } = await supabase
+    .from("product_upsell_items")
+    .select("id", { count: "exact", head: true })
+    .eq("upsell_id", group.id);
+
+  if ((count ?? 0) >= 3) throw new Error("Máximo de 3 sugestões atingido.");
+
+  // Evita duplicata
+  const { data: existing } = await supabase
+    .from("product_upsell_items")
+    .select("id")
+    .eq("upsell_id", group.id)
+    .eq("product_id", upsellProductId)
+    .maybeSingle();
+
+  if (existing) return; // já existe, silencia
+
+  const { error } = await supabase.from("product_upsell_items").insert({
+    upsell_id: group.id,
+    product_id: upsellProductId,
+    position: count ?? 0,
+  });
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/dashboard/cardapio");
+  revalidatePath("/u");
+}
+
+export async function removeUpsellItem(formData: FormData): Promise<void> {
+  const supabase = await createClient();
+
+  const id = String(formData.get("id") ?? "");
+  if (!id) throw new Error("ID inválido.");
+
+  const { error } = await supabase
+    .from("product_upsell_items")
+    .delete()
+    .eq("id", id);
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/dashboard/cardapio");
+  revalidatePath("/u");
+}
