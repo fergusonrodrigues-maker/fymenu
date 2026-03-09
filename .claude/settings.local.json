@@ -1,7 +1,14 @@
 {
   "permissions": {
     "allow": [
-      "Bash(ls c:/Users/Ferguson/Documents/fymenu/app/**/)"
+      "Bash(ls c:/Users/Ferguson/Documents/fymenu/app/**/)",
+      "Bash(git add app/dashboard/planos/)",
+      "Bash(git commit:*)",
+      "Bash(git push origin main)",
+      "mcp__claude_ai_Vercel__list_teams",
+      "mcp__claude_ai_Vercel__list_projects",
+      "mcp__claude_ai_Vercel__deploy_to_vercel",
+      "Bash(git add app/dashboard/actions.ts app/dashboard/cardapio/CardapioClient.tsx app/dashboard/cardapio/page.tsx app/dashboard/cardapio/UpsellSection.tsx app/u/[slug]/ProductCard.tsx app/u/[slug]/ProductModal.tsx app/u/[slug]/UpsellModal.tsx app/u/[slug]/orderBuilder.ts app/u/[slug]/useTrack.ts app/u/[slug]/MenuClient.tsx app/u/[slug]/menuTypes.ts app/u/[slug]/page.tsx)"
     ]
   }
 }
