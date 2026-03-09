@@ -43,6 +43,7 @@ export default function ProductModal({
   const isVideo = !product.thumb_path && product.video_path;
 
   function handleOrder() {
+    if (!product) return;
     if (!canOrder) return;
     onOrder({
       product,
