@@ -1,5 +1,4 @@
 // FILE: /app/u/[slug]/menuTypes.ts
-
 export type Unit = {
   id: string;
   restaurant_id: string | null;
@@ -11,10 +10,9 @@ export type Unit = {
   instagram: string | null;
   maps_url: string | null;
   logo_url: string | null;
-  order_type: string | null;   // "whatsapp" | "ifood" | "external"
-  order_link: string | null;   // link iFood ou externo
+  order_type: string | null;
+  order_link: string | null;
 };
-
 export type Category = {
   id: string;
   unit_id: string;
@@ -24,7 +22,6 @@ export type Category = {
   slug?: string;
   type?: string | null;
 };
-
 export type ProductVariation = {
   id: string;
   product_id: string;
@@ -32,7 +29,6 @@ export type ProductVariation = {
   price: number;
   order_index: number | null;
 };
-
 export type Product = {
   id: string;
   category_id: string;
@@ -47,14 +43,17 @@ export type Product = {
   order_index: number | null;
 };
 
-// ─── Helpers (server-safe) ───────────────────────────────────────────────────
+// Categoria com produtos embutidos (usado em CategoryPillsTop e similares)
+export type CategoryWithProducts = Category & {
+  products: Product[];
+};
 
+// ─── Helpers (server-safe) ───────────────────────────────────────────────────
 export function toNumberOrNull(v: unknown): number | null {
   if (v === null || v === undefined) return null;
   const n = typeof v === "number" ? v : Number(v);
   return Number.isFinite(n) ? n : null;
 }
-
 export function slugify(input: string): string {
   return (input ?? "")
     .toString()
@@ -66,7 +65,6 @@ export function slugify(input: string): string {
     .replace(/^-+|-+$/g, "")
     .slice(0, 64);
 }
-
 export function normalizePublicSlug(input: string): string {
   const cleaned = (input ?? "").toString().replace(/\s+/g, " ").trim();
   return slugify(cleaned);
