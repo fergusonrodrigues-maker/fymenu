@@ -3,11 +3,10 @@ import OpenAI from "openai";
 
 export const runtime = "nodejs";
 
-
 const SYSTEM_PROMPT = `Você é um parser de cardápio para o FyMenu.
 
 Regras:
-- Analise apenas palavras, estrutura e valores. Não analise imagens.
+- Analise o conteúdo fornecido (texto ou imagens) e extraia produtos, categorias e preços.
 - Preserve a ordem original dos itens.
 - Não invente preços. Se o preço não estiver claro, use null e raw_price_text com o texto original.
 - price_type = "variable" se houver tamanhos/opções com preços diferentes.
@@ -19,7 +18,7 @@ Regras:
 Schema de retorno:
 {
   "unit_name": null,
-  "source_type": "pdf|excel|word|txt|text|image",
+  "source_type": "excel|word|txt|text|image",
   "currency": "BRL",
   "notes": [],
   "categories": [
@@ -47,23 +46,20 @@ Schema de retorno:
   ]
 }`;
 
+interface FileData {
+  name: string;
+  type: string;
+  data: string; // base64
+}
+
 async function extractTextFromFile(
-  file: File
+  file: FileData
 ): Promise<{ text: string; sourceType: string }> {
   const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
-
-  if (ext === "pdf") {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const pdfModule = await import("pdf-parse");
-    const pdfParse = (pdfModule as any).default ?? pdfModule;
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const data = await pdfParse(buffer);
-    return { text: data.text, sourceType: "pdf" };
-  }
+  const buffer = Buffer.from(file.data, "base64");
 
   if (["xlsx", "xls"].includes(ext)) {
     const XLSX = await import("xlsx");
-    const buffer = Buffer.from(await file.arrayBuffer());
     const workbook = XLSX.read(buffer, { type: "buffer" });
     const lines: string[] = [];
     workbook.SheetNames.forEach((name) => {
@@ -76,79 +72,91 @@ async function extractTextFromFile(
 
   if (["doc", "docx"].includes(ext)) {
     const mammoth = await import("mammoth");
-    const buffer = Buffer.from(await file.arrayBuffer());
     const result = await mammoth.extractRawText({ buffer });
     return { text: result.value, sourceType: "word" };
   }
 
   if (["txt", "csv"].includes(ext)) {
-    const text = await file.text();
-    return { text, sourceType: "txt" };
+    return { text: buffer.toString("utf-8"), sourceType: "txt" };
   }
 
-  if (["jpg", "jpeg", "png", "webp"].includes(ext)) {
+  if (["jpg", "jpeg", "png", "webp"].includes(ext) || file.type.startsWith("image/")) {
     return { text: "__IMAGE__", sourceType: "image" };
   }
 
-  const text = await file.text();
-  return { text, sourceType: "text" };
+  return { text: buffer.toString("utf-8"), sourceType: "text" };
 }
 
 export async function POST(req: NextRequest) {
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   try {
-    const formData = await req.formData();
-    const file = formData.get("file") as File | null;
-    const rawText = formData.get("text") as string | null;
+    const body = await req.json();
+    const files: FileData[] = body.files ?? [];
+    const rawText: string | null = body.text ?? null;
 
-    if (!file && !rawText) {
+    if (files.length === 0 && !rawText) {
       return NextResponse.json(
         { error: "Envie um arquivo ou texto." },
         { status: 400 }
       );
     }
 
-    let text = "";
+    let messages: OpenAI.Chat.ChatCompletionMessageParam[];
     let sourceType = "text";
 
     if (rawText) {
-      text = rawText;
       sourceType = "text";
-    } else if (file) {
-      const extracted = await extractTextFromFile(file);
-      text = extracted.text;
-      sourceType = extracted.sourceType;
-    }
-
-    let messages: OpenAI.Chat.ChatCompletionMessageParam[];
-
-    if (sourceType === "image" && file) {
-      const buffer = Buffer.from(await file.arrayBuffer());
-      const base64 = buffer.toString("base64");
-      const mimeType = file.type || "image/jpeg";
-
       messages = [
         {
           role: "user",
-          content: [
-            {
-              type: "image_url",
-              image_url: { url: `data:${mimeType};base64,${base64}` },
-            },
-            {
-              type: "text",
-              text: "Analise esta imagem de cardápio e extraia todos os produtos, categorias e preços seguindo o schema JSON fornecido no sistema.",
-            },
-          ],
+          content: `Analise o cardápio abaixo e retorne o JSON estruturado:\n\n${rawText}`,
         },
       ];
     } else {
-      messages = [
-        {
-          role: "user",
-          content: `Analise o cardápio abaixo e retorne o JSON estruturado:\n\n${text}`,
-        },
-      ];
+      const imageContents: OpenAI.Chat.ChatCompletionContentPart[] = [];
+      const textChunks: string[] = [];
+
+      for (const file of files) {
+        const extracted = await extractTextFromFile(file);
+
+        if (extracted.sourceType === "image") {
+          sourceType = "image";
+          const mimeType = file.type || "image/jpeg";
+          imageContents.push({
+            type: "image_url",
+            image_url: { url: `data:${mimeType};base64,${file.data}` },
+          });
+        } else {
+          sourceType = extracted.sourceType;
+          textChunks.push(extracted.text);
+        }
+      }
+
+      if (imageContents.length > 0) {
+        messages = [
+          {
+            role: "user",
+            content: [
+              ...imageContents,
+              {
+                type: "text",
+                text:
+                  imageContents.length > 1
+                    ? `Analise estas ${imageContents.length} imagens de cardápio. Unifique os dados em um único JSON, eliminando duplicatas e mantendo a estrutura de categorias e produtos com preços. Siga o schema JSON do sistema.`
+                    : "Analise esta imagem de cardápio e extraia todos os produtos, categorias e preços seguindo o schema JSON do sistema.",
+              },
+            ],
+          },
+        ];
+      } else {
+        const combined = textChunks.join("\n\n---\n\n");
+        messages = [
+          {
+            role: "user",
+            content: `Analise o cardápio abaixo e retorne o JSON estruturado:\n\n${combined}`,
+          },
+        ];
+      }
     }
 
     const completion = await openai.chat.completions.create({

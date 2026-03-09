@@ -111,19 +111,29 @@ export default function ImportClient({
     setLoading(true);
 
     try {
-      const formData = new FormData();
+      let body: string;
+      let headers: Record<string, string> = { "Content-Type": "application/json" };
 
       if (inputMode === "file") {
         if (selectedFiles.length === 0) throw new Error("Selecione ao menos um arquivo.");
-        selectedFiles.forEach((f) => formData.append("files", f));
+        // Converte arquivos para base64
+        const filesData = await Promise.all(
+          selectedFiles.map(async (f) => {
+            const buf = await f.arrayBuffer();
+            const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
+            return { name: f.name, type: f.type, data: b64 };
+          })
+        );
+        body = JSON.stringify({ files: filesData });
       } else {
         if (!rawText.trim()) throw new Error("Cole o texto do cardápio.");
-        formData.append("text", rawText.trim());
+        body = JSON.stringify({ text: rawText.trim() });
       }
 
       const res = await fetch("/api/ia/import", {
         method: "POST",
-        body: formData,
+        headers,
+        body,
       });
 
       const json = await res.json();
@@ -353,6 +363,9 @@ export default function ImportClient({
                     multiple
                     onChange={(e) => {
                       const newFiles = Array.from(e.target.files ?? []);
+                      e.target.value = '';
+                      if (newFiles.length === 0) return;
+                      setError(null);
                       setSelectedFiles((prev) => {
                         const seen = new Set<string>();
                         return [...prev, ...newFiles].filter((f) => {
@@ -362,8 +375,6 @@ export default function ImportClient({
                           return true;
                         }).slice(0, 10);
                       });
-                      setError(null);
-                      e.target.value = '';
                     }}
                     className="hidden"
                   />
