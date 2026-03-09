@@ -117,12 +117,22 @@ export default function ImportClient({
       if (inputMode === "file") {
         if (selectedFiles.length === 0) throw new Error("Selecione ao menos um arquivo.");
         // Converte arquivos para base64
+        const toBase64 = (f: File): Promise<string> =>
+          new Promise((res, rej) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+              const result = reader.result as string;
+              res(result.split(',')[1] ?? '');
+            };
+            reader.onerror = rej;
+            reader.readAsDataURL(f);
+          });
         const filesData = await Promise.all(
-          selectedFiles.map(async (f) => {
-            const buf = await f.arrayBuffer();
-            const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
-            return { name: f.name, type: f.type, data: b64 };
-          })
+          selectedFiles.map(async (f) => ({
+            name: f.name,
+            type: f.type,
+            data: await toBase64(f),
+          }))
         );
         body = JSON.stringify({ files: filesData });
       } else {
@@ -367,13 +377,14 @@ export default function ImportClient({
                       if (newFiles.length === 0) return;
                       setError(null);
                       setSelectedFiles((prev) => {
+                        const merged = [...prev, ...newFiles];
                         const seen = new Set<string>();
-                        return [...prev, ...newFiles].filter((f) => {
-                          const key = f.name + f.size;
-                          if (seen.has(key)) return false;
-                          seen.add(key);
-                          return true;
-                        }).slice(0, 10);
+                        const deduped: File[] = [];
+                        for (const f of merged) {
+                          const key = f.name + '-' + f.size;
+                          if (!seen.has(key)) { seen.add(key); deduped.push(f); }
+                        }
+                        return deduped.slice(0, 10);
                       });
                     }}
                     className="hidden"
