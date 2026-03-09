@@ -1,8 +1,6 @@
 'use client';
 
-import { motion, AnimatePresence } from 'framer-motion';
-import { useState } from 'react';
-import { Check } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
 
 const PLANS = [
   {
@@ -39,40 +37,81 @@ const PLANS = [
   },
 ];
 
-/**
- * Border-beam: conic-gradient rotacionando atrás do inner card.
- * Fica visível apenas na faixa de 6px de padding do card externo.
- */
-function BorderBeam({ color }: { color: string }) {
+type Billing = 'anual' | 'trimestral' | 'mensal';
+
+function CheckIcon({ color }: { color: string }) {
   return (
-    <motion.div
-      className="absolute inset-0 rounded-[50px] pointer-events-none"
-      style={{
-        background: `conic-gradient(from 0deg, transparent 0%, ${color} 8%, transparent 16%)`,
-      }}
-      animate={{ rotate: 360 }}
-      transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
-    />
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
   );
 }
 
-type Billing = 'anual' | 'trimestral' | 'mensal';
+function AnimatedPrice({ price }: { price: string }) {
+  const [display, setDisplay] = useState(price);
+  const [fade, setFade] = useState(false);
+
+  useEffect(() => {
+    setFade(true);
+    const t = setTimeout(() => {
+      setDisplay(price);
+      setFade(false);
+    }, 150);
+    return () => clearTimeout(t);
+  }, [price]);
+
+  return (
+    <span
+      className="text-6xl font-black tracking-tighter"
+      style={{ transition: 'opacity 0.15s, transform 0.15s', opacity: fade ? 0 : 1, transform: fade ? 'translateY(8px)' : 'translateY(0)' }}
+    >
+      {display}
+    </span>
+  );
+}
+
+function BorderBeam({ color }: { color: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const id = 'fy-beam-keyframes';
+    if (!document.getElementById(id)) {
+      const s = document.createElement('style');
+      s.id = id;
+      s.textContent = `@keyframes fy-beam-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`;
+      document.head.appendChild(s);
+    }
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      style={{
+        position: 'absolute', inset: 0, borderRadius: 50, pointerEvents: 'none',
+        background: `conic-gradient(from 0deg, transparent 0%, ${color} 8%, transparent 16%)`,
+        animation: 'fy-beam-spin 3s linear infinite',
+      }}
+    />
+  );
+}
 
 export default function PlanosPage() {
   const [billing, setBilling] = useState<Billing>('anual');
 
   return (
-    <div className="min-h-screen bg-black text-white p-8 flex flex-col items-center gap-12">
+    <div style={{ minHeight: '100vh', background: '#080808', color: '#fff', padding: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3rem', fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif' }}>
 
       {/* Seletor de faturamento */}
-      <div className="flex bg-zinc-900 p-1 rounded-full border border-zinc-800">
+      <div style={{ display: 'flex', background: '#111', padding: 4, borderRadius: 999, border: '1px solid rgba(255,255,255,0.08)' }}>
         {(['anual', 'trimestral', 'mensal'] as Billing[]).map((type) => (
           <button
             key={type}
             onClick={() => setBilling(type)}
-            className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${
-              billing === type ? 'bg-zinc-700 text-white' : 'text-zinc-500'
-            }`}
+            style={{
+              padding: '8px 24px', borderRadius: 999, fontSize: 14, fontWeight: 500,
+              border: 'none', cursor: 'pointer', transition: 'all 0.2s',
+              background: billing === type ? 'rgba(255,255,255,0.12)' : 'transparent',
+              color: billing === type ? '#fff' : 'rgba(255,255,255,0.45)',
+            }}
           >
             {type.charAt(0).toUpperCase() + type.slice(1)}
           </button>
@@ -80,88 +119,94 @@ export default function PlanosPage() {
       </div>
 
       {/* Grid de cards */}
-      <motion.div
-        initial="hidden"
-        animate="visible"
-        variants={{ visible: { transition: { staggerChildren: 0.2 } } }}
-        className="flex flex-wrap justify-center gap-8"
-      >
-        {PLANS.map((plan) => (
-          <motion.div
-            key={plan.id}
-            variants={{
-              hidden: { opacity: 0, y: 30 },
-              visible: { opacity: 1, y: 0 },
-            }}
-            whileHover={{ y: -10, transition: { duration: 0.3 } }}
-            /* Outer wrapper: define a borda colorida via padding + background */
-            className="relative p-[6px] rounded-[50px] w-[350px] overflow-hidden"
-            style={{ background: plan.color }}
-          >
-            {/* Badge "Mais popular" */}
-            {plan.popular && (
-              <div
-                className="absolute -top-4 left-1/2 -translate-x-1/2 z-20
-                           px-4 py-1 rounded-full text-xs font-bold text-black uppercase tracking-widest"
-                style={{ backgroundColor: plan.buttonColor }}
-              >
-                Mais popular
-              </div>
-            )}
-
-            {/* Border-beam rotacionando por baixo do inner card */}
-            {plan.popular && <BorderBeam color={plan.buttonColor} />}
-
-            {/* Inner card escuro — z-10 para ficar acima do beam */}
-            <div className="relative z-10 bg-[#1a1a1a] h-full w-full rounded-[44px] p-10 flex flex-col justify-between overflow-hidden">
-              <div>
-                <h2 className="text-4xl font-extrabold mb-8 tracking-tighter">
-                  {plan.name}
-                </h2>
-                <ul className="space-y-4 mb-12">
-                  {plan.features.map((feature, i) => (
-                    <li
-                      key={i}
-                      className="flex items-center gap-3 text-sm font-light opacity-90"
-                    >
-                      <Check size={16} style={{ color: plan.buttonColor }} />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="mt-auto">
-                <div className="flex items-baseline gap-1 mb-8">
-                  <span className="text-xl font-light">R$</span>
-                  <AnimatePresence mode="wait">
-                    <motion.span
-                      key={plan.prices[billing]}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className="text-6xl font-black tracking-tighter"
-                    >
-                      {plan.prices[billing]}
-                    </motion.span>
-                  </AnimatePresence>
-                  <span className="text-zinc-500 text-sm">/mês</span>
-                </div>
-
-                <motion.button
-                  whileTap={{ scale: 0.95 }}
-                  style={{ backgroundColor: plan.buttonColor }}
-                  className="w-full py-4 rounded-full text-black font-black text-lg uppercase tracking-widest hover:brightness-110 transition-all"
-                >
-                  Fazer Upgrade
-                </motion.button>
-              </div>
-
-              <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
-            </div>
-          </motion.div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 32 }}>
+        {PLANS.map((plan, i) => (
+          <PlanCard key={plan.id} plan={plan} billing={billing} enterDelay={i * 200} />
         ))}
-      </motion.div>
+      </div>
+    </div>
+  );
+}
+
+function PlanCard({ plan, billing, enterDelay }: { plan: typeof PLANS[0]; billing: Billing; enterDelay: number }) {
+  const [hov, setHov] = useState(false);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setVisible(true), enterDelay);
+    return () => clearTimeout(t);
+  }, [enterDelay]);
+
+  return (
+    <div
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        position: 'relative', padding: 6, borderRadius: 50, width: 350,
+        overflow: 'hidden', background: plan.color,
+        transform: visible ? (hov ? 'translateY(-10px)' : 'translateY(0)') : 'translateY(30px)',
+        opacity: visible ? 1 : 0,
+        transition: 'opacity 0.4s ease, transform 0.3s ease',
+      }}
+    >
+      {/* Badge */}
+      {plan.popular && (
+        <div style={{
+          position: 'absolute', top: -14, left: '50%', transform: 'translateX(-50%)',
+          zIndex: 20, padding: '4px 16px', borderRadius: 999,
+          fontSize: 11, fontWeight: 700, color: '#000', letterSpacing: 1.5, textTransform: 'uppercase',
+          backgroundColor: plan.buttonColor,
+        }}>
+          Mais popular
+        </div>
+      )}
+
+      {/* Border beam */}
+      {plan.popular && <BorderBeam color={plan.buttonColor} />}
+
+      {/* Inner card */}
+      <div style={{
+        position: 'relative', zIndex: 10, background: '#1a1a1a',
+        borderRadius: 44, padding: '40px', display: 'flex', flexDirection: 'column',
+        justifyContent: 'space-between', overflow: 'hidden', minHeight: 480,
+      }}>
+        <div>
+          <h2 style={{ fontSize: 36, fontWeight: 900, marginBottom: 32, letterSpacing: -1 }}>
+            {plan.name}
+          </h2>
+          <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 48px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {plan.features.map((feature, i) => (
+              <li key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 14, fontWeight: 300, opacity: 0.9 }}>
+                <CheckIcon color={plan.buttonColor} />
+                {feature}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 32 }}>
+            <span style={{ fontSize: 20, fontWeight: 300 }}>R$</span>
+            <AnimatedPrice price={plan.prices[billing]} />
+            <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14 }}>/mês</span>
+          </div>
+
+          <button
+            style={{
+              width: '100%', padding: '16px', borderRadius: 999, border: 'none', cursor: 'pointer',
+              backgroundColor: plan.buttonColor, color: '#000', fontWeight: 900,
+              fontSize: 16, letterSpacing: 1.5, textTransform: 'uppercase',
+              transition: 'filter 0.2s',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.filter = 'brightness(1.15)')}
+            onMouseLeave={e => (e.currentTarget.style.filter = 'brightness(1)')}
+          >
+            Fazer Upgrade
+          </button>
+        </div>
+
+        <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: 128, background: 'linear-gradient(to top, rgba(0,0,0,0.2), transparent)', pointerEvents: 'none' }} />
+      </div>
     </div>
   );
 }
