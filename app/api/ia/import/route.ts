@@ -52,7 +52,9 @@ async function extractTextFromFile(
   const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
 
   if (ext === "pdf") {
-    const pdfParse = (await import("pdf-parse")).default;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const pdfModule = await import("pdf-parse");
+    const pdfParse = (pdfModule as any).default ?? pdfModule;
     const buffer = Buffer.from(await file.arrayBuffer());
     const data = await pdfParse(buffer);
     return { text: data.text, sourceType: "pdf" };
