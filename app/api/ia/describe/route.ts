@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
   try {
     const { name, category, existing_description } = await req.json();
 
@@ -47,8 +49,7 @@ Regras:
       max_tokens: 100,
     });
 
-    const description =
-      completion.choices[0]?.message?.content?.trim() ?? "";
+    const description = completion.choices[0]?.message?.content?.trim() ?? "";
 
     return NextResponse.json({ description });
   } catch (err: unknown) {
