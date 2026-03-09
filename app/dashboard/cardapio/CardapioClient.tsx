@@ -100,11 +100,13 @@ export default function CardapioClient({
             </select>
           )}
           {/* Botão Importar com IA */}
-          <a href="/dashboard/ia"
-            style={{ padding: "8px 14px", borderRadius: 10, background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.3)", color: "#a5b4fc", fontSize: 13, fontWeight: 700, textDecoration: "none" }}
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); router.push("/dashboard/ia"); }}
+            style={{ padding: "8px 14px", borderRadius: 10, background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.3)", color: "#a5b4fc", fontSize: 13, fontWeight: 700, cursor: "pointer" }}
           >
             ✨ Importar IA
-          </a>
+          </button>
           <a href={`/u/${activeUnit.slug}`} target="_blank" rel="noreferrer"
             style={{ padding: "8px 14px", borderRadius: 10, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", color: "#fff", fontSize: 13, fontWeight: 700, textDecoration: "none" }}
           >Ver cardápio ↗</a>
