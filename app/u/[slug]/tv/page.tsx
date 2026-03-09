@@ -39,7 +39,7 @@ export default async function TvPage({
   if (categoryIds.length > 0) {
     const { data: products } = await supabase
       .from("products")
-      .select("id, name, description, price, price_type, video_url, thumbnail_url")
+      .select("id, name, description, base_price, price_type, video_url, thumbnail_url")
       .in("category_id", categoryIds)
       .not("video_url", "is", null)
       .order("created_at", { ascending: true });

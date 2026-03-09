@@ -6,7 +6,7 @@ type TvItem = {
   id: string;
   name: string;
   description?: string | null;
-  price?: number | null;
+  base_price?: number | null;
   price_type?: string | null;
   video_url: string;
   thumbnail_url?: string | null;
@@ -89,7 +89,7 @@ export default function TvClient({ items, unitName, logoUrl }: Props) {
 
   const priceDisplay = current.price_type === "variable"
     ? "A partir de R$ —"
-    : current.price != null ? moneyBR(Number(current.price)) : null;
+    : current.base_price != null ? moneyBR(Number(current.base_price)) : null;
 
   return (
     <div
