@@ -35,7 +35,6 @@ export default function CategoryCarousel({
   onOpen: (p: Product, originalIndex: number) => void;
 }) {
   const scrollerRef = useRef<HTMLDivElement | null>(null);
-  // cardRefs: index 0 = guia início, 1..list.length = produtos, list.length+1 = guia fim
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
   const rafRef = useRef<number | null>(null);
   const bounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -44,10 +43,8 @@ export default function CategoryCarousel({
 
   const list = useMemo(() => items ?? [], [items]);
 
-  // heroIndex 1 = primeiro produto (após o card guia de início)
   const [heroIndex, setHeroIndex] = useState(1);
   const heroIndexRef = useRef(1);
-  // impede computeHero durante transição de largura (isVigente muda)
   const isResizingRef = useRef(false);
 
   function centralizeCard(index: number, smooth = false) {
@@ -58,7 +55,6 @@ export default function CategoryCarousel({
     const scrollerRect = scroller.getBoundingClientRect();
     const cardRect = card.getBoundingClientRect();
 
-    // posição real do centro do card relativa ao scroll atual
     const cardCenter = scroller.scrollLeft + (cardRect.left - scrollerRect.left) + cardRect.width / 2;
     const left = cardCenter - scroller.offsetWidth / 2;
 
@@ -67,13 +63,11 @@ export default function CategoryCarousel({
   }
 
   useEffect(() => {
-    // Primeiro: posiciona sem animação (instantâneo)
     const t1 = setTimeout(() => {
       centralizeCard(1);
       setHeroIndex(1);
     }, 50);
 
-    // Segundo: confirma após layout completo
     const t2 = setTimeout(() => {
       centralizeCard(1);
       setHeroIndex(1);
@@ -87,7 +81,7 @@ export default function CategoryCarousel({
   }, []);
 
   function computeHero(snapAfter = false) {
-    if (isResizingRef.current) return; // ignora durante transição de largura
+    if (isResizingRef.current) return;
     const scroller = scrollerRef.current;
     if (!scroller) return;
 
@@ -110,7 +104,6 @@ export default function CategoryCarousel({
 
     if (snapAfter) {
       if (bounceTimerRef.current) clearTimeout(bounceTimerRef.current);
-      // se for guia, volta pro produto adjacente; senão, centraliza o próprio card
       if (best === 0) {
         bounceTimerRef.current = setTimeout(() => centralizeCard(1, true), 80);
       } else if (best === total - 1) {
@@ -125,7 +118,6 @@ export default function CategoryCarousel({
     const scroller = scrollerRef.current;
     if (!scroller) return;
 
-    // ignora se não houve movimento horizontal real (ex: scroll vertical da página)
     if (Math.abs(scroller.scrollLeft - lastScrollLeft.current) < 2) return;
     lastScrollLeft.current = scroller.scrollLeft;
 
@@ -136,13 +128,9 @@ export default function CategoryCarousel({
     scrollEndTimerRef.current = setTimeout(() => computeHero(true), 120);
   }
 
-  // sizing: vigente cresce até o tamanho da categoria destaque
   const baseWidth = compact ? (isVigente ? 220 : 150) : 220;
-
-  // largura do card guia para centralizar o primeiro card no centro da tela
   const guideWidth = `calc(50vw - ${12 + baseWidth / 2}px)`;
 
-  // re-centraliza após a transição de largura completar
   useEffect(() => {
     heroIndexRef.current = heroIndex;
   }, [heroIndex]);
@@ -183,7 +171,7 @@ export default function CategoryCarousel({
           gap: 12,
           overflowX: "auto",
           overflowY: "hidden",
-          padding: "52px 0 56px", // espaço extra para o scale(1.13) do hero não ser clipado
+          padding: "52px 0 56px",
           WebkitOverflowScrolling: "touch",
           scrollSnapType: "none",
           scrollBehavior: "smooth",
@@ -191,7 +179,6 @@ export default function CategoryCarousel({
           scrollbarWidth: "none",
         }}
       >
-        {/* card guia início — largura calculada para centralizar o 1º produto */}
         <div
           key="guide-start"
           ref={(el) => { cardRefs.current[0] = el; }}
@@ -207,7 +194,6 @@ export default function CategoryCarousel({
           <GuideCard text="← Deslize" />
         </div>
 
-        {/* produtos */}
         {list.map((p, idx) => {
           const renderedIdx = idx + 1;
           const isHero = renderedIdx === heroIndex;
@@ -233,7 +219,6 @@ export default function CategoryCarousel({
           );
         })}
 
-        {/* card guia fim — mesma largura para centralizar o último produto */}
         <div
           key="guide-end"
           ref={(el) => { cardRefs.current[list.length + 1] = el; }}
@@ -299,8 +284,8 @@ function MediaCard({
   }, [product.id, hero]);
 
   // pré-carrega no adjacente, mas exibe/autoPlay só quando hero
-  const loadVideo = (hero || adjacent) && !!product.video_url;
-  const showVideo = hero && !!product.video_url;
+  const loadVideo = (hero || adjacent) && !!product.video_path;
+  const showVideo = hero && !!product.video_path;
 
   return (
     <button
@@ -315,13 +300,12 @@ function MediaCard({
         position: "relative",
         padding: 0,
         cursor: "pointer",
-        // Hack para forçar recorte arredondado no iOS/Safari
         WebkitMaskImage: "-webkit-radial-gradient(white, black)",
       }}
     >
-      {product.thumbnail_url ? (
+      {product.thumb_path ? (
         <img
-          src={product.thumbnail_url}
+          src={product.thumb_path}
           alt={product.name}
           style={{
             position: "absolute",
@@ -329,7 +313,7 @@ function MediaCard({
             width: "100%",
             height: "100%",
             objectFit: "cover",
-            borderRadius: "inherit", // Força a curva na imagem
+            borderRadius: "inherit",
             opacity: showVideo && videoReady ? 0 : 1,
             transition: "opacity 240ms ease",
           }}
@@ -353,7 +337,7 @@ function MediaCard({
 
       {loadVideo ? (
         <video
-          src={product.video_url!}
+          src={product.video_path!}
           autoPlay={showVideo}
           loop
           muted
@@ -366,7 +350,7 @@ function MediaCard({
             width: "100%",
             height: "100%",
             objectFit: "cover",
-            borderRadius: "inherit", // Força a curva no vídeo
+            borderRadius: "inherit",
             opacity: showVideo ? 1 : 0,
           }}
           onPlay={() => {
