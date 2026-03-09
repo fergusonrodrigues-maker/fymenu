@@ -352,8 +352,18 @@ export default function ImportClient({
                     accept={ACCEPTED_TYPES}
                     multiple
                     onChange={(e) => {
-                      const files = Array.from(e.target.files ?? []).slice(0, 10);
-                      setSelectedFiles(files);
+                      const newFiles = Array.from(e.target.files ?? []);
+                      setSelectedFiles((prev) => {
+                        const seen = new Set<string>();
+                        return [...prev, ...newFiles].filter((f) => {
+                          const key = f.name + f.size;
+                          if (seen.has(key)) return false;
+                          seen.add(key);
+                          return true;
+                        }).slice(0, 10);
+                      });
+                      setError(null);
+                      e.target.value = '';
                     }}
                     className="hidden"
                   />
