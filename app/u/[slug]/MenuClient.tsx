@@ -6,7 +6,6 @@ import CategoryPillsTop from "./CategoryPillsTop";
 import CategoryCarousel from "./CategoryCarousel";
 import FeaturedCarousel from "./FeaturedCarousel";
 import BottomGlassBar from "./BottomGlassBar";
-import ProductCard from "./ProductCard";
 import ProductModal from "./ProductModal";
 import UpsellModal, { UpsellSuggestion } from "./UpsellModal";
 import { OrderPayload } from "./orderBuilder";
@@ -75,9 +74,8 @@ export default function MenuClient({
           return (
             <FeaturedCarousel
               key={cat.id}
-              category={cat}
-              products={catProducts}
-              onProductClick={handleOpenProduct}
+              items={catProducts}
+              onOpen={(p) => handleOpenProduct(p)}
             />
           );
         })}
@@ -92,15 +90,9 @@ export default function MenuClient({
               ref={(el) => { sectionRefs.current[cat.id] = el; }}
             >
               <CategoryCarousel
-                category={cat}
-                products={catProducts}
-                renderCard={(product) => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    onOrder={handleOpenProduct}
-                  />
-                )}
+                items={catProducts}
+                compact={true}
+                onOpen={(p) => handleOpenProduct(p)}
               />
             </div>
           );
