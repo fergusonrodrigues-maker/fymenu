@@ -1,231 +1,179 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 
-type TvItem = {
+interface TVMedia {
   id: string;
-  name: string;
-  description?: string | null;
-  base_price?: number | null;
-  price_type?: string | null;
-  video_url: string;
-  thumbnail_url?: string | null;
-};
+  title: string;
+  video_path: string;
+  thumb_path: string | null;
+  orientation: "vertical" | "horizontal";
+  order_index: number;
+  is_active: boolean;
+}
 
 type Props = {
-  items: TvItem[];
+  unitId: string;
   unitName: string;
-  logoUrl?: string | null;
+  slug: string;
+  initialMedia: TVMedia[];
 };
 
-function moneyBR(v: number) {
-  return `R$ ${v.toFixed(2).replace(".", ",")}`;
-}
+export default function TVClient({ unitId, unitName, slug, initialMedia }: Props) {
+  const supabase = createClient();
+  const [media, setMedia] = useState<TVMedia[]>(initialMedia);
+  const [uploading, setUploading] = useState(false);
+  const [title, setTitle] = useState("");
+  const [orientation, setOrientation] = useState<"vertical" | "horizontal">("horizontal");
+  const [error, setError] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
-export default function TvClient({ items, unitName, logoUrl }: Props) {
-  const [index, setIndex] = useState(0);
-  const [paused, setPaused] = useState(false);
-  const [showUI, setShowUI] = useState(true);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const uiTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  async function handleUpload(e: { preventDefault(): void }) {
+    e.preventDefault();
+    setError(null);
+    const file = fileRef.current?.files?.[0];
+    if (!file || !title.trim()) return;
 
-  const current = items[index % items.length];
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `${unitId}/${Date.now()}.${ext}`;
 
-  // Oculta UI após 3s de inatividade
-  function resetUiTimer() {
-    setShowUI(true);
-    if (uiTimerRef.current) clearTimeout(uiTimerRef.current);
-    uiTimerRef.current = setTimeout(() => setShowUI(false), 3000);
-  }
+      const { error: uploadError } = await supabase.storage
+        .from("tv")
+        .upload(path, file);
+      if (uploadError) throw uploadError;
 
-  useEffect(() => {
-    resetUiTimer();
-    return () => { if (uiTimerRef.current) clearTimeout(uiTimerRef.current); };
-  }, []);
+      const { data, error: insertError } = await supabase
+        .from("tv_media")
+        .insert({
+          unit_id: unitId,
+          title: title.trim(),
+          video_path: path,
+          orientation,
+          order_index: media.length,
+          is_active: true,
+        })
+        .select()
+        .single();
+      if (insertError) throw insertError;
 
-  // Reinicia vídeo ao trocar
-  useEffect(() => {
-    const v = videoRef.current;
-    if (!v) return;
-    v.load();
-    if (!paused) v.play().catch(() => {});
-  }, [index]);
-
-  function goNext() {
-    setIndex(i => (i + 1) % items.length);
-  }
-
-  function goPrev() {
-    setIndex(i => (i - 1 + items.length) % items.length);
-  }
-
-  function togglePause() {
-    const v = videoRef.current;
-    if (!v) return;
-    if (paused) { v.play().catch(() => {}); setPaused(false); }
-    else { v.pause(); setPaused(true); }
-  }
-
-  // Teclado
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      resetUiTimer();
-      if (e.key === "ArrowRight") goNext();
-      else if (e.key === "ArrowLeft") goPrev();
-      else if (e.key === " ") { e.preventDefault(); togglePause(); }
-      else if (e.key === "Escape") window.close();
+      setMedia((prev) => [...prev, data as TVMedia]);
+      setTitle("");
+      if (fileRef.current) fileRef.current.value = "";
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Erro ao enviar vídeo");
+    } finally {
+      setUploading(false);
     }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [paused, index]);
-
-  if (!current) {
-    return (
-      <div style={{ background: "#000", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontFamily: "sans-serif", fontSize: 18 }}>
-        Nenhum vídeo cadastrado nos produtos.
-      </div>
-    );
   }
 
-  const priceDisplay = current.price_type === "variable"
-    ? "A partir de R$ —"
-    : current.base_price != null ? moneyBR(Number(current.base_price)) : null;
+  async function toggleActive(item: TVMedia) {
+    const { error: err } = await supabase
+      .from("tv_media")
+      .update({ is_active: !item.is_active })
+      .eq("id", item.id);
+    if (!err) {
+      setMedia((prev) =>
+        prev.map((m) => (m.id === item.id ? { ...m, is_active: !m.is_active } : m))
+      );
+    }
+  }
+
+  async function deleteItem(item: TVMedia) {
+    if (!confirm(`Excluir "${item.title}"?`)) return;
+    await supabase.storage.from("tv").remove([item.video_path]);
+    if (item.thumb_path) await supabase.storage.from("tv").remove([item.thumb_path]);
+    const { error: err } = await supabase.from("tv_media").delete().eq("id", item.id);
+    if (!err) setMedia((prev) => prev.filter((m) => m.id !== item.id));
+  }
+
+  const tvUrl = `/u/${slug}/tv`;
 
   return (
-    <div
-      style={{ position: "fixed", inset: 0, background: "#000", overflow: "hidden", cursor: showUI ? "default" : "none" }}
-      onMouseMove={resetUiTimer}
-      onClick={resetUiTimer}
-    >
-      {/* ── VÍDEO ── */}
-      <video
-        ref={videoRef}
-        key={current.id}
-        src={current.video_url}
-        autoPlay
-        muted
-        playsInline
-        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
-        onEnded={goNext}
-      />
+    <div className="max-w-3xl mx-auto px-4 py-8 space-y-8">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Modo TV</h1>
+          <p className="text-sm text-muted-foreground">{unitName}</p>
+        </div>
+        <a
+          href={tvUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-sm underline text-blue-600"
+        >
+          Abrir display público →
+        </a>
+      </div>
 
-      {/* Thumbnail fallback enquanto vídeo carrega */}
-      {current.thumbnail_url && (
-        <img
-          src={current.thumbnail_url}
-          alt={current.name}
-          style={{
-            position: "absolute", inset: 0,
-            width: "100%", height: "100%", objectFit: "cover",
-            zIndex: 0,
-          }}
+      {/* Upload form */}
+      <form onSubmit={handleUpload} className="border rounded-lg p-4 space-y-3">
+        <h2 className="font-semibold">Adicionar vídeo</h2>
+        <input
+          type="text"
+          placeholder="Título"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          className="w-full border rounded px-3 py-2 text-sm"
+          required
         />
-      )}
+        <select
+          value={orientation}
+          onChange={(e) => setOrientation(e.target.value as "vertical" | "horizontal")}
+          className="w-full border rounded px-3 py-2 text-sm"
+        >
+          <option value="horizontal">Horizontal (paisagem)</option>
+          <option value="vertical">Vertical (retrato)</option>
+        </select>
+        <input type="file" accept="video/*" ref={fileRef} required className="text-sm" />
+        {error && <p className="text-red-500 text-sm">{error}</p>}
+        <button
+          type="submit"
+          disabled={uploading}
+          className="bg-primary text-primary-foreground px-4 py-2 rounded text-sm disabled:opacity-50"
+        >
+          {uploading ? "Enviando..." : "Enviar vídeo"}
+        </button>
+      </form>
 
-      {/* Gradiente de legibilidade */}
-      <div style={{
-        position: "absolute", inset: 0, zIndex: 2,
-        background: "linear-gradient(to top, rgba(0,0,0,0.80) 0%, rgba(0,0,0,0.20) 40%, rgba(0,0,0,0.05) 70%, transparent 100%)",
-        pointerEvents: "none",
-      }} />
-
-      {/* ── LOGO + NOME (topo esquerdo) ── */}
-      <div style={{
-        position: "absolute", top: 32, left: 40, zIndex: 10,
-        display: "flex", alignItems: "center", gap: 14,
-        opacity: showUI ? 1 : 0, transition: "opacity .4s ease",
-      }}>
-        {logoUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={logoUrl} alt={unitName} style={{ width: 52, height: 52, borderRadius: 14, objectFit: "cover", border: "1px solid rgba(255,255,255,0.18)" }} />
+      {/* Media list */}
+      <div className="space-y-3">
+        <h2 className="font-semibold">Vídeos cadastrados ({media.length})</h2>
+        {media.length === 0 && (
+          <p className="text-sm text-muted-foreground">Nenhum vídeo cadastrado.</p>
         )}
-        <span style={{ color: "#fff", fontWeight: 700, fontSize: 22, letterSpacing: "-0.4px", textShadow: "0 2px 8px rgba(0,0,0,0.6)" }}>
-          {unitName}
-        </span>
-      </div>
-
-      {/* ── CONTADOR (topo direito) ── */}
-      <div style={{
-        position: "absolute", top: 36, right: 40, zIndex: 10,
-        color: "rgba(255,255,255,0.55)", fontSize: 16, fontWeight: 600,
-        opacity: showUI ? 1 : 0, transition: "opacity .4s ease",
-      }}>
-        {(index % items.length) + 1} / {items.length}
-      </div>
-
-      {/* ── INFO DO PRODUTO (rodapé) ── */}
-      <div style={{
-        position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 10,
-        padding: "0 48px 48px",
-        opacity: showUI ? 1 : 0, transition: "opacity .4s ease",
-      }}>
-        <div style={{ color: "#fff", fontWeight: 900, fontSize: "clamp(28px,4vw,56px)", lineHeight: 1.1, marginBottom: 8, textShadow: "0 4px 20px rgba(0,0,0,0.7)" }}>
-          {current.name}
-        </div>
-        {current.description && (
-          <div style={{ color: "rgba(255,255,255,0.72)", fontWeight: 500, fontSize: "clamp(14px,2vw,20px)", marginBottom: 10, maxWidth: 600 }}>
-            {current.description}
+        {media.map((item) => (
+          <div
+            key={item.id}
+            className="flex items-center justify-between border rounded-lg px-4 py-3 gap-3"
+          >
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-sm truncate">{item.title}</p>
+              <p className="text-xs text-muted-foreground capitalize">{item.orientation}</p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => toggleActive(item)}
+                className={`text-xs px-2 py-1 rounded ${
+                  item.is_active
+                    ? "bg-green-100 text-green-700"
+                    : "bg-gray-100 text-gray-500"
+                }`}
+              >
+                {item.is_active ? "Ativo" : "Inativo"}
+              </button>
+              <button
+                onClick={() => deleteItem(item)}
+                className="text-xs px-2 py-1 rounded bg-red-100 text-red-600 hover:bg-red-200"
+              >
+                Excluir
+              </button>
+            </div>
           </div>
-        )}
-        {priceDisplay && (
-          <div style={{ color: "#00ffae", fontWeight: 900, fontSize: "clamp(22px,3vw,40px)", textShadow: "0 0 20px rgba(0,255,174,0.5)" }}>
-            {priceDisplay}
-          </div>
-        )}
+        ))}
       </div>
-
-      {/* ── CONTROLES (UI ao mover o mouse) ── */}
-      <div style={{
-        position: "absolute", bottom: 48, right: 48, zIndex: 10,
-        display: "flex", gap: 12,
-        opacity: showUI ? 1 : 0, transition: "opacity .4s ease",
-      }}>
-        <CtrlBtn onClick={goPrev} title="Anterior (←)">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-        </CtrlBtn>
-        <CtrlBtn onClick={togglePause} title={paused ? "Retomar (Espaço)" : "Pausar (Espaço)"}>
-          {paused
-            ? <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-            : <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="6" y1="4" x2="6" y2="20"/><line x1="18" y1="4" x2="18" y2="20"/></svg>
-          }
-        </CtrlBtn>
-        <CtrlBtn onClick={goNext} title="Próximo (→)">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-        </CtrlBtn>
-      </div>
-
-      {/* ── HINT DE TECLADO ── */}
-      {showUI && (
-        <div style={{
-          position: "absolute", bottom: 16, left: "50%", transform: "translateX(-50%)",
-          zIndex: 10, color: "rgba(255,255,255,0.30)", fontSize: 12, letterSpacing: 0.3,
-          whiteSpace: "nowrap",
-        }}>
-          ← → trocar · Espaço pausar · Esc fechar
-        </div>
-      )}
     </div>
-  );
-}
-
-function CtrlBtn({ children, onClick, title }: { children: React.ReactNode; onClick: () => void; title?: string }) {
-  return (
-    <button
-      onClick={onClick}
-      title={title}
-      style={{
-        width: 48, height: 48, borderRadius: 14,
-        background: "rgba(255,255,255,0.12)",
-        border: "1px solid rgba(255,255,255,0.20)",
-        color: "#fff", cursor: "pointer",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        backdropFilter: "blur(8px)",
-        transition: "background .15s",
-      }}
-      onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.22)")}
-      onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.12)")}
-    >
-      {children}
-    </button>
   );
 }
