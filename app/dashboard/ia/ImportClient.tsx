@@ -4,6 +4,8 @@ import { useState, useRef, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+
 interface ImportVariation {
   name: string;
   price: number | null;
@@ -21,6 +23,7 @@ interface ImportProduct {
   position: number;
   import_confidence: number;
   raw_price_text: string | null;
+  // UI state
   _selected: boolean;
   _edited: boolean;
 }
@@ -39,6 +42,8 @@ interface ImportData {
   notes: string[];
   categories: ImportCategory[];
 }
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatPrice(val: number | null): string {
   if (val === null) return "";
@@ -74,6 +79,8 @@ function confidenceBadge(conf: number) {
 const ACCEPTED_TYPES =
   ".pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.jpg,.jpeg,.png,.webp";
 
+// ─── Component ────────────────────────────────────────────────────────────────
+
 export default function ImportClient({
   unitId,
   unitName,
@@ -94,13 +101,17 @@ export default function ImportClient({
   const [rawText, setRawText] = useState("");
   const [inputMode, setInputMode] = useState<"file" | "text">("file");
   const [savedCount, setSavedCount] = useState(0);
-  const [, startTransition] = useTransition();
+  const [isPending, startTransition] = useTransition();
+
+  // ─── Upload & Parse ──────────────────────────────────────────────────────
 
   async function handleImport() {
     setError(null);
     setLoading(true);
+
     try {
       const formData = new FormData();
+
       if (inputMode === "file") {
         const file = fileRef.current?.files?.[0];
         if (!file) throw new Error("Selecione um arquivo.");
@@ -114,21 +125,25 @@ export default function ImportClient({
         method: "POST",
         body: formData,
       });
+
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Erro ao processar.");
 
+      // Adiciona _selected e _edited em cada produto
       const data: ImportData = {
         ...json.data,
         categories: json.data.categories.map(
           (cat: ImportCategory, ci: number) => ({
             ...cat,
             position: ci,
-            products: cat.products.map((p: ImportProduct, pi: number) => ({
-              ...p,
-              position: pi,
-              _selected: true,
-              _edited: false,
-            })),
+            products: cat.products.map(
+              (p: ImportProduct, pi: number) => ({
+                ...p,
+                position: pi,
+                _selected: true,
+                _edited: false,
+              })
+            ),
           })
         ),
       };
@@ -142,7 +157,13 @@ export default function ImportClient({
     }
   }
 
-  function updateProduct(ci: number, pi: number, patch: Partial<ImportProduct>) {
+  // ─── Edit helpers ────────────────────────────────────────────────────────
+
+  function updateProduct(
+    ci: number,
+    pi: number,
+    patch: Partial<ImportProduct>
+  ) {
     setImportData((prev) => {
       if (!prev) return prev;
       const cats = [...prev.categories];
@@ -166,16 +187,21 @@ export default function ImportClient({
     });
   }
 
+  // ─── Save to Supabase ────────────────────────────────────────────────────
+
   async function handleSave() {
     if (!importData) return;
     setStep("saving");
     setError(null);
+
     let count = 0;
+
     try {
       for (const cat of importData.categories) {
         const selectedProducts = cat.products.filter((p) => p._selected);
         if (selectedProducts.length === 0) continue;
 
+        // Cria ou reutiliza categoria
         const { data: existingCat } = await supabase
           .from("categories")
           .select("id")
@@ -193,11 +219,11 @@ export default function ImportClient({
             .insert({
               unit_id: unitId,
               name: cat.name,
-              position: cat.position,
-              is_active: true,
+              order_index: cat.position,
             })
             .select("id")
             .single();
+
           if (catErr) throw catErr;
           categoryId = newCat.id;
         }
@@ -206,35 +232,41 @@ export default function ImportClient({
           const { data: newProd, error: prodErr } = await supabase
             .from("products")
             .insert({
-              unit_id: unitId,
               category_id: categoryId,
               name: product.name,
               description: product.description,
+              price_type: product.price_type,
               base_price:
                 product.price_type === "fixed" ? product.base_price : null,
-              is_active: product.status === "active",
-              position: product.position,
+              order_index: product.position,
             })
             .select("id")
             .single();
+
           if (prodErr) throw prodErr;
 
-          if (product.price_type === "variable" && product.variations.length > 0) {
+          if (
+            product.price_type === "variable" &&
+            product.variations.length > 0
+          ) {
             const vars = product.variations.map((v, vi) => ({
               product_id: newProd.id,
               name: v.name,
               price: v.price,
-              position: vi,
-              is_active: true,
+              order_index: vi,
             }));
+
             const { error: varErr } = await supabase
               .from("product_variations")
               .insert(vars);
+
             if (varErr) throw varErr;
           }
+
           count++;
         }
       }
+
       setSavedCount(count);
       setStep("done");
     } catch (err: unknown) {
@@ -242,6 +274,8 @@ export default function ImportClient({
       setStep("preview");
     }
   }
+
+  // ─── Count helpers ───────────────────────────────────────────────────────
 
   const totalProducts =
     importData?.categories.reduce((s, c) => s + c.products.length, 0) ?? 0;
@@ -251,8 +285,11 @@ export default function ImportClient({
       0
     ) ?? 0;
 
+  // ─── Render ──────────────────────────────────────────────────────────────
+
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Header */}
       <div className="bg-white border-b px-4 py-4 flex items-center gap-3">
         <button
           onClick={() => router.push("/dashboard/cardapio")}
@@ -269,8 +306,10 @@ export default function ImportClient({
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-6">
+        {/* ── STEP: Upload ── */}
         {step === "upload" && (
           <div className="space-y-6">
+            {/* Tabs */}
             <div className="flex bg-gray-100 rounded-xl p-1 gap-1">
               <button
                 onClick={() => setInputMode("file")}
@@ -343,8 +382,10 @@ export default function ImportClient({
           </div>
         )}
 
+        {/* ── STEP: Preview ── */}
         {step === "preview" && importData && (
           <div className="space-y-4">
+            {/* Summary bar */}
             <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4 flex items-center justify-between">
               <div>
                 <p className="text-sm font-semibold text-indigo-800">
@@ -386,6 +427,7 @@ export default function ImportClient({
               </div>
             )}
 
+            {/* Categories & Products */}
             {importData.categories.map((cat, ci) => (
               <div key={ci} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
                 <div className="px-4 py-3 bg-gray-50 border-b border-gray-100">
@@ -396,22 +438,30 @@ export default function ImportClient({
                     {cat.products.length} itens
                   </span>
                 </div>
+
                 <div className="divide-y divide-gray-50">
                   {cat.products.map((prod, pi) => (
                     <div
                       key={pi}
-                      className={`p-4 transition ${!prod._selected ? "opacity-50" : ""}`}
+                      className={`p-4 transition ${
+                        !prod._selected ? "opacity-50" : ""
+                      }`}
                     >
                       <div className="flex items-start gap-3">
+                        {/* Checkbox */}
                         <input
                           type="checkbox"
                           checked={prod._selected}
                           onChange={(e) =>
-                            updateProduct(ci, pi, { _selected: e.target.checked })
+                            updateProduct(ci, pi, {
+                              _selected: e.target.checked,
+                            })
                           }
                           className="mt-1 w-4 h-4 accent-indigo-600"
                         />
+
                         <div className="flex-1 space-y-2">
+                          {/* Nome + confidence */}
                           <div className="flex items-center gap-2">
                             <input
                               value={prod.name}
@@ -422,6 +472,8 @@ export default function ImportClient({
                             />
                             {confidenceBadge(prod.import_confidence)}
                           </div>
+
+                          {/* Descrição */}
                           <input
                             value={prod.description ?? ""}
                             onChange={(e) =>
@@ -432,11 +484,17 @@ export default function ImportClient({
                             placeholder="Descrição (opcional)"
                             className="w-full text-xs text-gray-500 bg-transparent border-b border-transparent focus:border-indigo-300 focus:outline-none"
                           />
+
+                          {/* Preço */}
                           {prod.price_type === "fixed" ? (
                             <div className="flex items-center gap-1">
                               <span className="text-xs text-gray-400">R$</span>
                               <input
-                                value={prod.base_price !== null ? formatPrice(prod.base_price) : ""}
+                                value={
+                                  prod.base_price !== null
+                                    ? formatPrice(prod.base_price)
+                                    : ""
+                                }
                                 onChange={(e) =>
                                   updateProduct(ci, pi, {
                                     base_price: parsePrice(e.target.value),
@@ -445,29 +503,41 @@ export default function ImportClient({
                                 placeholder="0,00"
                                 className="w-24 text-sm font-semibold text-gray-800 bg-transparent border-b border-transparent focus:border-indigo-300 focus:outline-none"
                               />
-                              {prod.raw_price_text && prod.base_price === null && (
-                                <span className="text-xs text-orange-500">
-                                  ({prod.raw_price_text})
-                                </span>
-                              )}
+                              {prod.raw_price_text &&
+                                prod.base_price === null && (
+                                  <span className="text-xs text-orange-500">
+                                    ({prod.raw_price_text})
+                                  </span>
+                                )}
                             </div>
                           ) : (
                             <div className="space-y-1">
                               {prod.variations.map((v, vi) => (
-                                <div key={vi} className="flex items-center gap-2">
+                                <div
+                                  key={vi}
+                                  className="flex items-center gap-2"
+                                >
                                   <span className="text-xs text-gray-500 w-24 truncate">
                                     {v.name}
                                   </span>
-                                  <span className="text-xs text-gray-400">R$</span>
+                                  <span className="text-xs text-gray-400">
+                                    R$
+                                  </span>
                                   <input
-                                    value={v.price !== null ? formatPrice(v.price) : ""}
+                                    value={
+                                      v.price !== null
+                                        ? formatPrice(v.price)
+                                        : ""
+                                    }
                                     onChange={(e) => {
                                       const vars = [...prod.variations];
                                       vars[vi] = {
                                         ...vars[vi],
                                         price: parsePrice(e.target.value),
                                       };
-                                      updateProduct(ci, pi, { variations: vars });
+                                      updateProduct(ci, pi, {
+                                        variations: vars,
+                                      });
                                     }}
                                     placeholder="0,00"
                                     className="w-20 text-xs font-semibold text-gray-800 bg-transparent border-b border-transparent focus:border-indigo-300 focus:outline-none"
@@ -484,6 +554,7 @@ export default function ImportClient({
               </div>
             ))}
 
+            {/* Actions */}
             <div className="flex gap-3 pt-2">
               <button
                 onClick={() => setStep("upload")}
@@ -502,6 +573,7 @@ export default function ImportClient({
           </div>
         )}
 
+        {/* ── STEP: Saving ── */}
         {step === "saving" && (
           <div className="flex flex-col items-center justify-center py-24 gap-4">
             <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
@@ -511,6 +583,7 @@ export default function ImportClient({
           </div>
         )}
 
+        {/* ── STEP: Done ── */}
         {step === "done" && (
           <div className="flex flex-col items-center justify-center py-24 gap-6 text-center">
             <div className="text-6xl">🎉</div>
