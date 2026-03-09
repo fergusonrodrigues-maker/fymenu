@@ -48,6 +48,10 @@ if (typeof document !== "undefined" && !document.getElementById("fy-dash-anim"))
       to   { opacity:1; transform:translateY(0); }
     }
     .fy-quickaction:hover { background: rgba(0,255,174,0.06) !important; border-color: rgba(0,255,174,0.22) !important; }
+    .fy-bento { display:grid; grid-template-columns:repeat(4,1fr); grid-template-rows:repeat(5,80px); gap:10px; }
+    @media(max-width:900px){ .fy-bento { grid-template-columns:repeat(2,1fr); grid-template-rows:none; grid-auto-rows:160px; } }
+    @media(max-width:560px){ .fy-bento { grid-template-columns:1fr; grid-template-rows:none; grid-auto-rows:auto; } }
+    @media(max-width:560px){ .fy-bento > div { grid-column:auto!important; grid-row:auto!important; min-height:160px; } }
   `;
   document.head.appendChild(s);
 }
@@ -137,88 +141,183 @@ function ThemeToggle({ dark, onToggle }: { dark: boolean; onToggle: () => void }
 }
 
 /* ─────────────────────────────────────────
-   CARD SHELL — neon bottom border via wrapper
+   CARD SHELL — neon bottom glow inside card + soft shadow outside
 ───────────────────────────────────────── */
-function Card({ children, onClick, th, style: extraStyle }: {
+function Card({ children, onClick, th, glowColor, style: extraStyle }: {
   children: React.ReactNode;
   onClick?: () => void;
   th: "light" | "dark";
+  glowColor?: string;
   style?: React.CSSProperties;
 }) {
   const [hov, setHov] = useState(false);
   const t = THEMES[th];
+  const glow = glowColor ?? G1;
+
   return (
     <div
       onClick={onClick}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{
-        background: GRAD_R,
-        borderRadius: 24,
-        padding: "0 0 5px 0",
-        height: "100%",
-        boxSizing: "border-box",
-        cursor: onClick ? "pointer" : "default",
-        transform: hov && onClick ? "translateY(-3px) scale(1.01)" : "translateY(0) scale(1)",
-        transition: "transform .22s cubic-bezier(.34,1.4,.64,1)",
         position: "relative",
+        height: "100%",
+        cursor: onClick ? "pointer" : "default",
+        transform: hov && onClick ? "translateY(-4px) scale(1.01)" : "translateY(0) scale(1)",
+        transition: "transform .22s cubic-bezier(.34,1.4,.64,1)",
         ...extraStyle,
       }}
     >
+      {/* Inner card */}
       <div style={{
         background: t.cardFace,
-        borderRadius: 20,
+        borderRadius: 36,
+        border: `1px solid ${t.cardBorder}`,
+        overflow: "hidden",
         height: "100%",
         boxSizing: "border-box",
         display: "flex",
         flexDirection: "column",
-        overflow: "hidden",
-        border: `1.5px solid ${t.cardBorder}`,
-        borderBottom: "none",
-        boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 6px 20px rgba(0,0,0,0.08)",
+        position: "relative",
+        boxShadow: th === "light"
+          ? "0 2px 8px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.05)"
+          : "0 2px 8px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.2)",
       }}>
         {children}
+        {/* Neon bottom glow — inside card, clipped to ellipse */}
+        <div style={{
+          position: "absolute",
+          bottom: 0, left: 0, right: 0,
+          height: 64,
+          background: glow,
+          clipPath: "ellipse(68% 55% at 50% 100%)",
+          opacity: th === "light" ? 0.30 : 0.45,
+          pointerEvents: "none",
+          zIndex: 0,
+        }} />
       </div>
+      {/* Soft neon shadow projected outside card bottom */}
+      <div style={{
+        position: "absolute",
+        bottom: -10,
+        left: "22%", right: "22%",
+        height: 28,
+        background: glow,
+        borderRadius: "50%",
+        filter: "blur(18px)",
+        opacity: th === "light" ? 0.20 : 0.35,
+        pointerEvents: "none",
+        zIndex: -1,
+      }} />
     </div>
   );
 }
 
 /* label top-left + bounce chevron bottom-center */
-function CardLayout({ label, children, onOpen, th }: {
+function CardLayout({ label, children, onOpen, th, glowColor }: {
   label: string;
   children: React.ReactNode;
   onOpen?: () => void;
   th: "light" | "dark";
+  glowColor?: string;
 }) {
   const t = THEMES[th];
   return (
-    <Card onClick={onOpen} th={th}>
-      <div style={{ padding: "13px 15px 6px", flexShrink: 0 }}>
-        <span style={{ fontSize: 9, fontWeight: 800, color: t.muted, textTransform: "uppercase", letterSpacing: ".11em", fontFamily: F }}>
-          {label}
+    <Card onClick={onOpen} th={th} glowColor={glowColor}>
+      {/* Label — lowercase, font-light, top-left */}
+      <div style={{ padding: "18px 18px 4px", flexShrink: 0, position: "relative", zIndex: 1 }}>
+        <span style={{
+          fontSize: 15,
+          fontWeight: 300,
+          color: t.muted,
+          fontFamily: F,
+          letterSpacing: "-0.2px",
+          lineHeight: 1,
+        }}>
+          {label.toLowerCase()}
         </span>
       </div>
-      <div style={{ flex: 1, padding: "0 15px", overflow: "hidden", minHeight: 0 }}>
+      <div style={{ flex: 1, padding: "4px 18px", overflow: "hidden", minHeight: 0, position: "relative", zIndex: 1 }}>
         {children}
       </div>
       {onOpen && (
-        <div style={{ display: "flex", justifyContent: "center", padding: "10px 0 12px", flexShrink: 0, position: "relative" }}>
+        <div style={{ display: "flex", justifyContent: "center", padding: "8px 0 14px", flexShrink: 0, position: "relative", zIndex: 1 }}>
           <div style={{
-            width: 26, height: 26, borderRadius: "50%",
+            width: 28, height: 28, borderRadius: "50%",
             background: GRAD_R,
             display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: `0 0 12px rgba(255,255,255,0.7), 0 0 6px rgba(0,255,174,.5)`,
+            boxShadow: `0 0 14px rgba(0,255,174,.5)`,
             animation: "chevBounce 2s ease-in-out infinite",
-            position: "absolute", bottom: 12, left: "50%",
-            transform: "translateX(-50%)",
           }}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="6 9 12 15 18 9"/>
             </svg>
           </div>
         </div>
       )}
     </Card>
+  );
+}
+
+/* ─────────────────────────────────────────
+   CATEGORIAS PILL — pill com brilho amarelo na base
+───────────────────────────────────────── */
+function CategoriasPill({ th }: { th: "light" | "dark" }) {
+  const t = THEMES[th];
+  return (
+    <Link href="/dashboard/cardapio" style={{ textDecoration: "none", display: "block", height: "100%" }}>
+      <div style={{
+        position: "relative",
+        height: "100%",
+        minHeight: 60,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}>
+        <div style={{
+          background: t.cardFace,
+          border: `1px solid ${t.cardBorder}`,
+          borderRadius: 999,
+          padding: "14px 28px",
+          fontWeight: 300,
+          fontSize: 17,
+          color: t.text,
+          fontFamily: F,
+          letterSpacing: "-0.3px",
+          overflow: "hidden",
+          position: "relative",
+          boxShadow: th === "light"
+            ? "0 2px 8px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.05)"
+            : "0 2px 8px rgba(0,0,0,0.3)",
+          whiteSpace: "nowrap",
+        }}>
+          categorias
+          {/* Yellow/orange bottom glow */}
+          <div style={{
+            position: "absolute",
+            bottom: 0, left: 0, right: 0,
+            height: 28,
+            background: "linear-gradient(90deg,#f59e0b,#f97316)",
+            clipPath: "ellipse(68% 55% at 50% 100%)",
+            opacity: th === "light" ? 0.40 : 0.55,
+            pointerEvents: "none",
+          }} />
+        </div>
+        {/* Shadow outside */}
+        <div style={{
+          position: "absolute",
+          bottom: -8,
+          left: "25%", right: "25%",
+          height: 22,
+          background: "#f59e0b",
+          borderRadius: "50%",
+          filter: "blur(14px)",
+          opacity: th === "light" ? 0.25 : 0.40,
+          pointerEvents: "none",
+          zIndex: -1,
+        }} />
+      </div>
+    </Link>
   );
 }
 
@@ -492,7 +591,7 @@ function CardStats({ stats, onOpen, th }: { stats: Props["stats"]; onOpen: () =>
     { l: "Categorias", v: totalCategories, c: "#fb923c" },
   ];
   return (
-    <CardLayout label="Visão Geral" onOpen={onOpen} th={th}>
+    <CardLayout label="Visão Geral" onOpen={onOpen} th={th} glowColor={G1}>
       <div style={{ display: "flex", gap: 10, marginBottom: 6 }}>
         {items.map((k, i) => (
           <div key={i} style={{ flex: 1, background: t.surf, borderRadius: 10, padding: "8px 10px", border: `1px solid ${t.border}` }}>
@@ -514,7 +613,7 @@ function CardPlano({ planLabel, trialDaysLeft, onOpen, th }: { planLabel: string
   const t = THEMES[th];
   const isBasic = planLabel === "BASIC";
   return (
-    <CardLayout label="Plano Atual" onOpen={onOpen} th={th}>
+    <CardLayout label="Plano Atual" onOpen={onOpen} th={th} glowColor="#818cf8">
       <div style={{ fontSize: 26, fontWeight: 900, color: t.text, fontFamily: F, letterSpacing: "-.5px", marginBottom: 2 }}>{planLabel}</div>
       <div style={{ fontSize: 9, color: t.muted, fontFamily: F, marginBottom: 8 }}>{isBasic ? "1 Unidade · WhatsApp" : "Ilimitado · Todos recursos"}</div>
       {trialDaysLeft !== null && (
@@ -547,30 +646,12 @@ function CardUnidade({ activeUnit, units, onOpen, th }: { activeUnit: Props["act
   );
 }
 
-// C4 — Cardápio quick card
-function CardCardapio({ th }: { th: "light" | "dark" }) {
-  const t = THEMES[th];
-  const items = ["Categorias", "Produtos", "Preços", "Variações"];
-  return (
-    <CardLayout label="Cardápio" th={th}>
-      <div style={{ fontSize: 13, fontWeight: 900, color: t.text, fontFamily: F, marginBottom: 8 }}>Gerenciar</div>
-      {items.map((item, i) => (
-        <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, padding: "3px 0", borderBottom: i < items.length - 1 ? `1px solid ${t.border}` : "none" }}>
-          <div style={{ width: 3, height: 3, borderRadius: "50%", background: G1, flexShrink: 0 }} />
-          <span style={{ fontSize: 9, color: t.text, fontFamily: F, fontWeight: 600 }}>{item}</span>
-        </div>
-      ))}
-      <div style={{ marginBottom: 28 }} />
-    </CardLayout>
-  );
-}
-
 // C5 — Conta quick card
 function CardConta({ restaurant, onOpen, th }: { restaurant: Props["restaurant"]; onOpen: () => void; th: "light" | "dark" }) {
   const t = THEMES[th];
   const initials = (restaurant?.name ?? "?").split(" ").slice(0, 2).map((w: string) => w[0]).join("").toUpperCase();
   return (
-    <CardLayout label="Conta" onOpen={onOpen} th={th}>
+    <CardLayout label="Conta" onOpen={onOpen} th={th} glowColor="#818cf8">
       <div style={{ display: "flex", justifyContent: "center", marginBottom: 8, marginTop: 4 }}>
         <div style={{ width: 42, height: 42, borderRadius: 13, background: GRAD_R, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 900, color: "#1a1a1c", fontFamily: F }}>
           {initials}
@@ -589,12 +670,11 @@ function CardConta({ restaurant, onOpen, th }: { restaurant: Props["restaurant"]
    ROOT COMPONENT
 ───────────────────────────────────────── */
 export default function DashboardClient({ restaurant, units, activeUnit, stats }: Props) {
-  const [dark, setDark] = useState(true); // default dark (para manter look atual)
+  const [dark, setDark] = useState(true);
   const [open, setOpen] = useState<string | null>(null);
   const th = dark ? "dark" : "light";
   const t = THEMES[th];
   const { planLabel, trialDaysLeft } = stats;
-  const isBasic = planLabel === "BASIC";
   const isTrial = trialDaysLeft !== null;
   const initials = (restaurant?.name ?? "?").split(" ").slice(0, 2).map((w: string) => w[0]).join("").toUpperCase();
 
@@ -645,15 +725,9 @@ export default function DashboardClient({ restaurant, units, activeUnit, stats }
         </div>
       )}
 
-      {/* ── BENTO GRID — 4 cols, 5 rows de 80px ── */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(4, 1fr)",
-        gridTemplateRows: "repeat(5, 80px)",
-        gap: 10,
-        maxWidth: 980,
-        margin: "0 auto",
-      }}>
+      {/* ── BENTO GRID — responsivo via .fy-bento ── */}
+      <div className="fy-bento" style={{ maxWidth: 980, margin: "0 auto" }}>
+
         {/* Stats — wide, 2 cols × 2 rows */}
         <div style={{ gridColumn: "span 2", gridRow: "span 2" }}>
           <CardStats stats={stats} onOpen={() => setOpen("analytics")} th={th} />
@@ -674,11 +748,9 @@ export default function DashboardClient({ restaurant, units, activeUnit, stats }
           <CardUnidade activeUnit={activeUnit} units={units} onOpen={() => setOpen("unidade")} th={th} />
         </div>
 
-        {/* Cardápio — link direto, 1 col × 3 rows */}
+        {/* Categorias pill — 1 col × 3 rows */}
         <div style={{ gridRow: "span 3" }}>
-          <Link href="/dashboard/cardapio" style={{ display: "block", height: "100%", textDecoration: "none" }}>
-            <CardCardapio th={th} />
-          </Link>
+          <CategoriasPill th={th} />
         </div>
 
         {/* Configurar Unidade — link direto, 1 col × 3 rows */}
