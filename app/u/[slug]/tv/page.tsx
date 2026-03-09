@@ -1,57 +1,31 @@
 import { createClient } from "@/lib/supabase/server";
-import TvClient from "./TvClient";
+import { notFound } from "next/navigation";
+import TVDisplay from "./TVDisplay";
 
-export const revalidate = 0;
+export const dynamic = "force-dynamic";
 
-export default async function TvPage({
+export default async function TVPage({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: { slug: string };
 }) {
-  const { slug } = await params;
   const supabase = await createClient();
 
-  // 1) Unidade
-  const { data: unitData } = await supabase
+  const { data: unit } = await supabase
     .from("units")
-    .select("id, name, logo_url")
-    .eq("slug", slug)
-    .maybeSingle();
+    .select("id, name, slug, restaurant_id")
+    .eq("slug", params.slug)
+    .eq("is_published", true)
+    .single();
 
-  if (!unitData) {
-    return (
-      <div style={{ minHeight: "100vh", background: "#000", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontFamily: "sans-serif" }}>
-        Unidade não encontrada.
-      </div>
-    );
-  }
+  if (!unit) notFound();
 
-  // 2) Categorias da unidade
-  const { data: categories } = await supabase
-    .from("categories")
-    .select("id")
-    .eq("unit_id", unitData.id);
+  const { data: media } = await supabase
+    .from("tv_media")
+    .select("id, title, video_path, thumb_path, orientation, order_index, is_active")
+    .eq("unit_id", unit.id)
+    .eq("is_active", true)
+    .order("order_index", { ascending: true });
 
-  const categoryIds = (categories ?? []).map((c: any) => c.id);
-
-  // 3) Produtos com vídeo
-  let tvItems: any[] = [];
-  if (categoryIds.length > 0) {
-    const { data: products } = await supabase
-      .from("products")
-      .select("id, name, description, base_price, price_type, video_url, thumbnail_url")
-      .in("category_id", categoryIds)
-      .not("video_url", "is", null)
-      .order("created_at", { ascending: true });
-
-    tvItems = (products ?? []).filter((p: any) => p.video_url);
-  }
-
-  return (
-    <TvClient
-      items={tvItems}
-      unitName={unitData.name ?? slug}
-      logoUrl={unitData.logo_url ?? null}
-    />
-  );
+  return <TVDisplay unit={unit} media={media ?? []} />;
 }
