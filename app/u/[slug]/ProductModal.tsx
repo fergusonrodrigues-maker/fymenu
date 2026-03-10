@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { Product, ProductVariation } from "./menuTypes";
 import { OrderPayload } from "./orderBuilder";
 
@@ -13,6 +13,11 @@ interface ProductModalProps {
   mode?: "delivery" | "presencial";
 }
 
+function moneyBR(value: number | null | undefined) {
+  if (value == null || Number.isNaN(Number(value))) return "";
+  return `R$ ${Number(value).toFixed(2).replace(".", ",")}`;
+}
+
 export default function ProductModal({
   product,
   variations,
@@ -21,36 +26,59 @@ export default function ProductModal({
   allProducts = [],
   mode = "delivery",
 }: ProductModalProps) {
-  const [currentIndex, setCurrentIndex] = useState<number>(0);
-
-  useEffect(() => {
-    if (!product) return;
-    const idx = allProducts.findIndex((p) => p.id === product.id);
-    setCurrentIndex(idx >= 0 ? idx : 0);
-  }, [product?.id]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const currentProduct =
-    allProducts.length > 0 ? (allProducts[currentIndex] ?? product) : product;
-
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedVariation, setSelectedVariation] =
     useState<ProductVariation | null>(null);
-  useEffect(() => { setSelectedVariation(null); }, [currentProduct?.id]);
-
   const [thumbVisible, setThumbVisible] = useState(true);
-  useEffect(() => { setThumbVisible(true); }, [currentProduct?.id]);
+  const [closing, setClosing] = useState(false);
+  const [slideDir, setSlideDir] = useState<"left" | "right" | null>(null);
 
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
   const THRESHOLD = 50;
 
+  useEffect(() => {
+    if (!product) return;
+    const idx = allProducts.findIndex((p) => p.id === product.id);
+    setCurrentIndex(idx >= 0 ? idx : 0);
+  }, [product, allProducts]);
+
+  const currentProduct =
+    allProducts.length > 0 ? (allProducts[currentIndex] ?? product) : product;
+
+  const currentVariations = useMemo(() => {
+    if (!currentProduct) return [];
+    if (currentProduct.variations && currentProduct.variations.length > 0) {
+      return currentProduct.variations;
+    }
+    if (product && currentProduct.id === product.id) {
+      return variations ?? [];
+    }
+    return [];
+  }, [currentProduct, product, variations]);
+
+  useEffect(() => {
+    setSelectedVariation(null);
+    setThumbVisible(true);
+  }, [currentProduct?.id]);
+
+  const total = allProducts.length;
+  const counter = total > 1 ? `${currentIndex + 1} / ${total}` : null;
+
   const goNext = useCallback(() => {
-    if (allProducts.length > 0 && currentIndex < allProducts.length - 1)
+    if (allProducts.length > 0 && currentIndex < allProducts.length - 1) {
+      setSlideDir("left");
       setCurrentIndex((i) => i + 1);
+      setTimeout(() => setSlideDir(null), 360);
+    }
   }, [currentIndex, allProducts.length]);
 
   const goPrev = useCallback(() => {
-    if (allProducts.length > 0 && currentIndex > 0)
+    if (allProducts.length > 0 && currentIndex > 0) {
+      setSlideDir("right");
       setCurrentIndex((i) => i - 1);
+      setTimeout(() => setSlideDir(null), 360);
+    }
   }, [currentIndex, allProducts.length]);
 
   function handleTouchStart(e: React.TouchEvent) {
@@ -61,216 +89,313 @@ export default function ProductModal({
   function handleTouchEnd(e: React.TouchEvent) {
     const dx = e.changedTouches[0].clientX - touchStartX.current;
     const dy = e.changedTouches[0].clientY - touchStartY.current;
-    if (Math.abs(dy) > Math.abs(dx) && dy > THRESHOLD) { onClose(); return; }
+
+    if (Math.abs(dy) > Math.abs(dx) && dy > THRESHOLD) {
+      handleClose();
+      return;
+    }
+
     if (Math.abs(dx) > Math.abs(dy)) {
       if (dx < -THRESHOLD) goNext();
       else if (dx > THRESHOLD) goPrev();
     }
   }
 
+  function handleClose() {
+    setClosing(true);
+    setTimeout(() => onClose(), 280);
+  }
+
   if (!product || !currentProduct) return null;
 
   const isFixed = currentProduct.price_type === "fixed";
-  const hasVariations = variations && variations.length > 0;
+  const hasVariations = currentVariations.length > 0;
+
+  const fixedPrice = currentProduct.base_price ?? null;
+
   const activePrice: number | null = isFixed
-    ? currentProduct.base_price ?? null
+    ? fixedPrice
     : selectedVariation?.price ?? null;
-  const canOrder = isFixed || selectedVariation !== null;
-  const priceLabel = activePrice
-    ? `R$\u00a0${Number(activePrice).toFixed(2).replace(".", ",")}`
-    : null;
+
+  const canOrder = mode === "delivery" && (isFixed || selectedVariation !== null);
 
   // NUNCA usar: thumb_path | image_path | video_path
   const thumbUrl: string | null = currentProduct.thumbnail_url ?? null;
   const videoUrl: string | null = currentProduct.video_url ?? null;
   const hasMedia = !!(thumbUrl || videoUrl);
 
-  const total = allProducts.length;
-  const counter = total > 1 ? `${currentIndex + 1} / ${total}` : null;
-
   function handleOrder() {
-    if (!canOrder) return;
-    onOrder({ product: currentProduct!, variation: selectedVariation ?? undefined, upsells: [], total: activePrice ?? 0 });
+    if (!canOrder || activePrice == null) return;
+
+    onOrder({
+      product: currentProduct,
+      variation: selectedVariation ?? undefined,
+      upsells: [],
+      total: activePrice,
+    });
   }
+
+  const displayPrice = activePrice != null ? moneyBR(activePrice) : null;
+  const productBasePrice =
+    !hasVariations && fixedPrice != null ? moneyBR(fixedPrice) : null;
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center"
-      style={{ background: "rgba(0,0,0,0.75)" }}
-      onClick={(e) => e.target === e.currentTarget && onClose()}
+      className="fixed inset-0 z-50 flex items-center justify-center px-3 py-4"
+      style={{
+        background: closing ? "rgba(0,0,0,0)" : "rgba(0,0,0,0.74)",
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
+        transition: "background 280ms ease",
+      }}
+      onClick={(e) => e.target === e.currentTarget && handleClose()}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Card expandido — mesma linguagem visual do ProductCard */}
       <div
-        className="w-full max-w-sm overflow-hidden animate-in slide-in-from-bottom duration-300"
+        className="relative w-full overflow-hidden"
         style={{
-          maxHeight: "92dvh",
-          borderRadius: "24px 24px 0 0",
-          background: "#111",
-          boxShadow: "0 -8px 40px rgba(0,0,0,0.6)",
+          width: "min(88vw, 460px)",
+          aspectRatio: "9 / 16",
+          borderRadius: 28,
+          background: "#0a0a0c",
+          boxShadow: "0 30px 80px rgba(0,0,0,0.60)",
+          animation: closing
+            ? "product-modal-out 280ms cubic-bezier(0.4,0,1,1) forwards"
+            : slideDir === "left"
+            ? "product-modal-slide-left 360ms cubic-bezier(0.34,1.56,0.64,1) forwards"
+            : slideDir === "right"
+            ? "product-modal-slide-right 360ms cubic-bezier(0.34,1.56,0.64,1) forwards"
+            : "product-modal-in 320ms cubic-bezier(0.34,1.56,0.64,1) forwards",
         }}
       >
-        {/* ── MÍDIA grande no topo ── */}
-        <div className="relative w-full overflow-hidden" style={{ aspectRatio: "4/3" }}>
+        <style>{`
+          @keyframes product-modal-in {
+            from { opacity: 0; transform: scale(0.88); }
+            to { opacity: 1; transform: scale(1); }
+          }
+          @keyframes product-modal-out {
+            from { opacity: 1; transform: scale(1); }
+            to { opacity: 0; transform: scale(0.88); }
+          }
+          @keyframes product-modal-slide-left {
+            from { opacity: 0.88; transform: translateX(72px) scale(0.96); }
+            to { opacity: 1; transform: translateX(0) scale(1); }
+          }
+          @keyframes product-modal-slide-right {
+            from { opacity: 0.88; transform: translateX(-72px) scale(0.96); }
+            to { opacity: 1; transform: translateX(0) scale(1); }
+          }
+        `}</style>
+
+        <div className="absolute inset-0">
           {hasMedia ? (
             <>
               {thumbUrl && (
-                // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={thumbUrl}
                   alt={currentProduct.name}
-                  className="absolute inset-0 w-full h-full object-cover transition-opacity duration-700"
-                  style={{ opacity: thumbVisible ? 1 : 0, zIndex: 1 }}
+                  className="absolute inset-0 h-full w-full object-cover transition-opacity"
+                  style={{
+                    opacity: thumbVisible ? 1 : 0,
+                    transitionDuration: "260ms",
+                    zIndex: 1,
+                  }}
                 />
               )}
+
               {videoUrl && (
                 <video
                   key={videoUrl}
                   src={videoUrl}
-                  className="absolute inset-0 w-full h-full object-cover"
+                  className="absolute inset-0 h-full w-full object-cover"
                   style={{ zIndex: 2 }}
-                  autoPlay loop muted playsInline
-                  onPlay={() => setTimeout(() => setThumbVisible(false), 1000)}
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  preload="metadata"
+                  onTimeUpdate={(e) => {
+                    if (thumbVisible && e.currentTarget.currentTime >= 1) {
+                      setThumbVisible(false);
+                    }
+                  }}
                 />
               )}
             </>
           ) : (
             <div
               className="absolute inset-0 flex items-center justify-center"
-              style={{ background: "linear-gradient(135deg, #1c1c1e, #2c2c2e)" }}
+              style={{
+                background:
+                  "linear-gradient(135deg, rgba(24,24,28,1) 0%, rgba(10,10,12,1) 100%)",
+                zIndex: 1,
+              }}
             >
-              <span style={{ fontSize: 48, opacity: 0.15 }}>🍽️</span>
+              <div
+                className="flex h-24 w-24 items-center justify-center rounded-full"
+                style={{
+                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                }}
+              >
+                <span style={{ fontSize: 34, opacity: 0.4 }}>🍽️</span>
+              </div>
             </div>
           )}
 
-          {/* Gradiente inferior — igual ao card */}
           <div
             className="absolute inset-0"
             style={{
-              background: "linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.15) 50%, transparent 100%)",
               zIndex: 3,
+              background:
+                "linear-gradient(to top, rgba(0,0,0,0.94) 0%, rgba(0,0,0,0.58) 36%, rgba(0,0,0,0.14) 68%, transparent 100%)",
             }}
           />
 
-          {/* Nome + preço no overlay — igual ao card */}
-          <div className="absolute bottom-0 left-0 right-0 px-5 pb-5" style={{ zIndex: 4 }}>
-            <p className="text-white font-bold text-lg leading-snug drop-shadow-sm">
-              {currentProduct.name}
-            </p>
-            {isFixed && priceLabel && (
-              <p className="text-white/70 text-sm font-medium mt-0.5">{priceLabel}</p>
-            )}
-          </div>
-
-          {/* Fechar */}
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 flex items-center justify-center
-              rounded-full backdrop-blur-md text-white text-sm font-bold"
-            style={{ zIndex: 10, width: 36, height: 36, background: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.12)" }}
-          >
-            ✕
-          </button>
-
-          {/* Counter X/Y */}
           {counter && (
             <div
-              className="absolute top-4 left-4 text-white text-xs font-bold backdrop-blur-md rounded-full px-3 py-1"
-              style={{ zIndex: 10, background: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.12)" }}
+              className="absolute left-4 top-4 rounded-full px-3 py-1 text-xs font-bold text-white"
+              style={{
+                zIndex: 10,
+                background: "rgba(0,0,0,0.42)",
+                border: "1px solid rgba(255,255,255,0.12)",
+                backdropFilter: "blur(10px)",
+                WebkitBackdropFilter: "blur(10px)",
+              }}
             >
               {counter}
             </div>
           )}
 
-          {/* Setas */}
-          {allProducts.length > 1 && currentIndex > 0 && (
-            <button
-              onClick={goPrev}
-              className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center
-                rounded-full text-white text-xl backdrop-blur-md"
-              style={{ zIndex: 10, width: 36, height: 36, background: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.12)" }}
-            >‹</button>
-          )}
-          {allProducts.length > 1 && currentIndex < allProducts.length - 1 && (
-            <button
-              onClick={goNext}
-              className="absolute right-14 top-1/2 -translate-y-1/2 flex items-center justify-center
-                rounded-full text-white text-xl backdrop-blur-md"
-              style={{ zIndex: 10, width: 36, height: 36, background: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.12)" }}
-            >›</button>
-          )}
-        </div>
+          <button
+            onClick={handleClose}
+            className="absolute right-4 top-4 flex items-center justify-center rounded-full text-white"
+            style={{
+              zIndex: 10,
+              width: 40,
+              height: 40,
+              background: "rgba(0,0,0,0.42)",
+              border: "1px solid rgba(255,255,255,0.12)",
+              backdropFilter: "blur(10px)",
+              WebkitBackdropFilter: "blur(10px)",
+              fontSize: 18,
+              fontWeight: 700,
+            }}
+            aria-label="Fechar"
+          >
+            ✕
+          </button>
 
-        {/* ── CONTEÚDO ── continuação natural do card */}
-        <div
-          className="overflow-y-auto"
-          style={{ maxHeight: "46dvh", background: "#111", padding: "20px 20px 28px" }}
-        >
-          {/* Descrição */}
-          {currentProduct.description && (
-            <p className="text-zinc-400 text-sm leading-relaxed mb-5">
-              {currentProduct.description}
-            </p>
-          )}
-
-          {/* Variações */}
-          {hasVariations && (
-            <div className="mb-5">
-              <p className="text-zinc-600 text-xs uppercase tracking-widest mb-3 font-semibold">
-                Escolha uma opção
-              </p>
-              <div className="flex flex-col gap-2">
-                {variations.map((v) => {
-                  const isSelected = selectedVariation?.id === v.id;
-                  return (
-                    <button
-                      key={v.id}
-                      onClick={() => setSelectedVariation(v)}
-                      className="flex items-center justify-between px-4 py-3 text-sm font-medium transition-all"
-                      style={{
-                        borderRadius: 14,
-                        border: isSelected ? "1.5px solid #fff" : "1.5px solid rgba(255,255,255,0.1)",
-                        background: isSelected ? "#fff" : "rgba(255,255,255,0.05)",
-                        color: isSelected ? "#000" : "#fff",
-                      }}
-                    >
-                      <span>{v.name}</span>
-                      <span style={{ opacity: isSelected ? 1 : 0.5 }}>
-                        R${Number(v.price).toFixed(2).replace(".", ",")}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Botão PEDIR */}
-          {mode === "delivery" && (
-            <button
-              onClick={handleOrder}
-              disabled={!canOrder}
-              className="w-full flex items-center justify-center gap-2 font-bold text-sm tracking-wide uppercase transition-all active:scale-95"
+          <div
+            className="absolute inset-x-0 bottom-0"
+            style={{ zIndex: 5, padding: "0 18px 18px" }}
+          >
+            <div
+              className="rounded-[24px] p-4"
               style={{
-                borderRadius: 16,
-                height: 52,
-                background: canOrder ? "#fff" : "rgba(255,255,255,0.07)",
-                color: canOrder ? "#000" : "rgba(255,255,255,0.25)",
-                cursor: canOrder ? "pointer" : "not-allowed",
-                letterSpacing: "0.06em",
+                background: "rgba(11,11,13,0.74)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                backdropFilter: "blur(14px)",
+                WebkitBackdropFilter: "blur(14px)",
+                boxShadow: "0 12px 30px rgba(0,0,0,0.26)",
               }}
             >
-              {canOrder ? (
-                <>
-                  Pedir
-                  {priceLabel && <span style={{ opacity: 0.6, fontWeight: 400 }}>• {priceLabel}</span>}
-                </>
-              ) : (
-                "Selecione uma opção"
+              <div className="text-white" style={{ fontSize: 22, fontWeight: 900, lineHeight: 1.08 }}>
+                {currentProduct.name}
+              </div>
+
+              {currentProduct.description && (
+                <p
+                  className="mt-2 text-sm"
+                  style={{ color: "rgba(255,255,255,0.72)", lineHeight: 1.55 }}
+                >
+                  {currentProduct.description}
+                </p>
               )}
-            </button>
-          )}
+
+              {!hasVariations && productBasePrice && (
+                <div
+                  className="mt-3 text-white"
+                  style={{ fontSize: 20, fontWeight: 900, lineHeight: 1.1 }}
+                >
+                  {productBasePrice}
+                </div>
+              )}
+
+              {hasVariations && (
+                <div className="mt-4">
+                  <div
+                    className="mb-3 text-[11px] font-semibold uppercase"
+                    style={{ color: "rgba(255,255,255,0.44)", letterSpacing: "0.14em" }}
+                  >
+                    Selecione uma opção
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    {currentVariations.map((variation) => {
+                      const isSelected = selectedVariation?.id === variation.id;
+                      return (
+                        <button
+                          key={variation.id}
+                          onClick={() => setSelectedVariation(variation)}
+                          className="min-w-[108px] rounded-full px-4 py-3 text-sm font-semibold transition-all"
+                          style={{
+                            background: isSelected ? "#ffffff" : "rgba(255,255,255,0.08)",
+                            color: isSelected ? "#000" : "#fff",
+                            border: isSelected
+                              ? "1px solid rgba(255,255,255,0.92)"
+                              : "1px solid rgba(255,255,255,0.12)",
+                            boxShadow: isSelected ? "0 6px 18px rgba(255,255,255,0.14)" : "none",
+                          }}
+                        >
+                          <span>{variation.name}</span>
+                          {variation.price != null && (
+                            <span style={{ marginLeft: 8, opacity: isSelected ? 0.72 : 0.82 }}>
+                              {moneyBR(variation.price)}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {displayPrice && (
+                    <div className="mt-3 text-white" style={{ fontSize: 18, fontWeight: 900 }}>
+                      {displayPrice}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {mode === "delivery" && (
+                <button
+                  onClick={handleOrder}
+                  disabled={!canOrder}
+                  className="mt-5 flex h-[54px] w-full items-center justify-center rounded-[18px] text-sm font-bold uppercase tracking-[0.08em] transition-all active:scale-[0.98]"
+                  style={{
+                    background: canOrder ? "#ffffff" : "rgba(255,255,255,0.08)",
+                    color: canOrder ? "#000" : "rgba(255,255,255,0.28)",
+                    border: canOrder
+                      ? "1px solid rgba(255,255,255,0.9)"
+                      : "1px solid rgba(255,255,255,0.08)",
+                    cursor: canOrder ? "pointer" : "not-allowed",
+                  }}
+                >
+                  {canOrder ? (
+                    <>
+                      Pedir
+                      {displayPrice && (
+                        <span style={{ marginLeft: 8, opacity: 0.56 }}>• {displayPrice}</span>
+                      )}
+                    </>
+                  ) : (
+                    "Selecione uma opção"
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
