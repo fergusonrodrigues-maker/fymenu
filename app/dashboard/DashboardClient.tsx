@@ -493,11 +493,37 @@ function PedidosModal({ unit }: { unit: Unit | null }) {
   );
 }
 
+// ─── Copy link row ────────────────────────────────────────────────────────────
+function CopyLinkRow({ label, url }: { label: string; url: string }) {
+  const [copied, setCopied] = useState(false);
+  function copy() {
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    });
+  }
+  return (
+    <div style={{ borderRadius: 12, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", padding: "10px 14px" }}>
+      <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, marginBottom: 4, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.4px" }}>{label}</div>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <span style={{ flex: 1, color: "rgba(255,255,255,0.7)", fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{url}</span>
+        <button type="button" onClick={copy} style={{ padding: "5px 10px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.12)", background: copied ? "rgba(0,255,174,0.15)" : "rgba(255,255,255,0.06)", color: copied ? "#00ffae" : "rgba(255,255,255,0.6)", fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>
+          {copied ? "Copiado ✓" : "Copiar"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Unidade Modal ────────────────────────────────────────────────────────────
 function UnidadeModal({ unit, onClose }: { unit: Unit | null; onClose: () => void }) {
   if (!unit) return <div style={{ color: "rgba(255,255,255,0.4)", paddingTop: 16 }}>Nenhuma unidade encontrada.</div>;
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
   return (
-    <form action={updateUnit} onSubmit={() => setTimeout(onClose, 300)} style={{ display: "flex", flexDirection: "column", gap: 10, paddingTop: 8 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingTop: 8 }}>
+      <CopyLinkRow label="Link Delivery" url={`${origin}/u/${unit.slug}`} />
+      <CopyLinkRow label="Link Presencial (QR Code / Mesa)" url={`${origin}/u/${unit.slug}/menu`} />
+    <form action={updateUnit} onSubmit={() => setTimeout(onClose, 300)} style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 4 }}>
       <input type="hidden" name="id" value={unit.id} />
 
       <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 4 }}>
@@ -548,6 +574,7 @@ function UnidadeModal({ unit, onClose }: { unit: Unit | null; onClose: () => voi
 
       <button type="submit" style={{ marginTop: 8, padding: "14px", borderRadius: 14, border: "none", background: "rgba(0,255,174,0.15)", color: "#00ffae", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>Salvar unidade</button>
     </form>
+    </div>
   );
 }
 

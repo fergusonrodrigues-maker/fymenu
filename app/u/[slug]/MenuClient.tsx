@@ -16,6 +16,7 @@ interface MenuClientProps {
   products: Product[];
   variations: Record<string, ProductVariation[]>;
   upsells: Record<string, UpsellSuggestion[]>;
+  mode?: "delivery" | "presencial";
 }
 
 export default function MenuClient({
@@ -24,6 +25,7 @@ export default function MenuClient({
   products,
   variations,
   upsells,
+  mode = "delivery",
 }: MenuClientProps) {
   const [activeCategoryId, setActiveCategoryId] = useState<string>(
     categories[0]?.id ?? ""
@@ -46,6 +48,7 @@ export default function MenuClient({
 
   function handleProductOrder(payload: OrderPayload) {
     setSelectedProduct(null);
+    if (mode === "presencial") return;
     setPendingPayload(payload);
   }
 
@@ -108,6 +111,7 @@ export default function MenuClient({
         variations={selectedProduct ? (variations[selectedProduct.id] ?? []) : []}
         onClose={() => setSelectedProduct(null)}
         onOrder={handleProductOrder}
+        mode={mode}
       />
 
       {/* Upsell modal */}
