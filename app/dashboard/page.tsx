@@ -78,7 +78,7 @@ export default async function DashboardPage() {
     <DashboardClient
       restaurant={restaurant}
       unit={unit}
-      profile={{ ...profile, email: user.email }}
+      profile={{ first_name: null, last_name: null, phone: null, ...profile, email: user.email }}
       categories={categories ?? []}
       products={products ?? []}
       upsellItems={upsellItems ?? []}
