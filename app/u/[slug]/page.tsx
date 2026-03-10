@@ -72,7 +72,7 @@ export default async function Page({
   const { data: productsData, error: prodErr } = await supabase
     .from("products")
     .select(
-      "id, category_id, name, description, price_type, base_price, image_path, thumb_path, video_path, is_active, order_index"
+      "id, category_id, name, description, price_type, base_price, thumbnail_url, video_url, is_active, order_index"
     )
     .in("category_id", Array.from(validCategoryIds))
     .eq("is_active", true)
@@ -87,9 +87,9 @@ export default async function Page({
     description: p.description ?? null,
     price_type: p.price_type === "variable" ? "variable" : "fixed",
     base_price: toNumberOrNull(p.base_price),
-    image_path: p.image_path ?? null,
-    thumb_path: p.thumb_path ?? null,
-    video_path: p.video_path ?? null,
+    image_path: null,
+    thumb_path: p.thumbnail_url ?? null,
+    video_path: p.video_url ?? null,
     is_active: p.is_active !== false,
     order_index: typeof p.order_index === "number" ? p.order_index : null,
   }));
