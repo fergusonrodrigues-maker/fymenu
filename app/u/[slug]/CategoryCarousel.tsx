@@ -284,8 +284,8 @@ function MediaCard({
   }, [product.id, hero]);
 
   // pré-carrega no adjacente, mas exibe/autoPlay só quando hero
-  const loadVideo = (hero || adjacent) && !!product.video_path;
-  const showVideo = hero && !!product.video_path;
+  const loadVideo = (hero || adjacent) && !!product.video_url;
+  const showVideo = hero && !!product.video_url;
 
   return (
     <button
@@ -303,9 +303,9 @@ function MediaCard({
         WebkitMaskImage: "-webkit-radial-gradient(white, black)",
       }}
     >
-      {product.thumb_path ? (
+      {product.thumbnail_url ? (
         <img
-          src={product.thumb_path}
+          src={product.thumbnail_url}
           alt={product.name}
           style={{
             position: "absolute",
@@ -337,7 +337,7 @@ function MediaCard({
 
       {loadVideo ? (
         <video
-          src={product.video_path!}
+          src={product.video_url!}
           autoPlay={showVideo}
           loop
           muted

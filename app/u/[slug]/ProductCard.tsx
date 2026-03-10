@@ -8,9 +8,9 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product, onOrder }: ProductCardProps) {
-  const hasMedia = product.thumb_path || product.image_path || product.video_path;
-  const mediaUrl = product.thumb_path || product.image_path;
-  const isVideo = !product.thumb_path && product.video_path;
+  const hasMedia = product.thumbnail_url || product.video_url;
+  const mediaUrl = product.thumbnail_url;
+  const isVideo = !product.thumbnail_url && product.video_url;
 
   const displayPrice =
     product.price_type === "fixed" && product.base_price
@@ -27,7 +27,7 @@ export default function ProductCard({ product, onOrder }: ProductCardProps) {
         {hasMedia ? (
           isVideo ? (
             <video
-              src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/products/${product.video_path}`}
+              src={product.video_url ?? ""}
               className="absolute inset-0 w-full h-full object-cover"
               autoPlay
               loop
@@ -37,7 +37,7 @@ export default function ProductCard({ product, onOrder }: ProductCardProps) {
           ) : (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/products/${mediaUrl}`}
+              src={mediaUrl ?? ""}
               alt={product.name}
               className="absolute inset-0 w-full h-full object-cover"
             />

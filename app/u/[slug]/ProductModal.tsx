@@ -55,8 +55,6 @@ export default function ProductModal({
   if (product.thumbnail_url) mediaItems.push({ type: "image", path: product.thumbnail_url });
   if (product.video_url) mediaItems.push({ type: "video", path: product.video_url });
 
-  const STORAGE = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/products`;
-
   function goToMedia(idx: number) {
     if (idx === mediaIndex) return;
     setFadeIn(false);
@@ -125,7 +123,7 @@ export default function ProductModal({
               {currentMedia.type === "video" ? (
                 <video
                   key={currentMedia.path}
-                  src={`${STORAGE}/${currentMedia.path}`}
+                  src={currentMedia.path}
                   className="w-full h-full object-cover"
                   autoPlay
                   loop
@@ -135,7 +133,7 @@ export default function ProductModal({
               ) : (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={`${STORAGE}/${currentMedia.path}`}
+                  src={currentMedia.path}
                   alt={product.name}
                   className="w-full h-full object-cover"
                   onError={(e) => {
