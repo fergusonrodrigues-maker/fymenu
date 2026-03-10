@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Product, ProductVariation } from "./menuTypes";
 import { OrderPayload } from "./orderBuilder";
 
@@ -46,16 +46,7 @@ export default function ProductModal({
   const currentProduct =
     allProducts.length > 0 ? (allProducts[currentIndex] ?? product) : product;
 
-  const currentVariations = useMemo(() => {
-    if (!currentProduct) return [];
-    if (currentProduct.variations && currentProduct.variations.length > 0) {
-      return currentProduct.variations;
-    }
-    if (product && currentProduct.id === product.id) {
-      return variations ?? [];
-    }
-    return [];
-  }, [currentProduct, product, variations]);
+  const currentVariations = variations ?? [];
 
   useEffect(() => {
     setSelectedVariation(null);
