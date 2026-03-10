@@ -55,7 +55,7 @@ export default async function MenuPresencialPage({
       unit_id: c.unit_id,
       name,
       order_index: typeof c.order_index === "number" ? c.order_index : idx,
-      is_featured: c.is_featured === true,
+      is_featured: false,
       slug: slugify(name || `categoria-${idx + 1}`),
       type: c.type ?? null,
     };

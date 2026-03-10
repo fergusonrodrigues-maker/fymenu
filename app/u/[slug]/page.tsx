@@ -45,7 +45,7 @@ export default async function Page({
   // ─── 2) CATEGORIES ────────────────────────────────────────────────────────
   const { data: categoriesData } = await supabase
     .from("categories")
-    .select("id, unit_id, name, order_index, is_featured, type")
+    .select("id, unit_id, name, order_index, type")
     .eq("unit_id", unit.id)
     .order("order_index", { ascending: true, nullsFirst: false });
 
@@ -56,7 +56,7 @@ export default async function Page({
       unit_id: c.unit_id,
       name,
       order_index: typeof c.order_index === "number" ? c.order_index : idx,
-      is_featured: c.is_featured === true,
+      is_featured: false,
       slug: slugify(name || `categoria-${idx + 1}`),
       type: c.type ?? null,
     };
