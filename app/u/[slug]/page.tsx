@@ -47,7 +47,6 @@ export default async function Page({
     .from("categories")
     .select("id, unit_id, name, order_index, is_featured, type")
     .eq("unit_id", unit.id)
-    .eq("is_active", true)
     .order("order_index", { ascending: true, nullsFirst: false });
 
   const categories: Category[] = (categoriesData ?? []).map((c: any, idx: number) => {
