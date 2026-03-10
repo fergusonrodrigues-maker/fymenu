@@ -21,7 +21,7 @@ export default async function Page({
   const { data: unitData, error: unitErr } = await supabase
     .from("units")
     .select(
-      "id, restaurant_id, name, slug, city, neighborhood, whatsapp, instagram, maps_url, logo_url, order_type, order_link"
+      "id, restaurant_id, name, slug, city, neighborhood, whatsapp, instagram, maps_url, logo_url"
     )
     .eq("slug", publicSlug)
     .maybeSingle();
@@ -40,8 +40,6 @@ export default async function Page({
     instagram: unitData.instagram ?? null,
     maps_url: unitData.maps_url ?? null,
     logo_url: unitData.logo_url ?? null,
-    order_type: unitData.order_type ?? "whatsapp",
-    order_link: unitData.order_link ?? null,
   };
 
   // ─── 2) CATEGORIES ────────────────────────────────────────────────────────
@@ -129,7 +127,7 @@ export default async function Page({
   // Só buscamos upsells se o destino for WhatsApp (único fluxo que usa upsell completo)
   const upsells: Record<string, UpsellSuggestion[]> = {};
 
-  if (unit.order_type === "whatsapp" || !unit.order_type) {
+  if (unit.whatsapp) {
     const { data: upsellGroups } = await supabase
       .from("product_upsells")
       .select("id, product_id")

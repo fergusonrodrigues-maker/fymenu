@@ -20,7 +20,7 @@ export default async function MenuPresencialPage({
   const { data: unitData, error: unitErr } = await supabase
     .from("units")
     .select(
-      "id, restaurant_id, name, slug, city, neighborhood, whatsapp, instagram, maps_url, logo_url, order_type, order_link"
+      "id, restaurant_id, name, slug, city, neighborhood, whatsapp, instagram, maps_url, logo_url"
     )
     .eq("slug", publicSlug)
     .maybeSingle();
@@ -39,8 +39,6 @@ export default async function MenuPresencialPage({
     instagram: unitData.instagram ?? null,
     maps_url: unitData.maps_url ?? null,
     logo_url: unitData.logo_url ?? null,
-    order_type: unitData.order_type ?? "whatsapp",
-    order_link: unitData.order_link ?? null,
   };
 
   const { data: categoriesData } = await supabase

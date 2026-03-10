@@ -10,8 +10,6 @@ export type Unit = {
   instagram: string | null;
   maps_url: string | null;
   logo_url: string | null;
-  order_type: string | null;
-  order_link: string | null;
 };
 export type Category = {
   id: string;

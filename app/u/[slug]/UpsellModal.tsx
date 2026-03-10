@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { OrderPayload, UpsellItem, buildOrderPayload, buildWhatsAppMessage, buildExternalLink, formatPrice } from "./orderBuilder";
-import { Product } from "./menuTypes";
+import { OrderPayload, UpsellItem, buildOrderPayload, buildWhatsAppMessage, formatPrice } from "./orderBuilder";
 
 export interface UpsellSuggestion {
   id: string;
@@ -16,8 +15,6 @@ interface UpsellModalProps {
   suggestions: UpsellSuggestion[];
   unit: {
     whatsapp?: string | null;
-    order_type?: string | null;
-    order_link?: string | null;
   };
   onClose: () => void;
 }
@@ -31,10 +28,6 @@ export default function UpsellModal({
   const [selectedUpsells, setSelectedUpsells] = useState<UpsellItem[]>([]);
 
   if (!payload) return null;
-
-  const orderType = unit.order_type ?? "whatsapp";
-  const isWhatsApp = orderType === "whatsapp";
-  const isIfood = orderType === "ifood";
 
   function toggleUpsell(suggestion: UpsellSuggestion) {
     setSelectedUpsells((prev) => {
@@ -57,14 +50,7 @@ export default function UpsellModal({
     onClose();
   }
 
-  function handleExternal() {
-    if (!unit.order_link) return;
-    const url = buildExternalLink(unit.order_link, finalPayload);
-    window.open(url, "_blank");
-    onClose();
-  }
-
-  const hasUpsells = suggestions.length > 0 && isWhatsApp;
+  const hasUpsells = suggestions.length > 0;
 
   return (
     <div
@@ -177,7 +163,7 @@ export default function UpsellModal({
 
           {/* CTA buttons */}
           <div className="flex flex-col gap-3">
-            {isWhatsApp && unit.whatsapp && (
+            {unit.whatsapp && (
               <button
                 onClick={handleWhatsApp}
                 className="w-full py-4 rounded-2xl font-bold text-base
@@ -186,28 +172,6 @@ export default function UpsellModal({
               >
                 <span>💬</span>
                 Pedir pelo WhatsApp
-              </button>
-            )}
-
-            {isIfood && unit.order_link && (
-              <button
-                onClick={handleExternal}
-                className="w-full py-4 rounded-2xl font-bold text-base
-                  bg-[#EA1D2C] text-white active:scale-95 transition-transform
-                  flex items-center justify-center gap-2"
-              >
-                <span>🛵</span>
-                Pedir pelo iFood
-              </button>
-            )}
-
-            {!isWhatsApp && !isIfood && unit.order_link && (
-              <button
-                onClick={handleExternal}
-                className="w-full py-4 rounded-2xl font-bold text-base
-                  bg-white text-black active:scale-95 transition-transform"
-              >
-                Fazer pedido
               </button>
             )}
 
