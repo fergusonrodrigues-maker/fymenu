@@ -116,7 +116,7 @@ export default function ProductModal({
   const hasMedia = !!(thumbUrl || videoUrl);
 
   function handleOrder() {
-    if (!canOrder || activePrice == null) return;
+    if (!canOrder || activePrice == null || !currentProduct) return;
 
     onOrder({
       product: currentProduct,
