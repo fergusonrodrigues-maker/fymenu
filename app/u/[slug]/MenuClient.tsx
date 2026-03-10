@@ -111,6 +111,7 @@ export default function MenuClient({
         variations={selectedProduct ? (variations[selectedProduct.id] ?? []) : []}
         onClose={() => setSelectedProduct(null)}
         onOrder={handleProductOrder}
+        mode={mode}
       />
 
       {/* Upsell modal */}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Product, ProductVariation } from "./menuTypes";
 import { OrderPayload } from "./orderBuilder";
 
@@ -9,6 +9,7 @@ interface ProductModalProps {
   variations: ProductVariation[];
   onClose: () => void;
   onOrder: (payload: OrderPayload) => void;
+  mode?: "delivery" | "presencial";
 }
 
 export default function ProductModal({
@@ -16,12 +17,18 @@ export default function ProductModal({
   variations,
   onClose,
   onOrder,
+  mode = "delivery",
 }: ProductModalProps) {
   const [selectedVariation, setSelectedVariation] = useState<ProductVariation | null>(null);
+  const [mediaIndex, setMediaIndex] = useState(0);
+  const [fadeIn, setFadeIn] = useState(true);
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
 
-  // Reset selection when product changes
   useEffect(() => {
     setSelectedVariation(null);
+    setMediaIndex(0);
+    setFadeIn(true);
   }, [product?.id]);
 
   if (!product) return null;
@@ -39,12 +46,54 @@ export default function ProductModal({
     ? `R$${Number(activePrice).toFixed(2).replace(".", ",")}`
     : null;
 
-  const mediaUrl = product.thumb_path || product.image_path;
-  const isVideo = !product.thumb_path && product.video_path;
+  // Build media list from thumb_path (thumbnail_url mapped) and video_path (video_url mapped)
+  type MediaItem =
+    | { type: "image"; path: string }
+    | { type: "video"; path: string };
+
+  const mediaItems: MediaItem[] = [];
+  const imagePath = product.thumb_path || product.image_path;
+  if (imagePath) mediaItems.push({ type: "image", path: imagePath });
+  if (product.video_path) mediaItems.push({ type: "video", path: product.video_path });
+
+  const STORAGE = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/products`;
+
+  function goToMedia(idx: number) {
+    if (idx === mediaIndex) return;
+    setFadeIn(false);
+    setTimeout(() => {
+      setMediaIndex(idx);
+      setFadeIn(true);
+    }, 150);
+  }
+
+  function handleTouchStart(e: React.TouchEvent) {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  }
+
+  function handleTouchEnd(e: React.TouchEvent) {
+    if (touchStartX.current === null || touchStartY.current === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    const dy = e.changedTouches[0].clientY - touchStartY.current;
+    touchStartX.current = null;
+    touchStartY.current = null;
+
+    // Vertical swipe down → close
+    if (dy > 60 && Math.abs(dy) > Math.abs(dx)) {
+      onClose();
+      return;
+    }
+
+    // Horizontal swipe → navigate media
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+      if (dx < 0 && mediaIndex < mediaItems.length - 1) goToMedia(mediaIndex + 1);
+      if (dx > 0 && mediaIndex > 0) goToMedia(mediaIndex - 1);
+    }
+  }
 
   function handleOrder() {
-    if (!product) return;
-    if (!canOrder) return;
+    if (!product || !canOrder) return;
     onOrder({
       product,
       variation: selectedVariation ?? undefined,
@@ -52,6 +101,8 @@ export default function ProductModal({
       total: activePrice ?? 0,
     });
   }
+
+  const currentMedia = mediaItems[mediaIndex] ?? null;
 
   return (
     <div
@@ -62,27 +113,54 @@ export default function ProductModal({
         className="w-full max-w-md rounded-t-3xl bg-zinc-950 overflow-hidden
           animate-in slide-in-from-bottom duration-300"
         style={{ maxHeight: "92dvh" }}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
       >
         {/* Media */}
-        {(mediaUrl || isVideo) && (
+        {currentMedia ? (
           <div className="relative w-full bg-zinc-900" style={{ aspectRatio: "4/3" }}>
-            {isVideo ? (
-              <video
-                src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/products/${product.video_path}`}
-                className="w-full h-full object-cover"
-                autoPlay
-                loop
-                muted
-                playsInline
-              />
-            ) : (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/products/${mediaUrl}`}
-                alt={product.name}
-                className="w-full h-full object-cover"
-              />
+            <div
+              className="w-full h-full transition-opacity duration-150"
+              style={{ opacity: fadeIn ? 1 : 0 }}
+            >
+              {currentMedia.type === "video" ? (
+                <video
+                  key={currentMedia.path}
+                  src={`${STORAGE}/${currentMedia.path}`}
+                  className="w-full h-full object-cover"
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                />
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={`${STORAGE}/${currentMedia.path}`}
+                  alt={product.name}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).style.display = "none";
+                  }}
+                />
+              )}
+            </div>
+
+            {/* Counter X/Y dots */}
+            {mediaItems.length > 1 && (
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+                {mediaItems.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => goToMedia(i)}
+                    className={`w-1.5 h-1.5 rounded-full transition-all ${
+                      i === mediaIndex ? "bg-white scale-125" : "bg-white/40"
+                    }`}
+                  />
+                ))}
+              </div>
             )}
+
             {/* Close button */}
             <button
               onClick={onClose}
@@ -92,12 +170,9 @@ export default function ProductModal({
               ✕
             </button>
           </div>
-        )}
-
-        {/* No media close */}
-        {!mediaUrl && !isVideo && (
-          <div className="flex items-center justify-between px-5 pt-5">
-            <div />
+        ) : (
+          /* No media — close button only */
+          <div className="flex items-center justify-end px-5 pt-5">
             <button
               onClick={onClose}
               className="w-9 h-9 flex items-center justify-center
@@ -160,28 +235,30 @@ export default function ProductModal({
             </div>
           )}
 
-          {/* Order button */}
-          <button
-            onClick={handleOrder}
-            disabled={!canOrder}
-            className={`w-full py-4 rounded-2xl font-bold text-base tracking-wide
-              transition-all flex items-center justify-center gap-2
-              ${canOrder
-                ? "bg-white text-black active:scale-95 hover:bg-zinc-100"
-                : "bg-zinc-800 text-zinc-500 cursor-not-allowed"
-              }`}
-          >
-            {canOrder ? (
-              <>
-                PEDIR
-                {priceLabel && (
-                  <span className="font-bold opacity-80">• {priceLabel}</span>
-                )}
-              </>
-            ) : (
-              "Selecione uma opção"
-            )}
-          </button>
+          {/* Order button — delivery only */}
+          {mode === "delivery" && (
+            <button
+              onClick={handleOrder}
+              disabled={!canOrder}
+              className={`w-full py-4 rounded-2xl font-bold text-base tracking-wide
+                transition-all flex items-center justify-center gap-2
+                ${canOrder
+                  ? "bg-white text-black active:scale-95 hover:bg-zinc-100"
+                  : "bg-zinc-800 text-zinc-500 cursor-not-allowed"
+                }`}
+            >
+              {canOrder ? (
+                <>
+                  PEDIR
+                  {priceLabel && (
+                    <span className="font-bold opacity-80">• {priceLabel}</span>
+                  )}
+                </>
+              ) : (
+                "Selecione uma opção"
+              )}
+            </button>
+          )}
         </div>
       </div>
     </div>
