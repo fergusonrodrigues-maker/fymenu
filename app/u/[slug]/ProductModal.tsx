@@ -21,7 +21,6 @@ export default function ProductModal({
   allProducts = [],
   mode = "delivery",
 }: ProductModalProps) {
-  // ── swipe lateral: índice do produto exibido ─────────────────────────────
   const [currentIndex, setCurrentIndex] = useState<number>(0);
 
   useEffect(() => {
@@ -33,20 +32,13 @@ export default function ProductModal({
   const currentProduct =
     allProducts.length > 0 ? (allProducts[currentIndex] ?? product) : product;
 
-  // ── reset variação ao trocar produto ─────────────────────────────────────
   const [selectedVariation, setSelectedVariation] =
     useState<ProductVariation | null>(null);
-  useEffect(() => {
-    setSelectedVariation(null);
-  }, [currentProduct?.id]);
+  useEffect(() => { setSelectedVariation(null); }, [currentProduct?.id]);
 
-  // ── fade da thumbnail quando vídeo inicia ────────────────────────────────
   const [thumbVisible, setThumbVisible] = useState(true);
-  useEffect(() => {
-    setThumbVisible(true);
-  }, [currentProduct?.id]);
+  useEffect(() => { setThumbVisible(true); }, [currentProduct?.id]);
 
-  // ── swipe ─────────────────────────────────────────────────────────────────
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
   const THRESHOLD = 50;
@@ -69,20 +61,15 @@ export default function ProductModal({
   function handleTouchEnd(e: React.TouchEvent) {
     const dx = e.changedTouches[0].clientX - touchStartX.current;
     const dy = e.changedTouches[0].clientY - touchStartY.current;
-    if (Math.abs(dy) > Math.abs(dx) && dy > THRESHOLD) {
-      onClose();
-      return;
-    }
+    if (Math.abs(dy) > Math.abs(dx) && dy > THRESHOLD) { onClose(); return; }
     if (Math.abs(dx) > Math.abs(dy)) {
       if (dx < -THRESHOLD) goNext();
       else if (dx > THRESHOLD) goPrev();
     }
   }
 
-  // ── guard ─────────────────────────────────────────────────────────────────
   if (!product || !currentProduct) return null;
 
-  // ── preço ─────────────────────────────────────────────────────────────────
   const isFixed = currentProduct.price_type === "fixed";
   const hasVariations = variations && variations.length > 0;
   const activePrice: number | null = isFixed
@@ -93,47 +80,41 @@ export default function ProductModal({
     ? `R$\u00a0${Number(activePrice).toFixed(2).replace(".", ",")}`
     : null;
 
-  // ── mídia — campos REAIS do schema ───────────────────────────────────────
   // NUNCA usar: thumb_path | image_path | video_path
   const thumbUrl: string | null = currentProduct.thumbnail_url ?? null;
   const videoUrl: string | null = currentProduct.video_url ?? null;
   const hasMedia = !!(thumbUrl || videoUrl);
 
-  // ── counter X/Y ───────────────────────────────────────────────────────────
   const total = allProducts.length;
   const counter = total > 1 ? `${currentIndex + 1} / ${total}` : null;
 
   function handleOrder() {
     if (!canOrder) return;
-    onOrder({
-      product: currentProduct!,
-      variation: selectedVariation ?? undefined,
-      upsells: [],
-      total: activePrice ?? 0,
-    });
+    onOrder({ product: currentProduct!, variation: selectedVariation ?? undefined, upsells: [], total: activePrice ?? 0 });
   }
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-end justify-center"
+      style={{ background: "rgba(0,0,0,0.75)" }}
       onClick={(e) => e.target === e.currentTarget && onClose()}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Container — mesma linguagem do card: rounded-2xl, bg-zinc-900, shadow-lg */}
+      {/* Card expandido — mesma linguagem visual do ProductCard */}
       <div
-        className="w-full max-w-md rounded-t-2xl bg-zinc-900 overflow-hidden shadow-lg
-          animate-in slide-in-from-bottom duration-300"
-        style={{ maxHeight: "92dvh" }}
+        className="w-full max-w-sm overflow-hidden animate-in slide-in-from-bottom duration-300"
+        style={{
+          maxHeight: "92dvh",
+          borderRadius: "24px 24px 0 0",
+          background: "#111",
+          boxShadow: "0 -8px 40px rgba(0,0,0,0.6)",
+        }}
       >
-        {/* ── MEDIA — mesma estética do card ─────────────────────────────── */}
-        <div
-          className="relative w-full overflow-hidden bg-zinc-900"
-          style={{ aspectRatio: "4/3" }}
-        >
+        {/* ── MÍDIA grande no topo ── */}
+        <div className="relative w-full overflow-hidden" style={{ aspectRatio: "4/3" }}>
           {hasMedia ? (
             <>
-              {/* Thumbnail com fade quando vídeo inicia */}
               {thumbUrl && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -143,103 +124,92 @@ export default function ProductModal({
                   style={{ opacity: thumbVisible ? 1 : 0, zIndex: 1 }}
                 />
               )}
-              {/* Vídeo */}
               {videoUrl && (
                 <video
                   key={videoUrl}
                   src={videoUrl}
                   className="absolute inset-0 w-full h-full object-cover"
                   style={{ zIndex: 2 }}
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
+                  autoPlay loop muted playsInline
                   onPlay={() => setTimeout(() => setThumbVisible(false), 1000)}
                 />
               )}
             </>
           ) : (
-            /* Placeholder igual ao card */
-            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-zinc-800 to-zinc-900">
-              <span className="text-4xl opacity-20">🍽️</span>
+            <div
+              className="absolute inset-0 flex items-center justify-center"
+              style={{ background: "linear-gradient(135deg, #1c1c1e, #2c2c2e)" }}
+            >
+              <span style={{ fontSize: 48, opacity: 0.15 }}>🍽️</span>
             </div>
           )}
 
-          {/* Gradiente inferior igual ao card */}
+          {/* Gradiente inferior — igual ao card */}
           <div
-            className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"
-            style={{ zIndex: 3 }}
+            className="absolute inset-0"
+            style={{
+              background: "linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.15) 50%, transparent 100%)",
+              zIndex: 3,
+            }}
           />
 
-          {/* Nome + preço no overlay inferior — igual ao card */}
-          <div
-            className="absolute bottom-0 left-0 right-0 px-4 pb-4 pt-8"
-            style={{ zIndex: 4 }}
-          >
-            <p className="text-white font-semibold text-base leading-tight drop-shadow">
+          {/* Nome + preço no overlay — igual ao card */}
+          <div className="absolute bottom-0 left-0 right-0 px-5 pb-5" style={{ zIndex: 4 }}>
+            <p className="text-white font-bold text-lg leading-snug drop-shadow-sm">
               {currentProduct.name}
             </p>
             {isFixed && priceLabel && (
-              <p className="text-white/80 text-sm font-medium mt-0.5">
-                {priceLabel}
-              </p>
+              <p className="text-white/70 text-sm font-medium mt-0.5">{priceLabel}</p>
             )}
           </div>
 
-          {/* Botão fechar */}
+          {/* Fechar */}
           <button
             onClick={onClose}
-            className="absolute top-3 right-3 w-9 h-9 flex items-center justify-center
-              rounded-full bg-black/50 text-white text-sm backdrop-blur-sm"
-            style={{ zIndex: 10 }}
+            className="absolute top-4 right-4 flex items-center justify-center
+              rounded-full backdrop-blur-md text-white text-sm font-bold"
+            style={{ zIndex: 10, width: 36, height: 36, background: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.12)" }}
           >
             ✕
           </button>
 
-          {/* Counter X / Y */}
+          {/* Counter X/Y */}
           {counter && (
             <div
-              className="absolute top-3 left-3 px-3 py-1 rounded-full
-                bg-black/50 text-white text-xs font-bold backdrop-blur-sm"
-              style={{ zIndex: 10 }}
+              className="absolute top-4 left-4 text-white text-xs font-bold backdrop-blur-md rounded-full px-3 py-1"
+              style={{ zIndex: 10, background: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.12)" }}
             >
               {counter}
             </div>
           )}
 
-          {/* Setas laterais */}
+          {/* Setas */}
           {allProducts.length > 1 && currentIndex > 0 && (
             <button
               onClick={goPrev}
-              className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9
-                flex items-center justify-center rounded-full
-                bg-black/50 text-white text-xl backdrop-blur-sm"
-              style={{ zIndex: 10 }}
-            >
-              ‹
-            </button>
+              className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center
+                rounded-full text-white text-xl backdrop-blur-md"
+              style={{ zIndex: 10, width: 36, height: 36, background: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.12)" }}
+            >‹</button>
           )}
           {allProducts.length > 1 && currentIndex < allProducts.length - 1 && (
             <button
               onClick={goNext}
-              className="absolute right-12 top-1/2 -translate-y-1/2 w-9 h-9
-                flex items-center justify-center rounded-full
-                bg-black/50 text-white text-xl backdrop-blur-sm"
-              style={{ zIndex: 10 }}
-            >
-              ›
-            </button>
+              className="absolute right-14 top-1/2 -translate-y-1/2 flex items-center justify-center
+                rounded-full text-white text-xl backdrop-blur-md"
+              style={{ zIndex: 10, width: 36, height: 36, background: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.12)" }}
+            >›</button>
           )}
         </div>
 
-        {/* ── CONTENT — continuação natural da mídia ──────────────────────── */}
+        {/* ── CONTEÚDO ── continuação natural do card */}
         <div
-          className="overflow-y-auto px-4 pt-4 pb-6"
-          style={{ maxHeight: "50dvh" }}
+          className="overflow-y-auto"
+          style={{ maxHeight: "46dvh", background: "#111", padding: "20px 20px 28px" }}
         >
-          {/* Descrição — nome já está no overlay da mídia */}
+          {/* Descrição */}
           {currentProduct.description && (
-            <p className="text-zinc-400 text-sm leading-relaxed mb-4">
+            <p className="text-zinc-400 text-sm leading-relaxed mb-5">
               {currentProduct.description}
             </p>
           )}
@@ -247,7 +217,7 @@ export default function ProductModal({
           {/* Variações */}
           {hasVariations && (
             <div className="mb-5">
-              <p className="text-zinc-500 text-xs uppercase tracking-widest mb-3 font-semibold">
+              <p className="text-zinc-600 text-xs uppercase tracking-widest mb-3 font-semibold">
                 Escolha uma opção
               </p>
               <div className="flex flex-col gap-2">
@@ -257,16 +227,16 @@ export default function ProductModal({
                     <button
                       key={v.id}
                       onClick={() => setSelectedVariation(v)}
-                      className={`flex items-center justify-between px-4 py-3 rounded-2xl border
-                        transition-all text-sm font-medium
-                        ${
-                          isSelected
-                            ? "border-white bg-white text-black"
-                            : "border-zinc-700 bg-zinc-800 text-white hover:border-zinc-500"
-                        }`}
+                      className="flex items-center justify-between px-4 py-3 text-sm font-medium transition-all"
+                      style={{
+                        borderRadius: 14,
+                        border: isSelected ? "1.5px solid #fff" : "1.5px solid rgba(255,255,255,0.1)",
+                        background: isSelected ? "#fff" : "rgba(255,255,255,0.05)",
+                        color: isSelected ? "#000" : "#fff",
+                      }}
                     >
                       <span>{v.name}</span>
-                      <span className={isSelected ? "text-black" : "text-zinc-400"}>
+                      <span style={{ opacity: isSelected ? 1 : 0.5 }}>
                         R${Number(v.price).toFixed(2).replace(".", ",")}
                       </span>
                     </button>
@@ -276,25 +246,25 @@ export default function ProductModal({
             </div>
           )}
 
-          {/* Botão PEDIR — só no modo delivery */}
+          {/* Botão PEDIR */}
           {mode === "delivery" && (
             <button
               onClick={handleOrder}
               disabled={!canOrder}
-              className={`w-full py-3.5 rounded-2xl font-bold text-sm tracking-wide uppercase
-                transition-all flex items-center justify-center gap-2
-                ${
-                  canOrder
-                    ? "bg-white text-black active:scale-95 hover:bg-zinc-100"
-                    : "bg-zinc-800 text-zinc-500 cursor-not-allowed"
-                }`}
+              className="w-full flex items-center justify-center gap-2 font-bold text-sm tracking-wide uppercase transition-all active:scale-95"
+              style={{
+                borderRadius: 16,
+                height: 52,
+                background: canOrder ? "#fff" : "rgba(255,255,255,0.07)",
+                color: canOrder ? "#000" : "rgba(255,255,255,0.25)",
+                cursor: canOrder ? "pointer" : "not-allowed",
+                letterSpacing: "0.06em",
+              }}
             >
               {canOrder ? (
                 <>
                   Pedir
-                  {priceLabel && (
-                    <span className="font-bold opacity-80">• {priceLabel}</span>
-                  )}
+                  {priceLabel && <span style={{ opacity: 0.6, fontWeight: 400 }}>• {priceLabel}</span>}
                 </>
               ) : (
                 "Selecione uma opção"
