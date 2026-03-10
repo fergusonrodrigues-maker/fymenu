@@ -9,7 +9,6 @@ interface ProductModalProps {
   variations: ProductVariation[];
   onClose: () => void;
   onOrder: (payload: OrderPayload) => void;
-  mode?: "delivery" | "presencial";
 }
 
 export default function ProductModal({
@@ -17,7 +16,6 @@ export default function ProductModal({
   variations,
   onClose,
   onOrder,
-  mode = "delivery",
 }: ProductModalProps) {
   const [selectedVariation, setSelectedVariation] = useState<ProductVariation | null>(null);
 
@@ -162,30 +160,28 @@ export default function ProductModal({
             </div>
           )}
 
-          {/* Order button — delivery only */}
-          {mode === "delivery" && (
-            <button
-              onClick={handleOrder}
-              disabled={!canOrder}
-              className={`w-full py-4 rounded-2xl font-bold text-base tracking-wide
-                transition-all flex items-center justify-center gap-2
-                ${canOrder
-                  ? "bg-white text-black active:scale-95 hover:bg-zinc-100"
-                  : "bg-zinc-800 text-zinc-500 cursor-not-allowed"
-                }`}
-            >
-              {canOrder ? (
-                <>
-                  PEDIR
-                  {priceLabel && (
-                    <span className="font-bold opacity-80">• {priceLabel}</span>
-                  )}
-                </>
-              ) : (
-                "Selecione uma opção"
-              )}
-            </button>
-          )}
+          {/* Order button */}
+          <button
+            onClick={handleOrder}
+            disabled={!canOrder}
+            className={`w-full py-4 rounded-2xl font-bold text-base tracking-wide
+              transition-all flex items-center justify-center gap-2
+              ${canOrder
+                ? "bg-white text-black active:scale-95 hover:bg-zinc-100"
+                : "bg-zinc-800 text-zinc-500 cursor-not-allowed"
+              }`}
+          >
+            {canOrder ? (
+              <>
+                PEDIR
+                {priceLabel && (
+                  <span className="font-bold opacity-80">• {priceLabel}</span>
+                )}
+              </>
+            ) : (
+              "Selecione uma opção"
+            )}
+          </button>
         </div>
       </div>
     </div>
