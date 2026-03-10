@@ -4,10 +4,11 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   createCategory, updateCategory, deleteCategory,
-  createProduct, updateProduct, deleteProduct,
+  createProduct,
   addUpsellItem, removeUpsellItem,
   updateUnit,
 } from "./actions";
+import ProductRow from "./ProductRow";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 type Restaurant = { id: string; name: string; plan: string; status: string; trial_ends_at: string; whatsapp: string | null; instagram: string | null };
@@ -428,7 +429,7 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
               <div style={{ padding: "0 12px 12px", display: "flex", flexDirection: "column", gap: 8 }}>
                 {catProducts.length === 0 && <div style={{ color: "rgba(255,255,255,0.2)", fontSize: 13, padding: "8px 0" }}>Nenhum produto nesta categoria.</div>}
                 {catProducts.map((p) => (
-                  <ProductRowInline key={p.id} product={p} allProducts={products.filter((o) => o.id !== p.id)} />
+                  <ProductRow key={p.id} product={p} />
                 ))}
                 <NewProductFormInline categoryId={cat.id} />
               </div>
@@ -440,50 +441,6 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
   );
 }
 
-function ProductRowInline({ product, allProducts }: { product: Product; allProducts: Product[] }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div style={{ borderRadius: 12, border: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.03)", overflow: "hidden" }}>
-      <div style={{ display: "flex", alignItems: "center", padding: "11px 12px", gap: 10, cursor: "pointer" }} onClick={() => setOpen(o => !o)}>
-        {product.thumbnail_url ? (
-          <img src={product.thumbnail_url} alt="" style={{ width: 40, height: 40, borderRadius: 8, objectFit: "cover", flexShrink: 0 }} />
-        ) : (
-          <div style={{ width: 40, height: 40, borderRadius: 8, flexShrink: 0, background: "rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>🍽</div>
-        )}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ color: "#fff", fontWeight: 700, fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{product.name}</div>
-          <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 12 }}>
-            {product.price_type === "variable" ? "Preço variável" : product.base_price != null ? `R$ ${Number(product.base_price).toFixed(2).replace(".", ",")}` : "Sem preço"}
-          </div>
-        </div>
-        <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 11 }}>{open ? "▲" : "▼"}</span>
-      </div>
-      {open && (
-        <div style={{ padding: "0 12px 12px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-          <form action={updateProduct} style={{ display: "flex", flexDirection: "column", gap: 8, paddingTop: 10 }}>
-            <input type="hidden" name="id" value={product.id} />
-            <input name="name" defaultValue={product.name} placeholder="Nome" required style={inp} />
-            <textarea name="description" defaultValue={product.description ?? ""} placeholder="Descrição (opcional)" rows={2} style={{ ...inp, resize: "vertical" }} />
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-              <input name="base_price" defaultValue={product.base_price != null ? String(product.base_price).replace(".", ",") : ""} placeholder="Preço (ex: 29,90)" inputMode="decimal" style={inp} />
-              <select name="price_type" defaultValue={product.price_type} style={{ ...inp, cursor: "pointer" }}>
-                <option value="fixed">Preço fixo</option>
-                <option value="variable">Preço variável</option>
-              </select>
-            </div>
-            <input name="thumbnail_url" defaultValue={product.thumbnail_url ?? ""} placeholder="URL da thumbnail" style={inp} />
-            <input name="video_url" defaultValue={product.video_url ?? ""} placeholder="URL do vídeo" style={inp} />
-            <button type="submit" style={{ padding: "10px", borderRadius: 10, border: "none", background: "rgba(0,255,174,0.15)", color: "#00ffae", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Salvar produto</button>
-          </form>
-          <form action={deleteProduct} style={{ marginTop: 8 }} onSubmit={(e) => { if (!confirm("Excluir produto?")) e.preventDefault(); }}>
-            <input type="hidden" name="id" value={product.id} />
-            <button type="submit" style={{ padding: "10px", borderRadius: 10, border: "none", background: "rgba(255,80,80,0.10)", color: "#f87171", fontSize: 13, fontWeight: 600, cursor: "pointer", width: "100%" }}>Excluir produto</button>
-          </form>
-        </div>
-      )}
-    </div>
-  );
-}
 
 function NewProductFormInline({ categoryId }: { categoryId: string }) {
   const [open, setOpen] = useState(false);
