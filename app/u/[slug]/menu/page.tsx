@@ -43,9 +43,8 @@ export default async function MenuPresencialPage({
 
   const { data: categoriesData } = await supabase
     .from("categories")
-    .select("id, unit_id, name, order_index, is_featured, type")
+    .select("id, unit_id, name, order_index, type")
     .eq("unit_id", unit.id)
-    .eq("is_active", true)
     .order("order_index", { ascending: true, nullsFirst: false });
 
   const categories: Category[] = (categoriesData ?? []).map((c: any, idx: number) => {
