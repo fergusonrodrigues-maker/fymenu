@@ -1,74 +1,89 @@
-// FILE: /app/dashboard/page.tsx
-// ACTION: REPLACE ENTIRE FILE
-
+import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import DashboardClient from "./DashboardClient";
-import { getTenantContext } from "../../lib/tenant/getTenantContext";
-import { createClient } from "@/lib/supabase/server";
 
-type SearchParamsShape = { unit?: string };
-
-async function resolveSearchParams(
-  sp: SearchParamsShape | Promise<SearchParamsShape> | undefined
-): Promise<SearchParamsShape> {
-  if (!sp) return {};
-  return await Promise.resolve(sp);
-}
-
-export default async function DashboardPage({
-  searchParams,
-}: {
-  searchParams?: SearchParamsShape | Promise<SearchParamsShape>;
-}) {
-  const { restaurant, units } = await getTenantContext();
-
-  if (!restaurant) redirect("/login");
-  if (!units || units.length === 0) redirect("/dashboard/unit");
-
-  const sp = await resolveSearchParams(searchParams);
-  const activeUnit = units.find((u) => u.id === sp.unit) ?? units[0];
-  if (!activeUnit) redirect("/dashboard/unit");
-
+export default async function DashboardPage() {
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
 
-  // Busca categorias da unidade ativa
+  const { data: restaurant } = await supabase
+    .from("restaurants")
+    .select("id, name, plan, status, trial_ends_at, whatsapp, instagram")
+    .eq("owner_id", user.id)
+    .single();
+
+  if (!restaurant) redirect("/onboarding");
+
+  const { data: unit } = await supabase
+    .from("units")
+    .select("id, name, slug, address, city, neighborhood, whatsapp, instagram, logo_url, maps_url, is_published")
+    .eq("restaurant_id", restaurant.id)
+    .single();
+
   const { data: categories } = await supabase
     .from("categories")
-    .select("id")
-    .eq("unit_id", activeUnit.id);
+    .select("id, name, order_index")
+    .eq("unit_id", unit?.id)
+    .order("order_index");
 
-  const categoryIds = (categories ?? []).map((c) => c.id);
+  const { data: products } = await supabase
+    .from("products")
+    .select("id, category_id, name, description, price_type, base_price, thumbnail_url, video_url, order_index, is_active")
+    .in("category_id", (categories ?? []).map((c) => c.id));
 
-  // Busca total de produtos
-  let totalProducts = 0;
-  if (categoryIds.length > 0) {
-    const { count } = await supabase
-      .from("products")
-      .select("id", { count: "exact", head: true })
-      .in("category_id", categoryIds);
-    totalProducts = count ?? 0;
-  }
+  const { data: upsellItems } = await supabase
+    .from("product_upsell_items")
+    .select(`
+      id,
+      upsell_id,
+      position,
+      product_upsells!inner(product_id),
+      products!product_upsell_items_product_id_fkey(id, name, base_price, price_type)
+    `)
+    .in("upsell_id",
+      (await supabase
+        .from("product_upsells")
+        .select("id")
+        .in("product_id", (products ?? []).map((p) => p.id))
+      ).data?.map((u) => u.id) ?? []
+    );
 
-  // Trial days left
-  let trialDaysLeft: number | null = null;
-  if (restaurant.status === "trial" && restaurant.trial_ends_at) {
-    const diff = new Date(restaurant.trial_ends_at).getTime() - Date.now();
-    trialDaysLeft = Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
-  }
+  // Analytics resumo
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const { data: events } = await supabase
+    .from("menu_events")
+    .select("event")
+    .eq("unit_id", unit?.id)
+    .gte("created_at", sevenDaysAgo);
 
-  const planLabel = String(restaurant.plan ?? "basic").toUpperCase() === "PRO" ? "PRO" : "BASIC";
+  const views = events?.filter((e) => e.event === "page_view").length ?? 0;
+  const clicks = events?.filter((e) => e.event === "product_click").length ?? 0;
+  const orders = events?.filter((e) => e.event === "order_sent").length ?? 0;
+
+  // TV media count
+  const { count: tvCount } = await supabase
+    .from("tv_media")
+    .select("id", { count: "exact", head: true })
+    .eq("unit_id", unit?.id)
+    .eq("is_active", true);
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("first_name, last_name, phone")
+    .eq("id", user.id)
+    .single();
 
   return (
     <DashboardClient
       restaurant={restaurant}
-      units={units}
-      activeUnit={activeUnit}
-      stats={{
-        totalProducts,
-        totalCategories: categoryIds.length,
-        planLabel,
-        trialDaysLeft,
-      }}
+      unit={unit}
+      profile={{ ...profile, email: user.email }}
+      categories={categories ?? []}
+      products={products ?? []}
+      upsellItems={upsellItems ?? []}
+      analytics={{ views, clicks, orders }}
+      tvCount={tvCount ?? 0}
     />
   );
 }

@@ -1,374 +1,69 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
-import Link from "next/link";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import {
+  createCategory, updateCategory, deleteCategory,
+  createProduct, updateProduct, deleteProduct,
+  addUpsellItem, removeUpsellItem,
+} from "./cardapio/actions";
+import { updateUnit } from "./actions";
 
-/* ─────────────────────────────────────────
-   FONT + KEYFRAMES (injected once)
-───────────────────────────────────────── */
-if (typeof document !== "undefined" && !document.getElementById("fy-font")) {
-  const l = document.createElement("link");
-  l.id = "fy-font"; l.rel = "stylesheet";
-  l.href = "https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap";
-  document.head.appendChild(l);
-}
-if (typeof document !== "undefined" && !document.getElementById("fy-dash-anim")) {
-  const s = document.createElement("style");
-  s.id = "fy-dash-anim";
-  s.textContent = `
-    @keyframes springIn {
-      0%   { opacity:0; transform:scale(0.86) translateY(-20px); }
-      55%  { opacity:1; transform:scale(1.025) translateY(4px); }
-      75%  { transform:scale(0.988) translateY(-2px); }
-      88%  { transform:scale(1.005) translateY(1px); }
-      100% { opacity:1; transform:scale(1) translateY(0); }
-    }
-    @keyframes springOut {
-      0%   { opacity:1; transform:scale(1) translateY(0); }
-      30%  { opacity:.8; transform:scale(1.02) translateY(-4px); }
-      100% { opacity:0; transform:scale(0.86) translateY(20px); }
-    }
-    @keyframes fadeUp {
-      from { opacity:0; transform:translateY(8px); }
-      to   { opacity:1; transform:translateY(0); }
-    }
-    @keyframes barGrow {
-      from { transform:scaleX(0); }
-      to   { transform:scaleX(1); }
-    }
-    @keyframes pulse {
-      0%,100%{opacity:1} 50%{opacity:.35}
-    }
-    @keyframes chevBounce {
-      0%,100% { transform:translateX(-50%) translateY(0); }
-      50%     { transform:translateX(-50%) translateY(3px); }
-    }
-    @keyframes slideUp {
-      from { opacity:0; transform:translateY(20px); }
-      to   { opacity:1; transform:translateY(0); }
-    }
-    .fy-quickaction:hover { background: rgba(0,255,174,0.06) !important; border-color: rgba(0,255,174,0.22) !important; }
-    .fy-bento { display:grid; grid-template-columns:repeat(4,1fr); grid-template-rows:repeat(5,80px); gap:10px; }
-    @media(max-width:900px){ .fy-bento { grid-template-columns:repeat(2,1fr); grid-template-rows:none; grid-auto-rows:160px; } }
-    @media(max-width:560px){ .fy-bento { grid-template-columns:1fr; grid-template-rows:none; grid-auto-rows:auto; } }
-    @media(max-width:560px){ .fy-bento > div { grid-column:auto!important; grid-row:auto!important; min-height:160px; } }
-  `;
-  document.head.appendChild(s);
-}
+// ─── Types ─────────────────────────────────────────────────────────────────
+type Restaurant = { id: string; name: string; plan: string; status: string; trial_ends_at: string; whatsapp: string | null; instagram: string | null };
+type Unit = { id: string; name: string; slug: string; address: string; city: string | null; neighborhood: string | null; whatsapp: string | null; instagram: string | null; logo_url: string | null; maps_url: string | null; is_published: boolean };
+type Category = { id: string; name: string; order_index: number | null };
+type Product = { id: string; category_id: string; name: string; description: string | null; price_type: string; base_price: number | null; thumbnail_url: string | null; video_url: string | null; order_index: number | null; is_active: boolean };
+type Profile = { first_name: string | null; last_name: string | null; phone: string | null; email: string | undefined };
 
-/* ─────────────────────────────────────────
-   TOKENS
-───────────────────────────────────────── */
-const G1 = "#00ffae";
-const G2 = "#00ffcc";
-const GRAD_R = `linear-gradient(90deg,${G1},${G2})`;
-const F = "'Montserrat',sans-serif";
+// ─── Modal backdrop ─────────────────────────────────────────────────────────
+function Modal({ open, onClose, children, title }: { open: boolean; onClose: () => void; children: React.ReactNode; title: string }) {
+  useEffect(() => {
+    if (open) document.body.style.overflow = "hidden";
+    else document.body.style.overflow = "";
+    return () => { document.body.style.overflow = ""; };
+  }, [open]);
 
-const THEMES = {
-  light: {
-    bg: "#e8e8ea",
-    cardFace: "linear-gradient(160deg,#ffffff 0%,#f6f6f6 50%,#f1f1f1 100%)",
-    cardBorder: "rgba(255,255,255,0.9)",
-    text: "#1e1e1e", muted: "#888", dim: "#ccc",
-    border: "rgba(0,0,0,0.07)", surf: "rgba(0,0,0,0.03)", chip: "rgba(0,0,0,0.05)",
-    overlayBg: "#fff", overlayBorder: "rgba(0,0,0,0.07)",
-    inputBg: "rgba(0,0,0,0.03)",
-    pillBg: "rgba(0,0,0,0.05)", pillActive: "#fff",
-    headerBg: "rgba(232,232,234,0.92)",
-  },
-  dark: {
-    bg: "#0f0f11",
-    cardFace: "linear-gradient(160deg,#1c1c1e 0%,#161618 50%,#111113 100%)",
-    cardBorder: "rgba(255,255,255,0.06)",
-    text: "#f0f0f0", muted: "#777", dim: "#444",
-    border: "rgba(255,255,255,0.07)", surf: "rgba(255,255,255,0.03)", chip: "rgba(255,255,255,0.07)",
-    overlayBg: "#1c1c1e", overlayBorder: "rgba(255,255,255,0.08)",
-    inputBg: "rgba(255,255,255,0.05)",
-    pillBg: "rgba(255,255,255,0.06)", pillActive: "rgba(255,255,255,0.12)",
-    headerBg: "rgba(15,15,17,0.92)",
-  },
-};
-
-/* ─────────────────────────────────────────
-   PROPS
-───────────────────────────────────────── */
-type Props = {
-  restaurant: any;
-  units: any[];
-  activeUnit: any;
-  stats: {
-    totalProducts: number;
-    totalCategories: number;
-    planLabel: string;
-    trialDaysLeft: number | null;
-  };
-};
-
-/* ─────────────────────────────────────────
-   THEME TOGGLE
-───────────────────────────────────────── */
-function ThemeToggle({ dark, onToggle }: { dark: boolean; onToggle: () => void }) {
+  if (!open) return null;
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-        stroke={dark ? "#555" : "#f59e0b"} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-        style={{ cursor: "pointer", transition: "stroke .2s" }} onClick={() => dark && onToggle()}>
-        <circle cx="12" cy="12" r="5"/>
-        <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
-        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-        <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
-        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-      </svg>
-      <div onClick={onToggle} style={{
-        width: 40, height: 22, borderRadius: 11, cursor: "pointer", position: "relative",
-        background: dark ? GRAD_R : "rgba(0,0,0,0.14)",
-        transition: "background .25s",
-        boxShadow: dark ? `0 0 10px rgba(0,255,174,.3)` : "none",
-      }}>
-        <div style={{
-          width: 14, height: 14, borderRadius: "50%", background: "#fff",
-          position: "absolute", top: 4, left: dark ? 22 : 4,
-          transition: "left .22s", boxShadow: "0 1px 4px rgba(0,0,0,.25)",
-        }} />
-      </div>
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-        stroke={dark ? G1 : "#888"} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-        style={{ cursor: "pointer", transition: "stroke .2s" }} onClick={() => !dark && onToggle()}>
-        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-      </svg>
-    </div>
-  );
-}
-
-/* ─────────────────────────────────────────
-   CARD SHELL — neon bottom glow inside card + soft shadow outside
-───────────────────────────────────────── */
-function Card({ children, onClick, th, glowColor, style: extraStyle }: {
-  children: React.ReactNode;
-  onClick?: () => void;
-  th: "light" | "dark";
-  glowColor?: string;
-  style?: React.CSSProperties;
-}) {
-  const [hov, setHov] = useState(false);
-  const t = THEMES[th];
-  const glow = glowColor ?? G1;
-
-  return (
-    <div
-      onClick={onClick}
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
-      style={{
-        position: "relative",
-        height: "100%",
-        cursor: onClick ? "pointer" : "default",
-        transform: hov && onClick ? "translateY(-4px) scale(1.01)" : "translateY(0) scale(1)",
-        transition: "transform .22s cubic-bezier(.34,1.4,.64,1)",
-        ...extraStyle,
-      }}
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 100,
+      background: "rgba(0,0,0,0.85)", backdropFilter: "blur(12px)",
+      display: "flex", alignItems: "flex-end",
+      animation: "fadeIn 0.2s ease",
+    }}
+      onClick={onClose}
     >
-      {/* Inner card */}
-      <div style={{
-        background: t.cardFace,
-        borderRadius: 36,
-        border: `1px solid ${t.cardBorder}`,
-        overflow: "hidden",
-        height: "100%",
-        boxSizing: "border-box",
-        display: "flex",
-        flexDirection: "column",
-        position: "relative",
-        boxShadow: th === "light"
-          ? "0 2px 8px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.05)"
-          : "0 2px 8px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.2)",
-      }}>
-        {children}
-        {/* Neon bottom glow — inside card, clipped to ellipse */}
-        <div style={{
-          position: "absolute",
-          bottom: 0, left: 0, right: 0,
-          height: 64,
-          background: glow,
-          clipPath: "ellipse(68% 55% at 50% 100%)",
-          opacity: th === "light" ? 0.30 : 0.45,
-          pointerEvents: "none",
-          zIndex: 0,
-        }} />
-      </div>
-      {/* Soft neon shadow projected outside card bottom */}
-      <div style={{
-        position: "absolute",
-        bottom: -10,
-        left: "22%", right: "22%",
-        height: 28,
-        background: glow,
-        borderRadius: "50%",
-        filter: "blur(18px)",
-        opacity: th === "light" ? 0.20 : 0.35,
-        pointerEvents: "none",
-        zIndex: -1,
-      }} />
-    </div>
-  );
-}
-
-/* label top-left + bounce chevron bottom-center */
-function CardLayout({ label, children, onOpen, th, glowColor }: {
-  label: string;
-  children: React.ReactNode;
-  onOpen?: () => void;
-  th: "light" | "dark";
-  glowColor?: string;
-}) {
-  const t = THEMES[th];
-  return (
-    <Card onClick={onOpen} th={th} glowColor={glowColor}>
-      {/* Label — lowercase, font-light, top-left */}
-      <div style={{ padding: "18px 18px 4px", flexShrink: 0, position: "relative", zIndex: 1 }}>
-        <span style={{
-          fontSize: 15,
-          fontWeight: 300,
-          color: t.muted,
-          fontFamily: F,
-          letterSpacing: "-0.2px",
-          lineHeight: 1,
-        }}>
-          {label.toLowerCase()}
-        </span>
-      </div>
-      <div style={{ flex: 1, padding: "4px 18px", overflow: "hidden", minHeight: 0, position: "relative", zIndex: 1 }}>
-        {children}
-      </div>
-      {onOpen && (
-        <div style={{ display: "flex", justifyContent: "center", padding: "8px 0 14px", flexShrink: 0, position: "relative", zIndex: 1 }}>
-          <div style={{
-            width: 28, height: 28, borderRadius: "50%",
-            background: GRAD_R,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: `0 0 14px rgba(0,255,174,.5)`,
-            animation: "chevBounce 2s ease-in-out infinite",
-          }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="6 9 12 15 18 9"/>
-            </svg>
-          </div>
-        </div>
-      )}
-    </Card>
-  );
-}
-
-/* ─────────────────────────────────────────
-   CATEGORIAS PILL — pill com brilho amarelo na base
-───────────────────────────────────────── */
-function CategoriasPill({ th }: { th: "light" | "dark" }) {
-  const t = THEMES[th];
-  return (
-    <Link href="/dashboard/cardapio" style={{ textDecoration: "none", display: "block", height: "100%" }}>
-      <div style={{
-        position: "relative",
-        height: "100%",
-        minHeight: 60,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}>
-        <div style={{
-          background: t.cardFace,
-          border: `1px solid ${t.cardBorder}`,
-          borderRadius: 999,
-          padding: "14px 28px",
-          fontWeight: 300,
-          fontSize: 17,
-          color: t.text,
-          fontFamily: F,
-          letterSpacing: "-0.3px",
-          overflow: "hidden",
-          position: "relative",
-          boxShadow: th === "light"
-            ? "0 2px 8px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.05)"
-            : "0 2px 8px rgba(0,0,0,0.3)",
-          whiteSpace: "nowrap",
-        }}>
-          categorias
-          {/* Yellow/orange bottom glow */}
-          <div style={{
-            position: "absolute",
-            bottom: 0, left: 0, right: 0,
-            height: 28,
-            background: "linear-gradient(90deg,#f59e0b,#f97316)",
-            clipPath: "ellipse(68% 55% at 50% 100%)",
-            opacity: th === "light" ? 0.40 : 0.55,
-            pointerEvents: "none",
-          }} />
-        </div>
-        {/* Shadow outside */}
-        <div style={{
-          position: "absolute",
-          bottom: -8,
-          left: "25%", right: "25%",
-          height: 22,
-          background: "#f59e0b",
-          borderRadius: "50%",
-          filter: "blur(14px)",
-          opacity: th === "light" ? 0.25 : 0.40,
-          pointerEvents: "none",
-          zIndex: -1,
-        }} />
-      </div>
-    </Link>
-  );
-}
-
-/* ─────────────────────────────────────────
-   OVERLAY — spring in / spring out
-───────────────────────────────────────── */
-function Overlay({ onClose, children, th }: {
-  onClose: () => void;
-  children: React.ReactNode;
-  th: "light" | "dark";
-}) {
-  const t = THEMES[th];
-  const [closing, setClosing] = useState(false);
-
-  const handleClose = useCallback(() => {
-    setClosing(true);
-    setTimeout(() => onClose(), 280);
-  }, [onClose]);
-
-  return (
-    <div
-      style={{
-        position: "fixed", inset: 0, zIndex: 999,
-        background: closing ? "rgba(0,0,0,0)" : "rgba(0,0,0,.45)",
-        backdropFilter: closing ? "blur(0px)" : "blur(7px)",
-        display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
-        transition: "background .28s",
-      }}
-      onClick={handleClose}
-    >
+      <style>{`
+        @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+        @keyframes slideUp { from { transform: translateY(100%) } to { transform: translateY(0) } }
+        @media (min-width: 640px) {
+          .modal-sheet { border-radius: 24px !important; max-width: 560px !important; margin: auto !important; align-self: center !important; max-height: 85vh !important; }
+        }
+      `}</style>
       <div
-        onClick={(e) => e.stopPropagation()}
+        className="modal-sheet"
         style={{
-          background: t.overlayBg,
-          borderRadius: 24,
-          border: `1px solid ${t.overlayBorder}`,
-          width: "100%", maxWidth: 680, maxHeight: "90vh", overflowY: "auto",
-          position: "relative",
-          boxShadow: `0 0 0 5px ${t.overlayBg}, 0 5px 0 5px ${G1}, 0 30px 70px rgba(0,0,0,.22)`,
-          animation: closing
-            ? "springOut .28s cubic-bezier(.34,1,.64,1) both"
-            : "springIn .44s cubic-bezier(.34,1.56,.64,1) both",
+          width: "100%", maxHeight: "92vh",
+          background: "linear-gradient(180deg, #161616 0%, #111 100%)",
+          borderRadius: "24px 24px 0 0",
+          border: "1px solid rgba(255,255,255,0.08)",
+          overflow: "hidden", display: "flex", flexDirection: "column",
+          animation: "slideUp 0.3s cubic-bezier(0.32,0.72,0,1)",
         }}
+        onClick={(e) => e.stopPropagation()}
       >
-        <button onClick={handleClose} style={{
-          position: "absolute", top: 14, right: 14, width: 30, height: 30, borderRadius: "50%",
-          background: t.chip, border: `1px solid ${t.border}`, cursor: "pointer", fontSize: 13,
-          color: t.muted, display: "flex", alignItems: "center", justifyContent: "center",
-          zIndex: 2, fontFamily: F,
-        }}>✕</button>
-        <div style={{ padding: "26px 26px 30px", position: "relative", zIndex: 1 }}>
+        {/* Handle */}
+        <div style={{ display: "flex", justifyContent: "center", padding: "12px 0 0" }}>
+          <div style={{ width: 36, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.15)" }} />
+        </div>
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 24px 12px" }}>
+          <h2 style={{ margin: 0, color: "#fff", fontSize: 20, fontWeight: 800, letterSpacing: "-0.5px" }}>{title}</h2>
+          <button onClick={onClose} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "50%", width: 32, height: 32, color: "rgba(255,255,255,0.5)", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+        </div>
+        {/* Content */}
+        <div style={{ overflowY: "auto", padding: "0 24px 32px", flex: 1 }}>
           {children}
         </div>
       </div>
@@ -376,430 +71,612 @@ function Overlay({ onClose, children, th }: {
   );
 }
 
-/* ─────────────────────────────────────────
-   MINI BARS (sparkline-style)
-───────────────────────────────────────── */
-function MiniBar({ value, max, th }: { value: number; max: number; th: "light" | "dark" }) {
-  const t = THEMES[th];
-  const pct = max > 0 ? (value / max) * 100 : 0;
+// ─── Input style ────────────────────────────────────────────────────────────
+const inp: React.CSSProperties = {
+  width: "100%", padding: "11px 14px", borderRadius: 12,
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "rgba(255,255,255,0.05)",
+  color: "#fff", fontSize: 14, boxSizing: "border-box",
+  outline: "none",
+};
+
+// ─── Main Component ──────────────────────────────────────────────────────────
+export default function DashboardClient({
+  restaurant, unit, profile, categories, products, upsellItems, analytics, tvCount,
+}: {
+  restaurant: Restaurant; unit: Unit | null; profile: Profile;
+  categories: Category[]; products: Product[];
+  upsellItems: any[]; analytics: { views: number; clicks: number; orders: number };
+  tvCount: number;
+}) {
+  const router = useRouter();
+  const [modal, setModal] = useState<"analytics" | "cardapio" | "pedidos" | "unidade" | "plano" | "config" | "tv" | null>(null);
+  const open = (m: typeof modal) => setModal(m);
+  const close = () => setModal(null);
+
+  const trialDays = Math.max(0, Math.ceil((new Date(restaurant.trial_ends_at).getTime() - Date.now()) / 86400000));
+  const isPro = restaurant.plan === "pro";
+
   return (
-    <div style={{ height: 4, background: t.border, borderRadius: 2, overflow: "hidden", marginTop: 6 }}>
+    <>
+      <style>{`
+        * { box-sizing: border-box; }
+        body { margin: 0; background: #0a0a0a; }
+        @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:0.5 } }
+        .card:active { transform: scale(0.97); }
+        .card { transition: transform 0.15s, background 0.2s; }
+        .card:hover { background: rgba(255,255,255,0.07) !important; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
+        input, textarea, select { outline: none; font-family: inherit; }
+        input::placeholder, textarea::placeholder { color: rgba(255,255,255,0.25); }
+      `}</style>
+
       <div style={{
-        width: `${pct}%`, height: "100%", background: GRAD_R, borderRadius: 2,
-        animation: "barGrow .5s ease .1s both", transformOrigin: "left",
-      }} />
-    </div>
-  );
-}
+        minHeight: "100vh",
+        background: "radial-gradient(ellipse 80% 50% at 50% -10%, rgba(0,255,174,0.07) 0%, transparent 60%), #0a0a0a",
+        fontFamily: "-apple-system, 'SF Pro Display', BlinkMacSystemFont, sans-serif",
+        padding: "env(safe-area-inset-top, 0) 0 env(safe-area-inset-bottom, 0)",
+      }}>
 
-/* ─────────────────────────────────────────
-   EXPANDED PANELS
-───────────────────────────────────────── */
-
-// Analytics expanded
-function AnalyticsExpanded({ stats, th }: { stats: Props["stats"]; th: "light" | "dark" }) {
-  const t = THEMES[th];
-  const { totalProducts, totalCategories } = stats;
-  const items = [
-    { l: "Produtos", v: totalProducts, d: "no cardápio", c: G1 },
-    { l: "Categorias", v: totalCategories, d: "organizadas", c: "#fb923c" },
-  ];
-  return (
-    <div>
-      <div style={{ fontSize: 17, fontWeight: 900, color: t.text, fontFamily: F, letterSpacing: "-.4px", marginBottom: 4 }}>Analytics</div>
-      <div style={{ fontSize: 11, color: t.muted, fontFamily: F, marginBottom: 20 }}>Desempenho do seu cardápio</div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
-        {items.map((k, i) => (
-          <div key={i} style={{ background: t.surf, borderRadius: 14, padding: "16px 16px 14px", border: `1px solid ${t.border}`, animation: `slideUp .3s ease ${i * .08}s both` }}>
-            <div style={{ fontSize: 9, fontWeight: 700, color: t.muted, textTransform: "uppercase", letterSpacing: ".1em", fontFamily: F, marginBottom: 6 }}>{k.l}</div>
-            <div style={{ fontSize: 32, fontWeight: 900, color: t.text, fontFamily: F, letterSpacing: "-1.2px", lineHeight: 1 }}>{k.v}</div>
-            <MiniBar value={k.v} max={Math.max(k.v, 1) * 1.2} th={th} />
-            <div style={{ fontSize: 10, color: k.c, fontWeight: 700, fontFamily: F, marginTop: 6 }}>{k.d}</div>
-          </div>
-        ))}
-      </div>
-      <div style={{ background: `rgba(0,255,174,.06)`, border: `1px solid rgba(0,255,174,.15)`, borderRadius: 14, padding: "14px 16px", animation: "slideUp .3s ease .2s both" }}>
-        <div style={{ fontSize: 11, color: t.muted, fontFamily: F, marginBottom: 4 }}>Para métricas de views, acesse o painel de analytics completo em breve.</div>
-        <div style={{ fontSize: 12, fontWeight: 700, color: G1, fontFamily: F }}>Em desenvolvimento 🚀</div>
-      </div>
-    </div>
-  );
-}
-
-// Plano expanded
-function PlanoExpanded({ planLabel, trialDaysLeft, th }: { planLabel: string; trialDaysLeft: number | null; th: "light" | "dark" }) {
-  const t = THEMES[th];
-  const [annual, setAnnual] = useState(false);
-  const isBasic = planLabel === "BASIC";
-  const plans = [
-    { name: "Basic", mo: 29, yr: 23, curr: isBasic, cta: isBasic ? "Plano Atual" : "Fazer Downgrade", features: ["1 Unidade", "Link /u/slug", "WhatsApp integrado", "QR Code", "Analytics básico"] },
-    { name: "Pro", mo: 79, yr: 62, curr: !isBasic, hi: true, cta: isBasic ? "Fazer Upgrade" : "Plano Atual", features: ["Unidades ilimitadas", "Link /u/slug", "WhatsApp integrado", "QR Code", "Analytics avançado", "Domínio próprio", "Vídeos nos produtos", "Suporte prioritário"] },
-  ];
-  return (
-    <div>
-      <div style={{ fontSize: 17, fontWeight: 900, color: t.text, fontFamily: F, letterSpacing: "-.4px", marginBottom: 4 }}>Planos FyMenu</div>
-      <div style={{ fontSize: 11, color: t.muted, fontFamily: F, marginBottom: 20 }}>Escolha o plano ideal para o seu negócio</div>
-      {trialDaysLeft !== null && (
-        <div style={{ background: "rgba(251,191,36,.1)", border: "1px solid rgba(251,191,36,.25)", borderRadius: 12, padding: "12px 14px", marginBottom: 16, fontSize: 12, fontWeight: 700, color: "#fbbf24", fontFamily: F }}>
-          ⏳ {trialDaysLeft} dia{trialDaysLeft !== 1 ? "s" : ""} restantes no teste gratuito
-        </div>
-      )}
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18, padding: "10px 14px", background: t.surf, borderRadius: 11, border: `1px solid ${t.border}`, width: "fit-content" }}>
-        <span style={{ fontSize: 12, color: annual ? t.muted : t.text, fontWeight: annual ? 500 : 700, fontFamily: F }}>Mensal</span>
-        <div onClick={() => setAnnual(a => !a)} style={{ width: 36, height: 20, borderRadius: 10, cursor: "pointer", position: "relative", background: annual ? GRAD_R : t.border, transition: "background .22s" }}>
-          <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#fff", position: "absolute", top: 4, left: annual ? 20 : 4, transition: "left .2s" }} />
-        </div>
-        <span style={{ fontSize: 12, color: annual ? t.text : t.muted, fontWeight: annual ? 700 : 500, fontFamily: F }}>Anual</span>
-        {annual && <span style={{ fontSize: 9, padding: "3px 8px", borderRadius: 20, background: "rgba(0,255,174,.12)", color: G1, fontWeight: 800, fontFamily: F, animation: "springIn .3s cubic-bezier(.34,1.56,.64,1) both" }}>Economize 20%</span>}
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-        {plans.map((p, i) => (
-          <div key={i} style={{
-            background: p.hi ? "linear-gradient(135deg,rgba(0,255,174,.07),rgba(0,255,204,.04))" : t.surf,
-            border: `1px solid ${p.hi ? "rgba(0,255,174,.22)" : t.border}`,
-            borderRadius: 18, padding: 20,
-            boxShadow: p.hi ? `0 0 0 3px rgba(0,255,174,.08), 0 8px 24px rgba(0,0,0,.1)` : "none",
-            animation: `slideUp .35s ease ${i * .1}s both`,
-          }}>
-            <div style={{ fontSize: 18, fontWeight: 900, color: t.text, fontFamily: F, marginBottom: 2 }}>{p.name}</div>
-            <div style={{ fontSize: 28, fontWeight: 900, fontFamily: F, letterSpacing: "-1px", marginBottom: 4 }}>
-              <span style={{ background: GRAD_R, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                R${annual ? p.yr : p.mo}
-              </span>
-              <span style={{ fontSize: 11, color: t.muted, fontWeight: 600 }}>/mês</span>
+        {/* Header */}
+        <div style={{ padding: "56px 24px 8px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              {unit?.logo_url ? (
+                <img src={unit.logo_url} alt="" style={{ width: 36, height: 36, borderRadius: 10, objectFit: "cover" }} />
+              ) : (
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(0,255,174,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>🍽</div>
+              )}
+              <div>
+                <div style={{ color: "#fff", fontSize: 18, fontWeight: 800, letterSpacing: "-0.5px", lineHeight: 1.1 }}>{unit?.name ?? restaurant.name}</div>
+                <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 12 }}>{unit?.is_published ? "● Publicado" : "○ Não publicado"}</div>
+              </div>
             </div>
-            <div style={{ marginBottom: 14 }}>
-              {p.features.map((f, j) => (
-                <div key={j} style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 0", borderBottom: j < p.features.length - 1 ? `1px solid ${t.border}` : "none" }}>
-                  <div style={{ width: 5, height: 5, borderRadius: "50%", background: G1, flexShrink: 0 }} />
-                  <span style={{ fontSize: 11, color: t.text, fontFamily: F }}>{f}</span>
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            {unit && (
+              <a href={`/u/${unit.slug}`} target="_blank" rel="noreferrer" style={{
+                padding: "8px 14px", borderRadius: 12,
+                background: "rgba(255,255,255,0.07)",
+                border: "1px solid rgba(255,255,255,0.10)",
+                color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: 600, textDecoration: "none",
+              }}>Ver cardápio ↗</a>
+            )}
+          </div>
+        </div>
+
+        {/* Trial banner */}
+        {restaurant.status === "trial" && trialDays <= 5 && (
+          <div style={{ margin: "12px 24px", padding: "12px 16px", borderRadius: 14, background: "rgba(255,180,0,0.08)", border: "1px solid rgba(255,180,0,0.2)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ color: "#fbbf24", fontSize: 13, fontWeight: 600 }}>
+              ⏳ {trialDays} dia{trialDays !== 1 ? "s" : ""} de trial restante{trialDays !== 1 ? "s" : ""}
+            </div>
+            <button onClick={() => open("plano")} style={{ padding: "6px 12px", borderRadius: 8, border: "none", background: "rgba(255,180,0,0.2)", color: "#fbbf24", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Ver planos</button>
+          </div>
+        )}
+
+        {/* Grid principal */}
+        <div style={{
+          padding: "16px 16px 100px",
+          display: "grid",
+          gridTemplateColumns: "repeat(2, 1fr)",
+          gap: 12,
+        }}>
+
+          {/* Analytics */}
+          <div className="card" onClick={() => open("analytics")} style={{
+            gridColumn: "span 2",
+            borderRadius: 20, padding: "20px 24px",
+            background: "rgba(255,255,255,0.04)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            cursor: "pointer",
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
+              <div>
+                <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 4 }}>Últimos 7 dias</div>
+                <div style={{ color: "#fff", fontSize: 18, fontWeight: 800 }}>Analytics</div>
+              </div>
+              <div style={{ fontSize: 24 }}>📊</div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+              {[
+                { label: "Visitas", value: analytics.views, color: "#00ffae" },
+                { label: "Cliques", value: analytics.clicks, color: "#60a5fa" },
+                { label: "Pedidos", value: analytics.orders, color: "#f472b6" },
+              ].map((stat) => (
+                <div key={stat.label} style={{ textAlign: "center" }}>
+                  <div style={{ color: stat.color, fontSize: 26, fontWeight: 900, lineHeight: 1 }}>{stat.value}</div>
+                  <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 11, marginTop: 4 }}>{stat.label}</div>
                 </div>
               ))}
             </div>
-            <button style={{
-              width: "100%", padding: "10px", borderRadius: 11, border: "none", cursor: p.curr ? "default" : "pointer",
-              background: p.curr ? t.chip : GRAD_R,
-              color: p.curr ? t.muted : "#1a1a1c",
-              fontWeight: 800, fontSize: 12, fontFamily: F,
-              boxShadow: p.curr ? "none" : `0 4px 12px rgba(0,255,174,.24)`,
-            }}>{p.cta}</button>
           </div>
-        ))}
+
+          {/* Cardápio */}
+          <div className="card" onClick={() => open("cardapio")} style={{
+            borderRadius: 20, padding: "20px 18px",
+            background: "rgba(255,255,255,0.04)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            cursor: "pointer", minHeight: 140,
+            display: "flex", flexDirection: "column", justifyContent: "space-between",
+          }}>
+            <div style={{ fontSize: 28 }}>📋</div>
+            <div>
+              <div style={{ color: "#fff", fontSize: 16, fontWeight: 800, marginBottom: 4 }}>Cardápio</div>
+              <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 12 }}>{products.length} produto{products.length !== 1 ? "s" : ""}</div>
+            </div>
+          </div>
+
+          {/* Pedidos */}
+          <div className="card" onClick={() => open("pedidos")} style={{
+            borderRadius: 20, padding: "20px 18px",
+            background: "rgba(255,255,255,0.04)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            cursor: "pointer", minHeight: 140,
+            display: "flex", flexDirection: "column", justifyContent: "space-between",
+          }}>
+            <div style={{ fontSize: 28 }}>🛒</div>
+            <div>
+              <div style={{ color: "#fff", fontSize: 16, fontWeight: 800, marginBottom: 4 }}>Pedidos</div>
+              <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 12 }}>{analytics.orders} hoje</div>
+            </div>
+          </div>
+
+          {/* Unidade */}
+          <div className="card" onClick={() => open("unidade")} style={{
+            borderRadius: 20, padding: "20px 18px",
+            background: "rgba(255,255,255,0.04)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            cursor: "pointer", minHeight: 120,
+            display: "flex", flexDirection: "column", justifyContent: "space-between",
+          }}>
+            <div style={{ fontSize: 24 }}>📍</div>
+            <div>
+              <div style={{ color: "#fff", fontSize: 15, fontWeight: 800, marginBottom: 2 }}>Unidade</div>
+              <div style={{ color: unit?.is_published ? "#00ffae" : "rgba(255,255,255,0.35)", fontSize: 11, display: "flex", alignItems: "center", gap: 4 }}>
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: unit?.is_published ? "#00ffae" : "rgba(255,255,255,0.2)", display: "inline-block", animation: unit?.is_published ? "pulse 2s infinite" : "none" }} />
+                {unit?.is_published ? "Publicado" : "Não publicado"}
+              </div>
+            </div>
+          </div>
+
+          {/* Modo TV */}
+          <div className="card" onClick={() => open("tv")} style={{
+            borderRadius: 20, padding: "20px 18px",
+            background: "rgba(255,255,255,0.04)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            cursor: "pointer", minHeight: 120,
+            display: "flex", flexDirection: "column", justifyContent: "space-between",
+          }}>
+            <div style={{ fontSize: 24 }}>📺</div>
+            <div>
+              <div style={{ color: "#fff", fontSize: 15, fontWeight: 800, marginBottom: 2 }}>Modo TV</div>
+              <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 11 }}>{tvCount} vídeo{tvCount !== 1 ? "s" : ""} ativo{tvCount !== 1 ? "s" : ""}</div>
+            </div>
+          </div>
+
+          {/* Plano */}
+          <div className="card" onClick={() => open("plano")} style={{
+            borderRadius: 20, padding: "20px 18px",
+            background: isPro
+              ? "linear-gradient(135deg, rgba(250,204,21,0.08) 0%, rgba(251,146,60,0.08) 100%)"
+              : "rgba(255,255,255,0.04)",
+            border: isPro ? "1px solid rgba(250,204,21,0.2)" : "1px solid rgba(255,255,255,0.08)",
+            cursor: "pointer", minHeight: 120,
+            display: "flex", flexDirection: "column", justifyContent: "space-between",
+          }}>
+            <div style={{ fontSize: 24 }}>{isPro ? "⭐" : "🎯"}</div>
+            <div>
+              <div style={{ color: "#fff", fontSize: 15, fontWeight: 800, marginBottom: 2 }}>Plano</div>
+              <div style={{ color: isPro ? "#fbbf24" : "rgba(255,255,255,0.35)", fontSize: 11, fontWeight: isPro ? 700 : 400 }}>
+                {isPro ? "Pro" : restaurant.status === "trial" ? `Trial · ${trialDays}d` : "Basic"}
+              </div>
+            </div>
+          </div>
+
+          {/* Config */}
+          <div className="card" onClick={() => open("config")} style={{
+            borderRadius: 20, padding: "20px 18px",
+            background: "rgba(255,255,255,0.04)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            cursor: "pointer", minHeight: 120,
+            display: "flex", flexDirection: "column", justifyContent: "space-between",
+          }}>
+            <div style={{ fontSize: 24 }}>⚙️</div>
+            <div>
+              <div style={{ color: "#fff", fontSize: 15, fontWeight: 800, marginBottom: 2 }}>Configurações</div>
+              <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 11 }}>{profile.email?.split("@")[0]}</div>
+            </div>
+          </div>
+
+        </div>
       </div>
-    </div>
+
+      {/* ─── Modais ─────────────────────────────────────────────────────────── */}
+
+      {/* Analytics */}
+      <Modal open={modal === "analytics"} onClose={close} title="Analytics">
+        <AnalyticsModal analytics={analytics} unit={unit} />
+      </Modal>
+
+      {/* Cardápio */}
+      <Modal open={modal === "cardapio"} onClose={close} title="Cardápio">
+        <CardapioModal
+          unit={unit}
+          categories={categories}
+          products={products}
+          upsellItems={upsellItems}
+          onClose={close}
+        />
+      </Modal>
+
+      {/* Pedidos */}
+      <Modal open={modal === "pedidos"} onClose={close} title="Pedidos">
+        <PedidosModal unit={unit} />
+      </Modal>
+
+      {/* Unidade */}
+      <Modal open={modal === "unidade"} onClose={close} title="Unidade">
+        <UnidadeModal unit={unit} onClose={close} />
+      </Modal>
+
+      {/* Modo TV */}
+      <Modal open={modal === "tv"} onClose={close} title="Modo TV">
+        <TVModal unit={unit} tvCount={tvCount} />
+      </Modal>
+
+      {/* Plano */}
+      <Modal open={modal === "plano"} onClose={close} title="Plano">
+        <PlanoModal restaurant={restaurant} trialDays={trialDays} />
+      </Modal>
+
+      {/* Config */}
+      <Modal open={modal === "config"} onClose={close} title="Configurações">
+        <ConfigModal profile={profile} />
+      </Modal>
+    </>
   );
 }
 
-// Unidade expanded
-function UnidadeExpanded({ units, activeUnit, th }: { units: Props["units"]; activeUnit: Props["activeUnit"]; th: "light" | "dark" }) {
-  const t = THEMES[th];
+// ─── Analytics Modal ─────────────────────────────────────────────────────────
+function AnalyticsModal({ analytics, unit }: { analytics: any; unit: Unit | null }) {
+  const stats = [
+    { label: "Visitas ao cardápio", value: analytics.views, icon: "👁", color: "#00ffae", desc: "últimos 7 dias" },
+    { label: "Cliques em produtos", value: analytics.clicks, icon: "👆", color: "#60a5fa", desc: "últimos 7 dias" },
+    { label: "Pedidos enviados", value: analytics.orders, icon: "✅", color: "#f472b6", desc: "últimos 7 dias" },
+  ];
+  const conversion = analytics.views > 0 ? ((analytics.orders / analytics.views) * 100).toFixed(1) : "0.0";
   return (
-    <div>
-      <div style={{ fontSize: 17, fontWeight: 900, color: t.text, fontFamily: F, letterSpacing: "-.4px", marginBottom: 4 }}>Suas Unidades</div>
-      <div style={{ fontSize: 11, color: t.muted, fontFamily: F, marginBottom: 20 }}>Gerencie e configure cada unidade</div>
-      {units.map((unit: any, i: number) => (
-        <div key={unit.id} style={{
-          background: unit.id === activeUnit?.id ? "rgba(0,255,174,.05)" : t.surf,
-          border: `1px solid ${unit.id === activeUnit?.id ? "rgba(0,255,174,.22)" : t.border}`,
-          borderRadius: 14, padding: "14px 16px", marginBottom: 10,
-          animation: `fadeUp .26s ease ${i * .05}s both`,
-        }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                <div style={{ width: 6, height: 6, borderRadius: "50%", background: G1, boxShadow: `0 0 5px ${G1}` }} />
-                <span style={{ fontSize: 14, fontWeight: 800, color: t.text, fontFamily: F }}>{unit.name}</span>
-                {unit.id === activeUnit?.id && <span style={{ fontSize: 9, padding: "2px 8px", borderRadius: 20, background: "rgba(0,255,174,.12)", color: G1, fontWeight: 800, fontFamily: F }}>Ativa</span>}
-              </div>
-              <div style={{ fontSize: 11, color: t.muted, fontFamily: F, marginLeft: 14 }}>fymenu.app/u/{unit.slug}</div>
-            </div>
-            <div style={{ display: "flex", gap: 8 }}>
-              <a href={`/u/${unit.slug}`} target="_blank" rel="noreferrer" style={{
-                padding: "6px 12px", borderRadius: 9, border: `1px solid ${t.border}`,
-                background: "transparent", color: t.muted, fontSize: 11, fontWeight: 700, fontFamily: F,
-                textDecoration: "none", whiteSpace: "nowrap",
-              }}>Ver ↗</a>
-              <Link href="/dashboard/unit" style={{
-                padding: "6px 12px", borderRadius: 9, border: "none",
-                background: GRAD_R, color: "#1a1a1c", fontSize: 11, fontWeight: 800, fontFamily: F,
-                textDecoration: "none", whiteSpace: "nowrap",
-              }}>Config</Link>
-            </div>
+    <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingTop: 8 }}>
+      {stats.map((s) => (
+        <div key={s.label} style={{ borderRadius: 16, padding: "18px 20px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", display: "flex", alignItems: "center", gap: 16 }}>
+          <div style={{ fontSize: 28 }}>{s.icon}</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}>{s.label}</div>
+            <div style={{ color: s.color, fontSize: 28, fontWeight: 900, lineHeight: 1.1 }}>{s.value}</div>
+            <div style={{ color: "rgba(255,255,255,0.25)", fontSize: 11 }}>{s.desc}</div>
           </div>
         </div>
       ))}
-      <Link href="/dashboard/unit" style={{
-        display: "block", width: "100%", padding: "11px", borderRadius: 11,
-        background: t.surf, border: `1px dashed ${t.border}`,
-        color: t.muted, fontWeight: 700, fontSize: 12, fontFamily: F,
-        textDecoration: "none", textAlign: "center", boxSizing: "border-box",
-        marginTop: 4,
-      }}>+ Configurar unidade</Link>
+      <div style={{ borderRadius: 16, padding: "18px 20px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+        <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, marginBottom: 4 }}>Taxa de conversão</div>
+        <div style={{ color: "#fff", fontSize: 32, fontWeight: 900 }}>{conversion}%</div>
+        <div style={{ color: "rgba(255,255,255,0.25)", fontSize: 11 }}>visitas → pedidos</div>
+      </div>
+      {unit && (
+        <a href={`/u/${unit.slug}`} target="_blank" rel="noreferrer" style={{ display: "block", textAlign: "center", padding: "14px", borderRadius: 14, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(255,255,255,0.6)", fontSize: 14, fontWeight: 600, textDecoration: "none" }}>
+          Ver cardápio público ↗
+        </a>
+      )}
     </div>
   );
 }
 
-// Conta expanded
-function ContaExpanded({ restaurant, th }: { restaurant: Props["restaurant"]; th: "light" | "dark" }) {
-  const t = THEMES[th];
-  const initials = (restaurant?.name ?? "?").split(" ").slice(0, 2).map((w: string) => w[0]).join("").toUpperCase();
+// ─── Cardápio Modal ───────────────────────────────────────────────────────────
+function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
+  unit: Unit | null; categories: Category[]; products: Product[]; upsellItems: any[]; onClose: () => void;
+}) {
+  const [expandedCat, setExpandedCat] = useState<string | null>(categories[0]?.id ?? null);
+  const productsByCat = categories.reduce<Record<string, Product[]>>((acc, cat) => {
+    acc[cat.id] = products.filter((p) => p.category_id === cat.id);
+    return acc;
+  }, {});
+
   return (
-    <div>
-      <div style={{ fontSize: 17, fontWeight: 900, color: t.text, fontFamily: F, letterSpacing: "-.4px", marginBottom: 4 }}>Minha Conta</div>
-      <div style={{ fontSize: 11, color: t.muted, fontFamily: F, marginBottom: 20 }}>Gerencie informações e preferências</div>
-      <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 24, padding: "16px", background: t.surf, borderRadius: 16, border: `1px solid ${t.border}` }}>
-        <div style={{ width: 52, height: 52, borderRadius: 16, background: GRAD_R, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 900, color: "#1a1a1c", fontFamily: F, flexShrink: 0 }}>{initials}</div>
+    <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingTop: 8 }}>
+      {/* Links rápidos */}
+      <div style={{ display: "flex", gap: 8 }}>
+        {unit && (
+          <a href={`/u/${unit.slug}`} target="_blank" rel="noreferrer" style={{ flex: 1, textAlign: "center", padding: "10px", borderRadius: 12, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(255,255,255,0.6)", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>Ver cardápio ↗</a>
+        )}
+        <a href="/dashboard/ia" style={{ flex: 1, textAlign: "center", padding: "10px", borderRadius: 12, background: "rgba(0,255,174,0.08)", border: "1px solid rgba(0,255,174,0.15)", color: "#00ffae", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>✨ Importar com IA</a>
+      </div>
+
+      {/* Nova categoria */}
+      {unit && (
+        <form action={createCategory} style={{ display: "flex", gap: 8 }}>
+          <input type="hidden" name="unit_id" value={unit.id} />
+          <input name="name" placeholder="+ Nova categoria" required style={{ ...inp, flex: 1 }} />
+          <button type="submit" style={{ padding: "11px 18px", borderRadius: 12, border: "none", background: "rgba(0,255,174,0.15)", color: "#00ffae", fontSize: 14, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>Criar</button>
+        </form>
+      )}
+
+      {categories.length === 0 && (
+        <div style={{ textAlign: "center", padding: "40px 0", color: "rgba(255,255,255,0.2)", fontSize: 14 }}>Crie sua primeira categoria acima!</div>
+      )}
+
+      {categories.map((cat) => {
+        const isOpen = expandedCat === cat.id;
+        const catProducts = productsByCat[cat.id] ?? [];
+        return (
+          <div key={cat.id} style={{ borderRadius: 16, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.03)", overflow: "hidden" }}>
+            <div style={{ display: "flex", alignItems: "center", padding: "14px 16px", gap: 10, cursor: "pointer" }} onClick={() => setExpandedCat(isOpen ? null : cat.id)}>
+              <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, transform: isOpen ? "rotate(90deg)" : "none", transition: "transform 0.2s", display: "inline-block" }}>▶</span>
+              <form action={updateCategory} onClick={(e) => e.stopPropagation()} style={{ flex: 1, display: "flex", gap: 8 }}>
+                <input type="hidden" name="id" value={cat.id} />
+                <input name="name" defaultValue={cat.name} style={{ ...inp, flex: 1, fontSize: 15, fontWeight: 800 }} />
+                <button type="submit" style={{ padding: "8px 14px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.12)", background: "transparent", color: "rgba(255,255,255,0.5)", fontSize: 12, cursor: "pointer" }}>Salvar</button>
+              </form>
+              <form action={deleteCategory} onClick={(e) => e.stopPropagation()} onSubmit={(e) => { if (!confirm("Excluir categoria e todos os produtos?")) e.preventDefault(); }}>
+                <input type="hidden" name="id" value={cat.id} />
+                <button type="submit" style={{ padding: "6px 12px", borderRadius: 8, border: "none", background: "rgba(255,80,80,0.12)", color: "#f87171", fontSize: 12, cursor: "pointer" }}>✕</button>
+              </form>
+            </div>
+            {isOpen && (
+              <div style={{ padding: "0 12px 12px", display: "flex", flexDirection: "column", gap: 8 }}>
+                {catProducts.length === 0 && <div style={{ color: "rgba(255,255,255,0.2)", fontSize: 13, padding: "8px 0" }}>Nenhum produto nesta categoria.</div>}
+                {catProducts.map((p) => (
+                  <ProductRowInline key={p.id} product={p} allProducts={products.filter((o) => o.id !== p.id)} />
+                ))}
+                <NewProductFormInline categoryId={cat.id} />
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function ProductRowInline({ product, allProducts }: { product: Product; allProducts: Product[] }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ borderRadius: 12, border: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.03)", overflow: "hidden" }}>
+      <div style={{ display: "flex", alignItems: "center", padding: "11px 12px", gap: 10, cursor: "pointer" }} onClick={() => setOpen(o => !o)}>
+        {product.thumbnail_url ? (
+          <img src={product.thumbnail_url} alt="" style={{ width: 40, height: 40, borderRadius: 8, objectFit: "cover", flexShrink: 0 }} />
+        ) : (
+          <div style={{ width: 40, height: 40, borderRadius: 8, flexShrink: 0, background: "rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>🍽</div>
+        )}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ color: "#fff", fontWeight: 700, fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{product.name}</div>
+          <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 12 }}>
+            {product.price_type === "variable" ? "Preço variável" : product.base_price != null ? `R$ ${Number(product.base_price).toFixed(2).replace(".", ",")}` : "Sem preço"}
+          </div>
+        </div>
+        <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 11 }}>{open ? "▲" : "▼"}</span>
+      </div>
+      {open && (
+        <div style={{ padding: "0 12px 12px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+          <form action={updateProduct} style={{ display: "flex", flexDirection: "column", gap: 8, paddingTop: 10 }}>
+            <input type="hidden" name="id" value={product.id} />
+            <input name="name" defaultValue={product.name} placeholder="Nome" required style={inp} />
+            <textarea name="description" defaultValue={product.description ?? ""} placeholder="Descrição (opcional)" rows={2} style={{ ...inp, resize: "vertical" }} />
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              <input name="base_price" defaultValue={product.base_price != null ? String(product.base_price).replace(".", ",") : ""} placeholder="Preço (ex: 29,90)" inputMode="decimal" style={inp} />
+              <select name="price_type" defaultValue={product.price_type} style={{ ...inp, cursor: "pointer" }}>
+                <option value="fixed">Preço fixo</option>
+                <option value="variable">Preço variável</option>
+              </select>
+            </div>
+            <input name="thumbnail_url" defaultValue={product.thumbnail_url ?? ""} placeholder="URL da thumbnail" style={inp} />
+            <input name="video_url" defaultValue={product.video_url ?? ""} placeholder="URL do vídeo" style={inp} />
+            <button type="submit" style={{ padding: "10px", borderRadius: 10, border: "none", background: "rgba(0,255,174,0.15)", color: "#00ffae", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Salvar produto</button>
+          </form>
+          <form action={deleteProduct} style={{ marginTop: 8 }} onSubmit={(e) => { if (!confirm("Excluir produto?")) e.preventDefault(); }}>
+            <input type="hidden" name="id" value={product.id} />
+            <button type="submit" style={{ padding: "10px", borderRadius: 10, border: "none", background: "rgba(255,80,80,0.10)", color: "#f87171", fontSize: 13, fontWeight: 600, cursor: "pointer", width: "100%" }}>Excluir produto</button>
+          </form>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function NewProductFormInline({ categoryId }: { categoryId: string }) {
+  const [open, setOpen] = useState(false);
+  if (!open) return (
+    <button onClick={() => setOpen(true)} style={{ padding: "10px", borderRadius: 10, width: "100%", background: "transparent", border: "1px dashed rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.4)", fontSize: 13, cursor: "pointer" }}>
+      + Adicionar produto
+    </button>
+  );
+  return (
+    <form action={createProduct} style={{ display: "flex", flexDirection: "column", gap: 8, padding: 12, borderRadius: 12, border: "1px solid rgba(255,255,255,0.10)", background: "rgba(255,255,255,0.04)" }}>
+      <input type="hidden" name="category_id" value={categoryId} />
+      <input name="name" placeholder="Nome do produto" required style={inp} />
+      <textarea name="description" placeholder="Descrição (opcional)" rows={2} style={{ ...inp, resize: "vertical" }} />
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+        <input name="base_price" placeholder="Preço (ex: 29,90)" inputMode="decimal" style={inp} />
+        <select name="price_type" defaultValue="fixed" style={{ ...inp, cursor: "pointer" }}>
+          <option value="fixed">Preço fixo</option>
+          <option value="variable">Preço variável</option>
+        </select>
+      </div>
+      <input name="thumbnail_url" placeholder="URL da thumbnail" style={inp} />
+      <input name="video_url" placeholder="URL do vídeo" style={inp} />
+      <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+        <button type="button" onClick={() => setOpen(false)} style={{ padding: "9px 14px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.12)", background: "transparent", color: "rgba(255,255,255,0.5)", fontSize: 12, cursor: "pointer" }}>Cancelar</button>
+        <button type="submit" style={{ padding: "9px 16px", borderRadius: 10, border: "none", background: "rgba(0,255,174,0.15)", color: "#00ffae", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Criar</button>
+      </div>
+    </form>
+  );
+}
+
+// ─── Pedidos Modal ────────────────────────────────────────────────────────────
+function PedidosModal({ unit }: { unit: Unit | null }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingTop: 8 }}>
+      <div style={{ borderRadius: 16, padding: "18px 20px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+        <div style={{ fontSize: 24, marginBottom: 8 }}>💬</div>
+        <div style={{ color: "#fff", fontSize: 16, fontWeight: 700, marginBottom: 4 }}>WhatsApp</div>
+        <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginBottom: 16 }}>Os pedidos são enviados automaticamente para o WhatsApp cadastrado na unidade com mensagem estruturada e tracking.</div>
+        <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 13 }}>WhatsApp atual: <span style={{ color: "#fff" }}>{unit?.whatsapp ?? "Não configurado"}</span></div>
+      </div>
+      <div style={{ borderRadius: 16, padding: "18px 20px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+        <div style={{ fontSize: 24, marginBottom: 8 }}>🛵</div>
+        <div style={{ color: "#fff", fontSize: 16, fontWeight: 700, marginBottom: 4 }}>iFood</div>
+        <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 13 }}>Redireciona o cliente para o seu perfil no iFood. Configure na aba Unidade.</div>
+      </div>
+      <div style={{ borderRadius: 14, padding: "14px 16px", background: "rgba(255,180,0,0.06)", border: "1px solid rgba(255,180,0,0.15)" }}>
+        <div style={{ color: "#fbbf24", fontSize: 13 }}>💡 Configure o WhatsApp e as redes sociais na seção <strong>Unidade</strong> para ativar o recebimento de pedidos.</div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Unidade Modal ────────────────────────────────────────────────────────────
+function UnidadeModal({ unit, onClose }: { unit: Unit | null; onClose: () => void }) {
+  if (!unit) return <div style={{ color: "rgba(255,255,255,0.4)", paddingTop: 16 }}>Nenhuma unidade encontrada.</div>;
+  return (
+    <form action={updateUnit} onSubmit={() => setTimeout(onClose, 300)} style={{ display: "flex", flexDirection: "column", gap: 10, paddingTop: 8 }}>
+      <input type="hidden" name="id" value={unit.id} />
+
+      <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 4 }}>
+        {unit.logo_url && <img src={unit.logo_url} alt="" style={{ width: 48, height: 48, borderRadius: 12, objectFit: "cover" }} />}
+        <div style={{ flex: 1 }}>
+          <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, marginBottom: 4 }}>URL do logo</div>
+          <input name="logo_url" defaultValue={unit.logo_url ?? ""} placeholder="https://..." style={inp} />
+        </div>
+      </div>
+
+      {[
+        { name: "name", label: "Nome da unidade", value: unit.name },
+        { name: "address", label: "Endereço", value: unit.address },
+        { name: "city", label: "Cidade", value: unit.city ?? "" },
+        { name: "neighborhood", label: "Bairro", value: unit.neighborhood ?? "" },
+        { name: "whatsapp", label: "WhatsApp", value: unit.whatsapp ?? "" },
+        { name: "instagram", label: "Instagram", value: unit.instagram ?? "" },
+        { name: "maps_url", label: "Link do Google Maps", value: unit.maps_url ?? "" },
+      ].map((f) => (
+        <div key={f.name}>
+          <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, marginBottom: 4 }}>{f.label}</div>
+          <input name={f.name} defaultValue={f.value} style={inp} />
+        </div>
+      ))}
+
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 0 4px" }}>
         <div>
-          <div style={{ fontSize: 16, fontWeight: 800, color: t.text, fontFamily: F }}>{restaurant?.name}</div>
-          <div style={{ fontSize: 11, color: t.muted, fontFamily: F, marginTop: 3 }}>{restaurant?.email ?? "–"}</div>
+          <div style={{ color: "#fff", fontSize: 14, fontWeight: 600 }}>Publicar cardápio</div>
+          <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 12 }}>Cardápio visível publicamente</div>
         </div>
+        <label style={{ display: "flex", alignItems: "center", cursor: "pointer" }}>
+          <input type="checkbox" name="is_published" defaultChecked={unit.is_published} style={{ display: "none" }} id="pub-toggle" />
+          <div
+            style={{
+              width: 44, height: 26, borderRadius: 13,
+              background: unit.is_published ? "#00ffae" : "rgba(255,255,255,0.15)",
+              position: "relative", transition: "background 0.2s",
+            }}
+            onClick={(e) => {
+              const cb = document.getElementById("pub-toggle") as HTMLInputElement;
+              if (cb) { cb.checked = !cb.checked; (e.currentTarget as HTMLDivElement).style.background = cb.checked ? "#00ffae" : "rgba(255,255,255,0.15)"; (e.currentTarget.querySelector("span") as HTMLSpanElement).style.transform = cb.checked ? "translateX(18px)" : "translateX(0)"; }
+            }}
+          >
+            <span style={{ display: "block", width: 20, height: 20, borderRadius: "50%", background: "#fff", position: "absolute", top: 3, left: 3, transition: "transform 0.2s", transform: unit.is_published ? "translateX(18px)" : "translateX(0)" }} />
+          </div>
+        </label>
       </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        {[
-          { href: "/dashboard/account", icon: "👤", label: "Dados pessoais", sub: "Nome, email, senha" },
-          { href: "/dashboard/unit", icon: "🏪", label: "Configurar unidade", sub: "Logo, slug, WhatsApp, Instagram" },
-          { href: "/dashboard/cardapio", icon: "📋", label: "Gerenciar cardápio", sub: "Categorias e produtos" },
-        ].map((item, i) => (
-          <Link key={i} href={item.href} style={{
-            display: "flex", alignItems: "center", gap: 14, padding: "13px 16px",
-            background: t.surf, border: `1px solid ${t.border}`, borderRadius: 13,
-            textDecoration: "none", animation: `fadeUp .24s ease ${i * .06}s both`,
-          }}>
-            <div style={{ width: 38, height: 38, borderRadius: 11, background: t.chip, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>{item.icon}</div>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: t.text, fontFamily: F }}>{item.label}</div>
-              <div style={{ fontSize: 11, color: t.muted, fontFamily: F, marginTop: 2 }}>{item.sub}</div>
-            </div>
-            <div style={{ marginLeft: "auto", color: t.muted, fontSize: 16 }}>→</div>
-          </Link>
-        ))}
+
+      <button type="submit" style={{ marginTop: 8, padding: "14px", borderRadius: 14, border: "none", background: "rgba(0,255,174,0.15)", color: "#00ffae", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>Salvar unidade</button>
+    </form>
+  );
+}
+
+// ─── TV Modal ─────────────────────────────────────────────────────────────────
+function TVModal({ unit, tvCount }: { unit: Unit | null; tvCount: number }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingTop: 8 }}>
+      <div style={{ borderRadius: 16, padding: "20px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", textAlign: "center" }}>
+        <div style={{ fontSize: 40, marginBottom: 12 }}>📺</div>
+        <div style={{ color: "#fff", fontSize: 16, fontWeight: 700, marginBottom: 4 }}>{tvCount} vídeo{tvCount !== 1 ? "s" : ""} ativo{tvCount !== 1 ? "s" : ""}</div>
+        <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginBottom: 16 }}>Exiba seus produtos em modo fullscreen para TV, totem ou projetor.</div>
+        {unit && (
+          <a href={`/u/${unit.slug}/tv`} target="_blank" rel="noreferrer" style={{ display: "block", padding: "12px", borderRadius: 12, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.7)", fontSize: 14, fontWeight: 600, textDecoration: "none", marginBottom: 10 }}>
+            Abrir display público ↗
+          </a>
+        )}
+        <a href="/dashboard/tv" style={{ display: "block", padding: "12px", borderRadius: 12, border: "none", background: "rgba(0,255,174,0.15)", color: "#00ffae", fontSize: 14, fontWeight: 700, textDecoration: "none" }}>
+          Gerenciar vídeos →
+        </a>
+      </div>
+      <div style={{ borderRadius: 14, padding: "14px 16px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+        <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 13 }}>
+          🎬 Vídeos até 15 segundos · Sem som · Autoplay · Vertical ou horizontal
+        </div>
       </div>
     </div>
   );
 }
 
-/* ─────────────────────────────────────────
-   COLLAPSED CARD COMPONENTS
-───────────────────────────────────────── */
-
-// C1 — Stats wide card
-function CardStats({ stats, onOpen, th }: { stats: Props["stats"]; onOpen: () => void; th: "light" | "dark" }) {
-  const t = THEMES[th];
-  const { totalProducts, totalCategories } = stats;
-  const items = [
-    { l: "Produtos", v: totalProducts, c: G1 },
-    { l: "Categorias", v: totalCategories, c: "#fb923c" },
-  ];
+// ─── Plano Modal ──────────────────────────────────────────────────────────────
+function PlanoModal({ restaurant, trialDays }: { restaurant: Restaurant; trialDays: number }) {
+  const isPro = restaurant.plan === "pro";
   return (
-    <CardLayout label="Visão Geral" onOpen={onOpen} th={th} glowColor={G1}>
-      <div style={{ display: "flex", gap: 10, marginBottom: 6 }}>
-        {items.map((k, i) => (
-          <div key={i} style={{ flex: 1, background: t.surf, borderRadius: 10, padding: "8px 10px", border: `1px solid ${t.border}` }}>
-            <div style={{ fontSize: 22, fontWeight: 900, color: k.c, fontFamily: F, letterSpacing: "-1px", lineHeight: 1 }}>{k.v}</div>
-            <div style={{ fontSize: 8, color: t.muted, fontFamily: F, marginTop: 3, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".08em" }}>{k.l}</div>
-          </div>
-        ))}
-      </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 30 }}>
-        <div style={{ width: 5, height: 5, borderRadius: "50%", background: G1, animation: "pulse 2s ease infinite", boxShadow: `0 0 4px ${G1}` }} />
-        <span style={{ fontSize: 9, color: t.muted, fontFamily: F }}>Analytics completo em breve</span>
-      </div>
-    </CardLayout>
-  );
-}
-
-// C2 — Plano card
-function CardPlano({ planLabel, trialDaysLeft, onOpen, th }: { planLabel: string; trialDaysLeft: number | null; onOpen: () => void; th: "light" | "dark" }) {
-  const t = THEMES[th];
-  const isBasic = planLabel === "BASIC";
-  return (
-    <CardLayout label="Plano Atual" onOpen={onOpen} th={th} glowColor="#818cf8">
-      <div style={{ fontSize: 26, fontWeight: 900, color: t.text, fontFamily: F, letterSpacing: "-.5px", marginBottom: 2 }}>{planLabel}</div>
-      <div style={{ fontSize: 9, color: t.muted, fontFamily: F, marginBottom: 8 }}>{isBasic ? "1 Unidade · WhatsApp" : "Ilimitado · Todos recursos"}</div>
-      {trialDaysLeft !== null && (
-        <div style={{ fontSize: 9, color: "#fbbf24", fontWeight: 700, fontFamily: F, marginBottom: 6 }}>⏳ {trialDaysLeft}d restantes</div>
-      )}
-      <button style={{ width: "100%", padding: "7px", borderRadius: 10, border: "none", cursor: "pointer", background: GRAD_R, color: "#1a1a1c", fontFamily: F, fontWeight: 800, fontSize: 10, boxShadow: `0 3px 10px rgba(0,255,174,.28)`, marginBottom: 28 }}>
-        {isBasic ? "Upgrade →" : "Ver Planos"}
-      </button>
-    </CardLayout>
-  );
-}
-
-// C3 — Unidade card
-function CardUnidade({ activeUnit, units, onOpen, th }: { activeUnit: Props["activeUnit"]; units: Props["units"]; onOpen: () => void; th: "light" | "dark" }) {
-  const t = THEMES[th];
-  return (
-    <CardLayout label="Unidade Ativa" onOpen={onOpen} th={th}>
-      <div style={{ fontSize: 14, fontWeight: 900, color: t.text, fontFamily: F, marginBottom: 3, letterSpacing: "-.3px" }}>{activeUnit?.name}</div>
-      <div style={{ fontSize: 9, color: G1, fontFamily: F, marginBottom: 6, fontWeight: 700 }}>/u/{activeUnit?.slug}</div>
-      <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-        <div style={{ width: 5, height: 5, borderRadius: "50%", background: G1, boxShadow: `0 0 5px ${G1}`, animation: "pulse 2s ease infinite" }} />
-        <span style={{ fontSize: 9, color: t.muted, fontFamily: F }}>{units.length} unidade{units.length !== 1 ? "s" : ""}</span>
-      </div>
-      <a href={`/u/${activeUnit?.slug}`} target="_blank" rel="noreferrer" style={{
-        display: "block", marginTop: 8, padding: "6px 0", borderRadius: 8, background: t.surf,
-        border: `1px solid ${t.border}`, color: t.muted, fontSize: 9, fontWeight: 700, fontFamily: F,
-        textDecoration: "none", textAlign: "center", marginBottom: 28,
-      }}>Ver ao vivo ↗</a>
-    </CardLayout>
-  );
-}
-
-// C5 — Conta quick card
-function CardConta({ restaurant, onOpen, th }: { restaurant: Props["restaurant"]; onOpen: () => void; th: "light" | "dark" }) {
-  const t = THEMES[th];
-  const initials = (restaurant?.name ?? "?").split(" ").slice(0, 2).map((w: string) => w[0]).join("").toUpperCase();
-  return (
-    <CardLayout label="Conta" onOpen={onOpen} th={th} glowColor="#818cf8">
-      <div style={{ display: "flex", justifyContent: "center", marginBottom: 8, marginTop: 4 }}>
-        <div style={{ width: 42, height: 42, borderRadius: 13, background: GRAD_R, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 900, color: "#1a1a1c", fontFamily: F }}>
-          {initials}
-        </div>
-      </div>
-      <div style={{ textAlign: "center" }}>
-        <div style={{ fontSize: 11, fontWeight: 800, color: t.text, fontFamily: F }}>{(restaurant?.name ?? "").split(" ")[0]}</div>
-        <div style={{ fontSize: 8, color: t.muted, fontFamily: F, marginTop: 2 }}>Gerenciar conta</div>
-      </div>
-      <div style={{ marginBottom: 28 }} />
-    </CardLayout>
-  );
-}
-
-/* ─────────────────────────────────────────
-   ROOT COMPONENT
-───────────────────────────────────────── */
-export default function DashboardClient({ restaurant, units, activeUnit, stats }: Props) {
-  const [dark, setDark] = useState(true);
-  const [open, setOpen] = useState<string | null>(null);
-  const th = dark ? "dark" : "light";
-  const t = THEMES[th];
-  const { planLabel, trialDaysLeft } = stats;
-  const isTrial = trialDaysLeft !== null;
-  const initials = (restaurant?.name ?? "?").split(" ").slice(0, 2).map((w: string) => w[0]).join("").toUpperCase();
-
-  const EXPANDED: Record<string, React.ReactNode> = {
-    analytics: <AnalyticsExpanded stats={stats} th={th} />,
-    plano: <PlanoExpanded planLabel={planLabel} trialDaysLeft={trialDaysLeft} th={th} />,
-    unidade: <UnidadeExpanded units={units} activeUnit={activeUnit} th={th} />,
-    conta: <ContaExpanded restaurant={restaurant} th={th} />,
-  };
-
-  return (
-    <div style={{ background: t.bg, minHeight: "100vh", fontFamily: F, padding: "20px 20px 56px", transition: "background .3s" }}>
-
-      {/* ── HEADER ── */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", maxWidth: 980, margin: "0 auto 20px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 32, height: 32, borderRadius: 9, background: GRAD_R, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 900, color: "#1a1a1c", boxShadow: `0 4px 12px rgba(0,255,174,.3)` }}>F</div>
-          <span style={{ fontSize: 16, fontWeight: 900, color: t.text, fontFamily: F, letterSpacing: "-.3px", transition: "color .3s" }}>FyMenu</span>
-        </div>
-        <ThemeToggle dark={dark} onToggle={() => setDark(d => !d)} />
-        <div
-          onClick={() => setOpen("conta")}
-          style={{ width: 32, height: 32, borderRadius: 9, background: GRAD_R, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 900, color: "#1a1a1c", cursor: "pointer", boxShadow: `0 4px 12px rgba(0,255,174,.28)` }}
-        >{initials}</div>
+    <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingTop: 8 }}>
+      {/* Status atual */}
+      <div style={{ borderRadius: 16, padding: "20px", background: isPro ? "linear-gradient(135deg, rgba(250,204,21,0.08), rgba(251,146,60,0.08))" : "rgba(255,255,255,0.04)", border: isPro ? "1px solid rgba(250,204,21,0.2)" : "1px solid rgba(255,255,255,0.08)" }}>
+        <div style={{ fontSize: 28, marginBottom: 8 }}>{isPro ? "⭐" : "🎯"}</div>
+        <div style={{ color: "#fff", fontSize: 18, fontWeight: 800 }}>{isPro ? "Plano Pro" : restaurant.status === "trial" ? `Trial ativo` : "Plano Basic"}</div>
+        {restaurant.status === "trial" && <div style={{ color: "#fbbf24", fontSize: 13, marginTop: 4 }}>⏳ {trialDays} dia{trialDays !== 1 ? "s" : ""} restante{trialDays !== 1 ? "s" : ""}</div>}
       </div>
 
-      {/* ── TRIAL BANNER ── */}
-      {isTrial && trialDaysLeft !== null && trialDaysLeft <= 7 && (
-        <div style={{
-          maxWidth: 980, margin: "0 auto 14px",
-          borderRadius: 14,
-          background: trialDaysLeft <= 2 ? "rgba(239,68,68,.12)" : "rgba(251,191,36,.10)",
-          border: `1px solid ${trialDaysLeft <= 2 ? "rgba(239,68,68,.3)" : "rgba(251,191,36,.25)"}`,
-          padding: "12px 18px",
-          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
-          animation: "slideUp .4s ease both",
-        }}>
-          <div>
-            <div style={{ color: t.text, fontWeight: 800, fontSize: 13, fontFamily: F }}>
-              {trialDaysLeft <= 0 ? "Seu período de teste expirou" : `${trialDaysLeft} dia${trialDaysLeft !== 1 ? "s" : ""} restantes no teste`}
+      {/* Planos */}
+      {!isPro && (
+        <>
+          {[
+            { name: "Basic", price: "Grátis", features: ["1 unidade", "Cardápio digital", "Modo TV", "IA básica"], color: "rgba(255,255,255,0.06)" },
+            { name: "Pro", price: "Em breve", features: ["Múltiplas unidades", "Analytics avançado", "Relatórios", "Suporte prioritário"], color: "rgba(0,255,174,0.06)", highlight: true },
+          ].map((plan) => (
+            <div key={plan.name} style={{ borderRadius: 16, padding: "18px 20px", background: plan.color, border: plan.highlight ? "1px solid rgba(0,255,174,0.2)" : "1px solid rgba(255,255,255,0.07)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                <div style={{ color: "#fff", fontSize: 16, fontWeight: 800 }}>{plan.name}</div>
+                <div style={{ color: plan.highlight ? "#00ffae" : "rgba(255,255,255,0.5)", fontSize: 14, fontWeight: 700 }}>{plan.price}</div>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {plan.features.map((f) => (
+                  <div key={f} style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ color: plan.highlight ? "#00ffae" : "rgba(255,255,255,0.3)" }}>✓</span> {f}
+                  </div>
+                ))}
+              </div>
             </div>
-            <div style={{ color: t.muted, fontSize: 11, marginTop: 2, fontFamily: F }}>Ative um plano para continuar publicado</div>
-          </div>
-          <button onClick={() => setOpen("plano")} style={{
-            padding: "8px 16px", borderRadius: 10, border: "none",
-            background: GRAD_R, color: "#1a1a1c", fontWeight: 800, fontSize: 12, fontFamily: F, cursor: "pointer", whiteSpace: "nowrap",
-          }}>Ver planos</button>
-        </div>
+          ))}
+        </>
       )}
+    </div>
+  );
+}
 
-      {/* ── BENTO GRID — responsivo via .fy-bento ── */}
-      <div className="fy-bento" style={{ maxWidth: 980, margin: "0 auto" }}>
-
-        {/* Stats — wide, 2 cols × 2 rows */}
-        <div style={{ gridColumn: "span 2", gridRow: "span 2" }}>
-          <CardStats stats={stats} onOpen={() => setOpen("analytics")} th={th} />
-        </div>
-
-        {/* Plano — 1 col × 2 rows */}
-        <div style={{ gridRow: "span 2" }}>
-          <CardPlano planLabel={planLabel} trialDaysLeft={trialDaysLeft} onOpen={() => setOpen("plano")} th={th} />
-        </div>
-
-        {/* Conta — 1 col × 2 rows */}
-        <div style={{ gridRow: "span 2" }}>
-          <CardConta restaurant={restaurant} onOpen={() => setOpen("conta")} th={th} />
-        </div>
-
-        {/* Unidade — 1 col × 3 rows */}
-        <div style={{ gridRow: "span 3" }}>
-          <CardUnidade activeUnit={activeUnit} units={units} onOpen={() => setOpen("unidade")} th={th} />
-        </div>
-
-        {/* Categorias pill — 1 col × 3 rows */}
-        <div style={{ gridRow: "span 3" }}>
-          <CategoriasPill th={th} />
-        </div>
-
-        {/* Configurar Unidade — link direto, 1 col × 3 rows */}
-        <div style={{ gridRow: "span 3" }}>
-          <Link href="/dashboard/unit" style={{ display: "block", height: "100%", textDecoration: "none" }}>
-            <CardLayout label="Unidade" th={th}>
-              <div style={{ fontSize: 13, fontWeight: 900, color: THEMES[th].text, fontFamily: F, marginBottom: 6 }}>Configurar</div>
-              {["Logo", "Slug", "WhatsApp", "Instagram", "Endereço"].map((item, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, padding: "3px 0", borderBottom: i < 4 ? `1px solid ${THEMES[th].border}` : "none" }}>
-                  <div style={{ width: 3, height: 3, borderRadius: "50%", background: "#fb923c", flexShrink: 0 }} />
-                  <span style={{ fontSize: 9, color: THEMES[th].text, fontFamily: F, fontWeight: 600 }}>{item}</span>
-                </div>
-              ))}
-              <div style={{ marginBottom: 28 }} />
-            </CardLayout>
-          </Link>
-        </div>
-
-        {/* Conta / Account — link direto, 1 col × 3 rows */}
-        <div style={{ gridRow: "span 3" }}>
-          <Link href="/dashboard/account" style={{ display: "block", height: "100%", textDecoration: "none" }}>
-            <CardLayout label="Conta" th={th}>
-              <div style={{ fontSize: 13, fontWeight: 900, color: THEMES[th].text, fontFamily: F, marginBottom: 6 }}>Minha Conta</div>
-              {["Dados pessoais", "Senha", "Plano", "Faturamento"].map((item, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, padding: "3px 0", borderBottom: i < 3 ? `1px solid ${THEMES[th].border}` : "none" }}>
-                  <div style={{ width: 3, height: 3, borderRadius: "50%", background: "#818cf8", flexShrink: 0 }} />
-                  <span style={{ fontSize: 9, color: THEMES[th].text, fontFamily: F, fontWeight: 600 }}>{item}</span>
-                </div>
-              ))}
-              <div style={{ marginBottom: 28 }} />
-            </CardLayout>
-          </Link>
-        </div>
+// ─── Config Modal ─────────────────────────────────────────────────────────────
+function ConfigModal({ profile }: { profile: Profile }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingTop: 8 }}>
+      <div style={{ borderRadius: 16, padding: "18px 20px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+        <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, marginBottom: 12 }}>Conta</div>
+        <div style={{ color: "#fff", fontSize: 16, fontWeight: 700 }}>{profile.first_name} {profile.last_name}</div>
+        <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginTop: 2 }}>{profile.email}</div>
+        {profile.phone && <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginTop: 2 }}>{profile.phone}</div>}
       </div>
-
-      {/* ── FOOTER ── */}
-      <div style={{ textAlign: "center", marginTop: 18, maxWidth: 980, margin: "18px auto 0" }}>
-        <div style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 12px", borderRadius: 20, background: "rgba(0,255,174,.08)", border: "1px solid rgba(0,255,174,.14)" }}>
-          <div style={{ width: 4, height: 4, borderRadius: "50%", background: G1, boxShadow: `0 0 4px ${G1}`, animation: "pulse 2s ease infinite" }} />
-          <span style={{ fontSize: 9, color: G1, fontWeight: 700, fontFamily: F }}>fymenu.app/u/{activeUnit?.slug}</span>
-        </div>
-      </div>
-
-      {/* ── OVERLAY ── */}
-      {open && EXPANDED[open] && (
-        <Overlay onClose={() => setOpen(null)} th={th}>
-          {EXPANDED[open]}
-        </Overlay>
-      )}
+      <a href="/dashboard/account" style={{ display: "block", padding: "14px 20px", borderRadius: 14, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", color: "#fff", fontSize: 14, fontWeight: 600, textDecoration: "none" }}>
+        ✏️ Editar perfil
+      </a>
+      <form action="/api/auth/signout" method="post">
+        <button type="submit" style={{ width: "100%", padding: "14px 20px", borderRadius: 14, border: "none", background: "rgba(255,80,80,0.08)", color: "#f87171", fontSize: 14, fontWeight: 600, cursor: "pointer", textAlign: "left" }}>
+          🚪 Sair da conta
+        </button>
+      </form>
     </div>
   );
 }
