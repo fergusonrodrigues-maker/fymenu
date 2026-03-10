@@ -34,9 +34,8 @@ export type Product = {
   description: string | null;
   price_type: "fixed" | "variable";
   base_price: number | null;
-  image_path: string | null;
-  thumb_path: string | null;
-  video_path: string | null;
+  thumbnail_url: string | null;
+  video_url: string | null;
   is_active: boolean;
   order_index: number | null;
 };

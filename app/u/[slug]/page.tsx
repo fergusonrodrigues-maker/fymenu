@@ -87,9 +87,8 @@ export default async function Page({
     description: p.description ?? null,
     price_type: p.price_type === "variable" ? "variable" : "fixed",
     base_price: toNumberOrNull(p.base_price),
-    image_path: null,
-    thumb_path: p.thumbnail_url ?? null,
-    video_path: p.video_url ?? null,
+    thumbnail_url: p.thumbnail_url ?? null,
+    video_url: p.video_url ?? null,
     is_active: p.is_active !== false,
     order_index: typeof p.order_index === "number" ? p.order_index : null,
   }));
@@ -172,7 +171,7 @@ export default async function Page({
           id: suggestedProduct.id,
           name: suggestedProduct.name,
           price: suggestedPrice,
-          image_path: suggestedProduct.thumb_path ?? suggestedProduct.image_path ?? undefined,
+          image_path: suggestedProduct.thumbnail_url ?? undefined,
         });
       }
     }

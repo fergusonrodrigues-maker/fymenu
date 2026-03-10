@@ -84,9 +84,8 @@ export default async function MenuPresencialPage({
     description: p.description ?? null,
     price_type: p.price_type === "variable" ? "variable" : "fixed",
     base_price: toNumberOrNull(p.base_price),
-    image_path: null,
-    thumb_path: p.thumbnail_url ?? null,
-    video_path: p.video_url ?? null,
+    thumbnail_url: p.thumbnail_url ?? null,
+    video_url: p.video_url ?? null,
     is_active: p.is_active !== false,
     order_index: typeof p.order_index === "number" ? p.order_index : null,
   }));

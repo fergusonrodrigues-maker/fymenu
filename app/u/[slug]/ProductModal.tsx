@@ -52,9 +52,8 @@ export default function ProductModal({
     | { type: "video"; path: string };
 
   const mediaItems: MediaItem[] = [];
-  const imagePath = product.thumb_path || product.image_path;
-  if (imagePath) mediaItems.push({ type: "image", path: imagePath });
-  if (product.video_path) mediaItems.push({ type: "video", path: product.video_path });
+  if (product.thumbnail_url) mediaItems.push({ type: "image", path: product.thumbnail_url });
+  if (product.video_url) mediaItems.push({ type: "video", path: product.video_url });
 
   const STORAGE = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/products`;
 
