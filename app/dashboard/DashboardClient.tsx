@@ -6,8 +6,8 @@ import {
   createCategory, updateCategory, deleteCategory,
   createProduct, updateProduct, deleteProduct,
   addUpsellItem, removeUpsellItem,
-} from "./cardapio/actions";
-import { updateUnit } from "./actions";
+  updateUnit,
+} from "./actions";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 type Restaurant = { id: string; name: string; plan: string; status: string; trial_ends_at: string; whatsapp: string | null; instagram: string | null };
