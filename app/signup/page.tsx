@@ -6,7 +6,6 @@ type SP = { err?: string; ok?: string };
 export default async function SignupPage({
   searchParams,
 }: {
-  // Next 16: searchParams pode vir como Promise
   searchParams?: Promise<SP>;
 }) {
   const sp = (await searchParams) ?? {};
@@ -21,20 +20,41 @@ export default async function SignupPage({
       redirect("/signup?err=" + encodeURIComponent("Preencha email e senha."));
     }
 
+    if (password.length < 6) {
+      redirect("/signup?err=" + encodeURIComponent("Senha deve ter pelo menos 6 caracteres."));
+    }
+
     const supabase = await createClient();
 
-    const { error } = await supabase.auth.signUp({
+    // 1. Criar usuário no Auth
+    const { error: signupError, data: authData } = await supabase.auth.signUp({
       email,
       password,
     });
 
-    if (error) {
-      redirect("/signup?err=" + encodeURIComponent(error.message));
+    if (signupError) {
+      redirect("/signup?err=" + encodeURIComponent(signupError.message));
     }
 
-    // Se estiver com "Confirm email" ligado no Supabase:
-    // o usuário precisa confirmar no email antes de logar.
-    redirect("/login?ok=1");
+    // 2. NOVO: Criar restaurant automaticamente
+    if (authData.user?.id) {
+      const restaurantName = email.split("@")[0]; // Use email como nome base
+
+      const { error: restaurantError } = await supabase
+        .from("restaurants")
+        .insert({
+          owner_id: authData.user.id,
+          name: restaurantName,
+          onboarding_completed: false, // Começa como false
+        });
+
+      if (restaurantError) {
+        console.error("Erro ao criar restaurant:", restaurantError);
+        // Não interrompe o fluxo, deixa o usuário continuar
+      }
+    }
+
+    redirect("/login?ok=Conta criada com sucesso. Faça login agora.");
   }
 
   return (
@@ -67,7 +87,7 @@ export default async function SignupPage({
             fontSize: 13,
           }}
         >
-          Conta criada. Confira seu email para confirmar (se estiver habilitado) e faça login.
+          ✅ {decodeURIComponent(sp.ok)}
         </div>
       ) : null}
 
@@ -78,43 +98,50 @@ export default async function SignupPage({
           type="email"
           autoComplete="email"
           required
-          style={inputStyle}
+          style={{
+            padding: "10px 12px",
+            borderRadius: 8,
+            border: "1px solid rgba(255,255,255,0.2)",
+            background: "rgba(255,255,255,0.05)",
+            color: "#fff",
+            fontSize: 14,
+          }}
         />
         <input
           name="password"
-          placeholder="Senha"
+          placeholder="Senha (mínimo 6 caracteres)"
           type="password"
           autoComplete="new-password"
           required
-          style={inputStyle}
+          style={{
+            padding: "10px 12px",
+            borderRadius: 8,
+            border: "1px solid rgba(255,255,255,0.2)",
+            background: "rgba(255,255,255,0.05)",
+            color: "#fff",
+            fontSize: 14,
+          }}
         />
 
-        <button style={btnStyle}>Criar conta</button>
+        <button
+          style={{
+            padding: "12px 16px",
+            borderRadius: 8,
+            background: "#fff",
+            color: "#000",
+            fontWeight: 900,
+            fontSize: 14,
+            border: "none",
+            cursor: "pointer",
+          }}
+        >
+          Criar conta
+        </button>
       </form>
 
       <div style={{ marginTop: 14, fontSize: 13, opacity: 0.8 }}>
-        Já tem conta? <a href="/login" style={{ color: "#fff", fontWeight: 900 }}>Entrar</a>
+        Já tem conta? <a href="/login" style={{ color: "#fff", textDecoration: "underline" }}>Faça login</a>
       </div>
     </main>
   );
 }
-
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  padding: "12px 12px",
-  borderRadius: 12,
-  border: "1px solid rgba(255,255,255,0.14)",
-  background: "rgba(255,255,255,0.06)",
-  color: "#fff",
-  outline: "none",
-};
-
-const btnStyle: React.CSSProperties = {
-  padding: "12px 12px",
-  borderRadius: 12,
-  border: "1px solid rgba(255,255,255,0.16)",
-  background: "rgba(255,255,255,0.10)",
-  color: "#fff",
-  cursor: "pointer",
-  fontWeight: 900,
-};
