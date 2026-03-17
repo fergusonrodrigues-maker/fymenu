@@ -9,7 +9,12 @@ export default async function LoginPage({
   // Se já logado, vai pro dashboard
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (user) redirect("/dashboard");
+
+  if (user) {
+    // Simples: se tá logado, vai pro dashboard
+    // A lógica de onboarding fica no dashboard/layout
+    redirect("/dashboard");
+  }
 
   const sp = (await searchParams) || {};
   const err = sp.err ? decodeURIComponent(sp.err) : "";
@@ -26,23 +31,14 @@ export default async function LoginPage({
       redirect("/login?err=" + encodeURIComponent("Preencha email e senha."));
     }
 
-    const { error, data } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
       redirect("/login?err=" + encodeURIComponent(error.message));
     }
 
-    // Checa se onboarding foi concluído
-    const { data: restaurant } = await supabase
-      .from("restaurants")
-      .select("onboarding_completed")
-      .eq("owner_id", data.user.id)
-      .maybeSingle();
-
-    if (!restaurant || !restaurant.onboarding_completed) {
-      redirect("/onboarding");
-    }
-
+    // Login bem-sucedido - redireciona para dashboard
+    // Dashboard/layout vai checar onboarding_completed
     redirect("/dashboard");
   }
 
@@ -67,44 +63,49 @@ export default async function LoginPage({
           name="email"
           placeholder="Email"
           autoComplete="email"
-          style={inputStyle}
+          style={{
+            padding: "10px 12px",
+            borderRadius: 8,
+            border: "1px solid rgba(255,255,255,0.2)",
+            background: "rgba(255,255,255,0.05)",
+            color: "#fff",
+            fontSize: 14,
+          }}
         />
         <input
           name="password"
           placeholder="Senha"
           type="password"
           autoComplete="current-password"
-          style={inputStyle}
+          style={{
+            padding: "10px 12px",
+            borderRadius: 8,
+            border: "1px solid rgba(255,255,255,0.2)",
+            background: "rgba(255,255,255,0.05)",
+            color: "#fff",
+            fontSize: 14,
+          }}
         />
 
-        <button style={btnStyle}>Entrar</button>
+        <button
+          style={{
+            padding: "12px 16px",
+            borderRadius: 8,
+            background: "#fff",
+            color: "#000",
+            fontWeight: 900,
+            fontSize: 14,
+            border: "none",
+            cursor: "pointer",
+          }}
+        >
+          Entrar
+        </button>
       </form>
 
       <div style={{ marginTop: 14, fontSize: 13, opacity: 0.8 }}>
-        Não tem conta? <a href="/signup" style={{ color: "#fff", fontWeight: 900 }}>Criar conta</a>
+        Não tem conta? <a href="/signup" style={{ color: "#fff", textDecoration: "underline" }}>Criar conta</a>
       </div>
-
-      <div style={{ height: 30 }} />
     </main>
   );
 }
-
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  padding: "10px 12px",
-  borderRadius: 12,
-  border: "1px solid rgba(255,255,255,0.14)",
-  background: "rgba(255,255,255,0.06)",
-  color: "#fff",
-  outline: "none",
-};
-
-const btnStyle: React.CSSProperties = {
-  padding: "10px 12px",
-  borderRadius: 12,
-  border: "1px solid rgba(255,255,255,0.16)",
-  background: "rgba(255,255,255,0.10)",
-  color: "#fff",
-  cursor: "pointer",
-  fontWeight: 900,
-};
