@@ -661,13 +661,13 @@ function ConfigModal({ profile }: { profile: Profile }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingTop: 8 }}>
       <div style={{ borderRadius: 16, padding: "18px 20px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
-        <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, marginBottom: 12 }}>Conta</div>
-        <div style={{ color: "#fff", fontSize: 16, fontWeight: 700 }}>{profile.first_name} {profile.last_name}</div>
-        <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginTop: 2 }}>{profile.email}</div>
+        <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, marginBottom: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.4px" }}>Conta</div>
+        <div style={{ color: "#fff", fontSize: 16, fontWeight: 700 }}>{[profile.first_name, profile.last_name].filter(Boolean).join(" ") || "Sem nome"}</div>
+        <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginTop: 4 }}>{profile.email}</div>
         {profile.phone && <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginTop: 2 }}>{profile.phone}</div>}
       </div>
-      <a href="/dashboard/account" style={{ display: "block", padding: "14px 20px", borderRadius: 14, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", color: "#fff", fontSize: 14, fontWeight: 600, textDecoration: "none" }}>
-        ✏️ Editar perfil
+      <a href="/auth/reset-password" style={{ display: "block", padding: "14px 20px", borderRadius: 14, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", color: "#fff", fontSize: 14, fontWeight: 600, textDecoration: "none" }}>
+        🔑 Alterar senha
       </a>
       <form action="/api/auth/signout" method="post">
         <button type="submit" style={{ width: "100%", padding: "14px 20px", borderRadius: 14, border: "none", background: "rgba(255,80,80,0.08)", color: "#f87171", fontSize: 14, fontWeight: 600, cursor: "pointer", textAlign: "left" }}>
