@@ -9,11 +9,11 @@ export default async function DashboardPage() {
 
   const { data: restaurant } = await supabase
     .from("restaurants")
-    .select("id, name, plan, status, trial_ends_at, whatsapp, instagram")
+    .select("id, name, plan, status, trial_ends_at, whatsapp, instagram, onboarding_completed")
     .eq("owner_id", user.id)
     .single();
 
-  if (!restaurant) redirect("/onboarding");
+  if (!restaurant || !restaurant.onboarding_completed) redirect("/onboarding");
 
   const { data: unit } = await supabase
     .from("units")

@@ -40,14 +40,13 @@ export default function StepMenu({
       return;
     }
 
-    // 2. Atualiza restaurant
+    // 2. Atualiza restaurant (sem onboarding_completed ainda)
     const { error: restError } = await supabase
       .from("restaurants")
       .update({
         name: data.restaurant_name,
         whatsapp: data.whatsapp,
         instagram: data.instagram,
-        onboarding_completed: true,
       })
       .eq("id", restaurantId);
 
@@ -76,7 +75,19 @@ export default function StepMenu({
       return;
     }
 
-    // 4. Redireciona via router (sem quebrar a SPA)
+    // 4. Marca onboarding como completo apenas após a unit ser criada com sucesso
+    const { error: completeError } = await supabase
+      .from("restaurants")
+      .update({ onboarding_completed: true })
+      .eq("id", restaurantId);
+
+    if (completeError) {
+      setError("Erro ao finalizar configuração. Tente novamente.");
+      setSaving(false);
+      return;
+    }
+
+    // 5. Redireciona via router (sem quebrar a SPA)
     router.push("/dashboard");
   }
 
