@@ -1,277 +1,204 @@
 // FILE: /app/u/[slug]/CategoryCarousel.tsx
-// ACTION: REPLACE ENTIRE FILE
-
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import type { Product } from "./menuTypes";
 
-const css = `
-  @keyframes neon-spin {
-    0%   { background-position: top center; }
-    100% { background-position: bottom center; }
-  }
-  .neon-border {
-    position: absolute;
-    inset: -0.5px;
-    border-radius: inherit;
-    background: linear-gradient(0deg, #FF0000, #FFD700);
-    background-size: 100% 200%;
-    animation: neon-spin 2s infinite alternate;
-    z-index: 0;
-    pointer-events: none;
-  }
-`;
+// ─── tipos ────────────────────────────────────────────────────────────────────
+interface CategoryCarouselProps {
+  items: Product[];
+  compact?: boolean;
+  active?: boolean;           // true = categoria vigente (hero)
+  onOpen: (p: Product, originalIndex: number) => void;
+}
+
+// ─── constantes ───────────────────────────────────────────────────────────────
+const HERO_W   = 140;   // largura card hero (categoria ativa)
+const SIDE_W   = 108;   // largura cards laterais (categoria ativa)
+const SMALL_W  = 90;    // largura cards (categoria inativa)
+const GHOST_W  = 56;    // largura card DESLIZE
+const GAP      = 10;
 
 export default function CategoryCarousel({
   items,
-  compact,
-  isVigente = false,
+  active = false,
   onOpen,
-}: {
-  items: Product[];
-  compact: boolean;
-  isVigente?: boolean;
-  onOpen: (p: Product, originalIndex: number) => void;
-}) {
-  const scrollerRef = useRef<HTMLDivElement | null>(null);
-  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const rafRef = useRef<number | null>(null);
-  const bounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const scrollEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastScrollLeft = useRef(0);
+}: CategoryCarouselProps) {
+  const scrollerRef  = useRef<HTMLDivElement | null>(null);
+  const cardRefs     = useRef<(HTMLDivElement | null)[]>([]);
+  const rafRef       = useRef<number | null>(null);
+  const snapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const list = useMemo(() => items ?? [], [items]);
-
-  const [heroIndex, setHeroIndex] = useState(1);
+  const [heroIndex, setHeroIndex] = useState(1); // índice 0 = ghost start
   const heroIndexRef = useRef(1);
-  const isResizingRef = useRef(false);
 
-  function centralizeCard(index: number, smooth = false) {
+  const list = items ?? [];
+  const cardW = active ? HERO_W : SMALL_W;
+
+  // centraliza o card de índice `idx` (índice no array renderizado, 0 = ghost)
+  const centerCard = useCallback((idx: number, smooth = false) => {
     const scroller = scrollerRef.current;
-    const card = cardRefs.current[index];
+    const card = cardRefs.current[idx];
     if (!scroller || !card) return;
-
-    const scrollerRect = scroller.getBoundingClientRect();
-    const cardRect = card.getBoundingClientRect();
-
-    const cardCenter = scroller.scrollLeft + (cardRect.left - scrollerRect.left) + cardRect.width / 2;
-    const left = cardCenter - scroller.offsetWidth / 2;
-
-    if (smooth) scroller.scrollTo({ left, behavior: "smooth" });
-    else scroller.scrollLeft = left;
-  }
-
-  useEffect(() => {
-    const t1 = setTimeout(() => {
-      centralizeCard(1);
-      setHeroIndex(1);
-    }, 50);
-
-    const t2 = setTimeout(() => {
-      centralizeCard(1);
-      setHeroIndex(1);
-    }, 350);
-
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    const sr = scroller.getBoundingClientRect();
+    const cr = card.getBoundingClientRect();
+    const cardCenter = scroller.scrollLeft + (cr.left - sr.left) + cr.width / 2;
+    const target = cardCenter - scroller.offsetWidth / 2;
+    if (smooth) scroller.scrollTo({ left: target, behavior: "smooth" });
+    else scroller.scrollLeft = target;
   }, []);
 
-  function computeHero(snapAfter = false) {
-    if (isResizingRef.current) return;
+  // ao montar ou mudar active: centraliza produto 1 (renderedIdx = 1)
+  useEffect(() => {
+    const t1 = setTimeout(() => { centerCard(1); setHeroIndex(1); heroIndexRef.current = 1; }, 60);
+    const t2 = setTimeout(() => { centerCard(1); }, 380);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active]);
+
+  // detecta qual card está mais próximo do centro durante o scroll
+  function computeHero(snap = false) {
     const scroller = scrollerRef.current;
     if (!scroller) return;
-
     const sr = scroller.getBoundingClientRect();
     const center = sr.left + sr.width / 2;
-
-    const total = list.length + 2;
-    let best = 1;
-    let bestDist = Infinity;
-
-    for (let i = 0; i < total; i++) {
+    const total = list.length + 2; // ghost + produtos + ghost
+    let best = 1, bestDist = Infinity;
+    for (let i = 1; i < total - 1; i++) { // ignora ghosts
       const el = cardRefs.current[i];
       if (!el) continue;
       const r = el.getBoundingClientRect();
       const d = Math.abs(r.left + r.width / 2 - center);
       if (d < bestDist) { bestDist = d; best = i; }
     }
-
     setHeroIndex(best);
-
-    if (snapAfter) {
-      if (bounceTimerRef.current) clearTimeout(bounceTimerRef.current);
-      if (best === 0) {
-        bounceTimerRef.current = setTimeout(() => centralizeCard(1, true), 80);
-      } else if (best === total - 1) {
-        bounceTimerRef.current = setTimeout(() => centralizeCard(total - 2, true), 80);
-      } else {
-        bounceTimerRef.current = setTimeout(() => centralizeCard(best, true), 80);
-      }
-    }
+    heroIndexRef.current = best;
+    if (snap) centerCard(best, true);
   }
 
   function onScroll() {
-    const scroller = scrollerRef.current;
-    if (!scroller) return;
-
-    if (Math.abs(scroller.scrollLeft - lastScrollLeft.current) < 2) return;
-    lastScrollLeft.current = scroller.scrollLeft;
-
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
     rafRef.current = requestAnimationFrame(() => computeHero(false));
-
-    if (scrollEndTimerRef.current) clearTimeout(scrollEndTimerRef.current);
-    scrollEndTimerRef.current = setTimeout(() => computeHero(true), 120);
+    if (snapTimerRef.current) clearTimeout(snapTimerRef.current);
+    snapTimerRef.current = setTimeout(() => computeHero(true), 120);
   }
 
-  const baseWidth = compact ? (isVigente ? 220 : 150) : 220;
-  const guideWidth = `calc(50vw - ${12 + baseWidth / 2}px)`;
-
-  useEffect(() => {
-    heroIndexRef.current = heroIndex;
-  }, [heroIndex]);
-
-  useEffect(() => {
-    isResizingRef.current = true;
-    const t = setTimeout(() => {
-      centralizeCard(heroIndexRef.current, false);
-      isResizingRef.current = false;
-    }, 520);
-    return () => { clearTimeout(t); isResizingRef.current = false; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [baseWidth]);
-
-  function cardStyle(renderedIdx: number) {
-    const isHero = renderedIdx === heroIndex;
-    return {
-      flex: "0 0 auto" as const,
-      width: baseWidth,
-      maxWidth: 280,
-      transform: isHero ? "scale(1.13)" : "scale(0.92)",
-      transformOrigin: "center center" as const,
-      transition: isHero
-        ? "width 0.5s cubic-bezier(0.25, 0.8, 0.25, 1), transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1)"
-        : "width 0.5s cubic-bezier(0.25, 0.8, 0.25, 1), transform 300ms ease",
-      zIndex: isHero ? 5 : 1,
-    };
-  }
+  // largura do ghost para centralizar o primeiro e o último produto
+  const guideW = `calc(50% - ${GAP + (active ? HERO_W : SMALL_W) / 2}px)`;
 
   return (
-    <div style={{ width: "100%" }}>
-      <style>{css}</style>
+    <div
+      ref={scrollerRef}
+      onScroll={onScroll}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: GAP,
+        overflowX: "auto",
+        overflowY: "hidden",
+        padding: active ? "40px 0 44px" : "18px 0 20px",
+        WebkitOverflowScrolling: "touch",
+        scrollbarWidth: "none",
+        transition: "padding 0.4s ease",
+      }}
+    >
+      <style>{`.fy-carousel::-webkit-scrollbar{display:none}`}</style>
+
+      {/* Ghost início */}
       <div
-        ref={scrollerRef}
-        onScroll={onScroll}
-        style={{
-          display: "flex",
-          gap: 12,
-          overflowX: "auto",
-          overflowY: "hidden",
-          padding: "52px 0 56px",
-          WebkitOverflowScrolling: "touch",
-          scrollSnapType: "none",
-          scrollBehavior: "smooth",
-          touchAction: "pan-x pan-y",
-          scrollbarWidth: "none",
-        }}
+        ref={el => { cardRefs.current[0] = el; }}
+        style={{ flex: "0 0 auto", width: guideW, minWidth: GHOST_W, pointerEvents: "none" }}
       >
-        <div
-          key="guide-start"
-          ref={(el) => { cardRefs.current[0] = el; }}
-          style={{
-            flex: "0 0 auto",
-            width: guideWidth,
-            minWidth: 8,
-            transition: "width 0.5s cubic-bezier(0.25, 0.8, 0.25, 1)",
-            pointerEvents: "none",
-            zIndex: 1,
-          }}
-        >
-          <GuideCard text="← Deslize" />
-        </div>
+        <GhostCard />
+      </div>
 
-        {list.map((p, idx) => {
-          const renderedIdx = idx + 1;
-          const isHero = renderedIdx === heroIndex;
-          const isAdjacent = renderedIdx === heroIndex - 1 || renderedIdx === heroIndex + 1;
-          return (
-            <div
-              key={p.id}
-              ref={(el) => { cardRefs.current[renderedIdx] = el; }}
-              style={{
-                ...cardStyle(renderedIdx),
-                position: "relative",
-                borderRadius: 24,
-                padding: 1,
-              }}
-            >
-              <div className="neon-border" style={{
-                opacity: isHero ? 1 : 0,
-                transition: "opacity 350ms ease",
-              }} />
-              <MediaCard product={p} hero={isHero} adjacent={isAdjacent}
-                onOpen={() => onOpen(p, idx)} />
-            </div>
-          );
-        })}
+      {/* Produtos */}
+      {list.map((p, idx) => {
+        const ri = idx + 1; // rendered index
+        const isHero = active && ri === heroIndex;
+        const w = active
+          ? (isHero ? HERO_W : SIDE_W)
+          : SMALL_W;
 
-        <div
-          key="guide-end"
-          ref={(el) => { cardRefs.current[list.length + 1] = el; }}
-          style={{
-            flex: "0 0 auto",
-            width: guideWidth,
-            minWidth: 8,
-            transition: "width 0.5s cubic-bezier(0.25, 0.8, 0.25, 1)",
-            pointerEvents: "none",
-            zIndex: 1,
-          }}
-        >
-          <GuideCard text="Voltar →" />
-        </div>
+        return (
+          <div
+            key={p.id}
+            ref={el => { cardRefs.current[ri] = el; }}
+            style={{
+              flex: "0 0 auto",
+              width: w,
+              maxWidth: 280,
+              transition: "width 0.35s cubic-bezier(0.34,1.56,0.64,1), transform 0.35s cubic-bezier(0.34,1.56,0.64,1), opacity 0.35s ease",
+              transform: isHero ? "scale(1.04)" : "scale(1)",
+              opacity: active ? (isHero ? 1 : 0.72) : 0.6,
+              borderRadius: 18,
+              border: isHero
+                ? "1.5px solid #FF6B00"
+                : active
+                ? "1px solid rgba(255,255,255,0.1)"
+                : "1px solid rgba(255,255,255,0.07)",
+              overflow: "hidden",
+              zIndex: isHero ? 5 : 1,
+            }}
+          >
+            <MediaCard
+              product={p}
+              hero={isHero}
+              active={active}
+              onOpen={() => onOpen(p, idx)}
+            />
+          </div>
+        );
+      })}
+
+      {/* Ghost fim */}
+      <div
+        ref={el => { cardRefs.current[list.length + 1] = el; }}
+        style={{ flex: "0 0 auto", width: guideW, minWidth: GHOST_W, pointerEvents: "none" }}
+      >
+        <GhostCard />
       </div>
     </div>
   );
 }
 
-function GuideCard({ text }: { text: string }) {
+// ─── Ghost card "DESLIZE" ─────────────────────────────────────────────────────
+function GhostCard() {
   return (
-    <div
-      style={{
-        width: "100%",
-        aspectRatio: "9 / 16",
-        borderRadius: 22,
-        border: "1px solid rgba(255,255,255,0.12)",
-        background: "rgba(255,255,255,0.06)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        textAlign: "center",
-        color: "#fff",
-        fontWeight: 800,
-        fontSize: 13,
-        opacity: 0.7,
-        padding: "0 16px",
-      }}
-    >
-      {text}
+    <div style={{
+      width: "100%",
+      aspectRatio: "9 / 16",
+      borderRadius: 16,
+      border: "1px solid rgba(255,255,255,0.07)",
+      background: "rgba(255,255,255,0.03)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+    }}>
+      <span style={{
+        fontSize: 8,
+        color: "rgba(255,255,255,0.2)",
+        writingMode: "vertical-rl",
+        letterSpacing: "0.12em",
+        textTransform: "uppercase",
+        fontWeight: 500,
+      }}>
+        Deslize
+      </span>
     </div>
   );
 }
 
+// ─── Media card ───────────────────────────────────────────────────────────────
 function MediaCard({
   product,
   hero,
-  adjacent,
+  active,
   onOpen,
 }: {
   product: Product;
   hero: boolean;
-  adjacent: boolean;
+  active: boolean;
   onOpen: () => void;
 }) {
   const [videoReady, setVideoReady] = useState(false);
@@ -280,12 +207,18 @@ function MediaCard({
   useEffect(() => {
     setVideoReady(false);
     if (readyTimerRef.current) window.clearTimeout(readyTimerRef.current);
-    readyTimerRef.current = null;
   }, [product.id, hero]);
 
-  // pré-carrega no adjacente, mas exibe/autoPlay só quando hero
-  const loadVideo = (hero || adjacent) && !!product.video_url;
+  const loadVideo = hero && !!product.video_url;
   const showVideo = hero && !!product.video_url;
+
+  // NUNCA usar: thumb_path | image_path | video_path
+  const thumbUrl = product.thumbnail_url ?? null;
+  const videoUrl = product.video_url ?? null;
+
+  const priceLabel = product.price_type === "fixed" && product.base_price != null
+    ? `R$ ${Number(product.base_price).toFixed(2).replace(".", ",")}`
+    : null;
 
   return (
     <button
@@ -293,19 +226,20 @@ function MediaCard({
       style={{
         width: "100%",
         aspectRatio: "9 / 16",
-        borderRadius: 22,
-        border: "1px solid rgba(255,255,255,0.12)",
+        borderRadius: "inherit",
+        border: "none",
         overflow: "hidden",
-        background: "rgba(255,255,255,0.06)",
+        background: "#111",
         position: "relative",
         padding: 0,
         cursor: "pointer",
         WebkitMaskImage: "-webkit-radial-gradient(white, black)",
       }}
     >
-      {product.thumbnail_url ? (
+      {/* Thumbnail */}
+      {thumbUrl ? (
         <img
-          src={product.thumbnail_url}
+          src={thumbUrl}
           alt={product.name}
           style={{
             position: "absolute",
@@ -313,36 +247,32 @@ function MediaCard({
             width: "100%",
             height: "100%",
             objectFit: "cover",
-            borderRadius: "inherit",
             opacity: showVideo && videoReady ? 0 : 1,
             transition: "opacity 240ms ease",
           }}
         />
       ) : (
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            display: "grid",
-            placeItems: "center",
-            opacity: 0.55,
-            color: "#fff",
-            fontWeight: 800,
-            fontSize: 12,
-          }}
-        >
-          Sem thumb
+        <div style={{
+          position: "absolute",
+          inset: 0,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          opacity: 0.15,
+          fontSize: 28,
+        }}>
+          🍽️
         </div>
       )}
 
-      {loadVideo ? (
+      {/* Vídeo — só carrega no hero */}
+      {loadVideo && videoUrl && (
         <video
-          src={product.video_url!}
+          src={videoUrl}
           autoPlay={showVideo}
           loop
           muted
           playsInline
-          controls={false}
           preload={showVideo ? "auto" : "metadata"}
           style={{
             position: "absolute",
@@ -350,40 +280,51 @@ function MediaCard({
             width: "100%",
             height: "100%",
             objectFit: "cover",
-            borderRadius: "inherit",
             opacity: showVideo ? 1 : 0,
           }}
           onPlay={() => {
             if (readyTimerRef.current) window.clearTimeout(readyTimerRef.current);
-            readyTimerRef.current = window.setTimeout(() => setVideoReady(true), 1000);
+            readyTimerRef.current = window.setTimeout(() => setVideoReady(true), 800);
           }}
         />
-      ) : null}
+      )}
 
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          borderRadius: "inherit",
-          background:
-            "linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.35) 45%, transparent 76%)",
-        }}
-      />
+      {/* Gradiente */}
+      <div style={{
+        position: "absolute",
+        inset: 0,
+        background: "linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.3) 45%, transparent 75%)",
+      }} />
 
-      <div
-        style={{
-          position: "absolute",
-          left: 12,
-          right: 12,
-          bottom: 12,
-          textAlign: "left",
+      {/* Info */}
+      <div style={{
+        position: "absolute",
+        left: 10,
+        right: 10,
+        bottom: 10,
+        textAlign: "left",
+      }}>
+        <p style={{
           color: "#fff",
-          zIndex: 10,
-        }}
-      >
-        <div style={{ fontWeight: 950, fontSize: 14, lineHeight: 1.1 }}>
+          fontWeight: 500,
+          fontSize: hero ? 13 : 10,
+          lineHeight: 1.2,
+          margin: "0 0 3px",
+          transition: "font-size 0.3s ease",
+        }}>
           {product.name}
-        </div>
+        </p>
+        {priceLabel && (
+          <p style={{
+            color: active && hero ? "#FF6B00" : "rgba(255,255,255,0.45)",
+            fontSize: hero ? 12 : 9,
+            fontWeight: 500,
+            margin: 0,
+            transition: "color 0.3s ease, font-size 0.3s ease",
+          }}>
+            {priceLabel}
+          </p>
+        )}
       </div>
     </button>
   );

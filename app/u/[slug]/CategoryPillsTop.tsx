@@ -23,17 +23,20 @@ export default function CategoryPillsTop({
 
   const pills = useMemo(() => categories ?? [], [categories]);
 
+  // hero pill cresce com o texto do nome mais longo
   const heroWidth = useMemo(() => {
     if (typeof document === "undefined") return 140;
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
     if (!ctx) return 140;
-    ctx.font = "950 15px -apple-system, sans-serif";
-    const max = Math.max(...pills.map(c => ctx.measureText(c.name).width));
-    return Math.ceil(max) + 40;
-  }, [pills]);
+    ctx.font = "500 15px -apple-system, sans-serif";
+    const activeIdx = pills.findIndex(c => c.id === activeCategoryId);
+    const name = pills[activeIdx]?.name ?? "";
+    return Math.ceil(ctx.measureText(name).width) + 48;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeCategoryId, pills]);
 
-  const sideWidth = Math.round(heroWidth * 0.80);
+  const sideWidth = Math.round(heroWidth * 0.78);
 
   function animateSide(
     el: HTMLButtonElement,
@@ -87,10 +90,10 @@ export default function CategoryPillsTop({
     const isFirst    = prevIdx < 0 || prevIdx === activeIdx;
 
     const sides = [
-      { ref: l2Ref, offset: -2, opacity: 0.35 },
-      { ref: l1Ref, offset: -1, opacity: 0.72 },
-      { ref: r1Ref, offset: +1, opacity: 0.72 },
-      { ref: r2Ref, offset: +2, opacity: 0.35 },
+      { ref: l2Ref, offset: -2, opacity: 0.3 },
+      { ref: l1Ref, offset: -1, opacity: 0.6 },
+      { ref: r1Ref, offset: +1, opacity: 0.6 },
+      { ref: r2Ref, offset: +2, opacity: 0.3 },
     ];
 
     sides.forEach(({ ref, offset, opacity }) => {
@@ -145,16 +148,26 @@ export default function CategoryPillsTop({
 
   return (
     <div style={{
-      position: "fixed", top: 0, left: 0, width: "100%",
+      position: "fixed",
+      top: 0,
+      left: 0,
+      width: "100%",
       zIndex: 50,
-      background: "linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%)",
+      background: "rgba(0,0,0,0.55)",
+      backdropFilter: "blur(20px)",
+      WebkitBackdropFilter: "blur(20px)",
+      borderBottom: "0.5px solid rgba(255,255,255,0.08)",
       pointerEvents: "none",
-      padding: "10px 0 28px",
+      padding: "10px 0 10px",
     }}>
       <div style={{
-        display: "flex", alignItems: "center",
-        justifyContent: "center", gap: 8,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 8,
         pointerEvents: "auto",
+        overflow: "hidden",
+        padding: "0 12px",
       }}>
 
         {/* L2 */}
@@ -162,13 +175,21 @@ export default function CategoryPillsTop({
           const idx = pills.findIndex(c => c.id === activeCategoryId);
           if (idx - 2 >= 0) onSelect(pills[idx - 2].id);
         }} style={{
-          width: sideWidth, height: 40, borderRadius: 999,
-          border: "1px solid rgba(255,255,255,0.14)",
-          background: "transparent", color: "rgba(255,255,255,0.85)",
-          fontWeight: 800, fontSize: 12,
-          whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-          cursor: "pointer", padding: "0 10px",
+          width: sideWidth,
+          height: 36,
+          borderRadius: 999,
+          border: "0.5px solid rgba(255,255,255,0.12)",
+          background: "rgba(255,255,255,0.06)",
+          color: "rgba(255,255,255,0.85)",
+          fontWeight: 500,
+          fontSize: 11,
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          cursor: "pointer",
+          padding: "0 10px",
           willChange: "transform, opacity",
+          flexShrink: 0,
         }} />
 
         {/* L1 */}
@@ -176,26 +197,44 @@ export default function CategoryPillsTop({
           const idx = pills.findIndex(c => c.id === activeCategoryId);
           if (idx - 1 >= 0) onSelect(pills[idx - 1].id);
         }} style={{
-          width: sideWidth, height: 44, borderRadius: 999,
-          border: "1px solid rgba(255,255,255,0.16)",
-          background: "transparent", color: "rgba(255,255,255,0.85)",
-          fontWeight: 800, fontSize: 13,
-          whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-          cursor: "pointer", padding: "0 10px",
+          width: sideWidth,
+          height: 38,
+          borderRadius: 999,
+          border: "0.5px solid rgba(255,255,255,0.14)",
+          background: "rgba(255,255,255,0.07)",
+          color: "rgba(255,255,255,0.85)",
+          fontWeight: 500,
+          fontSize: 12,
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          cursor: "pointer",
+          padding: "0 10px",
           willChange: "transform, opacity",
+          flexShrink: 0,
         }} />
 
-        {/* HERO */}
+        {/* HERO — laranja, responsivo ao texto */}
         <div style={{
-          width: heroWidth, height: 52, borderRadius: 999,
-          background: "rgba(255,255,255,0.92)",
-          boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          overflow: "hidden", flexShrink: 0, pointerEvents: "none",
+          width: heroWidth,
+          height: 44,
+          borderRadius: 999,
+          background: "#FF6B00",
+          boxShadow: "0 2px 16px rgba(255,107,0,0.35)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          overflow: "hidden",
+          flexShrink: 0,
+          pointerEvents: "none",
+          transition: "width 0.3s cubic-bezier(0.34,1.56,0.64,1)",
         }}>
           <span ref={heroTextRef} style={{
-            fontWeight: 950, fontSize: 15, color: "#111",
-            whiteSpace: "nowrap", display: "block",
+            fontWeight: 500,
+            fontSize: 15,
+            color: "#fff",
+            whiteSpace: "nowrap",
+            display: "block",
             willChange: "transform, opacity",
           }} />
         </div>
@@ -205,13 +244,21 @@ export default function CategoryPillsTop({
           const idx = pills.findIndex(c => c.id === activeCategoryId);
           if (idx + 1 < pills.length) onSelect(pills[idx + 1].id);
         }} style={{
-          width: sideWidth, height: 44, borderRadius: 999,
-          border: "1px solid rgba(255,255,255,0.16)",
-          background: "transparent", color: "rgba(255,255,255,0.85)",
-          fontWeight: 800, fontSize: 13,
-          whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-          cursor: "pointer", padding: "0 10px",
+          width: sideWidth,
+          height: 38,
+          borderRadius: 999,
+          border: "0.5px solid rgba(255,255,255,0.14)",
+          background: "rgba(255,255,255,0.07)",
+          color: "rgba(255,255,255,0.85)",
+          fontWeight: 500,
+          fontSize: 12,
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          cursor: "pointer",
+          padding: "0 10px",
           willChange: "transform, opacity",
+          flexShrink: 0,
         }} />
 
         {/* R2 */}
@@ -219,13 +266,21 @@ export default function CategoryPillsTop({
           const idx = pills.findIndex(c => c.id === activeCategoryId);
           if (idx + 2 < pills.length) onSelect(pills[idx + 2].id);
         }} style={{
-          width: sideWidth, height: 40, borderRadius: 999,
-          border: "1px solid rgba(255,255,255,0.14)",
-          background: "transparent", color: "rgba(255,255,255,0.85)",
-          fontWeight: 800, fontSize: 12,
-          whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-          cursor: "pointer", padding: "0 10px",
+          width: sideWidth,
+          height: 36,
+          borderRadius: 999,
+          border: "0.5px solid rgba(255,255,255,0.12)",
+          background: "rgba(255,255,255,0.06)",
+          color: "rgba(255,255,255,0.85)",
+          fontWeight: 500,
+          fontSize: 11,
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          cursor: "pointer",
+          padding: "0 10px",
           willChange: "transform, opacity",
+          flexShrink: 0,
         }} />
 
       </div>
