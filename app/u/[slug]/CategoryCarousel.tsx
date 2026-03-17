@@ -1,331 +1,276 @@
 // FILE: /app/u/[slug]/CategoryCarousel.tsx
 "use client";
 
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import type { Product } from "./menuTypes";
 
-// ─── tipos ────────────────────────────────────────────────────────────────────
 interface CategoryCarouselProps {
   items: Product[];
   compact?: boolean;
-  active?: boolean;           // true = categoria vigente (hero)
+  active?: boolean;
   onOpen: (p: Product, originalIndex: number) => void;
 }
 
-// ─── constantes ───────────────────────────────────────────────────────────────
-const HERO_W   = 150;   // largura card hero (categoria ativa) — 25% maior que SMALL_W
-const SIDE_W   = 112;   // largura cards laterais (categoria ativa)
-const SMALL_W  = 90;    // largura cards (categoria inativa)
-const GHOST_W  = 28;    // largura card DESLIZE — estreito
-const GAP      = 10;
+// Dimensões — hero domina, side 72%, proporção 9:16 garante altura proporcional
+const HW = 130;                          // hero width (categoria ativa)
+const SW = Math.round(HW * 0.72);       // side width (categoria ativa)
+const IW = Math.round(HW * 0.62);       // width (categoria inativa)
+const GAP = 8;
+
+// marginTop para alinhar cards menores pelo centro com o hero
+const heroH = HW * (16 / 9);
+const sideH = SW * (16 / 9);
+const SIDE_MT = Math.round((heroH - sideH) / 2);
 
 export default function CategoryCarousel({
   items,
   active = false,
   onOpen,
 }: CategoryCarouselProps) {
-  const scrollerRef  = useRef<HTMLDivElement | null>(null);
-  const cardRefs     = useRef<(HTMLDivElement | null)[]>([]);
-  const rafRef       = useRef<number | null>(null);
-  const snapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const [heroIndex, setHeroIndex] = useState(1); // índice 0 = ghost start
-  const heroIndexRef = useRef(1);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const vpRef = useRef<HTMLDivElement>(null);
+  const [heroIdx, setHeroIdx] = useState(0);
+  const heroIdxRef = useRef(0);
+  const dragStartX = useRef(0);
 
   const list = items ?? [];
-  const cardW = active ? HERO_W : SMALL_W;
 
-  // centraliza o card de índice `idx` (índice no array renderizado, 0 = ghost)
-  const centerCard = useCallback((idx: number, smooth = false) => {
-    const scroller = scrollerRef.current;
-    const card = cardRefs.current[idx];
-    if (!scroller || !card) return;
-    const sr = scroller.getBoundingClientRect();
-    const cr = card.getBoundingClientRect();
-    const cardCenter = scroller.scrollLeft + (cr.left - sr.left) + cr.width / 2;
-    const target = cardCenter - scroller.offsetWidth / 2;
-    if (smooth) scroller.scrollTo({ left: target, behavior: "smooth" });
-    else scroller.scrollLeft = target;
-  }, []);
+  // posiciona o track para centralizar heroIdx
+  function positionTrack(idx: number, animate: boolean) {
+    const track = trackRef.current;
+    const vp = vpRef.current;
+    if (!track || !vp) return;
 
-  // ao montar ou mudar active: centraliza produto 1 (renderedIdx = 1)
+    const vpW = vp.offsetWidth;
+    const heroW = active ? HW : IW;
+    const ghostW = Math.round(heroW * 0.55);
+
+    let offset = ghostW + GAP;
+    for (let i = 0; i < idx; i++) {
+      const w = active ? (i === heroIdxRef.current ? HW : SW) : IW;
+      offset += w + GAP;
+    }
+    const cardCenter = offset + heroW / 2;
+    const tx = vpW / 2 - cardCenter;
+
+    track.style.transition = animate
+      ? "transform 0.32s cubic-bezier(0.34,1.56,0.64,1)"
+      : "none";
+    track.style.transform = `translateX(${tx}px)`;
+  }
+
+  // centraliza produto 0 ao montar / mudar active
   useEffect(() => {
-    const t1 = setTimeout(() => { centerCard(1); setHeroIndex(1); heroIndexRef.current = 1; }, 60);
-    const t2 = setTimeout(() => { centerCard(1); }, 380);
+    heroIdxRef.current = 0;
+    setHeroIdx(0);
+    const t1 = setTimeout(() => positionTrack(0, false), 40);
+    const t2 = setTimeout(() => positionTrack(0, false), 220);
     return () => { clearTimeout(t1); clearTimeout(t2); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active]);
+  }, [active, list.length]);
 
-  // detecta qual card está mais próximo do centro durante o scroll
-  function computeHero(snap = false) {
-    const scroller = scrollerRef.current;
-    if (!scroller) return;
-    const sr = scroller.getBoundingClientRect();
-    const center = sr.left + sr.width / 2;
-    const total = list.length + 2; // ghost + produtos + ghost
-    let best = 1, bestDist = Infinity;
-    for (let i = 1; i < total - 1; i++) { // ignora ghosts
-      const el = cardRefs.current[i];
-      if (!el) continue;
-      const r = el.getBoundingClientRect();
-      const d = Math.abs(r.left + r.width / 2 - center);
-      if (d < bestDist) { bestDist = d; best = i; }
-    }
-    setHeroIndex(best);
-    heroIndexRef.current = best;
-    if (snap) centerCard(best, true);
+  function goTo(newIdx: number) {
+    if (newIdx < 0 || newIdx >= list.length) return;
+    heroIdxRef.current = newIdx;
+    setHeroIdx(newIdx);
+    positionTrack(newIdx, true);
   }
 
-  function onScroll() {
-    if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    rafRef.current = requestAnimationFrame(() => computeHero(false));
-    if (snapTimerRef.current) clearTimeout(snapTimerRef.current);
-    snapTimerRef.current = setTimeout(() => computeHero(true), 120);
+  // touch / mouse drag
+  function onPointerDown(e: React.PointerEvent) {
+    dragStartX.current = e.clientX;
   }
 
-  // largura do ghost para centralizar o primeiro e o último produto
-  const guideW = `calc(50% - ${GAP + (active ? HERO_W : SMALL_W) / 2}px)`;
+  function onPointerUp(e: React.PointerEvent) {
+    const dx = e.clientX - dragStartX.current;
+    if (Math.abs(dx) < 8) return;
+    if (dx < -30) goTo(heroIdxRef.current + 1);
+    else if (dx > 30) goTo(heroIdxRef.current - 1);
+  }
+
+  if (!list.length) return null;
+
+  const heroW = active ? HW : IW;
+  const ghostW = Math.round(heroW * 0.55);
 
   return (
     <div
-      ref={scrollerRef}
-      onScroll={onScroll}
+      ref={vpRef}
       style={{
-        display: "flex",
-        alignItems: "center",
-        gap: GAP,
-        overflowX: "auto",
-        overflowY: "hidden",
-        padding: active ? "48px 0 52px" : "14px 0 16px",
-        WebkitOverflowScrolling: "touch",
-        scrollbarWidth: "none",
-        transition: "padding 0.4s ease",
+        overflow: "hidden",
+        width: "100%",
+        padding: active ? "28px 0 32px" : "8px 0 10px",
+        transition: "padding 0.35s ease",
+        cursor: "grab",
       }}
+      onPointerDown={onPointerDown}
+      onPointerUp={onPointerUp}
     >
-      <style>{`.fy-carousel::-webkit-scrollbar{display:none}`}</style>
-
-      {/* Ghost início */}
       <div
-        ref={el => { cardRefs.current[0] = el; }}
-        style={{ flex: "0 0 auto", width: guideW, minWidth: GHOST_W, pointerEvents: "none" }}
+        ref={trackRef}
+        style={{
+          display: "flex",
+          alignItems: "flex-start",
+          gap: GAP,
+          userSelect: "none",
+        }}
       >
-        <GhostCard />
-      </div>
+        {/* Ghost início */}
+        <GhostCard width={ghostW} marginTop={active ? SIDE_MT : 0} />
 
-      {/* Produtos */}
-      {list.map((p, idx) => {
-        const ri = idx + 1; // rendered index
-        const isHero = active && ri === heroIndex;
-        const w = active
-          ? (isHero ? HERO_W : SIDE_W)
-          : SMALL_W;
+        {/* Produtos */}
+        {list.map((p, idx) => {
+          const isHero = active && idx === heroIdx;
+          const w = active ? (isHero ? HW : SW) : IW;
+          const mt = active ? (isHero ? 0 : SIDE_MT) : 0;
 
-        return (
-          <div
-            key={p.id}
-            ref={el => { cardRefs.current[ri] = el; }}
-            style={{
-              flex: "0 0 auto",
-              width: w,
-              maxWidth: 280,
-              transition: "width 0.35s cubic-bezier(0.34,1.56,0.64,1), transform 0.35s cubic-bezier(0.34,1.56,0.64,1), opacity 0.35s ease",
-              transform: isHero ? "scale(1.04)" : "scale(1)",
-              opacity: active ? (isHero ? 1 : 0.72) : 0.6,
-              borderRadius: 18,
-              border: isHero
-                ? "1.5px solid #FF6B00"
-                : active
-                ? "1px solid rgba(255,255,255,0.1)"
-                : "1px solid rgba(255,255,255,0.07)",
-              overflow: "hidden",
-              zIndex: isHero ? 5 : 1,
-            }}
-          >
-            <MediaCard
-              product={p}
-              hero={isHero}
-              active={active}
-              onOpen={() => onOpen(p, idx)}
-            />
-          </div>
-        );
-      })}
+          // NUNCA usar: thumb_path | image_path | video_path
+          const thumbUrl = p.thumbnail_url ?? null;
+          const videoUrl = p.video_url ?? null;
+          const priceLabel =
+            p.price_type === "fixed" && p.base_price != null
+              ? `R$ ${Number(p.base_price).toFixed(2).replace(".", ",")}`
+              : null;
 
-      {/* Ghost fim */}
-      <div
-        ref={el => { cardRefs.current[list.length + 1] = el; }}
-        style={{ flex: "0 0 auto", width: guideW, minWidth: GHOST_W, pointerEvents: "none" }}
-      >
-        <GhostCard />
+          return (
+            <div
+              key={p.id}
+              onClick={() => {
+                if (active && idx !== heroIdx) { goTo(idx); return; }
+                onOpen(p, idx);
+              }}
+              style={{
+                flexShrink: 0,
+                width: w,
+                borderRadius: 14,
+                overflow: "hidden",
+                cursor: "pointer",
+                transition: "all 0.32s cubic-bezier(0.34,1.56,0.64,1)",
+                opacity: active ? (isHero ? 1 : 0.62) : 0.45,
+                border: isHero && active
+                  ? "1.5px solid #FF6B00"
+                  : "1px solid rgba(255,255,255,0.07)",
+                marginTop: mt,
+              }}
+            >
+              <div
+                style={{
+                  aspectRatio: "9 / 16",
+                  position: "relative",
+                  background: "#1a1a1a",
+                }}
+              >
+                {thumbUrl && (
+                  <img
+                    src={thumbUrl}
+                    alt={p.name}
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                    }}
+                  />
+                )}
+                {videoUrl && active && isHero && (
+                  <video
+                    src={videoUrl}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                    }}
+                  />
+                )}
+                <div
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    background:
+                      "linear-gradient(to top, rgba(0,0,0,0.92) 0%, transparent 62%)",
+                  }}
+                />
+                <div
+                  style={{
+                    position: "absolute",
+                    bottom: 8,
+                    left: 8,
+                    right: 8,
+                  }}
+                >
+                  <p
+                    style={{
+                      color: "#fff",
+                      fontSize: isHero ? 12 : 9,
+                      fontWeight: 500,
+                      margin: "0 0 2px",
+                      lineHeight: 1.2,
+                      transition: "font-size 0.3s",
+                    }}
+                  >
+                    {p.name}
+                  </p>
+                  {priceLabel && (
+                    <p
+                      style={{
+                        color: active && isHero ? "#FF6B00" : "rgba(255,255,255,0.4)",
+                        fontSize: isHero ? 10 : 8,
+                        fontWeight: 500,
+                        margin: 0,
+                        transition: "all 0.3s",
+                      }}
+                    >
+                      {priceLabel}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+
+        {/* Ghost fim */}
+        <GhostCard width={ghostW} marginTop={active ? SIDE_MT : 0} />
       </div>
     </div>
   );
 }
 
-// ─── Ghost card "DESLIZE" ─────────────────────────────────────────────────────
-function GhostCard() {
+function GhostCard({ width, marginTop }: { width: number; marginTop: number }) {
   return (
-    <div style={{
-      width: "100%",
-      aspectRatio: "9 / 16",
-      borderRadius: 12,
-      border: "1px solid rgba(255,255,255,0.05)",
-      background: "rgba(255,255,255,0.02)",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-    }}>
-      <span style={{
-        fontSize: 7,
-        color: "rgba(255,255,255,0.15)",
-        writingMode: "vertical-rl",
-        letterSpacing: "0.1em",
-        textTransform: "uppercase",
-        fontWeight: 500,
-      }}>
+    <div
+      style={{
+        flexShrink: 0,
+        width,
+        aspectRatio: "9 / 16",
+        borderRadius: 10,
+        border: "1px solid rgba(255,255,255,0.05)",
+        background: "rgba(255,255,255,0.02)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        marginTop,
+      }}
+    >
+      <span
+        style={{
+          fontSize: 6,
+          color: "rgba(255,255,255,0.1)",
+          writingMode: "vertical-rl",
+          letterSpacing: "0.1em",
+          textTransform: "uppercase",
+          fontWeight: 500,
+        }}
+      >
         Deslize
       </span>
     </div>
-  );
-}
-
-// ─── Media card ───────────────────────────────────────────────────────────────
-function MediaCard({
-  product,
-  hero,
-  active,
-  onOpen,
-}: {
-  product: Product;
-  hero: boolean;
-  active: boolean;
-  onOpen: () => void;
-}) {
-  const [videoReady, setVideoReady] = useState(false);
-  const readyTimerRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    setVideoReady(false);
-    if (readyTimerRef.current) window.clearTimeout(readyTimerRef.current);
-  }, [product.id, hero]);
-
-  const loadVideo = hero && !!product.video_url;
-  const showVideo = hero && !!product.video_url;
-
-  // NUNCA usar: thumb_path | image_path | video_path
-  const thumbUrl = product.thumbnail_url ?? null;
-  const videoUrl = product.video_url ?? null;
-
-  const priceLabel = product.price_type === "fixed" && product.base_price != null
-    ? `R$ ${Number(product.base_price).toFixed(2).replace(".", ",")}`
-    : null;
-
-  return (
-    <button
-      onClick={onOpen}
-      style={{
-        width: "100%",
-        aspectRatio: "9 / 16",
-        borderRadius: "inherit",
-        border: "none",
-        overflow: "hidden",
-        background: "#111",
-        position: "relative",
-        padding: 0,
-        cursor: "pointer",
-        WebkitMaskImage: "-webkit-radial-gradient(white, black)",
-      }}
-    >
-      {/* Thumbnail */}
-      {thumbUrl ? (
-        <img
-          src={thumbUrl}
-          alt={product.name}
-          style={{
-            position: "absolute",
-            inset: 0,
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            opacity: showVideo && videoReady ? 0 : 1,
-            transition: "opacity 240ms ease",
-          }}
-        />
-      ) : (
-        <div style={{
-          position: "absolute",
-          inset: 0,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          opacity: 0.15,
-          fontSize: 28,
-        }}>
-          🍽️
-        </div>
-      )}
-
-      {/* Vídeo — só carrega no hero */}
-      {loadVideo && videoUrl && (
-        <video
-          src={videoUrl}
-          autoPlay={showVideo}
-          loop
-          muted
-          playsInline
-          preload={showVideo ? "auto" : "metadata"}
-          style={{
-            position: "absolute",
-            inset: 0,
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            opacity: showVideo ? 1 : 0,
-          }}
-          onPlay={() => {
-            if (readyTimerRef.current) window.clearTimeout(readyTimerRef.current);
-            readyTimerRef.current = window.setTimeout(() => setVideoReady(true), 800);
-          }}
-        />
-      )}
-
-      {/* Gradiente */}
-      <div style={{
-        position: "absolute",
-        inset: 0,
-        background: "linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.3) 45%, transparent 75%)",
-      }} />
-
-      {/* Info */}
-      <div style={{
-        position: "absolute",
-        left: 10,
-        right: 10,
-        bottom: 10,
-        textAlign: "left",
-      }}>
-        <p style={{
-          color: "#fff",
-          fontWeight: 500,
-          fontSize: hero ? 13 : 10,
-          lineHeight: 1.2,
-          margin: "0 0 3px",
-          transition: "font-size 0.3s ease",
-        }}>
-          {product.name}
-        </p>
-        {priceLabel && (
-          <p style={{
-            color: active && hero ? "#FF6B00" : "rgba(255,255,255,0.45)",
-            fontSize: hero ? 12 : 9,
-            fontWeight: 500,
-            margin: 0,
-            transition: "color 0.3s ease, font-size 0.3s ease",
-          }}>
-            {priceLabel}
-          </p>
-        )}
-      </div>
-    </button>
   );
 }
