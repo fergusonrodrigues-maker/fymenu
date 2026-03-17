@@ -192,6 +192,10 @@ function PlanCard({ plan, billing, enterDelay }: { plan: typeof PLANS[0]; billin
           </div>
 
           <button
+            onClick={() => {
+              const msg = encodeURIComponent(`Olá! Quero fazer upgrade para o Plano ${plan.name} (${plan.prices[billing]}/mês - ${billing}). Pode me ajudar?`);
+              window.open(`https://wa.me/5562994974355?text=${msg}`, '_blank');
+            }}
             style={{
               width: '100%', padding: '16px', borderRadius: 999, border: 'none', cursor: 'pointer',
               backgroundColor: plan.buttonColor, color: '#000', fontWeight: 900,

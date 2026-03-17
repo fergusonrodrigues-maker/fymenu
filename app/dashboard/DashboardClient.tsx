@@ -330,7 +330,7 @@ export default function DashboardClient({
 
       {/* Plano */}
       <Modal open={modal === "plano"} onClose={close} title="Plano">
-        <PlanoModal restaurant={restaurant} trialDays={trialDays} />
+        <PlanoModal restaurant={restaurant} trialDays={trialDays} onUpgrade={() => { close(); router.push("/dashboard/planos"); }} />
       </Modal>
 
       {/* Config */}
@@ -605,7 +605,7 @@ function TVModal({ unit, tvCount }: { unit: Unit | null; tvCount: number }) {
 }
 
 // ─── Plano Modal ──────────────────────────────────────────────────────────────
-function PlanoModal({ restaurant, trialDays }: { restaurant: Restaurant; trialDays: number }) {
+function PlanoModal({ restaurant, trialDays, onUpgrade }: { restaurant: Restaurant; trialDays: number; onUpgrade: () => void }) {
   const isPro = restaurant.plan === "pro";
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingTop: 8 }}>
@@ -620,8 +620,8 @@ function PlanoModal({ restaurant, trialDays }: { restaurant: Restaurant; trialDa
       {!isPro && (
         <>
           {[
-            { name: "Basic", price: "Grátis", features: ["1 unidade", "Cardápio digital", "Modo TV", "IA básica"], color: "rgba(255,255,255,0.06)" },
-            { name: "Pro", price: "Em breve", features: ["Múltiplas unidades", "Analytics avançado", "Relatórios", "Suporte prioritário"], color: "rgba(0,255,174,0.06)", highlight: true },
+            { name: "Basic", price: "Grátis", features: ["1 unidade", "Cardápio digital", "Modo TV", "IA básica"], color: "rgba(255,255,255,0.06)", highlight: false },
+            { name: "Pro", price: "R$ 99/mês", features: ["Múltiplas unidades", "Analytics avançado", "Relatórios", "Suporte prioritário"], color: "rgba(0,255,174,0.06)", highlight: true },
           ].map((plan) => (
             <div key={plan.name} style={{ borderRadius: 16, padding: "18px 20px", background: plan.color, border: plan.highlight ? "1px solid rgba(0,255,174,0.2)" : "1px solid rgba(255,255,255,0.07)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
@@ -635,6 +635,19 @@ function PlanoModal({ restaurant, trialDays }: { restaurant: Restaurant; trialDa
                   </div>
                 ))}
               </div>
+              {plan.highlight && (
+                <button
+                  onClick={onUpgrade}
+                  style={{
+                    marginTop: 16, width: "100%", padding: "13px",
+                    borderRadius: 12, border: "none", cursor: "pointer",
+                    background: "linear-gradient(135deg, #00ffae, #00d9b8)",
+                    color: "#000", fontWeight: 800, fontSize: 14,
+                  }}
+                >
+                  Fazer Upgrade →
+                </button>
+              )}
             </div>
           ))}
         </>
