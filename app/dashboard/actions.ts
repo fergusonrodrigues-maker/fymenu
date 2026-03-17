@@ -1,3 +1,219 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { createClient } from "@/lib/supabase/server";
+import { invalidateMenuCache } from "@/lib/cache/invalidateMenuCache";
+
+function normalizeName(name: string) {
+  return name.trim();
+}
+
+function normalizeText(v: string) {
+  return v.trim();
+}
+
+function normalizeSlug(v: string) {
+  return String(v ?? "").trim().replace(/[\r\n]/g, "");
+}
+
+function parsePrice(input: string): number | null {
+  const raw = input.trim();
+  if (!raw) return null;
+  const normalized = raw.replace(/\./g, "").replace(",", ".");
+  const num = Number(normalized);
+  if (!Number.isFinite(num)) return null;
+  return num;
+}
+
+async function getUnitIdOrThrow(unitIdFromForm?: string) {
+  const supabase = await createClient();
+
+  if (unitIdFromForm) {
+    const { data, error } = await supabase
+      .from("units")
+      .select("id")
+      .eq("id", unitIdFromForm)
+      .maybeSingle();
+    if (error || !data?.id) throw new Error("Unidade não encontrada ou sem permissão.");
+    return data.id as string;
+  }
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Não autenticado.");
+
+  const { data: restaurant } = await supabase
+    .from("restaurants")
+    .select("id")
+    .eq("owner_id", user.id)
+    .maybeSingle();
+  if (!restaurant?.id) throw new Error("Restaurante não encontrado.");
+
+  const { data: unit, error } = await supabase
+    .from("units")
+    .select("id")
+    .eq("restaurant_id", restaurant.id)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (error || !unit?.id) throw new Error("Nenhuma unidade encontrada.");
+  return unit.id as string;
+}
+
+/* ========================= UNIT ========================= */
+
+export async function updateUnit(formData: FormData): Promise<void> {
+  const supabase = await createClient();
+
+  const unitId = await getUnitIdOrThrow(
+    String(formData.get("unit_id") ?? "") || undefined
+  );
+
+  const name = normalizeName(String(formData.get("name") ?? ""));
+  const slug = normalizeSlug(String(formData.get("slug") ?? ""));
+  const address = normalizeText(String(formData.get("address") ?? ""));
+  const instagram = normalizeText(String(formData.get("instagram") ?? ""));
+  const whatsapp = normalizeText(String(formData.get("whatsapp") ?? ""));
+
+  if (!name) throw new Error("Nome da unidade é obrigatório.");
+  if (!slug) throw new Error("Slug é obrigatório.");
+
+  const { error } = await supabase
+    .from("units")
+    .update({
+      name,
+      slug,
+      address: address || null,
+      instagram: instagram || null,
+      whatsapp: whatsapp || null,
+    })
+    .eq("id", unitId);
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/dashboard");
+  revalidatePath("/u");
+}
+
+/* ========================= UPLOAD LOGO ========================= */
+
+export async function uploadLogoAction(
+  formData: FormData
+): Promise<{ ok: boolean; message?: string; publicUrl?: string }> {
+  try {
+    const supabase = await createClient();
+
+    const file = formData.get("file");
+    const unitId = await getUnitIdOrThrow(
+      String(formData.get("unitId") ?? "") || undefined
+    );
+
+    if (!file || !(file instanceof File)) {
+      return { ok: false, message: "Arquivo inválido." };
+    }
+
+    if (!file.type.startsWith("image/")) {
+      return { ok: false, message: "Envie uma imagem." };
+    }
+
+    const ext = file.name.split(".").pop()?.toLowerCase() || "png";
+    const safeExt = ["png", "jpg", "jpeg", "webp"].includes(ext) ? ext : "png";
+    const filePath = `units/${unitId}/logo-${Date.now()}.${safeExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("logos")
+      .upload(filePath, file, {
+        upsert: true,
+        cacheControl: "3600",
+        contentType: file.type,
+      });
+
+    if (uploadError) return { ok: false, message: uploadError.message };
+
+    const { data: pub } = supabase.storage.from("logos").getPublicUrl(filePath);
+    const publicUrl = pub?.publicUrl ?? "";
+
+    const { error: updateError } = await supabase
+      .from("units")
+      .update({ logo_url: publicUrl })
+      .eq("id", unitId);
+
+    if (updateError) return { ok: false, message: updateError.message };
+
+    revalidatePath("/dashboard");
+    revalidatePath("/u");
+
+    return { ok: true, publicUrl };
+  } catch (e: any) {
+    return { ok: false, message: e?.message || "Falha ao enviar logo." };
+  }
+}
+
+/* ========================= CATEGORIAS ========================= */
+
+export async function createCategory(formData: FormData): Promise<void> {
+  const supabase = await createClient();
+
+  const name = normalizeName(String(formData.get("name") ?? ""));
+  if (!name) throw new Error("Nome da categoria é obrigatório.");
+
+  const unitId = await getUnitIdOrThrow(
+    String(formData.get("unit_id") ?? "") || undefined
+  );
+
+  const { data: last } = await supabase
+    .from("categories")
+    .select("order_index")
+    .eq("unit_id", unitId)
+    .order("order_index", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const nextOrder = typeof last?.order_index === "number" ? last.order_index + 1 : 0;
+
+  const { error } = await supabase.from("categories").insert({
+    unit_id: unitId,
+    name,
+    order_index: nextOrder,
+  });
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/dashboard");
+  revalidatePath("/u");
+}
+
+export async function updateCategory(formData: FormData): Promise<void> {
+  const supabase = await createClient();
+
+  const id = String(formData.get("id") ?? "");
+  const name = normalizeName(String(formData.get("name") ?? ""));
+
+  if (!id) throw new Error("ID inválido.");
+  if (!name) throw new Error("Nome é obrigatório.");
+
+  const { error } = await supabase.from("categories").update({ name }).eq("id", id);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/dashboard");
+  revalidatePath("/u");
+}
+
+export async function deleteCategory(formData: FormData): Promise<void> {
+  const supabase = await createClient();
+
+  const id = String(formData.get("id") ?? "");
+  if (!id) throw new Error("ID inválido.");
+
+  const { error } = await supabase.from("categories").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/dashboard");
+  revalidatePath("/u");
+}
+
+/* ========================= PRODUTOS ========================= */
+
 export async function createProduct(formData: FormData): Promise<void> {
   const supabase = await createClient();
 
@@ -48,6 +264,10 @@ export async function createProduct(formData: FormData): Promise<void> {
 
   if (error) throw new Error(error.message);
 
+  try {
+    await invalidateMenuCache(category.unit_id);
+  } catch {}
+
   revalidatePath("/dashboard");
   revalidatePath("/u");
 }
@@ -79,6 +299,106 @@ export async function updateProduct(formData: FormData): Promise<void> {
       thumbnail_url: thumbnailUrl || null,
       video_url: videoUrl || null,
     })
+    .eq("id", id);
+
+  if (error) throw new Error(error.message);
+
+  try {
+    const { data: prod } = await supabase
+      .from("products")
+      .select("category_id")
+      .eq("id", id)
+      .single();
+    if (prod?.category_id) {
+      const { data: cat } = await supabase
+        .from("categories")
+        .select("unit_id")
+        .eq("id", prod.category_id)
+        .single();
+      if (cat?.unit_id) await invalidateMenuCache(cat.unit_id);
+    }
+  } catch {}
+
+  revalidatePath("/dashboard");
+  revalidatePath("/u");
+}
+
+export async function deleteProduct(formData: FormData): Promise<void> {
+  const supabase = await createClient();
+
+  const id = String(formData.get("id") ?? "");
+  if (!id) throw new Error("ID inválido.");
+
+  const { error } = await supabase.from("products").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/dashboard");
+  revalidatePath("/u");
+}
+
+/* ========================= UPSELL ========================= */
+
+export async function addUpsellItem(formData: FormData): Promise<void> {
+  const supabase = await createClient();
+
+  const productId = String(formData.get("product_id") ?? "");
+  const upsellProductId = String(formData.get("upsell_product_id") ?? "");
+
+  if (!productId || !upsellProductId) throw new Error("IDs inválidos.");
+
+  let { data: group } = await supabase
+    .from("product_upsells")
+    .select("id")
+    .eq("product_id", productId)
+    .maybeSingle();
+
+  if (!group) {
+    const { data: created, error: groupErr } = await supabase
+      .from("product_upsells")
+      .insert({ product_id: productId })
+      .select("id")
+      .single();
+    if (groupErr || !created) throw new Error(groupErr?.message ?? "Erro ao criar grupo de upsell.");
+    group = created;
+  }
+
+  const { count } = await supabase
+    .from("product_upsell_items")
+    .select("id", { count: "exact", head: true })
+    .eq("upsell_id", group.id);
+
+  if ((count ?? 0) >= 3) throw new Error("Máximo de 3 sugestões atingido.");
+
+  const { data: existing } = await supabase
+    .from("product_upsell_items")
+    .select("id")
+    .eq("upsell_id", group.id)
+    .eq("product_id", upsellProductId)
+    .maybeSingle();
+
+  if (existing) return;
+
+  const { error } = await supabase.from("product_upsell_items").insert({
+    upsell_id: group.id,
+    product_id: upsellProductId,
+    position: count ?? 0,
+  });
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/dashboard");
+  revalidatePath("/u");
+}
+
+export async function removeUpsellItem(formData: FormData): Promise<void> {
+  const supabase = await createClient();
+
+  const id = String(formData.get("id") ?? "");
+  if (!id) throw new Error("ID inválido.");
+
+  const { error } = await supabase
+    .from("product_upsell_items")
+    .delete()
     .eq("id", id);
 
   if (error) throw new Error(error.message);
