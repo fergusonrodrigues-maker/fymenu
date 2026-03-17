@@ -40,6 +40,7 @@ export default function ProductModal({
     if (!product) return;
     const idx = allProducts.findIndex((p) => p.id === product.id);
     setCurrentIndex(idx >= 0 ? idx : 0);
+    setClosing(false);
   }, [product, allProducts]);
 
   const currentProduct =
@@ -48,8 +49,10 @@ export default function ProductModal({
   const currentVariations = variations ?? [];
 
   useEffect(() => {
-    setSelectedVariation(null);
-    setThumbVisible(true);
+    if (currentProduct) {
+      setSelectedVariation(null);
+      setThumbVisible(true);
+    }
   }, [currentProduct?.id]);
 
   const total = allProducts.length;

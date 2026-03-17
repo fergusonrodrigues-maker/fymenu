@@ -159,6 +159,7 @@ export default function MenuClient({
         variations={selectedProduct ? (variations[selectedProduct.id] ?? []) : []}
         onClose={() => setSelectedProduct(null)}
         onOrder={handleProductOrder}
+        allProducts={products}
         mode={mode}
       />
 
