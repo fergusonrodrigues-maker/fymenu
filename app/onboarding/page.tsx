@@ -28,7 +28,14 @@ export default async function OnboardingPage() {
     restaurantId = newRestaurant?.id;
   }
 
-  if (!restaurantId) redirect("/login");
+  if (!restaurantId) {
+    return (
+      <main style={{ padding: 18, maxWidth: 420, margin: "0 auto", color: "#fff" }}>
+        <p style={{ color: "salmon" }}>Erro ao criar restaurante. Tente novamente mais tarde.</p>
+        <a href="/onboarding" style={{ color: "#fff", textDecoration: "underline" }}>Tentar novamente</a>
+      </main>
+    );
+  }
 
   return (
     <OnboardingClient
