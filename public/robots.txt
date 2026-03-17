@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /u/
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /api/
+Sitemap: https://fymenu.vercel.app/sitemap.xml
