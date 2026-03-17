@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 
+type ThemeType = "light" | "dark";
 type OverlayType = "cardapio" | "unidade" | "conta" | "planos" | "analytics" | null;
 
 const THEMES = {
@@ -39,10 +40,9 @@ function DashboardContent() {
   const [units, setUnits] = useState<any[]>([]);
   const [activeUnit, setActiveUnit] = useState<any>(null);
   const [stats, setStats] = useState({ totalProducts: 0, totalCategories: 0 });
-  const [th, setTh] = useState<"light" | "dark">("dark");
+  const [th, setTh] = useState<ThemeType>("dark");
   const [open, setOpen] = useState<OverlayType>(null);
   const [planLabel, setPlanLabel] = useState("BASIC");
-  const [trialDaysLeft, setTrialDaysLeft] = useState<number | null>(null);
 
   // Verificar autenticação
   useEffect(() => {
@@ -315,7 +315,14 @@ export default function DashboardPage() {
 
 // ─── COMPONENTS ───
 
-function CardLayout({ label, onOpen, th, children }: any) {
+interface CardLayoutProps {
+  label: string;
+  onOpen?: () => void;
+  th: ThemeType;
+  children: React.ReactNode;
+}
+
+function CardLayout({ label, onOpen, th, children }: CardLayoutProps) {
   const t = THEMES[th];
   return (
     <div
@@ -343,7 +350,13 @@ function CardLayout({ label, onOpen, th, children }: any) {
   );
 }
 
-function Overlay({ onClose, th, children }: any) {
+interface OverlayProps {
+  onClose: () => void;
+  th: ThemeType;
+  children: React.ReactNode;
+}
+
+function Overlay({ onClose, th, children }: OverlayProps) {
   const t = THEMES[th];
   return (
     <>
@@ -397,7 +410,7 @@ function Overlay({ onClose, th, children }: any) {
   );
 }
 
-function OverlayCardapio({ th }: any) {
+function OverlayCardapio({ th }: { th: ThemeType }) {
   const t = THEMES[th];
   return (
     <div>
@@ -425,7 +438,7 @@ function OverlayCardapio({ th }: any) {
   );
 }
 
-function OverlayUnidade({ unit, th }: any) {
+function OverlayUnidade({ unit, th }: { unit: any; th: ThemeType }) {
   const t = THEMES[th];
   return (
     <div>
@@ -470,7 +483,7 @@ function OverlayUnidade({ unit, th }: any) {
   );
 }
 
-function OverlayConta({ restaurant, user, th }: any) {
+function OverlayConta({ restaurant, user, th }: { restaurant: any; user: any; th: ThemeType }) {
   const t = THEMES[th];
   return (
     <div>
@@ -495,7 +508,7 @@ function OverlayConta({ restaurant, user, th }: any) {
   );
 }
 
-function OverlayPlanos({ th }: any) {
+function OverlayPlanos({ th }: { th: ThemeType }) {
   const t = THEMES[th];
   return (
     <div>
@@ -538,7 +551,7 @@ function OverlayPlanos({ th }: any) {
   );
 }
 
-function OverlayAnalytics({ stats, th }: any) {
+function OverlayAnalytics({ stats, th }: { stats: any; th: ThemeType }) {
   const t = THEMES[th];
   return (
     <div>
