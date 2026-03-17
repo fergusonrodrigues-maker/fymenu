@@ -91,6 +91,7 @@ export default function MenuClient({
             <div
               key={cat.id}
               ref={(el) => { sectionRefs.current[cat.id] = el; }}
+              style={{ marginBottom: 12, overflow: "visible" }}
             >
               <CategoryCarousel
                 items={catProducts}
