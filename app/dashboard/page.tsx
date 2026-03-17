@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -14,7 +14,7 @@ const TABS: { id: TabName; label: string; icon: string }[] = [
   { id: "planos", label: "Planos", icon: "💳" },
 ];
 
-export default function DashboardPage() {
+function DashboardContent() {
   const supabase = createClient();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -132,6 +132,14 @@ export default function DashboardPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: "#1a1a2e", color: "#fff" }}>Carregando...</div>}>
+      <DashboardContent />
+    </Suspense>
   );
 }
 
