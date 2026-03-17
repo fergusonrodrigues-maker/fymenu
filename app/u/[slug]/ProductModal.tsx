@@ -53,7 +53,6 @@ export default function ProductModal({
   }, [currentProduct?.id]);
 
   const total = allProducts.length;
-  const counter = total > 1 ? `${currentIndex + 1} / ${total}` : null;
 
   const goNext = useCallback(() => {
     if (allProducts.length > 0 && currentIndex < allProducts.length - 1) {
@@ -86,13 +85,10 @@ export default function ProductModal({
 
   const isFixed = currentProduct.price_type === "fixed";
   const hasVariations = currentVariations.length > 0;
-
   const fixedPrice = currentProduct.base_price ?? null;
-
   const activePrice: number | null = isFixed
     ? fixedPrice
     : selectedVariation?.price ?? null;
-
   const canOrder = mode === "delivery" && (isFixed || selectedVariation !== null);
 
   // NUNCA usar: thumb_path | image_path | video_path
@@ -102,7 +98,6 @@ export default function ProductModal({
 
   function handleOrder() {
     if (!canOrder || activePrice == null || !currentProduct) return;
-
     onOrder({
       product: currentProduct,
       variation: selectedVariation ?? undefined,
@@ -161,8 +156,11 @@ export default function ProductModal({
             from { opacity: 0.88; transform: translateX(-72px) scale(0.96); }
             to { opacity: 1; transform: translateX(0) scale(1); }
           }
+          .fy-desc-scroll::-webkit-scrollbar { display: none; }
+          .fy-desc-scroll { scrollbar-width: none; }
         `}</style>
 
+        {/* Media */}
         <div className="absolute inset-0">
           {hasMedia ? (
             <>
@@ -171,29 +169,18 @@ export default function ProductModal({
                   src={thumbUrl}
                   alt={currentProduct.name}
                   className="absolute inset-0 h-full w-full object-cover transition-opacity"
-                  style={{
-                    opacity: thumbVisible ? 1 : 0,
-                    transitionDuration: "260ms",
-                    zIndex: 1,
-                  }}
+                  style={{ opacity: thumbVisible ? 1 : 0, transitionDuration: "260ms", zIndex: 1 }}
                 />
               )}
-
               {videoUrl && (
                 <video
                   key={videoUrl}
                   src={videoUrl}
                   className="absolute inset-0 h-full w-full object-cover"
                   style={{ zIndex: 2 }}
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  preload="metadata"
+                  autoPlay loop muted playsInline preload="metadata"
                   onTimeUpdate={(e) => {
-                    if (thumbVisible && e.currentTarget.currentTime >= 1) {
-                      setThumbVisible(false);
-                    }
+                    if (thumbVisible && e.currentTarget.currentTime >= 1) setThumbVisible(false);
                   }}
                 />
               )}
@@ -201,176 +188,161 @@ export default function ProductModal({
           ) : (
             <div
               className="absolute inset-0 flex items-center justify-center"
-              style={{
-                background:
-                  "linear-gradient(135deg, rgba(24,24,28,1) 0%, rgba(10,10,12,1) 100%)",
-                zIndex: 1,
-              }}
+              style={{ background: "linear-gradient(135deg, rgba(24,24,28,1) 0%, rgba(10,10,12,1) 100%)", zIndex: 1 }}
             >
               <div
                 className="flex h-24 w-24 items-center justify-center rounded-full"
-                style={{
-                  background: "rgba(255,255,255,0.06)",
-                  border: "1px solid rgba(255,255,255,0.08)",
-                }}
+                style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}
               >
                 <span style={{ fontSize: 34, opacity: 0.4 }}>🍽️</span>
               </div>
             </div>
           )}
 
+          {/* Gradiente */}
           <div
             className="absolute inset-0"
             style={{
               zIndex: 3,
-              background:
-                "linear-gradient(to top, rgba(0,0,0,0.94) 0%, rgba(0,0,0,0.58) 36%, rgba(0,0,0,0.14) 68%, transparent 100%)",
+              background: "linear-gradient(to top, rgba(0,0,0,0.96) 0%, rgba(0,0,0,0.6) 40%, rgba(0,0,0,0.14) 68%, transparent 100%)",
             }}
           />
+        </div>
 
-          {counter && (
-            <div
-              className="absolute left-4 top-4 rounded-full px-3 py-1 text-xs font-bold text-white"
-              style={{
-                zIndex: 10,
-                background: "rgba(0,0,0,0.42)",
-                border: "1px solid rgba(255,255,255,0.12)",
-                backdropFilter: "blur(10px)",
-                WebkitBackdropFilter: "blur(10px)",
-              }}
-            >
-              {counter}
-            </div>
-          )}
-
+        {/* Top bar */}
+        <div
+          className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 pt-4"
+          style={{ zIndex: 10 }}
+        >
           <button
             onClick={handleClose}
-            className="absolute right-4 top-4 flex items-center justify-center rounded-full text-white"
+            className="flex items-center justify-center"
             style={{
-              zIndex: 10,
-              width: 40,
-              height: 40,
-              background: "rgba(0,0,0,0.42)",
-              border: "1px solid rgba(255,255,255,0.12)",
-              backdropFilter: "blur(10px)",
-              WebkitBackdropFilter: "blur(10px)",
-              fontSize: 18,
-              fontWeight: 700,
+              width: 34, height: 34, borderRadius: "50%",
+              background: "rgba(255,255,255,0.1)",
+              border: "0.5px solid rgba(255,255,255,0.15)",
+              cursor: "pointer", color: "#fff", fontSize: 14, fontWeight: 700,
             }}
             aria-label="Fechar"
           >
             ✕
           </button>
 
-          <div
-            className="absolute inset-x-0 bottom-0"
-            style={{ zIndex: 5, padding: "0 18px 18px" }}
-          >
-            <div
-              className="rounded-[24px] p-4"
+          {total > 1 && (
+            <div className="flex items-center" style={{ gap: 5 }}>
+              {allProducts.map((_, i) => (
+                <div
+                  key={i}
+                  style={{
+                    width: i === currentIndex ? 6 : 5,
+                    height: i === currentIndex ? 6 : 5,
+                    borderRadius: "50%",
+                    background: i === currentIndex ? "#FF6B00" : "rgba(255,255,255,0.25)",
+                    transition: "all 0.2s",
+                  }}
+                />
+              ))}
+            </div>
+          )}
+
+          <div style={{ width: 34 }} />
+        </div>
+
+        {/* Info + CTA */}
+        <div
+          className="absolute inset-x-0 bottom-0"
+          style={{ zIndex: 5, padding: "0 16px 18px" }}
+        >
+          <p style={{ color: "#fff", fontSize: 15, fontWeight: 500, lineHeight: 1.2, margin: "0 0 4px" }}>
+            {currentProduct.name}
+          </p>
+
+          {currentProduct.description && (
+            <div className="fy-desc-scroll" style={{ maxHeight: 32, overflowY: "auto", marginBottom: 8 }}>
+              <p style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", lineHeight: 1.45, margin: 0 }}>
+                {currentProduct.description}
+              </p>
+            </div>
+          )}
+
+          {!hasVariations && productBasePrice && (
+            <p style={{ color: "#FF6B00", fontSize: 18, fontWeight: 500, margin: "0 0 12px" }}>
+              {productBasePrice}
+            </p>
+          )}
+
+          {hasVariations && (
+            <div style={{ marginBottom: 12 }}>
+              <p style={{ color: "#FF6B00", fontSize: 18, fontWeight: 500, margin: "0 0 10px" }}>
+                {displayPrice ?? "\u00a0"}
+              </p>
+              <div style={{ display: "flex", gap: 5 }}>
+                {currentVariations.slice(0, 4).map((variation) => {
+                  const isSelected = selectedVariation?.id === variation.id;
+                  return (
+                    <button
+                      key={variation.id}
+                      onClick={() => setSelectedVariation(variation)}
+                      style={{
+                        flex: 1, minWidth: 0, padding: "5px 4px", borderRadius: 999,
+                        border: isSelected ? "1px solid #FF6B00" : "1px solid rgba(255,255,255,0.18)",
+                        background: isSelected ? "rgba(255,107,0,0.12)" : "rgba(255,255,255,0.06)",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <span style={{
+                        fontSize: 10,
+                        color: isSelected ? "#FF6B00" : "rgba(255,255,255,0.55)",
+                        whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                        display: "block", width: "100%", textAlign: "center",
+                      }}>
+                        {variation.name}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {mode === "delivery" && (
+            <button
+              onClick={handleOrder}
+              disabled={!canOrder}
+              className="active:scale-[0.98]"
               style={{
-                background: "rgba(11,11,13,0.74)",
-                border: "1px solid rgba(255,255,255,0.08)",
-                backdropFilter: "blur(14px)",
-                WebkitBackdropFilter: "blur(14px)",
-                boxShadow: "0 12px 30px rgba(0,0,0,0.26)",
+                position: "relative", width: "100%",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
+                padding: "13px", borderRadius: 999,
+                border: canOrder ? "1px solid rgba(255,255,255,0.22)" : "1px solid rgba(255,255,255,0.08)",
+                background: canOrder ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.05)",
+                color: canOrder ? "#fff" : "rgba(255,255,255,0.28)",
+                fontSize: 14, fontWeight: 500,
+                cursor: canOrder ? "pointer" : "not-allowed",
+                overflow: "hidden", transition: "all 0.2s",
               }}
             >
-              <div className="text-white" style={{ fontSize: 22, fontWeight: 900, lineHeight: 1.08 }}>
-                {currentProduct.name}
-              </div>
-
-              {currentProduct.description && (
-                <p
-                  className="mt-2 text-sm"
-                  style={{ color: "rgba(255,255,255,0.72)", lineHeight: 1.55 }}
-                >
-                  {currentProduct.description}
-                </p>
+              <span style={{
+                position: "absolute", top: 0, left: 0, right: 0, height: "50%",
+                background: "rgba(255,255,255,0.07)",
+                borderRadius: "999px 999px 0 0", pointerEvents: "none",
+              }} />
+              <span style={{ position: "relative", zIndex: 1 }}>
+                {canOrder ? "Pedir" : "Selecione uma opção"}
+              </span>
+              {canOrder && displayPrice && (
+                <span style={{ position: "relative", zIndex: 1, fontSize: 12, color: "rgba(255,255,255,0.55)" }}>
+                  · {displayPrice}
+                </span>
               )}
-
-              {!hasVariations && productBasePrice && (
-                <div
-                  className="mt-3 text-white"
-                  style={{ fontSize: 20, fontWeight: 900, lineHeight: 1.1 }}
-                >
-                  {productBasePrice}
-                </div>
+              {canOrder && (
+                <svg style={{ position: "relative", zIndex: 1 }} width="14" height="14" viewBox="0 0 15 15" fill="none">
+                  <line x1="3" y1="7.5" x2="12" y2="7.5" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" />
+                  <polyline points="9,4.5 12,7.5 9,10.5" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
               )}
-
-              {hasVariations && (
-                <div className="mt-4">
-                  <div
-                    className="mb-3 text-[11px] font-semibold uppercase"
-                    style={{ color: "rgba(255,255,255,0.44)", letterSpacing: "0.14em" }}
-                  >
-                    Selecione uma opção
-                  </div>
-
-                  <div className="flex flex-wrap gap-2">
-                    {currentVariations.map((variation) => {
-                      const isSelected = selectedVariation?.id === variation.id;
-                      return (
-                        <button
-                          key={variation.id}
-                          onClick={() => setSelectedVariation(variation)}
-                          className="min-w-[108px] rounded-full px-4 py-3 text-sm font-semibold transition-all"
-                          style={{
-                            background: isSelected ? "#ffffff" : "rgba(255,255,255,0.08)",
-                            color: isSelected ? "#000" : "#fff",
-                            border: isSelected
-                              ? "1px solid rgba(255,255,255,0.92)"
-                              : "1px solid rgba(255,255,255,0.12)",
-                            boxShadow: isSelected ? "0 6px 18px rgba(255,255,255,0.14)" : "none",
-                          }}
-                        >
-                          <span>{variation.name}</span>
-                          {variation.price != null && (
-                            <span style={{ marginLeft: 8, opacity: isSelected ? 0.72 : 0.82 }}>
-                              {moneyBR(variation.price)}
-                            </span>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {displayPrice && (
-                    <div className="mt-3 text-white" style={{ fontSize: 18, fontWeight: 900 }}>
-                      {displayPrice}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {mode === "delivery" && (
-                <button
-                  onClick={handleOrder}
-                  disabled={!canOrder}
-                  className="mt-5 flex h-[54px] w-full items-center justify-center rounded-[18px] text-sm font-bold uppercase tracking-[0.08em] transition-all active:scale-[0.98]"
-                  style={{
-                    background: canOrder ? "#ffffff" : "rgba(255,255,255,0.08)",
-                    color: canOrder ? "#000" : "rgba(255,255,255,0.28)",
-                    border: canOrder
-                      ? "1px solid rgba(255,255,255,0.9)"
-                      : "1px solid rgba(255,255,255,0.08)",
-                    cursor: canOrder ? "pointer" : "not-allowed",
-                  }}
-                >
-                  {canOrder ? (
-                    <>
-                      Pedir
-                      {displayPrice && (
-                        <span style={{ marginLeft: 8, opacity: 0.56 }}>• {displayPrice}</span>
-                      )}
-                    </>
-                  ) : (
-                    "Selecione uma opção"
-                  )}
-                </button>
-              )}
-            </div>
-          </div>
+            </button>
+          )}
         </div>
       </div>
     </div>
