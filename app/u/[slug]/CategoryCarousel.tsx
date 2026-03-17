@@ -13,10 +13,10 @@ interface CategoryCarouselProps {
 }
 
 // ─── constantes ───────────────────────────────────────────────────────────────
-const HERO_W   = 140;   // largura card hero (categoria ativa)
-const SIDE_W   = 108;   // largura cards laterais (categoria ativa)
+const HERO_W   = 150;   // largura card hero (categoria ativa) — 25% maior que SMALL_W
+const SIDE_W   = 112;   // largura cards laterais (categoria ativa)
 const SMALL_W  = 90;    // largura cards (categoria inativa)
-const GHOST_W  = 56;    // largura card DESLIZE
+const GHOST_W  = 28;    // largura card DESLIZE — estreito
 const GAP      = 10;
 
 export default function CategoryCarousel({
@@ -96,7 +96,7 @@ export default function CategoryCarousel({
         gap: GAP,
         overflowX: "auto",
         overflowY: "hidden",
-        padding: active ? "40px 0 44px" : "18px 0 20px",
+        padding: active ? "48px 0 52px" : "14px 0 16px",
         WebkitOverflowScrolling: "touch",
         scrollbarWidth: "none",
         transition: "padding 0.4s ease",
@@ -168,18 +168,18 @@ function GhostCard() {
     <div style={{
       width: "100%",
       aspectRatio: "9 / 16",
-      borderRadius: 16,
-      border: "1px solid rgba(255,255,255,0.07)",
-      background: "rgba(255,255,255,0.03)",
+      borderRadius: 12,
+      border: "1px solid rgba(255,255,255,0.05)",
+      background: "rgba(255,255,255,0.02)",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
     }}>
       <span style={{
-        fontSize: 8,
-        color: "rgba(255,255,255,0.2)",
+        fontSize: 7,
+        color: "rgba(255,255,255,0.15)",
         writingMode: "vertical-rl",
-        letterSpacing: "0.12em",
+        letterSpacing: "0.1em",
         textTransform: "uppercase",
         fontWeight: 500,
       }}>
