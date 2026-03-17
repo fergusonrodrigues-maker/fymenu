@@ -4,6 +4,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { invalidateMenuCache } from "@/lib/cache/invalidateMenuCache";
 
 function normalizeName(name: string) {
   return name.trim();
@@ -281,6 +282,16 @@ export async function createProduct(formData: FormData): Promise<void> {
 
   if (error) throw new Error(error.message);
 
+  // Invalidar cache
+  try {
+    const { data: cat } = await supabase
+      .from("categories")
+      .select("unit_id")
+      .eq("id", categoryId)
+      .single();
+    if (cat?.unit_id) await invalidateMenuCache(cat.unit_id);
+  } catch {}
+
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/cardapio");
   revalidatePath("/u");
@@ -316,6 +327,23 @@ export async function updateProduct(formData: FormData): Promise<void> {
     .eq("id", id);
 
   if (error) throw new Error(error.message);
+
+  // Invalidar cache
+  try {
+    const { data: prod } = await supabase
+      .from("products")
+      .select("category_id")
+      .eq("id", id)
+      .single();
+    if (prod?.category_id) {
+      const { data: cat } = await supabase
+        .from("categories")
+        .select("unit_id")
+        .eq("id", prod.category_id)
+        .single();
+      if (cat?.unit_id) await invalidateMenuCache(cat.unit_id);
+    }
+  } catch {}
 
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/cardapio");

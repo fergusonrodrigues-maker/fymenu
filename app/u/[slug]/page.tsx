@@ -1,12 +1,55 @@
 // FILE: /app/u/[slug]/page.tsx
 
 import { createClient } from "@/lib/supabase/server";
+import { getOrBuildMenuCache } from "@/lib/cache/buildMenuCache";
 import MenuClient from "./MenuClient";
 import type { Category, Product, ProductVariation, Unit } from "./menuTypes";
 import { normalizePublicSlug, slugify, toNumberOrNull } from "./menuTypes";
 import type { UpsellSuggestion } from "./UpsellModal";
+import type { Metadata } from "next";
 
 export const revalidate = 0;
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const publicSlug = normalizePublicSlug(slug);
+  const supabase = await createClient();
+
+  try {
+    const { data: unit } = await supabase
+      .from("units")
+      .select("name, logo_url, restaurant_id")
+      .eq("slug", publicSlug)
+      .single();
+
+    if (!unit) return { title: "Cardápio não encontrado" };
+
+    const { data: restaurant } = await supabase
+      .from("restaurants")
+      .select("name")
+      .eq("id", unit.restaurant_id)
+      .single();
+
+    const title = `${unit.name} - Cardápio Digital`;
+    const description = `Veja o cardápio de ${restaurant?.name ?? unit.name} online. Peça no WhatsApp!`;
+
+    return {
+      title,
+      description,
+      openGraph: {
+        title,
+        description,
+        images: unit.logo_url ? [unit.logo_url] : [],
+      },
+    };
+  } catch {
+    return { title: "Cardápio Digital" };
+  }
+}
 
 export default async function Page({
   params,
@@ -42,56 +85,37 @@ export default async function Page({
     logo_url: unitData.logo_url ?? null,
   };
 
-  // ─── 2) CATEGORIES ────────────────────────────────────────────────────────
-  const { data: categoriesData } = await supabase
-    .from("categories")
-    .select("id, unit_id, name, order_index, type")
-    .eq("unit_id", unit.id)
-    .order("order_index", { ascending: true, nullsFirst: false });
+  // ─── 2–4) CATEGORIES + PRODUCTS + VARIATIONS (via cache) ──────────────────
+  const cachedMenu = await getOrBuildMenuCache(unit.id);
 
-  const categories: Category[] = (categoriesData ?? []).map((c: any, idx: number) => {
-    const name = (c?.name ?? "").toString();
-    return {
-      id: c.id,
-      unit_id: c.unit_id,
-      name,
-      order_index: typeof c.order_index === "number" ? c.order_index : idx,
-      is_featured: false,
-      slug: slugify(name || `categoria-${idx + 1}`),
-      type: c.type ?? null,
-    };
-  });
+  const categories: Category[] = cachedMenu.categories.map((c, idx) => ({
+    id: c.id,
+    unit_id: unit.id,
+    name: c.name,
+    order_index: c.position,
+    is_featured: false,
+    slug: slugify(c.name || `categoria-${idx + 1}`),
+    type: null,
+  }));
 
   if (!categories.length) {
     return <MenuClient unit={unit} categories={[]} products={[]} variations={{}} upsells={{}} />;
   }
 
-  const validCategoryIds = new Set(categories.map((c) => c.id));
-
-  // ─── 3) PRODUCTS ──────────────────────────────────────────────────────────
-  const { data: productsData, error: prodErr } = await supabase
-    .from("products")
-    .select(
-      "id, category_id, name, description, price_type, base_price, thumbnail_url, video_url, is_active, order_index"
-    )
-    .in("category_id", Array.from(validCategoryIds))
-    .eq("is_active", true)
-    .order("order_index", { ascending: true, nullsFirst: false });
-
-  if (prodErr) return <ErrorScreen message={prodErr.message} />;
-
-  const products: Product[] = (productsData ?? []).map((p: any) => ({
-    id: p.id,
-    category_id: p.category_id,
-    name: (p.name ?? "").toString(),
-    description: p.description ?? null,
-    price_type: p.price_type === "variable" ? "variable" : "fixed",
-    base_price: toNumberOrNull(p.base_price),
-    thumbnail_url: p.thumbnail_url ?? null,
-    video_url: p.video_url ?? null,
-    is_active: p.is_active !== false,
-    order_index: typeof p.order_index === "number" ? p.order_index : null,
-  }));
+  const products: Product[] = cachedMenu.categories.flatMap((c) =>
+    c.products.map((p) => ({
+      id: p.id,
+      category_id: c.id,
+      name: p.name,
+      description: p.description ?? null,
+      price_type: (p.variations.length > 0 ? "variable" : "fixed") as "fixed" | "variable",
+      base_price: toNumberOrNull(p.base_price),
+      thumbnail_url: p.thumbnail_url ?? null,
+      video_url: p.video_url ?? null,
+      is_active: p.is_active,
+      order_index: null,
+    }))
+  );
 
   const productIds = products.map((p) => p.id);
 
@@ -99,24 +123,19 @@ export default async function Page({
     return <MenuClient unit={unit} categories={categories} products={[]} variations={{}} upsells={{}} />;
   }
 
-  // ─── 4) VARIATIONS ────────────────────────────────────────────────────────
-  const { data: variationsData } = await supabase
-    .from("product_variations")
-    .select("id, product_id, name, price, order_index")
-    .in("product_id", productIds)
-    .eq("is_active", true)
-    .order("order_index", { ascending: true, nullsFirst: false });
-
   const variations: Record<string, ProductVariation[]> = {};
-  for (const v of variationsData ?? []) {
-    if (!variations[v.product_id]) variations[v.product_id] = [];
-    variations[v.product_id].push({
-      id: v.id,
-      product_id: v.product_id,
-      name: (v.name ?? "").toString(),
-      price: toNumberOrNull(v.price) ?? 0,
-      order_index: typeof v.order_index === "number" ? v.order_index : null,
-    });
+  for (const cat of cachedMenu.categories) {
+    for (const product of cat.products) {
+      if (product.variations.length > 0) {
+        variations[product.id] = product.variations.map((v, idx) => ({
+          id: v.id,
+          product_id: product.id,
+          name: v.name,
+          price: v.price,
+          order_index: idx,
+        }));
+      }
+    }
   }
 
   // ─── 5) UPSELLS ───────────────────────────────────────────────────────────
