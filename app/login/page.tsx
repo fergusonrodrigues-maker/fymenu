@@ -296,7 +296,7 @@ export default async function LoginPage({
           </div>
 
           <div className="forgot-password">
-            <a href="#">Esqueceu a senha?</a>
+            <a href="/auth/reset-password">Esqueceu a senha?</a>
           </div>
 
           <button type="submit" className="submit-btn">Entrar</button>
