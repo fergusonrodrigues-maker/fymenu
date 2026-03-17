@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Product, ProductVariation } from "./menuTypes";
 import { OrderPayload } from "./orderBuilder";
+import { useSwipeGesture } from "./useSwipeGesture";
 
 interface ProductModalProps {
   product: Product | null;
@@ -33,9 +34,7 @@ export default function ProductModal({
   const [closing, setClosing] = useState(false);
   const [slideDir, setSlideDir] = useState<"left" | "right" | null>(null);
 
-  const touchStartX = useRef(0);
-  const touchStartY = useRef(0);
-  const THRESHOLD = 50;
+  const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!product) return;
@@ -72,25 +71,11 @@ export default function ProductModal({
     }
   }, [currentIndex, allProducts.length]);
 
-  function handleTouchStart(e: React.TouchEvent) {
-    touchStartX.current = e.touches[0].clientX;
-    touchStartY.current = e.touches[0].clientY;
-  }
-
-  function handleTouchEnd(e: React.TouchEvent) {
-    const dx = e.changedTouches[0].clientX - touchStartX.current;
-    const dy = e.changedTouches[0].clientY - touchStartY.current;
-
-    if (Math.abs(dy) > Math.abs(dx) && dy > THRESHOLD) {
-      handleClose();
-      return;
-    }
-
-    if (Math.abs(dx) > Math.abs(dy)) {
-      if (dx < -THRESHOLD) goNext();
-      else if (dx > THRESHOLD) goPrev();
-    }
-  }
+  useSwipeGesture(modalRef, {
+    onSwipeLeft: goNext,
+    onSwipeRight: goPrev,
+    onSwipeDown: () => handleClose(),
+  });
 
   function handleClose() {
     setClosing(true);
@@ -132,6 +117,7 @@ export default function ProductModal({
 
   return (
     <div
+      ref={modalRef}
       className="fixed inset-0 z-50 flex items-center justify-center px-3 py-4"
       style={{
         background: closing ? "rgba(0,0,0,0)" : "rgba(0,0,0,0.74)",
@@ -140,8 +126,6 @@ export default function ProductModal({
         transition: "background 280ms ease",
       }}
       onClick={(e) => e.target === e.currentTarget && handleClose()}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
     >
       <div
         className="relative w-full overflow-hidden"
