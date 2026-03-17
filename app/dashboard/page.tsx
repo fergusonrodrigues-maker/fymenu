@@ -214,7 +214,7 @@ function DashboardContent() {
 
         {/* Unidade */}
         <div style={{ gridRow: "span 2" }}>
-          <CardLayout label="Unidade" th={th}>
+          <CardLayout label="Unidade" onOpen={() => setOpen("unidade")} th={th}>
             <div style={{ fontSize: 13, fontWeight: 900, color: t.text, marginBottom: 12 }}>
               {activeUnit?.name || "–"}
             </div>
@@ -272,6 +272,26 @@ function DashboardContent() {
               {["Dados pessoais", "Senha", "Plano"].map((item, i) => (
                 <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, padding: "3px 0", borderBottom: i < 2 ? `1px solid ${t.border}` : "none" }}>
                   <div style={{ width: 3, height: 3, borderRadius: "50%", background: "#818cf8", flexShrink: 0 }} />
+                  <span style={{ fontSize: 9, color: t.muted, fontWeight: 600 }}>{item}</span>
+                </div>
+              ))}
+              <div style={{ marginBottom: 28 }} />
+            </CardLayout>
+          </a>
+        </div>
+        {/* Modo TV */}
+        <div>
+          <a
+            href="/dashboard/tv"
+            style={{ display: "block", height: "100%", textDecoration: "none" }}
+          >
+            <CardLayout label="Modo TV" th={th}>
+              <div style={{ fontSize: 13, fontWeight: 900, color: t.text, marginBottom: 6 }}>
+                📺 Tela de TV
+              </div>
+              {["Mídia ativa", "Slides", "Gerenciar"].map((item, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, padding: "3px 0", borderBottom: i < 2 ? `1px solid ${t.border}` : "none" }}>
+                  <div style={{ width: 3, height: 3, borderRadius: "50%", background: "#fb923c", flexShrink: 0 }} />
                   <span style={{ fontSize: 9, color: t.muted, fontWeight: 600 }}>{item}</span>
                 </div>
               ))}
