@@ -414,6 +414,7 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
   unit: Unit | null; categories: Category[]; products: Product[]; upsellItems: any[]; onClose: () => void;
 }) {
   const [expandedCat, setExpandedCat] = useState<string | null>(categories[0]?.id ?? null);
+  const [expandedProductId, setExpandedProductId] = useState<string | null>(null);
   const productsByCat = categories.reduce<Record<string, Product[]>>((acc, cat) => {
     acc[cat.id] = products.filter((p) => p.category_id === cat.id);
     return acc;
@@ -463,9 +464,19 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
               <div style={{ padding: "0 12px 12px", display: "flex", flexDirection: "column", gap: 8 }}>
                 {catProducts.length === 0 && <div style={{ color: "rgba(255,255,255,0.2)", fontSize: 13, padding: "8px 0" }}>Nenhum produto nesta categoria.</div>}
                 {catProducts.map((p) => (
-                  <ProductRow key={p.id} product={p} />
+                  <ProductRow
+                    key={p.id}
+                    product={p}
+                    expanded={expandedProductId === p.id}
+                    onToggle={() => setExpandedProductId(expandedProductId === p.id ? null : p.id)}
+                    onClose={() => setExpandedProductId(null)}
+                  />
                 ))}
-                <NewProductFormInline categoryId={cat.id} />
+                <NewProductFormInline
+                  categoryId={cat.id}
+                  anyProductExpanded={expandedProductId !== null}
+                  onOpen={() => setExpandedProductId(null)}
+                />
               </div>
             )}
           </div>
@@ -476,10 +487,15 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
 }
 
 
-function NewProductFormInline({ categoryId }: { categoryId: string }) {
+function NewProductFormInline({ categoryId, anyProductExpanded, onOpen }: { categoryId: string; anyProductExpanded: boolean; onOpen: () => void }) {
   const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (anyProductExpanded) setOpen(false);
+  }, [anyProductExpanded]);
+
   if (!open) return (
-    <button onClick={() => setOpen(true)} style={{ padding: "10px", borderRadius: 10, width: "100%", background: "transparent", border: "1px dashed rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.4)", fontSize: 13, cursor: "pointer" }}>
+    <button onClick={() => { onOpen(); setOpen(true); }} style={{ padding: "10px", borderRadius: 10, width: "100%", background: "transparent", border: "1px dashed rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.4)", fontSize: 13, cursor: "pointer" }}>
       + Adicionar produto
     </button>
   );

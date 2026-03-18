@@ -32,8 +32,17 @@ function StockBadge({ product }: { product: Product }) {
   return <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 6, background: "rgba(0,255,174,0.10)", color: "#00ffae", fontWeight: 700 }}>{stock} em estoque</span>;
 }
 
-export default function ProductRow({ product }: { product: Product }) {
-  const [expanded, setExpanded] = useState(false);
+export default function ProductRow({
+  product,
+  expanded,
+  onToggle,
+  onClose,
+}: {
+  product: Product;
+  expanded: boolean;
+  onToggle: () => void;
+  onClose: () => void;
+}) {
   const [activeTab, setActiveTab] = useState<"info" | "estoque" | "nutricao">("info");
   const [thumbnailUrl, setThumbnailUrl] = useState(product.thumbnail_url ?? "");
   const [videoUrl, setVideoUrl] = useState(product.video_url ?? "");
@@ -46,6 +55,13 @@ export default function ProductRow({ product }: { product: Product }) {
   const thumbRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLInputElement>(null);
   const [isPending, startTransition] = useTransition();
+  const [nutValues, setNutValues] = useState({
+    calories: String(product.nutrition?.calories ?? ""),
+    protein: String(product.nutrition?.protein ?? ""),
+    carbs: String(product.nutrition?.carbs ?? ""),
+    fat: String(product.nutrition?.fat ?? ""),
+  });
+  const [nutLoading, setNutLoading] = useState(false);
 
   const supabase = createClient();
 
@@ -78,7 +94,7 @@ export default function ProductRow({ product }: { product: Product }) {
   return (
     <div style={{ border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, marginBottom: 8, overflow: "hidden", background: "rgba(255,255,255,0.03)" }}>
       {/* Header row */}
-      <div onClick={() => setExpanded(!expanded)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", cursor: "pointer" }}>
+      <div onClick={onToggle} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", cursor: "pointer" }}>
         <div style={{ width: 44, height: 44, borderRadius: 8, background: "rgba(255,255,255,0.06)", flexShrink: 0, overflow: "hidden" }}>
           {thumbnailUrl && <img src={thumbnailUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
         </div>
@@ -114,7 +130,7 @@ export default function ProductRow({ product }: { product: Product }) {
                   await updateProductVariations(product.id, variations);
                 }
                 startTransition(() => updateProduct(formData));
-                setExpanded(false);
+                onClose();
               }}
               style={{ padding: "12px 16px 16px", display: "flex", flexDirection: "column", gap: 10 }}
             >
@@ -229,7 +245,7 @@ export default function ProductRow({ product }: { product: Product }) {
               action={async (formData) => {
                 formData.set("unlimited", String(unlimitedStock));
                 startTransition(() => updateProductStock(formData));
-                setExpanded(false);
+                onClose();
               }}
               style={{ padding: "12px 16px 16px", display: "flex", flexDirection: "column", gap: 10 }}
             >
@@ -270,22 +286,56 @@ export default function ProductRow({ product }: { product: Product }) {
             <form
               action={async (formData) => {
                 startTransition(() => updateProductNutrition(formData));
-                setExpanded(false);
+                onClose();
               }}
               style={{ padding: "12px 16px 16px", display: "flex", flexDirection: "column", gap: 10 }}
             >
               <input type="hidden" name="id" value={product.id} />
-              <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, marginBottom: 2 }}>Informações nutricionais por porção</div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 2 }}>
+                <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 11 }}>Informações nutricionais por porção</span>
+                <button
+                  type="button"
+                  disabled={nutLoading}
+                  onClick={async () => {
+                    setNutLoading(true);
+                    try {
+                      const res = await fetch("/api/ia/nutrition", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ name: product.name, description: product.description }),
+                      });
+                      const data = await res.json();
+                      if (data.calories != null) {
+                        setNutValues({
+                          calories: String(data.calories),
+                          protein: String(data.protein),
+                          carbs: String(data.carbs),
+                          fat: String(data.fat),
+                        });
+                      }
+                    } finally {
+                      setNutLoading(false);
+                    }
+                  }}
+                  style={{ padding: "4px 10px", background: "rgba(139,92,246,0.15)", color: "#a78bfa", border: "1px solid rgba(139,92,246,0.3)", borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: nutLoading ? "not-allowed" : "pointer", opacity: nutLoading ? 0.6 : 1 }}
+                >
+                  {nutLoading ? "Calculando…" : "✨ Sugestão IA"}
+                </button>
+              </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                {[
-                  { name: "calories", label: "Calorias (kcal)", value: product.nutrition?.calories },
-                  { name: "protein", label: "Proteína (g)", value: product.nutrition?.protein },
-                  { name: "carbs", label: "Carboidratos (g)", value: product.nutrition?.carbs },
-                  { name: "fat", label: "Gorduras (g)", value: product.nutrition?.fat },
-                ].map((f) => (
-                  <div key={f.name}>
-                    <label style={labelStyle}>{f.label}</label>
-                    <input name={f.name} type="number" step="0.1" min="0" defaultValue={f.value ?? ""} placeholder="—" style={inputStyle} />
+                {(["calories", "protein", "carbs", "fat"] as const).map((key) => (
+                  <div key={key}>
+                    <label style={labelStyle}>{key === "calories" ? "Calorias (kcal)" : key === "protein" ? "Proteína (g)" : key === "carbs" ? "Carboidratos (g)" : "Gorduras (g)"}</label>
+                    <input
+                      name={key}
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      value={nutValues[key]}
+                      onChange={(e) => setNutValues((v) => ({ ...v, [key]: e.target.value }))}
+                      placeholder="—"
+                      style={inputStyle}
+                    />
                   </div>
                 ))}
               </div>
