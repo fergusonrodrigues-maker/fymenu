@@ -323,6 +323,30 @@ export async function updateProduct(formData: FormData): Promise<void> {
   revalidatePath("/u");
 }
 
+export async function updateProductVariations(
+  productId: string,
+  variations: { id?: string; name: string; price: number }[]
+): Promise<void> {
+  const supabase = await createClient();
+
+  // Delete existing variations and reinsert (simpler than upsert with partial ids)
+  await supabase.from("product_variations").delete().eq("product_id", productId);
+
+  if (variations.length > 0) {
+    const rows = variations.map((v, i) => ({
+      product_id: productId,
+      name: v.name.trim(),
+      price: v.price,
+      order_index: i,
+    }));
+    const { error } = await supabase.from("product_variations").insert(rows);
+    if (error) throw new Error(error.message);
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath("/u");
+}
+
 export async function deleteProduct(formData: FormData): Promise<void> {
   const supabase = await createClient();
 

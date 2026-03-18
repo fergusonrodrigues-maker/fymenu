@@ -16,7 +16,7 @@ interface ProductModalProps {
 
 function moneyBR(value: number | null | undefined) {
   if (value == null || Number.isNaN(Number(value))) return "";
-  return `R$ ${Number(value).toFixed(2).replace(".", ",")}`;
+  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(value) / 100);
 }
 
 export default function ProductModal({

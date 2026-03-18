@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useRef, useTransition } from "react";
+import { useState, useRef, useTransition, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { updateProduct, deleteProduct, updateProductStock, updateProductNutrition } from "./actions";
+import { updateProduct, deleteProduct, updateProductStock, updateProductNutrition, updateProductVariations } from "./actions";
 
 type Product = {
   id: string;
@@ -37,6 +37,9 @@ export default function ProductRow({ product }: { product: Product }) {
   const [activeTab, setActiveTab] = useState<"info" | "estoque" | "nutricao">("info");
   const [thumbnailUrl, setThumbnailUrl] = useState(product.thumbnail_url ?? "");
   const [videoUrl, setVideoUrl] = useState(product.video_url ?? "");
+  const [priceType, setPriceType] = useState(product.price_type ?? "fixed");
+  const [variations, setVariations] = useState<{ id?: string; name: string; price: number }[]>([]);
+  const [variationsLoaded, setVariationsLoaded] = useState(false);
   const [uploading, setUploading] = useState<"thumb" | "video" | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [unlimitedStock, setUnlimitedStock] = useState(product.unlimited !== false);
@@ -45,6 +48,20 @@ export default function ProductRow({ product }: { product: Product }) {
   const [isPending, startTransition] = useTransition();
 
   const supabase = createClient();
+
+  // Load variations when expanded and price type is variable
+  useEffect(() => {
+    if (!expanded || priceType !== "variable" || variationsLoaded) return;
+    supabase
+      .from("product_variations")
+      .select("id, name, price, order_index")
+      .eq("product_id", product.id)
+      .order("order_index", { ascending: true })
+      .then(({ data }) => {
+        if (data) setVariations(data.map((v) => ({ id: v.id, name: v.name, price: v.price })));
+        setVariationsLoaded(true);
+      });
+  }, [expanded, priceType, variationsLoaded, product.id]);
 
   async function handleFileUpload(file: File, type: "thumb" | "video"): Promise<string | null> {
     setUploading(type);
@@ -68,7 +85,7 @@ export default function ProductRow({ product }: { product: Product }) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontWeight: 600, fontSize: 14, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{product.name}</div>
           <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 2, display: "flex", alignItems: "center", gap: 6 }}>
-            {product.price_type === "variable" ? "Preço variável" : product.base_price ? `R$ ${Number(product.base_price).toFixed(2)}` : "Sem preço"}
+            {product.price_type === "variable" ? "Preço variável" : product.base_price ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(product.base_price / 100) : "Sem preço"}
             <StockBadge product={product} />
           </div>
         </div>
@@ -93,6 +110,9 @@ export default function ProductRow({ product }: { product: Product }) {
               action={async (formData) => {
                 formData.set("thumbnail_url", thumbnailUrl);
                 formData.set("video_url", videoUrl);
+                if (priceType === "variable") {
+                  await updateProductVariations(product.id, variations);
+                }
                 startTransition(() => updateProduct(formData));
                 setExpanded(false);
               }}
@@ -102,12 +122,58 @@ export default function ProductRow({ product }: { product: Product }) {
               <input name="name" defaultValue={product.name} placeholder="Nome do produto" style={inputStyle} />
               <textarea name="description" defaultValue={product.description ?? ""} placeholder="Descrição (opcional)" rows={2} style={{ ...inputStyle, resize: "vertical" }} />
               <div style={{ display: "flex", gap: 8 }}>
-                <select name="price_type" defaultValue={product.price_type ?? "fixed"} style={{ ...inputStyle, flex: 1 }}>
+                <select
+                  name="price_type"
+                  value={priceType}
+                  onChange={(e) => { setPriceType(e.target.value); setVariationsLoaded(false); }}
+                  style={{ ...inputStyle, flex: 1 }}
+                >
                   <option value="fixed">Preço fixo</option>
                   <option value="variable">Preço variável</option>
                 </select>
-                <input name="base_price" type="number" step="0.01" defaultValue={product.base_price ?? ""} placeholder="Preço (R$)" style={{ ...inputStyle, flex: 1 }} />
+                {priceType === "fixed" && (
+                  <input name="base_price" type="number" step="0.01" defaultValue={product.base_price ?? ""} placeholder="Preço (R$)" style={{ ...inputStyle, flex: 1 }} />
+                )}
               </div>
+
+              {/* Variations section */}
+              {priceType === "variable" && (
+                <div style={{ border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.6)", marginBottom: 2 }}>Variações de preço</div>
+                  {variations.map((v, i) => (
+                    <div key={i} style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                      <input
+                        placeholder="Nome (ex: P, M, G)"
+                        value={v.name}
+                        onChange={(e) => setVariations(variations.map((x, j) => j === i ? { ...x, name: e.target.value } : x))}
+                        style={{ ...inputStyle, flex: 2, fontSize: 13 }}
+                      />
+                      <input
+                        type="number"
+                        placeholder="Preço"
+                        value={v.price}
+                        onChange={(e) => setVariations(variations.map((x, j) => j === i ? { ...x, price: parseFloat(e.target.value) || 0 } : x))}
+                        style={{ ...inputStyle, flex: 1, fontSize: 13 }}
+                        step="1"
+                        min="0"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setVariations(variations.filter((_, j) => j !== i))}
+                        style={{ padding: "8px 10px", background: "rgba(239,68,68,0.15)", color: "#f87171", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 6, cursor: "pointer", fontSize: 13, fontWeight: 700, flexShrink: 0 }}
+                      >✕</button>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => setVariations([...variations, { name: "", price: 0 }])}
+                    style={{ padding: "8px 0", background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 600 }}
+                  >+ Adicionar variação</button>
+                  {variations.length === 0 && (
+                    <p style={{ fontSize: 11, color: "#fbbf24", margin: 0 }}>⚠️ Adicione pelo menos uma variação</p>
+                  )}
+                </div>
+              )}
 
               {/* Thumbnail */}
               <div>

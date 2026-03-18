@@ -14,7 +14,7 @@ export default function ProductCard({ product, onOrder }: ProductCardProps) {
 
   const displayPrice =
     product.price_type === "fixed" && product.base_price
-      ? `R$${Number(product.base_price).toFixed(2).replace(".", ",")}`
+      ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(product.base_price / 100)
       : null;
 
   return (

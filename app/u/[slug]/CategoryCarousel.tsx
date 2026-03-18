@@ -129,7 +129,7 @@ export default function CategoryCarousel({
           const videoUrl = p.video_url ?? null;
           const priceLabel =
             p.price_type === "fixed" && p.base_price != null
-              ? `R$ ${Number(p.base_price).toFixed(2).replace(".", ",")}`
+              ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(p.base_price / 100)
               : null;
 
           return (
