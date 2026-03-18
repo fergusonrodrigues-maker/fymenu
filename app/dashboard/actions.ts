@@ -406,3 +406,99 @@ export async function removeUpsellItem(formData: FormData): Promise<void> {
   revalidatePath("/dashboard");
   revalidatePath("/u");
 }
+
+/* ========================= ESTOQUE ========================= */
+
+export async function updateProductStock(formData: FormData): Promise<void> {
+  const supabase = await createClient();
+
+  const id = String(formData.get("id") ?? "");
+  if (!id) throw new Error("ID inválido.");
+
+  const unlimited = formData.get("unlimited") === "true";
+  const stock = unlimited ? 999 : (parseInt(String(formData.get("stock") ?? "0"), 10) || 0);
+  const stockMinimum = parseInt(String(formData.get("stock_minimum") ?? "10"), 10) || 10;
+  const sku = normalizeText(String(formData.get("sku") ?? ""));
+
+  const { error } = await supabase
+    .from("products")
+    .update({ unlimited, stock, stock_minimum: stockMinimum, sku: sku || null })
+    .eq("id", id);
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/dashboard");
+  revalidatePath("/u");
+}
+
+export async function adjustStock(formData: FormData): Promise<void> {
+  const supabase = await createClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Não autenticado.");
+
+  const productId = String(formData.get("product_id") ?? "");
+  const unitId = String(formData.get("unit_id") ?? "");
+  const quantityChange = parseInt(String(formData.get("quantity_change") ?? "0"), 10);
+  const reason = normalizeText(String(formData.get("reason") ?? "manual"));
+  const notes = normalizeText(String(formData.get("notes") ?? ""));
+
+  if (!productId || !unitId) throw new Error("IDs inválidos.");
+  if (isNaN(quantityChange) || quantityChange === 0) throw new Error("Quantidade inválida.");
+
+  // Insert movement record
+  const { error: movErr } = await supabase.from("stock_movements").insert({
+    product_id: productId,
+    unit_id: unitId,
+    quantity_change: quantityChange,
+    reason: reason || "manual",
+    notes: notes || null,
+    created_by: user.id,
+  });
+  if (movErr) throw new Error(movErr.message);
+
+  // Update product stock
+  const { data: prod, error: prodErr } = await supabase
+    .from("products")
+    .select("stock, unlimited")
+    .eq("id", productId)
+    .single();
+  if (prodErr || !prod) throw new Error("Produto não encontrado.");
+
+  if (!prod.unlimited) {
+    const newStock = Math.max(0, (prod.stock ?? 0) + quantityChange);
+    await supabase.from("products").update({ stock: newStock }).eq("id", productId);
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath("/u");
+}
+
+export async function updateProductNutrition(formData: FormData): Promise<void> {
+  const supabase = await createClient();
+
+  const id = String(formData.get("id") ?? "");
+  if (!id) throw new Error("ID inválido.");
+
+  const parseNum = (v: string) => { const n = parseFloat(v.replace(",", ".")); return isNaN(n) ? null : n; };
+
+  const nutrition = {
+    calories: parseNum(String(formData.get("calories") ?? "")),
+    protein: parseNum(String(formData.get("protein") ?? "")),
+    fat: parseNum(String(formData.get("fat") ?? "")),
+    carbs: parseNum(String(formData.get("carbs") ?? "")),
+  };
+  const preparationTime = parseInt(String(formData.get("preparation_time") ?? "0"), 10) || 0;
+  const allergensRaw = normalizeText(String(formData.get("allergens") ?? ""));
+  const allergens = allergensRaw ? allergensRaw.split(",").map((a) => a.trim()).filter(Boolean) : [];
+
+  const { error } = await supabase
+    .from("products")
+    .update({ nutrition, preparation_time: preparationTime, allergens })
+    .eq("id", id);
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/dashboard");
+  revalidatePath("/u");
+}

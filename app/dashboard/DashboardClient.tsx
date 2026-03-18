@@ -13,8 +13,9 @@ import ProductRow from "./ProductRow";
 // ─── Types ─────────────────────────────────────────────────────────────────
 type Restaurant = { id: string; name: string; plan: string; status: string; trial_ends_at: string; whatsapp: string | null; instagram: string | null };
 type Unit = { id: string; name: string; slug: string; address: string; city: string | null; neighborhood: string | null; whatsapp: string | null; instagram: string | null; logo_url: string | null; maps_url: string | null; is_published: boolean };
+type StockStats = { low: number; out: number };
 type Category = { id: string; name: string; order_index: number | null };
-type Product = { id: string; category_id: string; name: string; description: string | null; price_type: string; base_price: number | null; thumbnail_url: string | null; video_url: string | null; order_index: number | null; is_active: boolean };
+type Product = { id: string; category_id: string; name: string; description: string | null; price_type: string; base_price: number | null; thumbnail_url: string | null; video_url: string | null; order_index: number | null; is_active: boolean; stock?: number | null; stock_minimum?: number | null; unlimited?: boolean | null; sku?: string | null; allergens?: string[] | null; nutrition?: any; preparation_time?: number | null };
 type Profile = { first_name: string | null; last_name: string | null; phone: string | null; email: string | undefined };
 
 // ─── Modal backdrop ─────────────────────────────────────────────────────────
@@ -83,15 +84,15 @@ const inp: React.CSSProperties = {
 
 // ─── Main Component ──────────────────────────────────────────────────────────
 export default function DashboardClient({
-  restaurant, unit, profile, categories, products, upsellItems, analytics, tvCount,
+  restaurant, unit, profile, categories, products, upsellItems, analytics, tvCount, stockStats,
 }: {
   restaurant: Restaurant; unit: Unit | null; profile: Profile;
   categories: Category[]; products: Product[];
   upsellItems: any[]; analytics: { views: number; clicks: number; orders: number };
-  tvCount: number;
+  tvCount: number; stockStats: StockStats;
 }) {
   const router = useRouter();
-  const [modal, setModal] = useState<"analytics" | "cardapio" | "pedidos" | "unidade" | "plano" | "config" | "tv" | null>(null);
+  const [modal, setModal] = useState<"analytics" | "cardapio" | "pedidos" | "unidade" | "plano" | "config" | "tv" | "estoque" | null>(null);
   const open = (m: typeof modal) => setModal(m);
   const close = () => setModal(null);
 
@@ -292,6 +293,34 @@ export default function DashboardClient({
             </div>
           </div>
 
+          {/* Estoque */}
+          <div className="card" onClick={() => open("estoque")} style={{
+            gridColumn: "span 2",
+            borderRadius: 20, padding: "20px 18px",
+            background: stockStats.out > 0
+              ? "rgba(248,113,113,0.04)"
+              : stockStats.low > 0
+              ? "rgba(251,191,36,0.04)"
+              : "rgba(255,255,255,0.04)",
+            border: stockStats.out > 0
+              ? "1px solid rgba(248,113,113,0.15)"
+              : stockStats.low > 0
+              ? "1px solid rgba(251,191,36,0.15)"
+              : "1px solid rgba(255,255,255,0.08)",
+            cursor: "pointer", minHeight: 100,
+            display: "flex", alignItems: "center", gap: 16,
+          }}>
+            <div style={{ fontSize: 28 }}>📦</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ color: "#fff", fontSize: 15, fontWeight: 800, marginBottom: 2 }}>Estoque</div>
+              <div style={{ fontSize: 12, display: "flex", gap: 8 }}>
+                {stockStats.out > 0 && <span style={{ color: "#f87171" }}>{stockStats.out} esgotado{stockStats.out !== 1 ? "s" : ""}</span>}
+                {stockStats.low > 0 && <span style={{ color: "#fbbf24" }}>{stockStats.low} baixo{stockStats.low !== 1 ? "s" : ""}</span>}
+                {stockStats.out === 0 && stockStats.low === 0 && <span style={{ color: "rgba(255,255,255,0.35)" }}>Tudo em ordem</span>}
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -336,6 +365,11 @@ export default function DashboardClient({
       {/* Config */}
       <Modal open={modal === "config"} onClose={close} title="Configurações">
         <ConfigModal profile={profile} />
+      </Modal>
+
+      {/* Estoque */}
+      <Modal open={modal === "estoque"} onClose={close} title="Estoque">
+        <EstoqueModal unit={unit} stockStats={stockStats} />
       </Modal>
     </>
   );
@@ -652,6 +686,35 @@ function PlanoModal({ restaurant, trialDays, onUpgrade }: { restaurant: Restaura
           ))}
         </>
       )}
+    </div>
+  );
+}
+
+// ─── Estoque Modal ────────────────────────────────────────────────────────────
+function EstoqueModal({ unit, stockStats }: { unit: Unit | null; stockStats: StockStats }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingTop: 8 }}>
+      <div style={{ borderRadius: 16, padding: "20px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", textAlign: "center" }}>
+        <div style={{ fontSize: 40, marginBottom: 12 }}>📦</div>
+        <div style={{ display: "flex", justifyContent: "center", gap: 12, marginBottom: 12 }}>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ color: "#f87171", fontSize: 26, fontWeight: 900, lineHeight: 1 }}>{stockStats.out}</div>
+            <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, marginTop: 4 }}>Esgotados</div>
+          </div>
+          <div style={{ width: 1, background: "rgba(255,255,255,0.08)" }} />
+          <div style={{ textAlign: "center" }}>
+            <div style={{ color: "#fbbf24", fontSize: 26, fontWeight: 900, lineHeight: 1 }}>{stockStats.low}</div>
+            <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, marginTop: 4 }}>Estoque baixo</div>
+          </div>
+        </div>
+        <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginBottom: 16 }}>Gerencie o estoque dos seus produtos e acompanhe movimentações.</div>
+        <a href="/dashboard/estoque" style={{ display: "block", padding: "12px", borderRadius: 12, border: "none", background: "rgba(0,255,174,0.15)", color: "#00ffae", fontSize: 14, fontWeight: 700, textDecoration: "none" }}>
+          Gerenciar estoque →
+        </a>
+      </div>
+      <div style={{ borderRadius: 14, padding: "14px 16px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+        <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 13 }}>📊 Ajuste estoque · Registre movimentações · Configure alertas</div>
+      </div>
     </div>
   );
 }

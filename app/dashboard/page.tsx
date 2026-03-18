@@ -30,7 +30,7 @@ export default async function DashboardPage() {
 
   const { data: products } = await supabase
     .from("products")
-    .select("id, category_id, name, description, price_type, base_price, thumbnail_url, video_url, order_index, is_active")
+    .select("id, category_id, name, description, price_type, base_price, thumbnail_url, video_url, order_index, is_active, stock, stock_minimum, unlimited, sku, allergens, nutrition, preparation_time")
     .in("category_id", (categories ?? []).map((c) => c.id));
 
   const upsellGroupIds = (categories ?? []).length > 0
@@ -65,6 +65,17 @@ export default async function DashboardPage() {
     .eq("unit_id", unit?.id)
     .eq("is_active", true);
 
+  const { data: stockProducts } = await supabase
+    .from("products")
+    .select("stock, stock_minimum, unlimited")
+    .eq("unit_id", unit?.id)
+    .eq("unlimited", false);
+
+  const stockStats = {
+    out: (stockProducts ?? []).filter((p) => (p.stock ?? 0) === 0).length,
+    low: (stockProducts ?? []).filter((p) => (p.stock ?? 0) > 0 && (p.stock ?? 0) <= (p.stock_minimum ?? 10)).length,
+  };
+
   const { data: profile } = await supabase
     .from("profiles")
     .select("first_name, last_name, phone")
@@ -81,6 +92,7 @@ export default async function DashboardPage() {
       upsellItems={upsellItems ?? []}
       analytics={{ views, clicks, orders }}
       tvCount={tvCount ?? 0}
+      stockStats={stockStats}
     />
   );
 }
