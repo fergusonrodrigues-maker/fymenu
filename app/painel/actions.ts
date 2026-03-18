@@ -531,3 +531,19 @@ export async function updateProductNutrition(formData: FormData): Promise<void> 
   revalidatePath("/painel");
   revalidatePath("/u");
 }
+
+/* ========================= PLAN ========================= */
+
+export async function changePlan(newPlan: "basic" | "pro"): Promise<void> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Não autenticado.");
+
+  const { error } = await supabase
+    .from("restaurants")
+    .update({ plan: newPlan, status: "active" })
+    .eq("owner_id", user.id);
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/painel");
+}
