@@ -11,7 +11,7 @@ export interface MenuCacheData {
     id: string;
     name: string;
     plan: string;
-  };
+  } | null;
   categories: Array<{
     id: string;
     name: string;
@@ -45,20 +45,18 @@ export async function buildMenuCache(unitId: string): Promise<{ menu_json: MenuC
 
   if (unitError || !unit) throw new Error("Unidade não encontrada");
 
-  const { data: restaurant, error: restError } = await supabase
+  // restaurants não tem policy pública — tratamos como opcional
+  const { data: restaurant } = await supabase
     .from("restaurants")
     .select("id, name, plan")
     .eq("id", unit.restaurant_id)
-    .single();
-
-  if (restError || !restaurant) throw new Error("Restaurante não encontrado");
+    .maybeSingle();
 
   const { data: categories, error: catError } = await supabase
     .from("categories")
-    .select("id, name, position")
+    .select("id, name, order_index")
     .eq("unit_id", unitId)
-    .eq("is_active", true)
-    .order("position", { ascending: true });
+    .order("order_index", { ascending: true });
 
   if (catError) throw new Error("Erro ao buscar categorias");
 
@@ -66,10 +64,10 @@ export async function buildMenuCache(unitId: string): Promise<{ menu_json: MenuC
     (categories || []).map(async (category) => {
       const { data: products } = await supabase
         .from("products")
-        .select("id, name, description, base_price, thumbnail_url, video_url, is_active, position")
+        .select("id, name, description, base_price, thumbnail_url, video_url, is_active, order_index")
         .eq("category_id", category.id)
         .eq("is_active", true)
-        .order("position", { ascending: true });
+        .order("order_index", { ascending: true });
 
       const productsWithDetails = await Promise.all(
         (products || []).map(async (product) => {
@@ -92,7 +90,11 @@ export async function buildMenuCache(unitId: string): Promise<{ menu_json: MenuC
         })
       );
 
-      return { ...category, products: productsWithDetails };
+      return {
+        ...category,
+        position: category.order_index ?? 0,
+        products: productsWithDetails,
+      };
     })
   );
 
@@ -103,11 +105,9 @@ export async function buildMenuCache(unitId: string): Promise<{ menu_json: MenuC
       slug: unit.slug,
       logo_url: unit.logo_url || undefined,
     },
-    restaurant: {
-      id: restaurant.id,
-      name: restaurant.name,
-      plan: restaurant.plan,
-    },
+    restaurant: restaurant
+      ? { id: restaurant.id, name: restaurant.name, plan: restaurant.plan }
+      : null,
     categories: categoriesWithProducts,
   };
 
@@ -123,7 +123,7 @@ export async function getOrBuildMenuCache(unitId: string): Promise<MenuCacheData
     .from("menu_cache")
     .select("menu_json, expires_at")
     .eq("unit_id", unitId)
-    .single();
+    .maybeSingle();
 
   if (cache && cache.expires_at && new Date(cache.expires_at) > new Date()) {
     return cache.menu_json as MenuCacheData;
