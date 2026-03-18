@@ -24,7 +24,7 @@ export default function AIButton({
     setTimeout(() => setIsClicked(false), 600)
   }
 
-  const label = children?.toString() ?? 'Gerar com IA'
+  const label = (children?.toString() ?? 'Gerar com IA').trim()
 
   return (
     <div className="btn-wrapper">

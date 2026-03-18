@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import AIButton from "@/components/AIButton";
 
 interface UseDescribeAIReturn {
   generating: boolean;
@@ -64,21 +65,8 @@ export function DescribeAIButton({
   }
 
   return (
-    <button
-      type="button"
-      onClick={handleClick}
-      disabled={generating}
-      title="Gerar descrição com IA"
-      className="text-xs text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-1 disabled:opacity-50 transition"
-    >
-      {generating ? (
-        <>
-          <span className="w-3 h-3 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin inline-block" />
-          Gerando...
-        </>
-      ) : (
-        <>✨ IA</>
-      )}
-    </button>
+    <AIButton onClick={handleClick} isLoading={generating} variant="secondary">
+      ✨ Gerar descrição
+    </AIButton>
   );
 }
