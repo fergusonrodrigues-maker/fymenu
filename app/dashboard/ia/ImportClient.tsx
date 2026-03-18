@@ -3,6 +3,8 @@
 import { useState, useRef, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import AIButton from "@/components/AIButton";
+import AILoader from "@/components/AILoader";
 
 interface ImportVariation {
   name: string;
@@ -269,9 +271,11 @@ export default function ImportClient({ unitId, unitName }: { unitId: string; uni
 
             {error && <div style={{ borderRadius: 12, padding: "12px 14px", background: "rgba(255,80,80,0.08)", border: "1px solid rgba(255,80,80,0.2)", color: "#f87171", fontSize: 13 }}>{error}</div>}
 
-            <button onClick={handleImport} disabled={loading} style={{ padding: "16px", borderRadius: 16, border: "none", background: loading ? "rgba(99,102,241,0.3)" : "linear-gradient(135deg, #6366f1, #4f46e5)", color: "#fff", fontSize: 16, fontWeight: 700, cursor: loading ? "not-allowed" : "pointer" }}>
-              {loading ? "Analisando com IA..." : "Analisar cardápio ✨"}
-            </button>
+            <div style={{ display: "flex", justifyContent: "center" }}>
+              <AIButton onClick={handleImport} isLoading={loading}>
+                Analisar cardápio
+              </AIButton>
+            </div>
             <div style={{ textAlign: "center", color: "rgba(255,255,255,0.25)", fontSize: 12 }}>Custo estimado: menos de R$0,01 por importação</div>
           </div>
         )}
@@ -350,10 +354,8 @@ export default function ImportClient({ unitId, unitName }: { unitId: string; uni
 
         {/* STEP: Saving */}
         {step === "saving" && (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "100px 0", gap: 16 }}>
-            <div style={{ width: 48, height: 48, borderRadius: "50%", border: "3px solid rgba(99,102,241,0.2)", borderTop: "3px solid #6366f1", animation: "spin 0.8s linear infinite" }} />
-            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-            <div style={{ color: "rgba(255,255,255,0.6)", fontSize: 14 }}>Salvando no cardápio...</div>
+          <div style={{ display: "flex", justifyContent: "center", padding: "60px 0" }}>
+            <AILoader isLoading={true} message="Salvando no cardápio..." size="md" />
           </div>
         )}
 

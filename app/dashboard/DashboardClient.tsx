@@ -9,6 +9,8 @@ import {
   updateUnit,
 } from "./actions";
 import ProductRow from "./ProductRow";
+import LogoUploader from "./LogoUploader";
+import ThemeToggle from "@/components/ThemeToggle";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 type Restaurant = { id: string; name: string; plan: string; status: string; trial_ends_at: string; whatsapp: string | null; instagram: string | null };
@@ -137,7 +139,8 @@ export default function DashboardClient({
               </div>
             </div>
           </div>
-          <div style={{ display: "flex", gap: 8 }}>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <ThemeToggle />
             {unit && (
               <a href={`/u/${unit.slug}`} target="_blank" rel="noreferrer" style={{
                 padding: "8px 14px", borderRadius: 12,
@@ -567,63 +570,63 @@ function CopyLinkRow({ label, url }: { label: string; url: string }) {
 
 // ─── Unidade Modal ────────────────────────────────────────────────────────────
 function UnidadeModal({ unit, onClose }: { unit: Unit | null; onClose: () => void }) {
+  const [isPublished, setIsPublished] = useState(unit?.is_published ?? false);
+
   if (!unit) return <div style={{ color: "rgba(255,255,255,0.4)", paddingTop: 16 }}>Nenhuma unidade encontrada.</div>;
   const origin = typeof window !== "undefined" ? window.location.origin : "";
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingTop: 8 }}>
       <CopyLinkRow label="Link Delivery" url={`${origin}/u/${unit.slug}`} />
       <CopyLinkRow label="Link Presencial (QR Code / Mesa)" url={`${origin}/u/${unit.slug}/menu`} />
-    <form action={updateUnit} onSubmit={() => setTimeout(onClose, 300)} style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 4 }}>
-      <input type="hidden" name="id" value={unit.id} />
 
-      <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 4 }}>
-        {unit.logo_url && <img src={unit.logo_url} alt="" style={{ width: 48, height: 48, borderRadius: 12, objectFit: "cover" }} />}
-        <div style={{ flex: 1 }}>
-          <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, marginBottom: 4 }}>URL do logo</div>
-          <input name="logo_url" defaultValue={unit.logo_url ?? ""} placeholder="https://..." style={inp} />
-        </div>
-      </div>
+      <LogoUploader unitId={unit.id} currentLogoUrl={unit.logo_url} />
 
-      {[
-        { name: "name", label: "Nome da unidade", value: unit.name },
-        { name: "address", label: "Endereço", value: unit.address },
-        { name: "city", label: "Cidade", value: unit.city ?? "" },
-        { name: "neighborhood", label: "Bairro", value: unit.neighborhood ?? "" },
-        { name: "whatsapp", label: "WhatsApp", value: unit.whatsapp ?? "" },
-        { name: "instagram", label: "Instagram", value: unit.instagram ?? "" },
-        { name: "maps_url", label: "Link do Google Maps", value: unit.maps_url ?? "" },
-      ].map((f) => (
-        <div key={f.name}>
-          <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, marginBottom: 4 }}>{f.label}</div>
-          <input name={f.name} defaultValue={f.value} style={inp} />
-        </div>
-      ))}
+      <form action={updateUnit} onSubmit={() => setTimeout(onClose, 300)} style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 4 }}>
+        <input type="hidden" name="unit_id" value={unit.id} />
+        <input type="hidden" name="is_published" value={String(isPublished)} />
 
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 0 4px" }}>
-        <div>
-          <div style={{ color: "#fff", fontSize: 14, fontWeight: 600 }}>Publicar cardápio</div>
-          <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 12 }}>Cardápio visível publicamente</div>
-        </div>
-        <label style={{ display: "flex", alignItems: "center", cursor: "pointer" }}>
-          <input type="checkbox" name="is_published" defaultChecked={unit.is_published} style={{ display: "none" }} id="pub-toggle" />
-          <div
+        {[
+          { name: "name", label: "Nome da unidade", value: unit.name },
+          { name: "address", label: "Endereço", value: unit.address },
+          { name: "city", label: "Cidade", value: unit.city ?? "" },
+          { name: "neighborhood", label: "Bairro", value: unit.neighborhood ?? "" },
+          { name: "whatsapp", label: "WhatsApp", value: unit.whatsapp ?? "" },
+          { name: "instagram", label: "Instagram", value: unit.instagram ?? "" },
+          { name: "maps_url", label: "Link do Google Maps", value: unit.maps_url ?? "" },
+        ].map((f) => (
+          <div key={f.name}>
+            <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, marginBottom: 4 }}>{f.label}</div>
+            <input name={f.name} defaultValue={f.value} style={inp} />
+          </div>
+        ))}
+
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 0 4px" }}>
+          <div>
+            <div style={{ color: "#fff", fontSize: 14, fontWeight: 600 }}>Publicar cardápio</div>
+            <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 12 }}>Cardápio visível publicamente</div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsPublished((v) => !v)}
             style={{
-              width: 44, height: 26, borderRadius: 13,
-              background: unit.is_published ? "#00ffae" : "rgba(255,255,255,0.15)",
+              width: 44, height: 26, borderRadius: 13, border: "none",
+              background: isPublished ? "#00ffae" : "rgba(255,255,255,0.15)",
               position: "relative", transition: "background 0.2s",
-            }}
-            onClick={(e) => {
-              const cb = document.getElementById("pub-toggle") as HTMLInputElement;
-              if (cb) { cb.checked = !cb.checked; (e.currentTarget as HTMLDivElement).style.background = cb.checked ? "#00ffae" : "rgba(255,255,255,0.15)"; (e.currentTarget.querySelector("span") as HTMLSpanElement).style.transform = cb.checked ? "translateX(18px)" : "translateX(0)"; }
+              cursor: "pointer", flexShrink: 0,
             }}
           >
-            <span style={{ display: "block", width: 20, height: 20, borderRadius: "50%", background: "#fff", position: "absolute", top: 3, left: 3, transition: "transform 0.2s", transform: unit.is_published ? "translateX(18px)" : "translateX(0)" }} />
-          </div>
-        </label>
-      </div>
+            <span style={{
+              display: "block", width: 20, height: 20, borderRadius: "50%",
+              background: "#fff", position: "absolute", top: 3, left: 3,
+              transition: "transform 0.2s",
+              transform: isPublished ? "translateX(18px)" : "translateX(0)",
+            }} />
+          </button>
+        </div>
 
-      <button type="submit" style={{ marginTop: 8, padding: "14px", borderRadius: 14, border: "none", background: "rgba(0,255,174,0.15)", color: "#00ffae", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>Salvar unidade</button>
-    </form>
+        <button type="submit" style={{ marginTop: 8, padding: "14px", borderRadius: 14, border: "none", background: "rgba(0,255,174,0.15)", color: "#00ffae", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>Salvar unidade</button>
+      </form>
     </div>
   );
 }

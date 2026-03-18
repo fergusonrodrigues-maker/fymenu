@@ -65,27 +65,32 @@ async function getUnitIdOrThrow(unitIdFromForm?: string) {
 export async function updateUnit(formData: FormData): Promise<void> {
   const supabase = await createClient();
 
-  const unitId = await getUnitIdOrThrow(
-    String(formData.get("unit_id") ?? "") || undefined
-  );
+  const rawId = String(formData.get("unit_id") ?? formData.get("id") ?? "").trim();
+  const unitId = await getUnitIdOrThrow(rawId || undefined);
 
   const name = normalizeName(String(formData.get("name") ?? ""));
-  const slug = normalizeSlug(String(formData.get("slug") ?? ""));
   const address = normalizeText(String(formData.get("address") ?? ""));
+  const city = normalizeText(String(formData.get("city") ?? ""));
+  const neighborhood = normalizeText(String(formData.get("neighborhood") ?? ""));
   const instagram = normalizeText(String(formData.get("instagram") ?? ""));
   const whatsapp = normalizeText(String(formData.get("whatsapp") ?? ""));
+  const mapsUrl = normalizeText(String(formData.get("maps_url") ?? ""));
+  const isPublishedRaw = formData.get("is_published");
+  const isPublished = isPublishedRaw === "true" || isPublishedRaw === "on";
 
   if (!name) throw new Error("Nome da unidade é obrigatório.");
-  if (!slug) throw new Error("Slug é obrigatório.");
 
   const { error } = await supabase
     .from("units")
     .update({
       name,
-      slug,
       address: address || null,
+      city: city || null,
+      neighborhood: neighborhood || null,
       instagram: instagram || null,
       whatsapp: whatsapp || null,
+      maps_url: mapsUrl || null,
+      is_published: isPublished,
     })
     .eq("id", unitId);
 
