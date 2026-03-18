@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -88,7 +88,7 @@ export default function StepMenu({
     }
 
     // 5. Redireciona via router (sem quebrar a SPA)
-    router.push("/dashboard");
+    router.push("/painel");
   }
 
   return (

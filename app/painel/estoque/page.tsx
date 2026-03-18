@@ -1,11 +1,11 @@
-import { createClient } from "@/lib/supabase/server";
+﻿import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import EstoqueClient from "./EstoqueClient";
 
 export default async function EstoquePage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/entrar");
 
   const { data: restaurant } = await supabase
     .from("restaurants")
@@ -13,8 +13,8 @@ export default async function EstoquePage() {
     .eq("owner_id", user.id)
     .single();
 
-  if (!restaurant) redirect("/login");
-  if (!restaurant.onboarding_completed) redirect("/onboarding");
+  if (!restaurant) redirect("/entrar");
+  if (!restaurant.onboarding_completed) redirect("/configurar");
 
   const { data: unit } = await supabase
     .from("units")
@@ -22,7 +22,7 @@ export default async function EstoquePage() {
     .eq("restaurant_id", restaurant.id)
     .single();
 
-  if (!unit) redirect("/dashboard");
+  if (!unit) redirect("/painel");
 
   const { data: categories } = await supabase
     .from("categories")

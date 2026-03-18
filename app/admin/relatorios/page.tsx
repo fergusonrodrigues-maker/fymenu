@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+﻿import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import AdminRelatoriosClient from "./AdminRelatoriosClient";
@@ -10,10 +10,10 @@ export default async function AdminRelatoriosPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/entrar");
 
   const adminEmail = process.env.ADMIN_EMAIL;
-  if (!adminEmail || user.email !== adminEmail) redirect("/dashboard");
+  if (!adminEmail || user.email !== adminEmail) redirect("/painel");
 
   const admin = createAdminClient();
   const now = new Date();

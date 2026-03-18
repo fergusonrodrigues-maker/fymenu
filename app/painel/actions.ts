@@ -1,4 +1,4 @@
-"use server";
+﻿"use server";
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
@@ -96,7 +96,7 @@ export async function updateUnit(formData: FormData): Promise<void> {
 
   if (error) throw new Error(error.message);
 
-  revalidatePath("/dashboard");
+  revalidatePath("/painel");
   revalidatePath("/u");
 }
 
@@ -145,7 +145,7 @@ export async function uploadLogoAction(
 
     if (updateError) return { ok: false, message: updateError.message };
 
-    revalidatePath("/dashboard");
+    revalidatePath("/painel");
     revalidatePath("/u");
 
     return { ok: true, publicUrl };
@@ -184,7 +184,7 @@ export async function createCategory(formData: FormData): Promise<void> {
 
   if (error) throw new Error(error.message);
 
-  revalidatePath("/dashboard");
+  revalidatePath("/painel");
   revalidatePath("/u");
 }
 
@@ -200,7 +200,7 @@ export async function updateCategory(formData: FormData): Promise<void> {
   const { error } = await supabase.from("categories").update({ name }).eq("id", id);
   if (error) throw new Error(error.message);
 
-  revalidatePath("/dashboard");
+  revalidatePath("/painel");
   revalidatePath("/u");
 }
 
@@ -213,7 +213,7 @@ export async function deleteCategory(formData: FormData): Promise<void> {
   const { error } = await supabase.from("categories").delete().eq("id", id);
   if (error) throw new Error(error.message);
 
-  revalidatePath("/dashboard");
+  revalidatePath("/painel");
   revalidatePath("/u");
 }
 
@@ -273,7 +273,7 @@ export async function createProduct(formData: FormData): Promise<void> {
     await invalidateMenuCache(category.unit_id);
   } catch {}
 
-  revalidatePath("/dashboard");
+  revalidatePath("/painel");
   revalidatePath("/u");
 }
 
@@ -324,7 +324,7 @@ export async function updateProduct(formData: FormData): Promise<void> {
     }
   } catch {}
 
-  revalidatePath("/dashboard");
+  revalidatePath("/painel");
   revalidatePath("/u");
 }
 
@@ -348,7 +348,7 @@ export async function updateProductVariations(
     if (error) throw new Error(error.message);
   }
 
-  revalidatePath("/dashboard");
+  revalidatePath("/painel");
   revalidatePath("/u");
 }
 
@@ -361,7 +361,7 @@ export async function deleteProduct(formData: FormData): Promise<void> {
   const { error } = await supabase.from("products").delete().eq("id", id);
   if (error) throw new Error(error.message);
 
-  revalidatePath("/dashboard");
+  revalidatePath("/painel");
   revalidatePath("/u");
 }
 
@@ -415,7 +415,7 @@ export async function addUpsellItem(formData: FormData): Promise<void> {
 
   if (error) throw new Error(error.message);
 
-  revalidatePath("/dashboard");
+  revalidatePath("/painel");
   revalidatePath("/u");
 }
 
@@ -432,7 +432,7 @@ export async function removeUpsellItem(formData: FormData): Promise<void> {
 
   if (error) throw new Error(error.message);
 
-  revalidatePath("/dashboard");
+  revalidatePath("/painel");
   revalidatePath("/u");
 }
 
@@ -456,7 +456,7 @@ export async function updateProductStock(formData: FormData): Promise<void> {
 
   if (error) throw new Error(error.message);
 
-  revalidatePath("/dashboard");
+  revalidatePath("/painel");
   revalidatePath("/u");
 }
 
@@ -499,7 +499,7 @@ export async function adjustStock(formData: FormData): Promise<void> {
     await supabase.from("products").update({ stock: newStock }).eq("id", productId);
   }
 
-  revalidatePath("/dashboard");
+  revalidatePath("/painel");
   revalidatePath("/u");
 }
 
@@ -528,6 +528,6 @@ export async function updateProductNutrition(formData: FormData): Promise<void> 
 
   if (error) throw new Error(error.message);
 
-  revalidatePath("/dashboard");
+  revalidatePath("/painel");
   revalidatePath("/u");
 }

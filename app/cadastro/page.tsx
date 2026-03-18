@@ -1,40 +1,64 @@
-import { createClient } from "@/lib/supabase/server";
+﻿import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
-export default async function LoginPage({
+type SP = { err?: string; ok?: string };
+
+export default async function SignupPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ err?: string; ok?: string }>;
+  searchParams?: Promise<SP>;
 }) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  
-  if (user) {
-    redirect("/dashboard");
-  }
+  const sp = (await searchParams) ?? {};
 
-  const sp = (await searchParams) || {};
-  const err = sp.err ? decodeURIComponent(sp.err) : "";
-  const ok = sp.ok ? decodeURIComponent(sp.ok) : "";
-
-  async function loginAction(formData: FormData) {
+  async function signupAction(formData: FormData): Promise<void> {
     "use server";
-    const supabase = await createClient();
 
     const email = String(formData.get("email") || "").trim();
     const password = String(formData.get("password") || "").trim();
+    const confirmPassword = String(formData.get("confirmPassword") || "").trim();
 
-    if (!email || !password) {
-      redirect("/login?err=" + encodeURIComponent("Preencha email e senha."));
+    if (!email || !password || !confirmPassword) {
+      redirect("/cadastro?err=" + encodeURIComponent("Preencha todos os campos."));
     }
 
-    const { error, data } = await supabase.auth.signInWithPassword({ email, password });
-
-    if (error) {
-      redirect("/login?err=" + encodeURIComponent(error.message));
+    if (password !== confirmPassword) {
+      redirect("/cadastro?err=" + encodeURIComponent("As senhas não correspondem."));
     }
 
-    redirect("/dashboard");
+    if (password.length < 6) {
+      redirect("/cadastro?err=" + encodeURIComponent("Senha deve ter pelo menos 6 caracteres."));
+    }
+
+    const supabase = await createClient();
+
+    // 1. Criar usuário no Auth
+    const { error: signupError, data: authData } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+
+    if (signupError) {
+      redirect("/cadastro?err=" + encodeURIComponent(signupError.message));
+    }
+
+    // 2. Criar restaurant automaticamente
+    if (authData.user?.id) {
+      const restaurantName = email.split("@")[0];
+
+      const { error: restaurantError } = await supabase
+        .from("restaurants")
+        .insert({
+          owner_id: authData.user.id,
+          name: restaurantName,
+          onboarding_completed: false,
+        });
+
+      if (restaurantError) {
+        console.error("Erro ao criar restaurant:", restaurantError);
+      }
+    }
+
+    redirect("/entrar?ok=Conta criada com sucesso. Faça login agora.");
   }
 
   return (
@@ -237,24 +261,6 @@ export default async function LoginPage({
           font-size: 13px;
           margin-bottom: 16px;
         }
-
-        .forgot-password {
-          display: flex;
-          justify-content: flex-end;
-          margin-bottom: 24px;
-        }
-
-        .forgot-password a {
-          font-size: 13px;
-          color: #00ffcd;
-          text-decoration: none;
-          font-weight: 500;
-          transition: color 0.3s ease;
-        }
-
-        .forgot-password a:hover {
-          text-decoration: underline;
-        }
       `}</style>
 
       <div className="glass-container">
@@ -262,13 +268,13 @@ export default async function LoginPage({
           <span className="logo-fy">f</span><span className="logo-fy">y</span><span className="logo-circle">●</span><span className="logo-menu">menu</span>
         </div>
 
-        <h1 className="title">Bem-vindo</h1>
-        <p className="subtitle">Gerencie seu cardápio digital</p>
+        <h1 className="title">Criar Conta</h1>
+        <p className="subtitle">Cardápio digital em minutos</p>
 
-        {err && <div className="error-message">{err}</div>}
-        {ok && <div className="success-message">{ok}</div>}
+        {sp.err && <div className="error-message">{decodeURIComponent(sp.err)}</div>}
+        {sp.ok && <div className="success-message">{decodeURIComponent(sp.ok)}</div>}
 
-        <form action={loginAction} style={{ display: "grid", gap: 0 }}>
+        <form action={signupAction} style={{ display: "grid", gap: 0 }}>
           <div className="form-group">
             <label>Email</label>
             <div className="input-wrapper">
@@ -288,18 +294,27 @@ export default async function LoginPage({
               <input
                 name="password"
                 type="password"
-                placeholder="Sua senha"
-                autoComplete="current-password"
+                placeholder="Mínimo 6 caracteres"
+                autoComplete="new-password"
                 required
               />
             </div>
           </div>
 
-          <div className="forgot-password">
-            <a href="/auth/reset-password">Esqueceu a senha?</a>
+          <div className="form-group">
+            <label>Confirmar Senha</label>
+            <div className="input-wrapper">
+              <input
+                name="confirmPassword"
+                type="password"
+                placeholder="Confirme sua senha"
+                autoComplete="new-password"
+                required
+              />
+            </div>
           </div>
 
-          <button type="submit" className="submit-btn">Entrar</button>
+          <button type="submit" className="submit-btn">Criar Conta</button>
         </form>
 
         <div className="divider">
@@ -309,7 +324,7 @@ export default async function LoginPage({
         <button className="social-btn">Continuar com Google</button>
 
         <div className="footer-text">
-          Não tem conta? <a href="/signup">Criar uma agora</a>
+          Já tem conta? <a href="/entrar">Fazer login</a>
         </div>
       </div>
     </main>

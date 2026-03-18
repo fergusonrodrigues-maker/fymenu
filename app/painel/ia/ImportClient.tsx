@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useRef, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -193,7 +193,7 @@ export default function ImportClient({ unitId, unitName }: { unitId: string; uni
 
       {/* Header */}
       <div style={{ padding: "56px 24px 16px", display: "flex", alignItems: "center", gap: 12, borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-        <a href="/dashboard" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: 10, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(255,255,255,0.6)", textDecoration: "none", fontSize: 18 }}>←</a>
+        <a href="/painel" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: 10, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(255,255,255,0.6)", textDecoration: "none", fontSize: 18 }}>←</a>
         <div>
           <div style={{ color: "#fff", fontSize: 18, fontWeight: 800, letterSpacing: "-0.5px" }}>Importar cardápio com IA</div>
           <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 12 }}>{unitName}</div>
@@ -371,7 +371,7 @@ export default function ImportClient({ unitId, unitName }: { unitId: string; uni
               <button onClick={() => { setStep("upload"); setImportData(null); setRawText(""); setSelectedFiles([]); if (fileRef.current) fileRef.current.value = ""; }} style={{ flex: 1, padding: "14px", borderRadius: 14, border: "1px solid rgba(255,255,255,0.10)", background: "transparent", color: "rgba(255,255,255,0.6)", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
                 Nova importação
               </button>
-              <button onClick={() => router.push("/dashboard")} style={{ flex: 1, padding: "14px", borderRadius: 14, border: "none", background: "linear-gradient(135deg, #6366f1, #4f46e5)", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
+              <button onClick={() => router.push("/painel")} style={{ flex: 1, padding: "14px", borderRadius: 14, border: "none", background: "linear-gradient(135deg, #6366f1, #4f46e5)", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
                 Ver cardápio
               </button>
             </div>

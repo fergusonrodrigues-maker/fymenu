@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+﻿import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import TVClient from "./TVClient";
 
@@ -6,7 +6,7 @@ export default async function TVPage() {
   const supabase = await createClient();
 
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/entrar");
 
   // owner_id está em restaurants, não em units
   const { data: restaurant } = await supabase
@@ -15,7 +15,7 @@ export default async function TVPage() {
     .eq("owner_id", user.id)
     .single();
 
-  if (!restaurant) redirect("/dashboard");
+  if (!restaurant) redirect("/painel");
 
   const { data: unit } = await supabase
     .from("units")
@@ -23,7 +23,7 @@ export default async function TVPage() {
     .eq("restaurant_id", restaurant.id)
     .single();
 
-  if (!unit) redirect("/dashboard");
+  if (!unit) redirect("/painel");
 
   const { data: media } = await supabase
     .from("tv_media")

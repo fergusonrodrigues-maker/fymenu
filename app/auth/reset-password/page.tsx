@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+﻿import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
 export default async function ResetPasswordPage({
@@ -36,7 +36,7 @@ export default async function ResetPasswordPage({
       redirect("/auth/reset-password?error=" + encodeURIComponent(updateError.message));
     }
 
-    redirect("/login?ok=" + encodeURIComponent("Senha atualizada com sucesso. Faça login."));
+    redirect("/entrar?ok=" + encodeURIComponent("Senha atualizada com sucesso. Faça login."));
   }
 
   // Enviar email de reset
@@ -264,7 +264,7 @@ export default async function ResetPasswordPage({
           </>
         )}
 
-        <a href="/login" className="back-link">← Voltar ao login</a>
+        <a href="/entrar" className="back-link">← Voltar ao login</a>
       </div>
     </main>
   );

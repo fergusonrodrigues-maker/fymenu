@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+﻿import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import RelatoriosClient from "./RelatoriosClient";
 
@@ -74,21 +74,21 @@ export default async function RelatoriosPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/entrar");
 
   const { data: restaurant } = await supabase
     .from("restaurants")
     .select("id, name")
     .eq("owner_id", user.id)
     .single();
-  if (!restaurant) redirect("/login");
+  if (!restaurant) redirect("/entrar");
 
   const { data: unit } = await supabase
     .from("units")
     .select("id, name")
     .eq("restaurant_id", restaurant.id)
     .single();
-  if (!unit) redirect("/dashboard");
+  if (!unit) redirect("/painel");
 
   const now = new Date();
   const todayStr = getDateStr(now);

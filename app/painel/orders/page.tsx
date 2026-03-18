@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+﻿import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getTenantContext } from "@/lib/tenant/getTenantContext";
 import { listOrdersByUnit } from "./actions";
@@ -13,11 +13,11 @@ export default async function OrdersPage({
   const { restaurant, units } = await getTenantContext();
 
   if (!restaurant || !units.length) {
-    redirect("/dashboard");
+    redirect("/painel");
   }
 
   const activeUnit = units.find((u) => u.id === params.unit) ?? units[0];
-  if (!activeUnit) redirect("/dashboard");
+  if (!activeUnit) redirect("/painel");
 
   let orders: any[] = [];
   try {
@@ -63,7 +63,7 @@ export default async function OrdersPage({
         {[undefined, ...Object.keys(countByStatus)].map((status) => (
           <Link
             key={status ?? "all"}
-            href={status ? `/dashboard/orders?status=${status}` : "/dashboard/orders"}
+            href={status ? `/painel/orders?status=${status}` : "/painel/orders"}
             style={{
               padding: "8px 16px",
               borderRadius: "8px",
@@ -104,7 +104,7 @@ export default async function OrdersPage({
             return (
               <Link
                 key={order.id}
-                href={`/dashboard/orders/${order.id}`}
+                href={`/painel/orders/${order.id}`}
                 style={{
                   display: "block",
                   padding: "16px",

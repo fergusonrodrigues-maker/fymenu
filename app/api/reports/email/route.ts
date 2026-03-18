@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
 async function sendWithResend(to: string, subject: string, html: string) {
@@ -69,7 +69,7 @@ function buildWeeklyHTML(restaurantName: string, stats: {
         <table style="width:100%;border-collapse:collapse">${productRows}</table>
       </div>` : ""}
 
-      <a href="https://fymenu.vercel.app/dashboard/relatorios"
+      <a href="https://fymenu.vercel.app/painel/relatorios"
         style="display:block;text-align:center;background:#7c3aed;color:#fff;padding:14px;border-radius:10px;text-decoration:none;font-weight:700">
         Ver Relatório Completo →
       </a>

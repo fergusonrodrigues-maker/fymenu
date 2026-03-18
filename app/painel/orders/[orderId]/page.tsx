@@ -41,7 +41,7 @@ export default function OrderDetailPage({ params }: { params: { orderId: string 
         <div style={{ color: "red", marginBottom: "20px" }}>
           Erro: {error || "Pedido não encontrado"}
         </div>
-        <Link href="/dashboard/orders" style={{ color: "blue", textDecoration: "underline" }}>
+        <Link href="/painel/orders" style={{ color: "blue", textDecoration: "underline" }}>
           ← Voltar para pedidos
         </Link>
       </main>
@@ -105,7 +105,7 @@ export default function OrderDetailPage({ params }: { params: { orderId: string 
   return (
     <main style={{ padding: "20px", maxWidth: 720, margin: "0 auto" }}>
       <div style={{ marginBottom: "24px" }}>
-        <Link href="/dashboard/orders" style={{ fontSize: "13px", color: "blue", textDecoration: "underline" }}>
+        <Link href="/painel/orders" style={{ fontSize: "13px", color: "blue", textDecoration: "underline" }}>
           ← Voltar
         </Link>
         <h1 style={{ fontSize: "28px", fontWeight: 900, margin: "12px 0 6px" }}>

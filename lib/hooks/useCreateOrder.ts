@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { createOrderIntent, generateOrderWhatsAppLink, markOrderAsSent } from "@/app/dashboard/orders/actions";
+import { createOrderIntent, generateOrderWhatsAppLink, markOrderAsSent } from "@/app/painel/orders/actions";
 import type { OrderItemInput } from "@/lib/types/orders";
 
 export function useCreateOrder() {

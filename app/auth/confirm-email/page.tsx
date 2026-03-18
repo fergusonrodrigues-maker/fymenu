@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+﻿import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
 export default async function ConfirmEmailPage({
@@ -24,7 +24,7 @@ export default async function ConfirmEmailPage({
       redirect(`/auth/confirm-email?error=${encodeURIComponent(err.message)}`);
     }
 
-    redirect("/dashboard?verified=true");
+    redirect("/painel?verified=true");
   }
 
   return (
@@ -127,7 +127,7 @@ export default async function ConfirmEmailPage({
             <h1 className="title">Erro ao Verificar Email</h1>
             <p className="subtitle">Houve um problema ao confirmar seu email</p>
             <div className="error">⚠️ {error}</div>
-            <a href="/signup" className="link">← Voltar ao cadastro</a>
+            <a href="/cadastro" className="link">← Voltar ao cadastro</a>
           </>
         ) : (
           <>
@@ -140,7 +140,7 @@ export default async function ConfirmEmailPage({
             <div className="success">
               ✅ Acesse seu email e clique no link para ativar sua conta
             </div>
-            <a href="/login" className="link">← Voltar ao login</a>
+            <a href="/entrar" className="link">← Voltar ao login</a>
           </>
         )}
       </div>

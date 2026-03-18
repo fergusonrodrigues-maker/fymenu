@@ -1,41 +1,49 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-// Rotas que exigem autenticação
-const PROTECTED_ROUTES = ["/dashboard", "/waiter", "/kitchen", "/admin"];
-
-// Rotas públicas (não redirecionar se já autenticado)
-const AUTH_ROUTES = ["/login", "/signup", "/auth/reset-password", "/auth/confirm-email"];
+const PROTECTED_ROUTES = ["/painel", "/garcom", "/cozinha", "/admin"];
+const AUTH_ROUTES = ["/entrar", "/cadastro", "/auth/reset-password", "/auth/confirm-email"];
 
 // Rate limiting simples em memória (por IP)
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT_MAX = 10; // requests
-const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minuto
+const RATE_LIMIT_MAX = 10;
+const RATE_LIMIT_WINDOW = 60 * 1000;
 
 function checkRateLimit(ip: string): boolean {
   const now = Date.now();
   const record = rateLimitMap.get(ip);
-
   if (!record || now > record.resetAt) {
     rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW });
     return true;
   }
-
-  if (record.count >= RATE_LIMIT_MAX) {
-    return false;
-  }
-
+  if (record.count >= RATE_LIMIT_MAX) return false;
   record.count++;
   return true;
 }
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const hostname = request.headers.get("host") ?? "";
 
-  // Rate limiting para rotas de auth
+  // ── Subdomínio → rewrite para /u/[slug] ──────────────────────────────
+  // pizzaria.fymenu.com → /u/pizzaria
+  const mainDomain = process.env.NEXT_PUBLIC_DOMAIN ?? "fymenu.com";
+  const isSubdomain =
+    hostname.endsWith(`.${mainDomain}`) &&
+    !hostname.startsWith("www.") &&
+    hostname !== mainDomain;
+
+  if (isSubdomain) {
+    const slug = hostname.replace(`.${mainDomain}`, "");
+    const url = request.nextUrl.clone();
+    url.pathname = `/u/${slug}${pathname === "/" ? "" : pathname}`;
+    return NextResponse.rewrite(url);
+  }
+
+  // ── Rate limiting nas rotas de auth ──────────────────────────────────
   const isAuthAction =
-    pathname === "/login" ||
-    pathname === "/signup" ||
+    pathname === "/entrar" ||
+    pathname === "/cadastro" ||
     pathname === "/auth/reset-password";
 
   if (isAuthAction && request.method === "POST") {
@@ -43,7 +51,6 @@ export async function middleware(request: NextRequest) {
       request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
       request.headers.get("x-real-ip") ||
       "unknown";
-
     if (!checkRateLimit(ip)) {
       return new NextResponse("Muitas tentativas. Tente novamente em 1 minuto.", {
         status: 429,
@@ -52,24 +59,16 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  const response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
-  });
+  const response = NextResponse.next({ request: { headers: request.headers } });
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
+        getAll() { return request.cookies.getAll(); },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, options)
           );
@@ -78,23 +77,17 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  const isProtected = PROTECTED_ROUTES.some((route) =>
-    pathname.startsWith(route)
-  );
-  const isAuthRoute = AUTH_ROUTES.some((route) => pathname === route);
+  const isProtected = PROTECTED_ROUTES.some((r) => pathname.startsWith(r));
+  const isAuthRoute = AUTH_ROUTES.some((r) => pathname === r);
 
-  // Redirecionar para login se não autenticado e rota protegida
   if (isProtected && !user) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    return NextResponse.redirect(new URL("/entrar", request.url));
   }
 
-  // Redirecionar para dashboard se já autenticado e na rota de auth
   if (isAuthRoute && user && pathname !== "/auth/reset-password") {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    return NextResponse.redirect(new URL("/painel", request.url));
   }
 
   return response;

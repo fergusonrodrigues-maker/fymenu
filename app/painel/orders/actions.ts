@@ -1,4 +1,4 @@
-"use server";
+﻿"use server";
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
@@ -134,7 +134,7 @@ export async function markOrderAsSent(orderId: string, whatsappLink: string) {
     throw new Error(`Erro ao atualizar pedido: ${error.message}`);
   }
 
-  revalidatePath("/dashboard/orders");
+  revalidatePath("/painel/orders");
   return { success: true };
 }
 
@@ -209,7 +209,7 @@ export async function cancelOrder(orderId: string) {
     throw new Error(`Erro ao cancelar pedido: ${error.message}`);
   }
 
-  revalidatePath("/dashboard/orders");
+  revalidatePath("/painel/orders");
   return { success: true };
 }
 
@@ -225,6 +225,6 @@ export async function confirmOrder(orderId: string) {
     throw new Error(`Erro ao confirmar pedido: ${error.message}`);
   }
 
-  revalidatePath("/dashboard/orders");
+  revalidatePath("/painel/orders");
   return { success: true };
 }

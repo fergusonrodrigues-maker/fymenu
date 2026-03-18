@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+﻿import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import OnboardingClient from "./OnboardingClient";
 
@@ -6,7 +6,7 @@ export default async function OnboardingPage() {
   const supabase = await createClient();
 
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/entrar");
 
   // Se já completou onboarding, vai pro dashboard
   const { data: restaurant } = await supabase
@@ -15,7 +15,7 @@ export default async function OnboardingPage() {
     .eq("owner_id", user.id)
     .maybeSingle();
 
-  if (restaurant?.onboarding_completed) redirect("/dashboard");
+  if (restaurant?.onboarding_completed) redirect("/painel");
 
   // Auto-provisiona restaurante se não existir
   let restaurantId = restaurant?.id;
@@ -32,7 +32,7 @@ export default async function OnboardingPage() {
     return (
       <main style={{ padding: 18, maxWidth: 420, margin: "0 auto", color: "#fff" }}>
         <p style={{ color: "salmon" }}>Erro ao criar restaurante. Tente novamente mais tarde.</p>
-        <a href="/onboarding" style={{ color: "#fff", textDecoration: "underline" }}>Tentar novamente</a>
+        <a href="/configurar" style={{ color: "#fff", textDecoration: "underline" }}>Tentar novamente</a>
       </main>
     );
   }

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 // Chamado toda segunda às 08:00 via Vercel Cron
@@ -27,7 +27,7 @@ async function sendReportEmail(to: string, restaurantName: string, stats: {
   <p>Receita: <strong>${R(stats.revenue)}</strong></p>
   <p>Ticket Médio: <strong>${R(stats.avgTicket)}</strong></p>
   ${productList ? `<p>Top Produtos: ${productList}</p>` : ""}
-  <a href="https://fymenu.vercel.app/dashboard/relatorios" style="color:#a78bfa">Ver relatório completo →</a>
+  <a href="https://fymenu.vercel.app/painel/relatorios" style="color:#a78bfa">Ver relatório completo →</a>
 </div>`;
 
   await fetch("https://api.resend.com/emails", {

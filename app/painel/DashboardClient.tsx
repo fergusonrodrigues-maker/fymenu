@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -362,7 +362,7 @@ export default function DashboardClient({
 
       {/* Plano */}
       <Modal open={modal === "plano"} onClose={close} title="Plano">
-        <PlanoModal restaurant={restaurant} trialDays={trialDays} onUpgrade={() => { close(); router.push("/dashboard/planos"); }} />
+        <PlanoModal restaurant={restaurant} trialDays={trialDays} onUpgrade={() => { close(); router.push("/painel/planos"); }} />
       </Modal>
 
       {/* Config */}
@@ -430,7 +430,7 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
         {unit && (
           <a href={`/u/${unit.slug}`} target="_blank" rel="noreferrer" style={{ flex: 1, textAlign: "center", padding: "10px", borderRadius: 12, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(255,255,255,0.6)", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>Ver cardápio ↗</a>
         )}
-        <a href="/dashboard/ia" style={{ flex: 1, textAlign: "center", padding: "10px", borderRadius: 12, background: "rgba(0,255,174,0.08)", border: "1px solid rgba(0,255,174,0.15)", color: "#00ffae", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>✨ Importar com IA</a>
+        <a href="/painel/ia" style={{ flex: 1, textAlign: "center", padding: "10px", borderRadius: 12, background: "rgba(0,255,174,0.08)", border: "1px solid rgba(0,255,174,0.15)", color: "#00ffae", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>✨ Importar com IA</a>
       </div>
 
       {/* Nova categoria */}
@@ -667,7 +667,7 @@ function TVModal({ unit, tvCount }: { unit: Unit | null; tvCount: number }) {
             Abrir display público ↗
           </a>
         )}
-        <a href="/dashboard/tv" style={{ display: "block", padding: "12px", borderRadius: 12, border: "none", background: "rgba(0,255,174,0.15)", color: "#00ffae", fontSize: 14, fontWeight: 700, textDecoration: "none" }}>
+        <a href="/painel/tv" style={{ display: "block", padding: "12px", borderRadius: 12, border: "none", background: "rgba(0,255,174,0.15)", color: "#00ffae", fontSize: 14, fontWeight: 700, textDecoration: "none" }}>
           Gerenciar vídeos →
         </a>
       </div>
@@ -750,7 +750,7 @@ function EstoqueModal({ unit, stockStats }: { unit: Unit | null; stockStats: Sto
           </div>
         </div>
         <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginBottom: 16 }}>Gerencie o estoque dos seus produtos e acompanhe movimentações.</div>
-        <a href="/dashboard/estoque" style={{ display: "block", padding: "12px", borderRadius: 12, border: "none", background: "rgba(0,255,174,0.15)", color: "#00ffae", fontSize: 14, fontWeight: 700, textDecoration: "none" }}>
+        <a href="/painel/estoque" style={{ display: "block", padding: "12px", borderRadius: 12, border: "none", background: "rgba(0,255,174,0.15)", color: "#00ffae", fontSize: 14, fontWeight: 700, textDecoration: "none" }}>
           Gerenciar estoque →
         </a>
       </div>
