@@ -492,32 +492,55 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
 
 function NewProductFormInline({ categoryId, anyProductExpanded, onOpen }: { categoryId: string; anyProductExpanded: boolean; onOpen: () => void }) {
   const [open, setOpen] = useState(false);
+  const [priceType, setPriceType] = useState("fixed");
 
   useEffect(() => {
     if (anyProductExpanded) setOpen(false);
   }, [anyProductExpanded]);
 
+  function handleOpen() {
+    onOpen();
+    setPriceType("fixed");
+    setOpen(true);
+  }
+
+  function handleClose() {
+    setOpen(false);
+    setPriceType("fixed");
+  }
+
   if (!open) return (
-    <button onClick={() => { onOpen(); setOpen(true); }} style={{ padding: "10px", borderRadius: 10, width: "100%", background: "transparent", border: "1px dashed rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.4)", fontSize: 13, cursor: "pointer" }}>
+    <button onClick={handleOpen} style={{ padding: "10px", borderRadius: 10, width: "100%", background: "transparent", border: "1px dashed rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.4)", fontSize: 13, cursor: "pointer" }}>
       + Adicionar produto
     </button>
   );
   return (
-    <form action={createProduct} style={{ display: "flex", flexDirection: "column", gap: 8, padding: 12, borderRadius: 12, border: "1px solid rgba(255,255,255,0.10)", background: "rgba(255,255,255,0.04)" }}>
+    <form
+      action={async (formData) => {
+        await createProduct(formData);
+        handleClose();
+      }}
+      style={{ display: "flex", flexDirection: "column", gap: 8, padding: 12, borderRadius: 12, border: "1px solid rgba(255,255,255,0.10)", background: "rgba(255,255,255,0.04)" }}
+    >
       <input type="hidden" name="category_id" value={categoryId} />
       <input name="name" placeholder="Nome do produto" required style={inp} />
       <textarea name="description" placeholder="Descrição (opcional)" rows={2} style={{ ...inp, resize: "vertical" }} />
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-        <input name="base_price" placeholder="Preço (ex: 29,90)" inputMode="decimal" style={inp} />
-        <select name="price_type" defaultValue="fixed" style={{ ...inp, cursor: "pointer" }}>
+      <div style={{ display: "flex", gap: 8 }}>
+        <select name="price_type" value={priceType} onChange={(e) => setPriceType(e.target.value)} style={{ ...inp, flex: 1, cursor: "pointer" }}>
           <option value="fixed">Preço fixo</option>
           <option value="variable">Preço variável</option>
         </select>
+        {priceType === "fixed" && (
+          <input name="base_price" placeholder="Preço (ex: 29,90)" inputMode="decimal" style={{ ...inp, flex: 1 }} />
+        )}
       </div>
-      <input name="thumbnail_url" placeholder="URL da thumbnail" style={inp} />
-      <input name="video_url" placeholder="URL do vídeo" style={inp} />
+      {priceType === "variable" && (
+        <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, margin: 0 }}>
+          💡 Adicione as variações de preço após criar o produto (clique no produto para editar).
+        </p>
+      )}
       <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-        <button type="button" onClick={() => setOpen(false)} style={{ padding: "9px 14px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.12)", background: "transparent", color: "rgba(255,255,255,0.5)", fontSize: 12, cursor: "pointer" }}>Cancelar</button>
+        <button type="button" onClick={handleClose} style={{ padding: "9px 14px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.12)", background: "transparent", color: "rgba(255,255,255,0.5)", fontSize: 12, cursor: "pointer" }}>Cancelar</button>
         <button type="submit" style={{ padding: "9px 16px", borderRadius: 10, border: "none", background: "rgba(0,255,174,0.15)", color: "#00ffae", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Criar</button>
       </div>
     </form>

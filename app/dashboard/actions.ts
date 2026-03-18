@@ -234,7 +234,7 @@ export async function createProduct(formData: FormData): Promise<void> {
   if (!categoryId) throw new Error("category_id é obrigatório.");
   if (!name) throw new Error("Nome do produto é obrigatório.");
 
-  const base_price = parsePrice(basePriceInput) ?? 0;
+  const base_price = Math.round((parsePrice(basePriceInput) ?? 0) * 100);
 
   // Obter unit_id a partir da categoria
   const { data: category, error: catErr } = await supabase
