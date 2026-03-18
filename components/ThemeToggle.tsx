@@ -49,17 +49,17 @@ export default function ThemeToggle({
 
   if (!mounted) {
     return (
-      <div className="ui-switch">
+      <label className="ui-switch">
         <input type="checkbox" disabled aria-label="Loading theme toggle" />
         <div className="slider">
           <div className="circle"></div>
         </div>
-      </div>
+      </label>
     )
   }
 
   return (
-    <div
+    <label
       className="ui-switch"
       role="switch"
       aria-checked={isDark}
@@ -74,6 +74,6 @@ export default function ThemeToggle({
       <div className="slider">
         <div className="circle"></div>
       </div>
-    </div>
+    </label>
   )
 }
