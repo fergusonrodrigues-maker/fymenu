@@ -39,7 +39,7 @@ export async function buildMenuCache(unitId: string): Promise<{ menu_json: MenuC
 
   const { data: unit, error: unitError } = await supabase
     .from("units")
-    .select("id, name, slug, restaurant_id, logo_path")
+    .select("id, name, slug, restaurant_id, logo_url")
     .eq("id", unitId)
     .single();
 
@@ -101,7 +101,7 @@ export async function buildMenuCache(unitId: string): Promise<{ menu_json: MenuC
       id: unit.id,
       name: unit.name,
       slug: unit.slug,
-      logo_url: unit.logo_path || undefined,
+      logo_url: unit.logo_url || undefined,
     },
     restaurant: {
       id: restaurant.id,
