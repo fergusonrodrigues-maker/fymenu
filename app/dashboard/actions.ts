@@ -287,7 +287,7 @@ export async function updateProduct(formData: FormData): Promise<void> {
   if (!id) throw new Error("ID inválido.");
   if (!name) throw new Error("Nome do produto é obrigatório.");
 
-  const base_price = parsePrice(basePriceInput) ?? 0;
+  const base_price = Math.round((parsePrice(basePriceInput) ?? 0) * 100);
 
   const { error } = await supabase
     .from("products")

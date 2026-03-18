@@ -132,7 +132,7 @@ export default function ProductRow({ product }: { product: Product }) {
                   <option value="variable">Preço variável</option>
                 </select>
                 {priceType === "fixed" && (
-                  <input name="base_price" type="number" step="0.01" defaultValue={product.base_price ?? ""} placeholder="Preço (R$)" style={{ ...inputStyle, flex: 1 }} />
+                  <input name="base_price" type="number" step="0.01" defaultValue={product.base_price != null ? product.base_price / 100 : ""} placeholder="Preço (R$)" style={{ ...inputStyle, flex: 1 }} />
                 )}
               </div>
 
