@@ -8,6 +8,8 @@ import FeaturedCarousel from "./FeaturedCarousel";
 import BottomGlassBar from "./BottomGlassBar";
 import ProductModal from "./ProductModal";
 import UpsellModal, { UpsellSuggestion } from "./UpsellModal";
+import CartBar from "./CartBar";
+import CartModal, { CartItem } from "./CartModal";
 import { OrderPayload } from "./orderBuilder";
 
 interface MenuClientProps {
@@ -17,6 +19,7 @@ interface MenuClientProps {
   variations: Record<string, ProductVariation[]>;
   upsells: Record<string, UpsellSuggestion[]>;
   mode?: "delivery" | "presencial";
+  initialTable?: number | null;
 }
 
 export default function MenuClient({
@@ -26,12 +29,48 @@ export default function MenuClient({
   variations,
   upsells,
   mode = "delivery",
+  initialTable = null,
 }: MenuClientProps) {
   const [activeCategoryId, setActiveCategoryId] = useState<string>(
     categories[0]?.id ?? ""
   );
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [pendingPayload, setPendingPayload] = useState<OrderPayload | null>(null);
+
+  // Carrinho para modo presencial
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cartOpen, setCartOpen] = useState(false);
+
+  function addToCart(payload: OrderPayload) {
+    const productId = payload.variation?.id
+      ? `${payload.product.id}__${payload.variation.id}`
+      : payload.product.id;
+    const name = payload.variation
+      ? `${payload.product.name} — ${payload.variation.name}`
+      : payload.product.name;
+    setCart((prev) => {
+      const existing = prev.find((i) => i.product_id === productId);
+      if (existing) {
+        return prev.map((i) =>
+          i.product_id === productId ? { ...i, qty: i.qty + 1 } : i
+        );
+      }
+      return [...prev, { product_id: productId, name, qty: 1, unit_price: payload.total }];
+    });
+  }
+
+  function updateCartQty(productId: string, qty: number) {
+    if (qty <= 0) {
+      setCart((prev) => prev.filter((i) => i.product_id !== productId));
+    } else {
+      setCart((prev) =>
+        prev.map((i) => (i.product_id === productId ? { ...i, qty } : i))
+      );
+    }
+  }
+
+  const cartTotal = cart.reduce((s, i) => s + i.qty * i.unit_price, 0);
+  const cartCount = cart.reduce((s, i) => s + i.qty, 0);
 
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const isScrollingTo = useRef(false); // evita loop: scroll programático ≠ scroll do usuário
@@ -86,7 +125,10 @@ export default function MenuClient({
 
   function handleProductOrder(payload: OrderPayload) {
     setSelectedProduct(null);
-    if (mode === "presencial") return;
+    if (mode === "presencial") {
+      addToCart(payload);
+      return;
+    }
     setPendingPayload(payload);
   }
 
@@ -150,8 +192,17 @@ export default function MenuClient({
         })}
       </div>
 
-      {/* Bottom bar */}
-      <BottomGlassBar unit={unit} />
+      {/* Bottom bar (apenas no modo delivery) */}
+      {mode === "delivery" && <BottomGlassBar unit={unit} />}
+
+      {/* Cart bar flutuante (modo presencial) */}
+      {mode === "presencial" && (
+        <CartBar
+          itemCount={cartCount}
+          total={cartTotal}
+          onOpen={() => setCartOpen(true)}
+        />
+      )}
 
       {/* Product modal */}
       <ProductModal
@@ -163,17 +214,29 @@ export default function MenuClient({
         mode={mode}
       />
 
-      {/* Upsell modal */}
-      <UpsellModal
-        payload={pendingPayload}
-        suggestions={
-          pendingPayload
-            ? (upsells[pendingPayload.product.id] ?? [])
-            : []
-        }
-        unit={unit}
-        onClose={handleUpsellClose}
-      />
+      {/* Upsell modal (delivery) */}
+      {mode === "delivery" && (
+        <UpsellModal
+          payload={pendingPayload}
+          suggestions={
+            pendingPayload ? (upsells[pendingPayload.product.id] ?? []) : []
+          }
+          unit={unit}
+          onClose={handleUpsellClose}
+        />
+      )}
+
+      {/* Cart modal (presencial) */}
+      {mode === "presencial" && cartOpen && (
+        <CartModal
+          items={cart}
+          unitId={unit.id}
+          initialTable={initialTable}
+          onClose={() => setCartOpen(false)}
+          onSuccess={() => setCart([])}
+          onUpdateQty={updateCartQty}
+        />
+      )}
     </>
   );
 }

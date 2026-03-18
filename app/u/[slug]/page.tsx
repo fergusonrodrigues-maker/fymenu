@@ -53,10 +53,15 @@ export async function generateMetadata({
 
 export default async function Page({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams?: Promise<{ mesa?: string; mode?: string }>;
 }) {
   const { slug } = await params;
+  const sp = searchParams ? await searchParams : {};
+  const tableNumber = sp.mesa ? parseInt(sp.mesa) || null : null;
+  const mode = sp.mode === "presencial" || sp.mesa ? "presencial" : "delivery";
   const publicSlug = normalizePublicSlug(slug);
   const supabase = await createClient();
 
@@ -204,6 +209,8 @@ export default async function Page({
       products={products}
       variations={variations}
       upsells={upsells}
+      mode={mode}
+      initialTable={tableNumber}
     />
   );
 }

@@ -92,7 +92,7 @@ export default function ProductModal({
   const activePrice: number | null = isFixed
     ? fixedPrice
     : selectedVariation?.price ?? null;
-  const canOrder = mode === "delivery" && (isFixed || selectedVariation !== null);
+  const canOrder = (isFixed || selectedVariation !== null);
 
   // NUNCA usar: thumb_path | image_path | video_path
   const thumbUrl: string | null = currentProduct.thumbnail_url ?? null;
@@ -308,7 +308,7 @@ export default function ProductModal({
             </div>
           )}
 
-          {mode === "delivery" && (
+          {(mode === "delivery" || mode === "presencial") && (
             <button
               onClick={handleOrder}
               disabled={!canOrder}
@@ -331,7 +331,11 @@ export default function ProductModal({
                 borderRadius: "999px 999px 0 0", pointerEvents: "none",
               }} />
               <span style={{ position: "relative", zIndex: 1 }}>
-                {canOrder ? "Pedir" : "Selecione uma opção"}
+                {canOrder
+                  ? mode === "presencial"
+                    ? "Adicionar ao Pedido"
+                    : "Pedir"
+                  : "Selecione uma opção"}
               </span>
               {canOrder && displayPrice && (
                 <span style={{ position: "relative", zIndex: 1, fontSize: 12, color: "rgba(255,255,255,0.55)" }}>
