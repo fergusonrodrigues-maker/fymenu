@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -32,7 +32,7 @@ function Modal({ open, onClose, children, title }: { open: boolean; onClose: () 
   return (
     <div style={{
       position: "fixed", inset: 0, zIndex: 100,
-      background: "rgba(0,0,0,0.85)", backdropFilter: "blur(12px)",
+      background: "var(--dash-overlay)", backdropFilter: "blur(12px)",
       display: "flex", alignItems: "flex-end",
       animation: "fadeIn 0.2s ease",
     }}
@@ -49,9 +49,9 @@ function Modal({ open, onClose, children, title }: { open: boolean; onClose: () 
         className="modal-sheet"
         style={{
           width: "100%", maxHeight: "92vh",
-          background: "linear-gradient(180deg, #161616 0%, #111 100%)",
+          background: "var(--dash-modal-bg)",
           borderRadius: "24px 24px 0 0",
-          border: "1px solid rgba(255,255,255,0.08)",
+          border: "1px solid var(--dash-modal-border)",
           overflow: "hidden", display: "flex", flexDirection: "column",
           animation: "slideUp 0.3s cubic-bezier(0.32,0.72,0,1)",
         }}
@@ -59,12 +59,12 @@ function Modal({ open, onClose, children, title }: { open: boolean; onClose: () 
       >
         {/* Handle */}
         <div style={{ display: "flex", justifyContent: "center", padding: "12px 0 0" }}>
-          <div style={{ width: 36, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.15)" }} />
+          <div style={{ width: 36, height: 4, borderRadius: 2, background: "var(--dash-handle)" }} />
         </div>
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 24px 12px" }}>
-          <h2 style={{ margin: 0, color: "#fff", fontSize: 20, fontWeight: 800, letterSpacing: "-0.5px" }}>{title}</h2>
-          <button onClick={onClose} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "50%", width: 32, height: 32, color: "rgba(255,255,255,0.5)", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+          <h2 style={{ margin: 0, color: "var(--dash-text)", fontSize: 20, fontWeight: 800, letterSpacing: "-0.5px" }}>{title}</h2>
+          <button onClick={onClose} style={{ background: "var(--dash-close-btn)", border: "none", borderRadius: "50%", width: 32, height: 32, color: "var(--dash-close-color)", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
         </div>
         {/* Content */}
         <div style={{ overflowY: "auto", padding: "0 24px 32px", flex: 1 }}>
@@ -78,9 +78,9 @@ function Modal({ open, onClose, children, title }: { open: boolean; onClose: () 
 // ─── Input style ────────────────────────────────────────────────────────────
 const inp: React.CSSProperties = {
   width: "100%", padding: "11px 14px", borderRadius: 12,
-  border: "1px solid rgba(255,255,255,0.10)",
-  background: "rgba(255,255,255,0.05)",
-  color: "#fff", fontSize: 14, boxSizing: "border-box",
+  border: "1px solid var(--dash-input-border)",
+  background: "var(--dash-input-bg)",
+  color: "var(--dash-text)", fontSize: 14, boxSizing: "border-box",
   outline: "none",
 };
 
@@ -105,21 +105,21 @@ export default function DashboardClient({
     <>
       <style>{`
         * { box-sizing: border-box; }
-        body { margin: 0; background: #0a0a0a; }
+        body { margin: 0; background: var(--dash-bg); }
         @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:0.5 } }
         .card:active { transform: scale(0.97); }
         .card { transition: transform 0.15s, background 0.2s; }
-        .card:hover { background: rgba(255,255,255,0.07) !important; }
+        .card:hover { background: var(--dash-card-hover) !important; }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: var(--dash-scrollbar); border-radius: 4px; }
         input, textarea, select { outline: none; font-family: inherit; }
-        input::placeholder, textarea::placeholder { color: rgba(255,255,255,0.25); }
+        input::placeholder, textarea::placeholder { color: var(--dash-placeholder); }
       `}</style>
 
       <div style={{
         minHeight: "100vh",
-        background: "radial-gradient(ellipse 80% 50% at 50% -10%, rgba(0,255,174,0.07) 0%, transparent 60%), #0a0a0a",
+        background: "var(--dash-bg-gradient)",
         fontFamily: "-apple-system, 'SF Pro Display', BlinkMacSystemFont, sans-serif",
         padding: "env(safe-area-inset-top, 0) 0 env(safe-area-inset-bottom, 0)",
       }}>
@@ -134,8 +134,8 @@ export default function DashboardClient({
                 <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(0,255,174,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>🍽</div>
               )}
               <div>
-                <div style={{ color: "#fff", fontSize: 18, fontWeight: 800, letterSpacing: "-0.5px", lineHeight: 1.1 }}>{unit?.name ?? restaurant.name}</div>
-                <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 12 }}>{unit?.is_published ? "● Publicado" : "○ Não publicado"}</div>
+                <div style={{ color: "var(--dash-text)", fontSize: 18, fontWeight: 800, letterSpacing: "-0.5px", lineHeight: 1.1 }}>{unit?.name ?? restaurant.name}</div>
+                <div style={{ color: "var(--dash-text-muted)", fontSize: 12 }}>{unit?.is_published ? "● Publicado" : "○ Não publicado"}</div>
               </div>
             </div>
           </div>
@@ -144,9 +144,9 @@ export default function DashboardClient({
             {unit && (
               <a href={`/u/${unit.slug}`} target="_blank" rel="noreferrer" style={{
                 padding: "8px 14px", borderRadius: 12,
-                background: "rgba(255,255,255,0.07)",
-                border: "1px solid rgba(255,255,255,0.10)",
-                color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: 600, textDecoration: "none",
+                background: "var(--dash-link-bg)",
+                border: "1px solid var(--dash-card-border)",
+                color: "var(--dash-text-secondary)", fontSize: 13, fontWeight: 600, textDecoration: "none",
               }}>Ver cardápio ↗</a>
             )}
           </div>
@@ -174,14 +174,14 @@ export default function DashboardClient({
           <div className="card" onClick={() => open("analytics")} style={{
             gridColumn: "span 2",
             borderRadius: 20, padding: "20px 24px",
-            background: "rgba(255,255,255,0.04)",
-            border: "1px solid rgba(255,255,255,0.08)",
+            background: "var(--dash-card)",
+            border: "1px solid var(--dash-card-border)",
             cursor: "pointer",
           }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
               <div>
-                <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 4 }}>Últimos 7 dias</div>
-                <div style={{ color: "#fff", fontSize: 18, fontWeight: 800 }}>Analytics</div>
+                <div style={{ color: "var(--dash-text-muted)", fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 4 }}>Últimos 7 dias</div>
+                <div style={{ color: "var(--dash-text)", fontSize: 18, fontWeight: 800 }}>Analytics</div>
               </div>
               <div style={{ fontSize: 24 }}>📊</div>
             </div>
@@ -193,7 +193,7 @@ export default function DashboardClient({
               ].map((stat) => (
                 <div key={stat.label} style={{ textAlign: "center" }}>
                   <div style={{ color: stat.color, fontSize: 26, fontWeight: 900, lineHeight: 1 }}>{stat.value}</div>
-                  <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 11, marginTop: 4 }}>{stat.label}</div>
+                  <div style={{ color: "var(--dash-text-muted)", fontSize: 11, marginTop: 4 }}>{stat.label}</div>
                 </div>
               ))}
             </div>
@@ -202,46 +202,46 @@ export default function DashboardClient({
           {/* Cardápio */}
           <div className="card" onClick={() => open("cardapio")} style={{
             borderRadius: 20, padding: "20px 18px",
-            background: "rgba(255,255,255,0.04)",
-            border: "1px solid rgba(255,255,255,0.08)",
+            background: "var(--dash-card)",
+            border: "1px solid var(--dash-card-border)",
             cursor: "pointer", minHeight: 140,
             display: "flex", flexDirection: "column", justifyContent: "space-between",
           }}>
             <div style={{ fontSize: 28 }}>📋</div>
             <div>
-              <div style={{ color: "#fff", fontSize: 16, fontWeight: 800, marginBottom: 4 }}>Cardápio</div>
-              <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 12 }}>{products.length} produto{products.length !== 1 ? "s" : ""}</div>
+              <div style={{ color: "var(--dash-text)", fontSize: 16, fontWeight: 800, marginBottom: 4 }}>Cardápio</div>
+              <div style={{ color: "var(--dash-text-muted)", fontSize: 12 }}>{products.length} produto{products.length !== 1 ? "s" : ""}</div>
             </div>
           </div>
 
           {/* Pedidos */}
           <div className="card" onClick={() => open("pedidos")} style={{
             borderRadius: 20, padding: "20px 18px",
-            background: "rgba(255,255,255,0.04)",
-            border: "1px solid rgba(255,255,255,0.08)",
+            background: "var(--dash-card)",
+            border: "1px solid var(--dash-card-border)",
             cursor: "pointer", minHeight: 140,
             display: "flex", flexDirection: "column", justifyContent: "space-between",
           }}>
             <div style={{ fontSize: 28 }}>🛒</div>
             <div>
-              <div style={{ color: "#fff", fontSize: 16, fontWeight: 800, marginBottom: 4 }}>Pedidos</div>
-              <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 12 }}>{analytics.orders} hoje</div>
+              <div style={{ color: "var(--dash-text)", fontSize: 16, fontWeight: 800, marginBottom: 4 }}>Pedidos</div>
+              <div style={{ color: "var(--dash-text-muted)", fontSize: 12 }}>{analytics.orders} hoje</div>
             </div>
           </div>
 
           {/* Unidade */}
           <div className="card" onClick={() => open("unidade")} style={{
             borderRadius: 20, padding: "20px 18px",
-            background: "rgba(255,255,255,0.04)",
-            border: "1px solid rgba(255,255,255,0.08)",
+            background: "var(--dash-card)",
+            border: "1px solid var(--dash-card-border)",
             cursor: "pointer", minHeight: 120,
             display: "flex", flexDirection: "column", justifyContent: "space-between",
           }}>
             <div style={{ fontSize: 24 }}>📍</div>
             <div>
-              <div style={{ color: "#fff", fontSize: 15, fontWeight: 800, marginBottom: 2 }}>Unidade</div>
-              <div style={{ color: unit?.is_published ? "#00ffae" : "rgba(255,255,255,0.35)", fontSize: 11, display: "flex", alignItems: "center", gap: 4 }}>
-                <span style={{ width: 6, height: 6, borderRadius: "50%", background: unit?.is_published ? "#00ffae" : "rgba(255,255,255,0.2)", display: "inline-block", animation: unit?.is_published ? "pulse 2s infinite" : "none" }} />
+              <div style={{ color: "var(--dash-text)", fontSize: 15, fontWeight: 800, marginBottom: 2 }}>Unidade</div>
+              <div style={{ color: unit?.is_published ? "#00ffae" : "var(--dash-text-muted)", fontSize: 11, display: "flex", alignItems: "center", gap: 4 }}>
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: unit?.is_published ? "#00ffae" : "var(--dash-card-border)", display: "inline-block", animation: unit?.is_published ? "pulse 2s infinite" : "none" }} />
                 {unit?.is_published ? "Publicado" : "Não publicado"}
               </div>
             </div>
@@ -250,15 +250,15 @@ export default function DashboardClient({
           {/* Modo TV */}
           <div className="card" onClick={() => open("tv")} style={{
             borderRadius: 20, padding: "20px 18px",
-            background: "rgba(255,255,255,0.04)",
-            border: "1px solid rgba(255,255,255,0.08)",
+            background: "var(--dash-card)",
+            border: "1px solid var(--dash-card-border)",
             cursor: "pointer", minHeight: 120,
             display: "flex", flexDirection: "column", justifyContent: "space-between",
           }}>
             <div style={{ fontSize: 24 }}>📺</div>
             <div>
-              <div style={{ color: "#fff", fontSize: 15, fontWeight: 800, marginBottom: 2 }}>Modo TV</div>
-              <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 11 }}>{tvCount} vídeo{tvCount !== 1 ? "s" : ""} ativo{tvCount !== 1 ? "s" : ""}</div>
+              <div style={{ color: "var(--dash-text)", fontSize: 15, fontWeight: 800, marginBottom: 2 }}>Modo TV</div>
+              <div style={{ color: "var(--dash-text-muted)", fontSize: 11 }}>{tvCount} vídeo{tvCount !== 1 ? "s" : ""} ativo{tvCount !== 1 ? "s" : ""}</div>
             </div>
           </div>
 
@@ -267,15 +267,15 @@ export default function DashboardClient({
             borderRadius: 20, padding: "20px 18px",
             background: isPro
               ? "linear-gradient(135deg, rgba(250,204,21,0.08) 0%, rgba(251,146,60,0.08) 100%)"
-              : "rgba(255,255,255,0.04)",
-            border: isPro ? "1px solid rgba(250,204,21,0.2)" : "1px solid rgba(255,255,255,0.08)",
+              : "var(--dash-card)",
+            border: isPro ? "1px solid rgba(250,204,21,0.2)" : "1px solid var(--dash-card-border)",
             cursor: "pointer", minHeight: 120,
             display: "flex", flexDirection: "column", justifyContent: "space-between",
           }}>
             <div style={{ fontSize: 24 }}>{isPro ? "⭐" : "🎯"}</div>
             <div>
-              <div style={{ color: "#fff", fontSize: 15, fontWeight: 800, marginBottom: 2 }}>Plano</div>
-              <div style={{ color: isPro ? "#fbbf24" : "rgba(255,255,255,0.35)", fontSize: 11, fontWeight: isPro ? 700 : 400 }}>
+              <div style={{ color: "var(--dash-text)", fontSize: 15, fontWeight: 800, marginBottom: 2 }}>Plano</div>
+              <div style={{ color: isPro ? "#fbbf24" : "var(--dash-text-muted)", fontSize: 11, fontWeight: isPro ? 700 : 400 }}>
                 {isPro ? "Pro" : restaurant.status === "trial" ? `Trial · ${trialDays}d` : "Basic"}
               </div>
             </div>
@@ -284,15 +284,15 @@ export default function DashboardClient({
           {/* Config */}
           <div className="card" onClick={() => open("config")} style={{
             borderRadius: 20, padding: "20px 18px",
-            background: "rgba(255,255,255,0.04)",
-            border: "1px solid rgba(255,255,255,0.08)",
+            background: "var(--dash-card)",
+            border: "1px solid var(--dash-card-border)",
             cursor: "pointer", minHeight: 120,
             display: "flex", flexDirection: "column", justifyContent: "space-between",
           }}>
             <div style={{ fontSize: 24 }}>⚙️</div>
             <div>
-              <div style={{ color: "#fff", fontSize: 15, fontWeight: 800, marginBottom: 2 }}>Configurações</div>
-              <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 11 }}>{profile.email?.split("@")[0]}</div>
+              <div style={{ color: "var(--dash-text)", fontSize: 15, fontWeight: 800, marginBottom: 2 }}>Configurações</div>
+              <div style={{ color: "var(--dash-text-muted)", fontSize: 11 }}>{profile.email?.split("@")[0]}</div>
             </div>
           </div>
 
@@ -304,22 +304,22 @@ export default function DashboardClient({
               ? "rgba(248,113,113,0.04)"
               : stockStats.low > 0
               ? "rgba(251,191,36,0.04)"
-              : "rgba(255,255,255,0.04)",
+              : "var(--dash-card)",
             border: stockStats.out > 0
               ? "1px solid rgba(248,113,113,0.15)"
               : stockStats.low > 0
               ? "1px solid rgba(251,191,36,0.15)"
-              : "1px solid rgba(255,255,255,0.08)",
+              : "1px solid var(--dash-card-border)",
             cursor: "pointer", minHeight: 100,
             display: "flex", alignItems: "center", gap: 16,
           }}>
             <div style={{ fontSize: 28 }}>📦</div>
             <div style={{ flex: 1 }}>
-              <div style={{ color: "#fff", fontSize: 15, fontWeight: 800, marginBottom: 2 }}>Estoque</div>
+              <div style={{ color: "var(--dash-text)", fontSize: 15, fontWeight: 800, marginBottom: 2 }}>Estoque</div>
               <div style={{ fontSize: 12, display: "flex", gap: 8 }}>
                 {stockStats.out > 0 && <span style={{ color: "#f87171" }}>{stockStats.out} esgotado{stockStats.out !== 1 ? "s" : ""}</span>}
                 {stockStats.low > 0 && <span style={{ color: "#fbbf24" }}>{stockStats.low} baixo{stockStats.low !== 1 ? "s" : ""}</span>}
-                {stockStats.out === 0 && stockStats.low === 0 && <span style={{ color: "rgba(255,255,255,0.35)" }}>Tudo em ordem</span>}
+                {stockStats.out === 0 && stockStats.low === 0 && <span style={{ color: "var(--dash-text-muted)" }}>Tudo em ordem</span>}
               </div>
             </div>
           </div>
@@ -389,22 +389,22 @@ function AnalyticsModal({ analytics, unit }: { analytics: any; unit: Unit | null
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingTop: 8 }}>
       {stats.map((s) => (
-        <div key={s.label} style={{ borderRadius: 16, padding: "18px 20px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", display: "flex", alignItems: "center", gap: 16 }}>
+        <div key={s.label} style={{ borderRadius: 16, padding: "18px 20px", background: "var(--dash-card)", border: "1px solid var(--dash-card-border)", display: "flex", alignItems: "center", gap: 16 }}>
           <div style={{ fontSize: 28 }}>{s.icon}</div>
           <div style={{ flex: 1 }}>
-            <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}>{s.label}</div>
+            <div style={{ color: "var(--dash-text-dim)", fontSize: 12 }}>{s.label}</div>
             <div style={{ color: s.color, fontSize: 28, fontWeight: 900, lineHeight: 1.1 }}>{s.value}</div>
-            <div style={{ color: "rgba(255,255,255,0.25)", fontSize: 11 }}>{s.desc}</div>
+            <div style={{ color: "var(--dash-text-subtle)", fontSize: 11 }}>{s.desc}</div>
           </div>
         </div>
       ))}
-      <div style={{ borderRadius: 16, padding: "18px 20px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
-        <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, marginBottom: 4 }}>Taxa de conversão</div>
-        <div style={{ color: "#fff", fontSize: 32, fontWeight: 900 }}>{conversion}%</div>
-        <div style={{ color: "rgba(255,255,255,0.25)", fontSize: 11 }}>visitas → pedidos</div>
+      <div style={{ borderRadius: 16, padding: "18px 20px", background: "var(--dash-card)", border: "1px solid var(--dash-card-border)" }}>
+        <div style={{ color: "var(--dash-text-dim)", fontSize: 12, marginBottom: 4 }}>Taxa de conversão</div>
+        <div style={{ color: "var(--dash-text)", fontSize: 32, fontWeight: 900 }}>{conversion}%</div>
+        <div style={{ color: "var(--dash-text-subtle)", fontSize: 11 }}>visitas → pedidos</div>
       </div>
       {unit && (
-        <a href={`/u/${unit.slug}`} target="_blank" rel="noreferrer" style={{ display: "block", textAlign: "center", padding: "14px", borderRadius: 14, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(255,255,255,0.6)", fontSize: 14, fontWeight: 600, textDecoration: "none" }}>
+        <a href={`/u/${unit.slug}`} target="_blank" rel="noreferrer" style={{ display: "block", textAlign: "center", padding: "14px", borderRadius: 14, background: "var(--dash-link-bg)", border: "1px solid var(--dash-card-border)", color: "var(--dash-text-secondary)", fontSize: 14, fontWeight: 600, textDecoration: "none" }}>
           Ver cardápio público ↗
         </a>
       )}
@@ -428,7 +428,7 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
       {/* Links rápidos */}
       <div style={{ display: "flex", gap: 8 }}>
         {unit && (
-          <a href={`/u/${unit.slug}`} target="_blank" rel="noreferrer" style={{ flex: 1, textAlign: "center", padding: "10px", borderRadius: 12, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(255,255,255,0.6)", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>Ver cardápio ↗</a>
+          <a href={`/u/${unit.slug}`} target="_blank" rel="noreferrer" style={{ flex: 1, textAlign: "center", padding: "10px", borderRadius: 12, background: "var(--dash-link-bg)", border: "1px solid var(--dash-card-border)", color: "var(--dash-text-secondary)", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>Ver cardápio ↗</a>
         )}
         <a href="/painel/ia" style={{ flex: 1, textAlign: "center", padding: "10px", borderRadius: 12, background: "rgba(0,255,174,0.08)", border: "1px solid rgba(0,255,174,0.15)", color: "#00ffae", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>✨ Importar com IA</a>
       </div>
@@ -443,20 +443,20 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
       )}
 
       {categories.length === 0 && (
-        <div style={{ textAlign: "center", padding: "40px 0", color: "rgba(255,255,255,0.2)", fontSize: 14 }}>Crie sua primeira categoria acima!</div>
+        <div style={{ textAlign: "center", padding: "40px 0", color: "var(--dash-text-subtle)", fontSize: 14 }}>Crie sua primeira categoria acima!</div>
       )}
 
       {categories.map((cat) => {
         const isOpen = expandedCat === cat.id;
         const catProducts = productsByCat[cat.id] ?? [];
         return (
-          <div key={cat.id} style={{ borderRadius: 16, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.03)", overflow: "hidden" }}>
+          <div key={cat.id} style={{ borderRadius: 16, border: "1px solid var(--dash-card-border)", background: "var(--dash-card-subtle)", overflow: "hidden" }}>
             <div style={{ display: "flex", alignItems: "center", padding: "14px 16px", gap: 10, cursor: "pointer" }} onClick={() => setExpandedCat(isOpen ? null : cat.id)}>
-              <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, transform: isOpen ? "rotate(90deg)" : "none", transition: "transform 0.2s", display: "inline-block" }}>▶</span>
+              <span style={{ color: "var(--dash-text-muted)", fontSize: 11, transform: isOpen ? "rotate(90deg)" : "none", transition: "transform 0.2s", display: "inline-block" }}>▶</span>
               <form action={updateCategory} onClick={(e) => e.stopPropagation()} style={{ flex: 1, display: "flex", gap: 8 }}>
                 <input type="hidden" name="id" value={cat.id} />
                 <input name="name" defaultValue={cat.name} style={{ ...inp, flex: 1, fontSize: 15, fontWeight: 800 }} />
-                <button type="submit" style={{ padding: "8px 14px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.12)", background: "transparent", color: "rgba(255,255,255,0.5)", fontSize: 12, cursor: "pointer" }}>Salvar</button>
+                <button type="submit" style={{ padding: "8px 14px", borderRadius: 10, border: "1px solid var(--dash-btn-border)", background: "transparent", color: "var(--dash-text-dim)", fontSize: 12, cursor: "pointer" }}>Salvar</button>
               </form>
               <form action={deleteCategory} onClick={(e) => e.stopPropagation()} onSubmit={(e) => { if (!confirm("Excluir categoria e todos os produtos?")) e.preventDefault(); }}>
                 <input type="hidden" name="id" value={cat.id} />
@@ -465,7 +465,7 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
             </div>
             {isOpen && (
               <div style={{ padding: "0 12px 12px", display: "flex", flexDirection: "column", gap: 8 }}>
-                {catProducts.length === 0 && <div style={{ color: "rgba(255,255,255,0.2)", fontSize: 13, padding: "8px 0" }}>Nenhum produto nesta categoria.</div>}
+                {catProducts.length === 0 && <div style={{ color: "var(--dash-text-subtle)", fontSize: 13, padding: "8px 0" }}>Nenhum produto nesta categoria.</div>}
                 {catProducts.map((p) => (
                   <ProductRow
                     key={p.id}
@@ -510,7 +510,7 @@ function NewProductFormInline({ categoryId, anyProductExpanded, onOpen }: { cate
   }
 
   if (!open) return (
-    <button onClick={handleOpen} style={{ padding: "10px", borderRadius: 10, width: "100%", background: "transparent", border: "1px dashed rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.4)", fontSize: 13, cursor: "pointer" }}>
+    <button onClick={handleOpen} style={{ padding: "10px", borderRadius: 10, width: "100%", background: "transparent", border: "1px dashed var(--dash-btn-border)", color: "var(--dash-text-muted)", fontSize: 13, cursor: "pointer" }}>
       + Adicionar produto
     </button>
   );
@@ -520,7 +520,7 @@ function NewProductFormInline({ categoryId, anyProductExpanded, onOpen }: { cate
         await createProduct(formData);
         handleClose();
       }}
-      style={{ display: "flex", flexDirection: "column", gap: 8, padding: 12, borderRadius: 12, border: "1px solid rgba(255,255,255,0.10)", background: "rgba(255,255,255,0.04)" }}
+      style={{ display: "flex", flexDirection: "column", gap: 8, padding: 12, borderRadius: 12, border: "1px solid var(--dash-input-border)", background: "var(--dash-card)" }}
     >
       <input type="hidden" name="category_id" value={categoryId} />
       <input name="name" placeholder="Nome do produto" required style={inp} />
@@ -535,12 +535,12 @@ function NewProductFormInline({ categoryId, anyProductExpanded, onOpen }: { cate
         )}
       </div>
       {priceType === "variable" && (
-        <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, margin: 0 }}>
+        <p style={{ color: "var(--dash-text-muted)", fontSize: 12, margin: 0 }}>
           💡 Adicione as variações de preço após criar o produto (clique no produto para editar).
         </p>
       )}
       <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-        <button type="button" onClick={handleClose} style={{ padding: "9px 14px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.12)", background: "transparent", color: "rgba(255,255,255,0.5)", fontSize: 12, cursor: "pointer" }}>Cancelar</button>
+        <button type="button" onClick={handleClose} style={{ padding: "9px 14px", borderRadius: 10, border: "1px solid var(--dash-btn-border)", background: "transparent", color: "var(--dash-text-dim)", fontSize: 12, cursor: "pointer" }}>Cancelar</button>
         <button type="submit" style={{ padding: "9px 16px", borderRadius: 10, border: "none", background: "rgba(0,255,174,0.15)", color: "#00ffae", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Criar</button>
       </div>
     </form>
@@ -551,16 +551,16 @@ function NewProductFormInline({ categoryId, anyProductExpanded, onOpen }: { cate
 function PedidosModal({ unit }: { unit: Unit | null }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingTop: 8 }}>
-      <div style={{ borderRadius: 16, padding: "18px 20px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+      <div style={{ borderRadius: 16, padding: "18px 20px", background: "var(--dash-card)", border: "1px solid var(--dash-card-border)" }}>
         <div style={{ fontSize: 24, marginBottom: 8 }}>💬</div>
-        <div style={{ color: "#fff", fontSize: 16, fontWeight: 700, marginBottom: 4 }}>WhatsApp</div>
-        <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginBottom: 16 }}>Os pedidos são enviados automaticamente para o WhatsApp cadastrado na unidade com mensagem estruturada e tracking.</div>
-        <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 13 }}>WhatsApp atual: <span style={{ color: "#fff" }}>{unit?.whatsapp ?? "Não configurado"}</span></div>
+        <div style={{ color: "var(--dash-text)", fontSize: 16, fontWeight: 700, marginBottom: 4 }}>WhatsApp</div>
+        <div style={{ color: "var(--dash-text-muted)", fontSize: 13, marginBottom: 16 }}>Os pedidos são enviados automaticamente para o WhatsApp cadastrado na unidade com mensagem estruturada e tracking.</div>
+        <div style={{ color: "var(--dash-text-dim)", fontSize: 13 }}>WhatsApp atual: <span style={{ color: "var(--dash-text)" }}>{unit?.whatsapp ?? "Não configurado"}</span></div>
       </div>
-      <div style={{ borderRadius: 16, padding: "18px 20px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+      <div style={{ borderRadius: 16, padding: "18px 20px", background: "var(--dash-card)", border: "1px solid var(--dash-card-border)" }}>
         <div style={{ fontSize: 24, marginBottom: 8 }}>🛵</div>
-        <div style={{ color: "#fff", fontSize: 16, fontWeight: 700, marginBottom: 4 }}>iFood</div>
-        <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 13 }}>Redireciona o cliente para o seu perfil no iFood. Configure na aba Unidade.</div>
+        <div style={{ color: "var(--dash-text)", fontSize: 16, fontWeight: 700, marginBottom: 4 }}>iFood</div>
+        <div style={{ color: "var(--dash-text-muted)", fontSize: 13 }}>Redireciona o cliente para o seu perfil no iFood. Configure na aba Unidade.</div>
       </div>
       <div style={{ borderRadius: 14, padding: "14px 16px", background: "rgba(255,180,0,0.06)", border: "1px solid rgba(255,180,0,0.15)" }}>
         <div style={{ color: "#fbbf24", fontSize: 13 }}>💡 Configure o WhatsApp e as redes sociais na seção <strong>Unidade</strong> para ativar o recebimento de pedidos.</div>
@@ -579,11 +579,11 @@ function CopyLinkRow({ label, url }: { label: string; url: string }) {
     });
   }
   return (
-    <div style={{ borderRadius: 12, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", padding: "10px 14px" }}>
-      <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, marginBottom: 4, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.4px" }}>{label}</div>
+    <div style={{ borderRadius: 12, background: "var(--dash-card)", border: "1px solid var(--dash-card-border)", padding: "10px 14px" }}>
+      <div style={{ color: "var(--dash-text-muted)", fontSize: 11, marginBottom: 4, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.4px" }}>{label}</div>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <span style={{ flex: 1, color: "rgba(255,255,255,0.7)", fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{url}</span>
-        <button type="button" onClick={copy} style={{ padding: "5px 10px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.12)", background: copied ? "rgba(0,255,174,0.15)" : "rgba(255,255,255,0.06)", color: copied ? "#00ffae" : "rgba(255,255,255,0.6)", fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>
+        <span style={{ flex: 1, color: "var(--dash-text-secondary)", fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{url}</span>
+        <button type="button" onClick={copy} style={{ padding: "5px 10px", borderRadius: 8, border: "1px solid var(--dash-btn-border)", background: copied ? "rgba(0,255,174,0.15)" : "var(--dash-link-bg)", color: copied ? "#00ffae" : "var(--dash-text-secondary)", fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>
           {copied ? "Copiado ✓" : "Copiar"}
         </button>
       </div>
@@ -595,7 +595,7 @@ function CopyLinkRow({ label, url }: { label: string; url: string }) {
 function UnidadeModal({ unit, onClose }: { unit: Unit | null; onClose: () => void }) {
   const [isPublished, setIsPublished] = useState(unit?.is_published ?? false);
 
-  if (!unit) return <div style={{ color: "rgba(255,255,255,0.4)", paddingTop: 16 }}>Nenhuma unidade encontrada.</div>;
+  if (!unit) return <div style={{ color: "var(--dash-text-muted)", paddingTop: 16 }}>Nenhuma unidade encontrada.</div>;
   const origin = typeof window !== "undefined" ? window.location.origin : "";
 
   return (
@@ -619,22 +619,22 @@ function UnidadeModal({ unit, onClose }: { unit: Unit | null; onClose: () => voi
           { name: "maps_url", label: "Link do Google Maps", value: unit.maps_url ?? "" },
         ].map((f) => (
           <div key={f.name}>
-            <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, marginBottom: 4 }}>{f.label}</div>
+            <div style={{ color: "var(--dash-text-muted)", fontSize: 11, marginBottom: 4 }}>{f.label}</div>
             <input name={f.name} defaultValue={f.value} style={inp} />
           </div>
         ))}
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 0 4px" }}>
           <div>
-            <div style={{ color: "#fff", fontSize: 14, fontWeight: 600 }}>Publicar cardápio</div>
-            <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 12 }}>Cardápio visível publicamente</div>
+            <div style={{ color: "var(--dash-text)", fontSize: 14, fontWeight: 600 }}>Publicar cardápio</div>
+            <div style={{ color: "var(--dash-text-muted)", fontSize: 12 }}>Cardápio visível publicamente</div>
           </div>
           <button
             type="button"
             onClick={() => setIsPublished((v) => !v)}
             style={{
               width: 44, height: 26, borderRadius: 13, border: "none",
-              background: isPublished ? "#00ffae" : "rgba(255,255,255,0.15)",
+              background: isPublished ? "#00ffae" : "var(--dash-card-border)",
               position: "relative", transition: "background 0.2s",
               cursor: "pointer", flexShrink: 0,
             }}
@@ -658,12 +658,12 @@ function UnidadeModal({ unit, onClose }: { unit: Unit | null; onClose: () => voi
 function TVModal({ unit, tvCount }: { unit: Unit | null; tvCount: number }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingTop: 8 }}>
-      <div style={{ borderRadius: 16, padding: "20px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", textAlign: "center" }}>
+      <div style={{ borderRadius: 16, padding: "20px", background: "var(--dash-card)", border: "1px solid var(--dash-card-border)", textAlign: "center" }}>
         <div style={{ fontSize: 40, marginBottom: 12 }}>📺</div>
-        <div style={{ color: "#fff", fontSize: 16, fontWeight: 700, marginBottom: 4 }}>{tvCount} vídeo{tvCount !== 1 ? "s" : ""} ativo{tvCount !== 1 ? "s" : ""}</div>
-        <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginBottom: 16 }}>Exiba seus produtos em modo fullscreen para TV, totem ou projetor.</div>
+        <div style={{ color: "var(--dash-text)", fontSize: 16, fontWeight: 700, marginBottom: 4 }}>{tvCount} vídeo{tvCount !== 1 ? "s" : ""} ativo{tvCount !== 1 ? "s" : ""}</div>
+        <div style={{ color: "var(--dash-text-muted)", fontSize: 13, marginBottom: 16 }}>Exiba seus produtos em modo fullscreen para TV, totem ou projetor.</div>
         {unit && (
-          <a href={`/u/${unit.slug}/tv`} target="_blank" rel="noreferrer" style={{ display: "block", padding: "12px", borderRadius: 12, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.7)", fontSize: 14, fontWeight: 600, textDecoration: "none", marginBottom: 10 }}>
+          <a href={`/u/${unit.slug}/tv`} target="_blank" rel="noreferrer" style={{ display: "block", padding: "12px", borderRadius: 12, background: "var(--dash-link-bg)", border: "1px solid var(--dash-card-border)", color: "var(--dash-text-secondary)", fontSize: 14, fontWeight: 600, textDecoration: "none", marginBottom: 10 }}>
             Abrir display público ↗
           </a>
         )}
@@ -671,8 +671,8 @@ function TVModal({ unit, tvCount }: { unit: Unit | null; tvCount: number }) {
           Gerenciar vídeos →
         </a>
       </div>
-      <div style={{ borderRadius: 14, padding: "14px 16px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
-        <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 13 }}>
+      <div style={{ borderRadius: 14, padding: "14px 16px", background: "var(--dash-card-subtle)", border: "1px solid var(--dash-card-border)" }}>
+        <div style={{ color: "var(--dash-text-muted)", fontSize: 13 }}>
           🎬 Vídeos até 15 segundos · Sem som · Autoplay · Vertical ou horizontal
         </div>
       </div>
@@ -686,9 +686,9 @@ function PlanoModal({ restaurant, trialDays, onUpgrade }: { restaurant: Restaura
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingTop: 8 }}>
       {/* Status atual */}
-      <div style={{ borderRadius: 16, padding: "20px", background: isPro ? "linear-gradient(135deg, rgba(250,204,21,0.08), rgba(251,146,60,0.08))" : "rgba(255,255,255,0.04)", border: isPro ? "1px solid rgba(250,204,21,0.2)" : "1px solid rgba(255,255,255,0.08)" }}>
+      <div style={{ borderRadius: 16, padding: "20px", background: isPro ? "linear-gradient(135deg, rgba(250,204,21,0.08), rgba(251,146,60,0.08))" : "var(--dash-card)", border: isPro ? "1px solid rgba(250,204,21,0.2)" : "1px solid var(--dash-card-border)" }}>
         <div style={{ fontSize: 28, marginBottom: 8 }}>{isPro ? "⭐" : "🎯"}</div>
-        <div style={{ color: "#fff", fontSize: 18, fontWeight: 800 }}>{isPro ? "Plano Pro" : restaurant.status === "trial" ? `Trial ativo` : "Plano Basic"}</div>
+        <div style={{ color: "var(--dash-text)", fontSize: 18, fontWeight: 800 }}>{isPro ? "Plano Pro" : restaurant.status === "trial" ? `Trial ativo` : "Plano Basic"}</div>
         {restaurant.status === "trial" && <div style={{ color: "#fbbf24", fontSize: 13, marginTop: 4 }}>⏳ {trialDays} dia{trialDays !== 1 ? "s" : ""} restante{trialDays !== 1 ? "s" : ""}</div>}
       </div>
 
@@ -696,18 +696,18 @@ function PlanoModal({ restaurant, trialDays, onUpgrade }: { restaurant: Restaura
       {!isPro && (
         <>
           {[
-            { name: "Basic", price: "Grátis", features: ["1 unidade", "Cardápio digital", "Modo TV", "IA básica"], color: "rgba(255,255,255,0.06)", highlight: false },
+            { name: "Basic", price: "Grátis", features: ["1 unidade", "Cardápio digital", "Modo TV", "IA básica"], color: "var(--dash-link-bg)", highlight: false },
             { name: "Pro", price: "R$ 99/mês", features: ["Múltiplas unidades", "Analytics avançado", "Relatórios", "Suporte prioritário"], color: "rgba(0,255,174,0.06)", highlight: true },
           ].map((plan) => (
-            <div key={plan.name} style={{ borderRadius: 16, padding: "18px 20px", background: plan.color, border: plan.highlight ? "1px solid rgba(0,255,174,0.2)" : "1px solid rgba(255,255,255,0.07)" }}>
+            <div key={plan.name} style={{ borderRadius: 16, padding: "18px 20px", background: plan.color, border: plan.highlight ? "1px solid rgba(0,255,174,0.2)" : "1px solid var(--dash-card-border)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                <div style={{ color: "#fff", fontSize: 16, fontWeight: 800 }}>{plan.name}</div>
-                <div style={{ color: plan.highlight ? "#00ffae" : "rgba(255,255,255,0.5)", fontSize: 14, fontWeight: 700 }}>{plan.price}</div>
+                <div style={{ color: "var(--dash-text)", fontSize: 16, fontWeight: 800 }}>{plan.name}</div>
+                <div style={{ color: plan.highlight ? "#00ffae" : "var(--dash-text-dim)", fontSize: 14, fontWeight: 700 }}>{plan.price}</div>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {plan.features.map((f) => (
-                  <div key={f} style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ color: plan.highlight ? "#00ffae" : "rgba(255,255,255,0.3)" }}>✓</span> {f}
+                  <div key={f} style={{ color: "var(--dash-text-dim)", fontSize: 13, display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ color: plan.highlight ? "#00ffae" : "var(--dash-text-subtle)" }}>✓</span> {f}
                   </div>
                 ))}
               </div>
@@ -736,26 +736,26 @@ function PlanoModal({ restaurant, trialDays, onUpgrade }: { restaurant: Restaura
 function EstoqueModal({ unit, stockStats }: { unit: Unit | null; stockStats: StockStats }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingTop: 8 }}>
-      <div style={{ borderRadius: 16, padding: "20px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", textAlign: "center" }}>
+      <div style={{ borderRadius: 16, padding: "20px", background: "var(--dash-card)", border: "1px solid var(--dash-card-border)", textAlign: "center" }}>
         <div style={{ fontSize: 40, marginBottom: 12 }}>📦</div>
         <div style={{ display: "flex", justifyContent: "center", gap: 12, marginBottom: 12 }}>
           <div style={{ textAlign: "center" }}>
             <div style={{ color: "#f87171", fontSize: 26, fontWeight: 900, lineHeight: 1 }}>{stockStats.out}</div>
-            <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, marginTop: 4 }}>Esgotados</div>
+            <div style={{ color: "var(--dash-text-muted)", fontSize: 11, marginTop: 4 }}>Esgotados</div>
           </div>
-          <div style={{ width: 1, background: "rgba(255,255,255,0.08)" }} />
+          <div style={{ width: 1, background: "var(--dash-separator)" }} />
           <div style={{ textAlign: "center" }}>
             <div style={{ color: "#fbbf24", fontSize: 26, fontWeight: 900, lineHeight: 1 }}>{stockStats.low}</div>
-            <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, marginTop: 4 }}>Estoque baixo</div>
+            <div style={{ color: "var(--dash-text-muted)", fontSize: 11, marginTop: 4 }}>Estoque baixo</div>
           </div>
         </div>
-        <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginBottom: 16 }}>Gerencie o estoque dos seus produtos e acompanhe movimentações.</div>
+        <div style={{ color: "var(--dash-text-muted)", fontSize: 13, marginBottom: 16 }}>Gerencie o estoque dos seus produtos e acompanhe movimentações.</div>
         <a href="/painel/estoque" style={{ display: "block", padding: "12px", borderRadius: 12, border: "none", background: "rgba(0,255,174,0.15)", color: "#00ffae", fontSize: 14, fontWeight: 700, textDecoration: "none" }}>
           Gerenciar estoque →
         </a>
       </div>
-      <div style={{ borderRadius: 14, padding: "14px 16px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
-        <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 13 }}>📊 Ajuste estoque · Registre movimentações · Configure alertas</div>
+      <div style={{ borderRadius: 14, padding: "14px 16px", background: "var(--dash-card-subtle)", border: "1px solid var(--dash-card-border)" }}>
+        <div style={{ color: "var(--dash-text-muted)", fontSize: 13 }}>📊 Ajuste estoque · Registre movimentações · Configure alertas</div>
       </div>
     </div>
   );
@@ -765,13 +765,13 @@ function EstoqueModal({ unit, stockStats }: { unit: Unit | null; stockStats: Sto
 function ConfigModal({ profile }: { profile: Profile }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingTop: 8 }}>
-      <div style={{ borderRadius: 16, padding: "18px 20px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
-        <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, marginBottom: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.4px" }}>Conta</div>
-        <div style={{ color: "#fff", fontSize: 16, fontWeight: 700 }}>{[profile.first_name, profile.last_name].filter(Boolean).join(" ") || "Sem nome"}</div>
-        <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginTop: 4 }}>{profile.email}</div>
-        {profile.phone && <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginTop: 2 }}>{profile.phone}</div>}
+      <div style={{ borderRadius: 16, padding: "18px 20px", background: "var(--dash-card)", border: "1px solid var(--dash-card-border)" }}>
+        <div style={{ color: "var(--dash-text-muted)", fontSize: 12, marginBottom: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.4px" }}>Conta</div>
+        <div style={{ color: "var(--dash-text)", fontSize: 16, fontWeight: 700 }}>{[profile.first_name, profile.last_name].filter(Boolean).join(" ") || "Sem nome"}</div>
+        <div style={{ color: "var(--dash-text-muted)", fontSize: 13, marginTop: 4 }}>{profile.email}</div>
+        {profile.phone && <div style={{ color: "var(--dash-text-muted)", fontSize: 13, marginTop: 2 }}>{profile.phone}</div>}
       </div>
-      <a href="/auth/reset-password" style={{ display: "block", padding: "14px 20px", borderRadius: 14, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", color: "#fff", fontSize: 14, fontWeight: 600, textDecoration: "none" }}>
+      <a href="/auth/reset-password" style={{ display: "block", padding: "14px 20px", borderRadius: 14, background: "var(--dash-card)", border: "1px solid var(--dash-card-border)", color: "var(--dash-text)", fontSize: 14, fontWeight: 600, textDecoration: "none" }}>
         🔑 Alterar senha
       </a>
       <form action="/api/auth/signout" method="post">

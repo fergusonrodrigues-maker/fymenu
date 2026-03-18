@@ -10,7 +10,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div style={{ minHeight: "100dvh", background: "#0a0a0a" }}>
+    <div style={{ minHeight: "100dvh", background: "var(--dash-bg)" }}>
       {children}
     </div>
   );
