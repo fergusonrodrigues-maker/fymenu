@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
-  createCategory, updateCategory, deleteCategory, reorderCategories,
+  createCategory, updateCategory, deleteCategory,
   createProduct,
   addUpsellItem, removeUpsellItem,
   updateUnit,
@@ -491,18 +491,78 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
   const [expandedProductId, setExpandedProductId] = useState<string | null>(null);
   const [newCatType, setNewCatType] = useState<"food" | "drink">("food");
   const [newCatAlcoholic, setNewCatAlcoholic] = useState(false);
-  const [orderedCats, setOrderedCats] = useState<Category[]>(categories);
+  const [orderedCats, setOrderedCats] = useState(categories);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [overIdx, setOverIdx] = useState<number | null>(null);
+  const touchStartY = useRef(0);
+  const touchCurrentY = useRef(0);
+  const dragElRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => { setOrderedCats(categories); }, [categories]);
 
-  async function handleReorder(from: number, to: number) {
-    const next = [...orderedCats];
-    const [moved] = next.splice(from, 1);
-    next.splice(to, 0, moved);
-    setOrderedCats(next);
-    await reorderCategories(next.map((c) => c.id));
+  function handleReorder(fromIdx: number, toIdx: number) {
+    if (fromIdx === toIdx) return;
+    const updated = [...orderedCats];
+    const [moved] = updated.splice(fromIdx, 1);
+    updated.splice(toIdx, 0, moved);
+    setOrderedCats(updated);
+    updated.forEach((cat, i) => {
+      const fd = new FormData();
+      fd.set("id", cat.id);
+      fd.set("name", cat.name);
+      fd.set("order_index", String(i));
+      updateCategory(fd);
+    });
+  }
+
+  function onTouchStartDrag(e: React.TouchEvent, idx: number) {
+    e.stopPropagation();
+    setDragIdx(idx);
+    touchStartY.current = e.touches[0].clientY;
+    touchCurrentY.current = e.touches[0].clientY;
+    dragElRef.current = (e.currentTarget as HTMLElement).closest('[data-cat-idx]') as HTMLDivElement;
+    if (dragElRef.current) {
+      dragElRef.current.style.transition = "none";
+      dragElRef.current.style.zIndex = "999";
+      dragElRef.current.style.position = "relative";
+    }
+  }
+
+  function onTouchMoveDrag(e: React.TouchEvent) {
+    if (dragIdx === null || !dragElRef.current) return;
+    e.preventDefault();
+    const y = e.touches[0].clientY;
+    touchCurrentY.current = y;
+    const dy = y - touchStartY.current;
+    dragElRef.current.style.transform = `translateY(${dy}px) scale(1.03)`;
+    dragElRef.current.style.opacity = "0.85";
+    dragElRef.current.style.boxShadow = "0 8px 32px rgba(0,0,0,0.4)";
+    const items = document.querySelectorAll('[data-cat-idx]');
+    items.forEach((item) => {
+      const rect = item.getBoundingClientRect();
+      const mid = rect.top + rect.height / 2;
+      if (y > mid - 20 && y < mid + 20) {
+        const idx = parseInt(item.getAttribute('data-cat-idx') || '-1');
+        if (idx !== dragIdx) setOverIdx(idx);
+      }
+    });
+  }
+
+  function onTouchEndDrag() {
+    if (dragIdx !== null && overIdx !== null) {
+      handleReorder(dragIdx, overIdx);
+    }
+    if (dragElRef.current) {
+      dragElRef.current.style.transition = "all 0.25s ease";
+      dragElRef.current.style.transform = "";
+      dragElRef.current.style.opacity = "";
+      dragElRef.current.style.boxShadow = "";
+      dragElRef.current.style.zIndex = "";
+      dragElRef.current.style.position = "";
+      dragElRef.current = null;
+    }
+    setDragIdx(null);
+    setOverIdx(null);
   }
 
   const productsByCat = orderedCats.reduce<Record<string, Product[]>>((acc, cat) => {
@@ -563,15 +623,31 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
         return (
           <div
             key={cat.id}
+            data-cat-idx={catIdx}
             draggable
-            onDragStart={() => { setDragIdx(catIdx); }}
+            onDragStart={() => setDragIdx(catIdx)}
             onDragOver={(e) => { e.preventDefault(); setOverIdx(catIdx); }}
-            onDragEnd={() => { setDragIdx(null); setOverIdx(null); }}
-            onDrop={() => { if (dragIdx !== null && dragIdx !== catIdx) handleReorder(dragIdx, catIdx); setDragIdx(null); setOverIdx(null); }}
-            style={{ borderRadius: 16, border: isOver && !isDragging ? "1px solid rgba(0,255,174,0.5)" : "1px solid var(--dash-card-border)", background: "var(--dash-card-subtle)", overflow: "hidden", opacity: isDragging ? 0.4 : 1, transition: "opacity 0.15s, border 0.15s" }}
+            onDragEnd={() => { if (dragIdx !== null && overIdx !== null) handleReorder(dragIdx, overIdx); setDragIdx(null); setOverIdx(null); }}
+            onDrop={() => { if (dragIdx !== null) handleReorder(dragIdx, catIdx); setDragIdx(null); setOverIdx(null); }}
+            style={{
+              borderRadius: 16,
+              border: overIdx === catIdx ? "2px solid #FF6B00" : "1px solid var(--dash-card-border)",
+              background: dragIdx === catIdx ? "var(--dash-card-hover, rgba(255,255,255,0.08))" : "var(--dash-card-subtle)",
+              overflow: "hidden",
+              opacity: dragIdx === catIdx ? 0.7 : 1,
+              transition: "all 0.2s ease",
+              transform: overIdx === catIdx && dragIdx !== catIdx ? "scale(1.02)" : "none",
+            }}
           >
             <div style={{ display: "flex", alignItems: "center", padding: "14px 16px", gap: 10, cursor: "pointer" }} onClick={() => setExpandedCat(isOpen ? null : cat.id)}>
-              <span style={{ color: "var(--dash-text-muted)", fontSize: 16, cursor: "grab", paddingRight: 2, lineHeight: 1 }} onMouseDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>⠿</span>
+              <span
+                style={{ cursor: "grab", fontSize: 18, color: "var(--dash-text-muted)", opacity: 0.7, userSelect: "none", touchAction: "none", padding: "4px 6px" }}
+                onMouseDown={(e) => e.stopPropagation()}
+                onTouchStart={(e) => onTouchStartDrag(e, catIdx)}
+                onTouchMove={(e) => onTouchMoveDrag(e)}
+                onTouchEnd={() => onTouchEndDrag()}
+                title="Segurar e arrastar para reordenar"
+              >⠿</span>
               <span style={{ color: "var(--dash-text-muted)", fontSize: 11, transform: isOpen ? "rotate(90deg)" : "none", transition: "transform 0.2s", display: "inline-block" }}>▶</span>
               <form action={updateCategory} onClick={(e) => e.stopPropagation()} style={{ flex: 1, display: "flex", gap: 8 }}>
                 <input type="hidden" name="id" value={cat.id} />
