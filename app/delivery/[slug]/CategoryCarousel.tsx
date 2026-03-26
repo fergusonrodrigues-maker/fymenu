@@ -103,6 +103,7 @@ export default function CategoryCarousel({
         padding: active ? "28px 0 32px" : "8px 0 10px",
         transition: "padding 0.35s ease",
         cursor: active ? "grab" : "default",
+        touchAction: "pan-y",
       }}
       onPointerDown={active ? onPointerDown : undefined}
       onPointerUp={active ? onPointerUp : undefined}
