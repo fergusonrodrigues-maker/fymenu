@@ -86,10 +86,10 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
         <div style={{
           position: "absolute",
           left: "50%", transform: "translateX(-50%)",
-          top: isMaximized ? -32 : -14,
-          width: isMaximized ? 72 : 108,
-          height: isMaximized ? 72 : 108,
-          borderRadius: isMaximized ? 20 : 30,
+          top: isMaximized ? -32 : -18,
+          width: isMaximized ? 72 : 80,
+          height: isMaximized ? 72 : 80,
+          borderRadius: isMaximized ? 20 : 22,
           background: "rgba(255,255,255,0.95)",
           boxShadow: "0 8px 28px rgba(0,0,0,0.5)",
           display: "flex", alignItems: "center", justifyContent: "center",
@@ -108,68 +108,64 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
         <div style={{
           position: "absolute", inset: 0,
           display: "flex", alignItems: "center",
-          justifyContent: "center",
-          padding: "0 10px", gap: 0,
+          justifyContent: "space-evenly",
+          padding: "0 6px",
           opacity: isMaximized ? 0 : 1,
           pointerEvents: isMaximized ? "none" : "auto",
           transition: `opacity 250ms ease ${isMaximized ? "0ms" : "350ms"}`,
         }}>
-          {/* esquerda: maps + unidade — ambos 56x56 */}
-          <div style={{ display: "flex", gap: 10 }}>
-            {maps && (
-              <a href={maps} target="_blank" rel="noreferrer" style={{
-                width: 56, height: 56, borderRadius: 16,
-                overflow: "hidden", flexShrink: 0,
-              }}>
-                <img src={ICONS.maps} alt="Maps"
-                  style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              </a>
-            )}
-            <div style={{
-              width: 56, height: 56, borderRadius: 16,
-              position: "relative", overflow: "hidden", flexShrink: 0,
+          {maps && (
+            <a href={maps} target="_blank" rel="noreferrer" style={{
+              width: 52, height: 52, borderRadius: 15,
+              overflow: "hidden", flexShrink: 0,
             }}>
-              <img src={ICONS.unidade} alt=""
-                style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
-              <div style={{
-                position: "relative", zIndex: 1,
-                height: "100%", display: "flex", flexDirection: "column",
-                justifyContent: "center", alignItems: "center", padding: "0 4px",
-              }}>
-                <span style={{ fontSize: 9, fontWeight: 900, color: "#1a1a1a", lineHeight: 1.2, textAlign: "center" }}>
-                  {unit.city || ""}
-                </span>
-                <span style={{ fontSize: 8, fontWeight: 800, color: "#1a1a1a", lineHeight: 1.2, textAlign: "center" }}>
-                  {unit.neighborhood || unit.name}
-                </span>
-              </div>
+              <img src={ICONS.maps} alt="Maps"
+                style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            </a>
+          )}
+
+          <div style={{
+            width: 52, height: 52, borderRadius: 15,
+            position: "relative", overflow: "hidden", flexShrink: 0,
+          }}>
+            <img src={ICONS.unidade} alt=""
+              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+            <div style={{
+              position: "relative", zIndex: 1,
+              height: "100%", display: "flex", flexDirection: "column",
+              justifyContent: "center", alignItems: "center", padding: "0 3px",
+            }}>
+              <span style={{ fontSize: 8, fontWeight: 900, color: "#1a1a1a", lineHeight: 1.2, textAlign: "center" }}>
+                {unit.city || ""}
+              </span>
+              <span style={{ fontSize: 7, fontWeight: 800, color: "#1a1a1a", lineHeight: 1.2, textAlign: "center" }}>
+                {unit.neighborhood || unit.name}
+              </span>
             </div>
           </div>
 
-          {/* espaço central logo */}
-          <div style={{ width: 108, flexShrink: 0 }} />
+          {/* Spacer para o logo flutuante */}
+          <div style={{ width: 72, flexShrink: 0 }} />
 
-          {/* direita: whatsapp + instagram — ambos 56x56 */}
-          <div style={{ display: "flex", gap: 10 }}>
-            {wa && (
-              <a href={wa} target="_blank" rel="noreferrer" style={{
-                width: 56, height: 56, borderRadius: 16,
-                overflow: "hidden", flexShrink: 0,
-              }}>
-                <img src={ICONS.whatsapp} alt="WhatsApp"
-                  style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              </a>
-            )}
-            {ig && (
-              <a href={ig} target="_blank" rel="noreferrer" style={{
-                width: 56, height: 56, borderRadius: 16,
-                overflow: "hidden", flexShrink: 0,
-              }}>
-                <img src={ICONS.instagram} alt="Instagram"
-                  style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              </a>
-            )}
-          </div>
+          {wa && (
+            <a href={wa} target="_blank" rel="noreferrer" style={{
+              width: 52, height: 52, borderRadius: 15,
+              overflow: "hidden", flexShrink: 0,
+            }}>
+              <img src={ICONS.whatsapp} alt="WhatsApp"
+                style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            </a>
+          )}
+
+          {ig && (
+            <a href={ig} target="_blank" rel="noreferrer" style={{
+              width: 52, height: 52, borderRadius: 15,
+              overflow: "hidden", flexShrink: 0,
+            }}>
+              <img src={ICONS.instagram} alt="Instagram"
+                style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            </a>
+          )}
         </div>
 
         {/* ── MAXIMIZADO (vertical) ── */}
