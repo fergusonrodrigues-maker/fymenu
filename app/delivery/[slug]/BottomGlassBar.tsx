@@ -108,17 +108,17 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
         <div style={{
           position: "absolute", inset: 0,
           display: "flex", alignItems: "center",
-          justifyContent: "space-between",
-          padding: "0 8px", gap: 0,
+          justifyContent: "center",
+          padding: "0 10px", gap: 0,
           opacity: isMaximized ? 0 : 1,
           pointerEvents: isMaximized ? "none" : "auto",
           transition: `opacity 250ms ease ${isMaximized ? "0ms" : "350ms"}`,
         }}>
-          {/* esquerda: maps + unidade — ambos 60x60 */}
-          <div style={{ display: "flex", gap: 6 }}>
+          {/* esquerda: maps + unidade — ambos 56x56 */}
+          <div style={{ display: "flex", gap: 10 }}>
             {maps && (
               <a href={maps} target="_blank" rel="noreferrer" style={{
-                width: 60, height: 60, borderRadius: 18,
+                width: 56, height: 56, borderRadius: 16,
                 overflow: "hidden", flexShrink: 0,
               }}>
                 <img src={ICONS.maps} alt="Maps"
@@ -126,7 +126,7 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
               </a>
             )}
             <div style={{
-              width: 60, height: 60, borderRadius: 18,
+              width: 56, height: 56, borderRadius: 16,
               position: "relative", overflow: "hidden", flexShrink: 0,
             }}>
               <img src={ICONS.unidade} alt=""
@@ -147,13 +147,13 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
           </div>
 
           {/* espaço central logo */}
-          <div style={{ flex: 1, flexShrink: 0 }} />
+          <div style={{ width: 108, flexShrink: 0 }} />
 
-          {/* direita: whatsapp + instagram — ambos 60x60 */}
-          <div style={{ display: "flex", gap: 6 }}>
+          {/* direita: whatsapp + instagram — ambos 56x56 */}
+          <div style={{ display: "flex", gap: 10 }}>
             {wa && (
               <a href={wa} target="_blank" rel="noreferrer" style={{
-                width: 60, height: 60, borderRadius: 18,
+                width: 56, height: 56, borderRadius: 16,
                 overflow: "hidden", flexShrink: 0,
               }}>
                 <img src={ICONS.whatsapp} alt="WhatsApp"
@@ -162,7 +162,7 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
             )}
             {ig && (
               <a href={ig} target="_blank" rel="noreferrer" style={{
-                width: 60, height: 60, borderRadius: 18,
+                width: 56, height: 56, borderRadius: 16,
                 overflow: "hidden", flexShrink: 0,
               }}>
                 <img src={ICONS.instagram} alt="Instagram"
