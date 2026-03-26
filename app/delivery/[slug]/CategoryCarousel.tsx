@@ -61,10 +61,11 @@ export default function CategoryCarousel({
 
   // centraliza produto 0 ao montar / mudar active
   useEffect(() => {
-    heroIdxRef.current = 0;
-    setHeroIdx(0);
-    const t1 = setTimeout(() => positionTrack(0, false), 40);
-    const t2 = setTimeout(() => positionTrack(0, false), 220);
+    const startIdx = list.length > 1 ? 1 : 0;
+    heroIdxRef.current = startIdx;
+    setHeroIdx(startIdx);
+    const t1 = setTimeout(() => positionTrack(startIdx, false), 40);
+    const t2 = setTimeout(() => positionTrack(startIdx, false), 220);
     return () => { clearTimeout(t1); clearTimeout(t2); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, list.length]);
@@ -146,7 +147,7 @@ export default function CategoryCarousel({
                 overflow: "hidden",
                 cursor: "pointer",
                 transition: "all 0.32s cubic-bezier(0.34,1.56,0.64,1)",
-                opacity: active ? (isHero ? 1 : 0.62) : 0.45,
+                opacity: active ? (isHero ? 1 : 0.75) : 0.7,
                 border: isHero && active
                   ? "1.5px solid #FF6B00"
                   : "1px solid rgba(0,0,0,0.08)",

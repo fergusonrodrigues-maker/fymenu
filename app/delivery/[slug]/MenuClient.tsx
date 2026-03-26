@@ -164,7 +164,7 @@ export default function MenuClient({
       {/* Conteúdo scrollável */}
       <div
         className="min-h-dvh bg-white"
-        style={{ paddingTop: 64, paddingBottom: 96 }}
+        style={{ paddingTop: 64, paddingBottom: 200 }}
       >
         {/* Categorias em destaque */}
         {featuredCategories.map((cat) => {
