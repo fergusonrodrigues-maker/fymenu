@@ -12,10 +12,10 @@ interface CategoryCarouselProps {
 }
 
 // Dimensões — hero domina, side 72%, proporção 9:16 garante altura proporcional
-const HW = 169;                          // hero width (categoria ativa)
+const HW = 220;                          // hero width (categoria ativa)
 const SW = Math.round(HW * 0.72);       // side width (categoria ativa)
 const IW = Math.round(HW / 1.4);        // width (categoria inativa)
-const GAP = 10;
+const GAP = 13;
 
 // marginTop para alinhar cards menores pelo centro com o hero
 const heroH = HW * (16 / 9);
@@ -100,7 +100,7 @@ export default function CategoryCarousel({
       style={{
         overflow: "hidden",
         width: "100%",
-        padding: active ? "36px 0 42px" : "8px 0 10px",
+        padding: active ? "47px 0 55px" : "8px 0 10px",
         transition: "padding 0.35s ease",
         cursor: active ? "grab" : "default",
         touchAction: "pan-y",
