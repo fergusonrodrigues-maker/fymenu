@@ -16,6 +16,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 import RestaurantOperationsModal from "./components/RestaurantOperationsModal";
 import PedidosModal from "./components/PedidosModal";
 import DominioSection from "./components/DominioSection";
+import StaffAnalyticsModal from "./components/StaffAnalyticsModal";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 type Restaurant = { id: string; name: string; plan: string; status: string; trial_ends_at: string; whatsapp: string | null; instagram: string | null };
@@ -99,7 +100,7 @@ export default function DashboardClient({
   tvCount: number; stockStats: StockStats;
 }) {
   const router = useRouter();
-  const [modal, setModal] = useState<"analytics" | "cardapio" | "pedidos" | "financeiro" | "unidade" | "plano" | "config" | "tv" | "estoque" | "operacoes" | null>(null);
+  const [modal, setModal] = useState<"analytics" | "cardapio" | "pedidos" | "financeiro" | "unidade" | "plano" | "config" | "tv" | "estoque" | "operacoes" | "equipe" | null>(null);
   const open = (m: typeof modal) => setModal(m);
   const close = () => setModal(null);
 
@@ -363,6 +364,22 @@ export default function DashboardClient({
             </div>
           </div>
 
+          {/* Equipe */}
+          <div className="card" onClick={() => open("equipe")} style={{
+            gridColumn: "span 2",
+            borderRadius: 20, padding: "20px 18px",
+            background: "var(--dash-card)",
+            border: "1px solid var(--dash-card-border)",
+            cursor: "pointer", minHeight: 100,
+            display: "flex", alignItems: "center", gap: 16,
+          }}>
+            <div style={{ fontSize: 28 }}>👥</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ color: "var(--dash-text)", fontSize: 15, fontWeight: 800, marginBottom: 2 }}>Equipe</div>
+              <div style={{ color: "var(--dash-text-muted)", fontSize: 12 }}>Funcionários · Avaliações · Entregas</div>
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -422,6 +439,11 @@ export default function DashboardClient({
       {/* Operações */}
       <Modal open={modal === "operacoes"} onClose={close} title="Operações">
         {unit && <RestaurantOperationsModal unitId={unit.id} />}
+      </Modal>
+
+      {/* Equipe */}
+      <Modal open={modal === "equipe"} onClose={close} title="Equipe">
+        {unit && <StaffAnalyticsModal unitId={unit.id} />}
       </Modal>
     </>
   );
