@@ -129,10 +129,7 @@ export default function CategoryCarousel({
           // NUNCA usar: thumb_path | image_path | video_path
           const thumbUrl = p.thumbnail_url ?? null;
           const videoUrl = p.video_url ?? null;
-          const priceLabel =
-            p.price_type === "fixed" && p.base_price != null
-              ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(p.base_price / 100)
-              : null;
+          // preço exibido apenas no modal
 
           return (
             <div
@@ -145,14 +142,12 @@ export default function CategoryCarousel({
               style={{
                 flexShrink: 0,
                 width: w,
-                borderRadius: 14,
+                borderRadius: 18,
                 overflow: "hidden",
                 cursor: "pointer",
                 transition: "all 0.32s cubic-bezier(0.34,1.56,0.64,1)",
                 opacity: active ? (isHero ? 1 : 0.9) : 0.85,
-                border: isHero && active
-                  ? "1.5px solid #FF6B00"
-                  : "1px solid rgba(0,0,0,0.08)",
+                border: "1px solid rgba(0,0,0,0.06)",
                 marginTop: mt,
               }}
             >
@@ -203,36 +198,24 @@ export default function CategoryCarousel({
                 <div
                   style={{
                     position: "absolute",
-                    bottom: 8,
-                    left: 8,
-                    right: 8,
+                    bottom: 10,
+                    left: 6,
+                    right: 6,
+                    textAlign: "center",
                   }}
                 >
                   <p
                     style={{
                       color: "#fff",
-                      fontSize: isHero ? 12 : 9,
-                      fontWeight: 500,
-                      margin: "0 0 2px",
-                      lineHeight: 1.2,
+                      fontSize: isHero ? 13 : 9,
+                      fontWeight: 600,
+                      margin: 0,
+                      lineHeight: 1.25,
                       transition: "font-size 0.3s",
                     }}
                   >
                     {p.name}
                   </p>
-                  {priceLabel && (
-                    <p
-                      style={{
-                        color: active && isHero ? "#FF6B00" : "rgba(255,255,255,0.4)",
-                        fontSize: isHero ? 10 : 8,
-                        fontWeight: 500,
-                        margin: 0,
-                        transition: "all 0.3s",
-                      }}
-                    >
-                      {priceLabel}
-                    </p>
-                  )}
                 </div>
               </div>
             </div>
