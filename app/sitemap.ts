@@ -15,7 +15,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
 
     const routes = units.map((unit) => ({
-      url: `https://fymenu.vercel.app/u/${unit.slug}`,
+      url: `https://fymenu.com/delivery/${unit.slug}`,
       lastModified: new Date(),
       changeFrequency: 'daily' as const,
       priority: 0.8,

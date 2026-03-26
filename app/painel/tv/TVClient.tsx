@@ -97,7 +97,7 @@ export default function TVClient({ unitId, unitName, slug, initialMedia }: Props
           <div style={{ color: "#fff", fontSize: 18, fontWeight: 800, letterSpacing: "-0.5px" }}>Modo TV</div>
           <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 12 }}>{unitName}</div>
         </div>
-        <a href={`/u/${slug}/tv`} target="_blank" rel="noopener noreferrer" style={{ padding: "8px 14px", borderRadius: 12, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>
+        <a href={`/tv/${slug}`} target="_blank" rel="noopener noreferrer" style={{ padding: "8px 14px", borderRadius: 12, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>
           Abrir display ↗
         </a>
       </div>

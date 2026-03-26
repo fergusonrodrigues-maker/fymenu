@@ -30,9 +30,9 @@ export async function invalidateMenuCache(unitId: string) {
     .single();
 
   if (unit?.slug) {
-    revalidatePath(`/u/${unit.slug}`);
-    revalidatePath(`/u/${unit.slug}/menu`);
-    revalidatePath(`/u/${unit.slug}/tv`);
+    revalidatePath(`/delivery/${unit.slug}`);
+    revalidatePath(`/menu/${unit.slug}`);
+    revalidatePath(`/tv/${unit.slug}`);
   }
 
   return { success: true };

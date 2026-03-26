@@ -148,7 +148,7 @@ export default function DashboardClient({
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <ThemeToggle />
             {unit && (
-              <a href={`/u/${unit.slug}`} target="_blank" rel="noreferrer" style={{
+              <a href={`/delivery/${unit.slug}`} target="_blank" rel="noreferrer" style={{
                 padding: "8px 14px", borderRadius: 12,
                 background: "var(--dash-link-bg)",
                 border: "1px solid var(--dash-card-border)",
@@ -475,7 +475,7 @@ function AnalyticsModal({ analytics, unit }: { analytics: any; unit: Unit | null
         <div style={{ color: "var(--dash-text-subtle)", fontSize: 11 }}>visitas → pedidos</div>
       </div>
       {unit && (
-        <a href={`/u/${unit.slug}`} target="_blank" rel="noreferrer" style={{ display: "block", textAlign: "center", padding: "14px", borderRadius: 14, background: "var(--dash-link-bg)", border: "1px solid var(--dash-card-border)", color: "var(--dash-text-secondary)", fontSize: 14, fontWeight: 600, textDecoration: "none" }}>
+        <a href={`/delivery/${unit.slug}`} target="_blank" rel="noreferrer" style={{ display: "block", textAlign: "center", padding: "14px", borderRadius: 14, background: "var(--dash-link-bg)", border: "1px solid var(--dash-card-border)", color: "var(--dash-text-secondary)", fontSize: 14, fontWeight: 600, textDecoration: "none" }}>
           Ver cardápio público ↗
         </a>
       )}
@@ -501,7 +501,7 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
       {/* Links rápidos */}
       <div style={{ display: "flex", gap: 8 }}>
         {unit && (
-          <a href={`/u/${unit.slug}`} target="_blank" rel="noreferrer" style={{ flex: 1, textAlign: "center", padding: "10px", borderRadius: 12, background: "var(--dash-link-bg)", border: "1px solid var(--dash-card-border)", color: "var(--dash-text-secondary)", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>Ver cardápio ↗</a>
+          <a href={`/delivery/${unit.slug}`} target="_blank" rel="noreferrer" style={{ flex: 1, textAlign: "center", padding: "10px", borderRadius: 12, background: "var(--dash-link-bg)", border: "1px solid var(--dash-card-border)", color: "var(--dash-text-secondary)", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>Ver cardápio ↗</a>
         )}
         <a href="/painel/ia" style={{ flex: 1, textAlign: "center", padding: "10px", borderRadius: 12, background: "rgba(0,255,174,0.08)", border: "1px solid rgba(0,255,174,0.15)", color: "#00ffae", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>✨ Importar com IA</a>
       </div>
@@ -807,8 +807,8 @@ function UnidadeModal({ unit, isPro, onClose }: { unit: Unit | null; isPro: bool
         restaurantName={unit.name}
       />
 
-      <CopyLinkRow label="Link Delivery" url={`${origin}/u/${unit.slug}`} />
-      <CopyLinkRow label="Link Presencial (QR Code / Mesa)" url={`${origin}/u/${unit.slug}/menu`} />
+      <CopyLinkRow label="Link Delivery" url={`${origin}/delivery/${unit.slug}`} />
+      <CopyLinkRow label="Link Presencial (QR Code / Mesa)" url={`${origin}/menu/${unit.slug}`} />
 
       <LogoUploader unitId={unit.id} currentLogoUrl={unit.logo_url} />
 
@@ -911,7 +911,7 @@ function TVModal({ unit, tvCount }: { unit: Unit | null; tvCount: number }) {
         <div style={{ color: "var(--dash-text)", fontSize: 16, fontWeight: 700, marginBottom: 4 }}>{tvCount} vídeo{tvCount !== 1 ? "s" : ""} ativo{tvCount !== 1 ? "s" : ""}</div>
         <div style={{ color: "var(--dash-text-muted)", fontSize: 13, marginBottom: 16 }}>Exiba seus produtos em modo fullscreen para TV, totem ou projetor.</div>
         {unit && (
-          <a href={`/u/${unit.slug}/tv`} target="_blank" rel="noreferrer" style={{ display: "block", padding: "12px", borderRadius: 12, background: "var(--dash-link-bg)", border: "1px solid var(--dash-card-border)", color: "var(--dash-text-secondary)", fontSize: 14, fontWeight: 600, textDecoration: "none", marginBottom: 10 }}>
+          <a href={`/tv/${unit.slug}`} target="_blank" rel="noreferrer" style={{ display: "block", padding: "12px", borderRadius: 12, background: "var(--dash-link-bg)", border: "1px solid var(--dash-card-border)", color: "var(--dash-text-secondary)", fontSize: 14, fontWeight: 600, textDecoration: "none", marginBottom: 10 }}>
             Abrir display público ↗
           </a>
         )}

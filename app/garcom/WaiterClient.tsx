@@ -312,7 +312,7 @@ export default function WaiterClient({
 function QRMesaModal({ unitSlug, onClose }: { unitSlug: string; onClose: () => void }) {
   const [mesa, setMesa] = useState("");
   const qrUrl = mesa
-    ? `${window.location.origin}/u/${unitSlug}?mesa=${mesa}&mode=presencial`
+    ? `${window.location.origin}/menu/${unitSlug}?mesa=${mesa}`
     : null;
 
   return (

@@ -162,7 +162,7 @@ export default function HubClient({
             </>
           )}
           <a
-            href={`/u/${slug}/pdv`}
+            href="/pdv"
             className="ml-2 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-sm font-bold transition-colors"
           >
             💳 PDV

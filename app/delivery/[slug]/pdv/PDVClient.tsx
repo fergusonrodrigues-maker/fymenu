@@ -411,7 +411,7 @@ export default function PDVClient({
             </span>
           )}
           <a
-            href={`/u/${slug}/hub-central`}
+            href="/operacoes"
             className="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm font-semibold transition-colors"
           >
             🍳 Hub

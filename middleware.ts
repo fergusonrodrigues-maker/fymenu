@@ -26,8 +26,10 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const hostname = request.headers.get("host") ?? "";
 
-  // ── Subdomínio → rewrite para /u/[slug] ──────────────────────────────
-  // pizzaria.fymenu.com → /u/pizzaria
+  // ── Subdomínio → rewrite para /delivery/[slug] ────────────────────────
+  // pizzaria.fymenu.com → /delivery/pizzaria
+  // pizzaria.fymenu.com/menu → /menu/pizzaria
+  // pizzaria.fymenu.com/tv → /tv/pizzaria
   const mainDomain = process.env.NEXT_PUBLIC_DOMAIN ?? "fymenu.com";
   const isSubdomain =
     hostname.endsWith(`.${mainDomain}`) &&
@@ -66,7 +68,24 @@ export async function middleware(request: NextRequest) {
     } catch { /* fall back to direct slug mapping */ }
 
     const url = request.nextUrl.clone();
-    url.pathname = `/u/${slug}${pathname === "/" ? "" : pathname}`;
+
+    // Path-aware routing: map subdomain paths to new route structure
+    if (pathname === "/" || pathname === "/delivery") {
+      url.pathname = `/delivery/${slug}`;
+    } else if (pathname === "/menu") {
+      url.pathname = `/menu/${slug}`;
+    } else if (pathname === "/tv") {
+      url.pathname = `/tv/${slug}`;
+    } else if (pathname === "/operacoes" || pathname === "/hub-central") {
+      url.pathname = `/operacoes/${slug}`;
+    } else if (pathname.startsWith("/comanda/")) {
+      const hash = pathname.slice("/comanda/".length);
+      url.pathname = `/comanda/${slug}/${hash}`;
+    } else {
+      // /pdv, /pdv/* and any other sub-paths remain under delivery
+      url.pathname = `/delivery/${slug}${pathname}`;
+    }
+
     return NextResponse.rewrite(url);
   }
 
