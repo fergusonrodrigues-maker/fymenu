@@ -14,7 +14,7 @@ interface CategoryCarouselProps {
 // Dimensões — hero domina, side 72%, proporção 9:16 garante altura proporcional
 const HW = 130;                          // hero width (categoria ativa)
 const SW = Math.round(HW * 0.72);       // side width (categoria ativa)
-const IW = Math.round(HW * 0.62);       // width (categoria inativa)
+const IW = Math.round(HW / 1.4);        // width (categoria inativa)
 const GAP = 8;
 
 // marginTop para alinhar cards menores pelo centro com o hero
