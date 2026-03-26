@@ -193,6 +193,7 @@ export default function MenuClient({
                 marginBottom: 4,
                 transition: "opacity 0.4s ease",
                 opacity: isActive ? 1 : 0.55,
+                scrollMarginTop: 72,
               }}
             >
               <CategoryCarousel

@@ -61,11 +61,10 @@ export default function CategoryCarousel({
 
   // centraliza produto 0 ao montar / mudar active
   useEffect(() => {
-    const startIdx = list.length > 1 ? 1 : 0;
-    heroIdxRef.current = startIdx;
-    setHeroIdx(startIdx);
-    const t1 = setTimeout(() => positionTrack(startIdx, false), 40);
-    const t2 = setTimeout(() => positionTrack(startIdx, false), 220);
+    heroIdxRef.current = 0;
+    setHeroIdx(0);
+    const t1 = setTimeout(() => positionTrack(0, false), 40);
+    const t2 = setTimeout(() => positionTrack(0, false), 220);
     return () => { clearTimeout(t1); clearTimeout(t2); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, list.length]);
