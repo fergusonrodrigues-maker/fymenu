@@ -547,10 +547,12 @@ export async function updateProfile(formData: FormData): Promise<void> {
   const firstName = normalizeText(String(formData.get("first_name") ?? ""));
   const lastName = normalizeText(String(formData.get("last_name") ?? ""));
   const phone = normalizeText(String(formData.get("phone") ?? ""));
+  const address = normalizeText(String(formData.get("address") ?? ""));
+  const city = normalizeText(String(formData.get("city") ?? ""));
 
   const { error } = await supabase
     .from("profiles")
-    .update({ first_name: firstName || null, last_name: lastName || null, phone: phone || null })
+    .update({ first_name: firstName || null, last_name: lastName || null, phone: phone || null, address: address || null, city: city || null })
     .eq("id", user.id);
 
   if (error) throw new Error(error.message);

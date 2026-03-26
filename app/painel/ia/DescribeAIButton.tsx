@@ -65,8 +65,22 @@ export function DescribeAIButton({
   }
 
   return (
-    <AIButton onClick={handleClick} isLoading={generating} variant="secondary">
-      ✨ Gerar descrição
-    </AIButton>
+    <button
+      onClick={handleClick}
+      disabled={generating}
+      type="button"
+      style={{
+        padding: "5px 12px", borderRadius: 20,
+        background: generating ? "rgba(0,217,184,0.1)" : "linear-gradient(135deg, #00d9b8, #00ffae)",
+        border: "none", color: generating ? "#00ffae" : "#000",
+        fontSize: 12, fontWeight: 700, cursor: generating ? "not-allowed" : "pointer",
+        display: "flex", alignItems: "center", gap: 5,
+        opacity: generating ? 0.7 : 1,
+        transition: "opacity 0.15s",
+        whiteSpace: "nowrap",
+      }}
+    >
+      {generating ? "⏳ Gerando..." : "✨ Gerar descrição"}
+    </button>
   );
 }

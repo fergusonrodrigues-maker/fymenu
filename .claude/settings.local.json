@@ -8,7 +8,16 @@
       "mcp__claude_ai_Vercel__list_teams",
       "mcp__claude_ai_Vercel__list_projects",
       "mcp__claude_ai_Vercel__deploy_to_vercel",
-      "Bash(git add app/dashboard/actions.ts app/dashboard/cardapio/CardapioClient.tsx app/dashboard/cardapio/page.tsx app/dashboard/cardapio/UpsellSection.tsx app/u/[slug]/ProductCard.tsx app/u/[slug]/ProductModal.tsx app/u/[slug]/UpsellModal.tsx app/u/[slug]/orderBuilder.ts app/u/[slug]/useTrack.ts app/u/[slug]/MenuClient.tsx app/u/[slug]/menuTypes.ts app/u/[slug]/page.tsx)"
+      "Bash(git add app/dashboard/actions.ts app/dashboard/cardapio/CardapioClient.tsx app/dashboard/cardapio/page.tsx app/dashboard/cardapio/UpsellSection.tsx app/u/[slug]/ProductCard.tsx app/u/[slug]/ProductModal.tsx app/u/[slug]/UpsellModal.tsx app/u/[slug]/orderBuilder.ts app/u/[slug]/useTrack.ts app/u/[slug]/MenuClient.tsx app/u/[slug]/menuTypes.ts app/u/[slug]/page.tsx)",
+      "Bash(git push:*)",
+      "Bash(ls app/u/[slug]/)",
+      "Bash(git merge:*)",
+      "Bash(npx vercel:*)",
+      "Bash(grep -n \"useTrack\\\\|track\\(\" app/u/[slug]/MenuClient.tsx app/u/[slug]/ProductModal.tsx)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\Ferguson\\Documents\\fymenu\\app\\u\\[slug]\\hub-central",
+      "C:\\Users\\Ferguson\\Documents\\fymenu\\app\\u\\[slug]\\hub-central\\components"
     ]
   }
 }

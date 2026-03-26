@@ -250,10 +250,40 @@ function GarcomTab({
   orders: Order[];
   onUpdateWaiter: (id: string, status: string) => void;
 }) {
+  const [viewAs, setViewAs] = useState<"owner" | string>("owner");
   const active = orders.filter((o) => o.waiter_status !== "delivered");
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      {/* Super Admin header */}
+      <div style={{
+        borderRadius: 12, padding: "12px 14px",
+        background: "rgba(0,255,174,0.05)", border: "1px solid rgba(0,255,174,0.2)",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+          <span style={{
+            fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 20,
+            background: "rgba(0,255,174,0.12)", color: "#00ffae", border: "1px solid rgba(0,255,174,0.3)",
+          }}>
+            👨‍💼 DONO · Super Admin
+          </span>
+        </div>
+        <div style={{ color: "var(--dash-text-muted)", fontSize: 11, marginBottom: 6 }}>Visualizar como:</div>
+        <select
+          value={viewAs}
+          onChange={(e) => setViewAs(e.target.value)}
+          style={{
+            width: "100%", padding: "8px 10px", borderRadius: 9,
+            border: "1px solid var(--dash-input-border)", background: "var(--dash-input-bg)",
+            color: "var(--dash-text)", fontSize: 13, outline: "none",
+          }}
+        >
+          <option value="owner">👨‍💼 Sua visão (Dono) — todos os pedidos</option>
+          <option value="garcom">👔 Visão do Garçom — comandas activas</option>
+          <option value="cozinha">👨‍🍳 Visão da Cozinha — fila de preparo</option>
+        </select>
+      </div>
+
       <div style={{ color: "var(--dash-text-muted)", fontSize: 12 }}>
         {active.length} comanda{active.length !== 1 ? "s" : ""} em aberto
       </div>

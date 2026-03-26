@@ -18,7 +18,7 @@ export default async function DashboardPage() {
 
   const { data: unit } = await supabase
     .from("units")
-    .select("id, name, slug, custom_domain, address, city, neighborhood, whatsapp, instagram, logo_url, maps_url, is_published")
+    .select("id, name, slug, custom_domain, address, city, neighborhood, whatsapp, instagram, logo_url, maps_url, delivery_link, is_published")
     .eq("restaurant_id", restaurant.id)
     .single();
 
@@ -78,7 +78,7 @@ export default async function DashboardPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("first_name, last_name, phone")
+    .select("first_name, last_name, phone, address, city")
     .eq("id", user.id)
     .single();
 
@@ -86,7 +86,7 @@ export default async function DashboardPage() {
     <DashboardClient
       restaurant={restaurant}
       unit={unit ?? null}
-      profile={{ first_name: null, last_name: null, phone: null, ...profile, email: user.email }}
+      profile={{ first_name: null, last_name: null, phone: null, address: null, city: null, ...profile, email: user.email }}
       categories={categories ?? []}
       products={products ?? []}
       upsellItems={upsellItems ?? []}

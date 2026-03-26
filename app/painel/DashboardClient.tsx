@@ -19,11 +19,11 @@ import DominioSection from "./components/DominioSection";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 type Restaurant = { id: string; name: string; plan: string; status: string; trial_ends_at: string; whatsapp: string | null; instagram: string | null };
-type Unit = { id: string; name: string; slug: string; custom_domain: string | null; address: string; city: string | null; neighborhood: string | null; whatsapp: string | null; instagram: string | null; logo_url: string | null; maps_url: string | null; is_published: boolean };
+type Unit = { id: string; name: string; slug: string; custom_domain: string | null; address: string; city: string | null; neighborhood: string | null; whatsapp: string | null; instagram: string | null; logo_url: string | null; maps_url: string | null; delivery_link: string | null; is_published: boolean };
 type StockStats = { low: number; out: number };
 type Category = { id: string; name: string; order_index: number | null };
 type Product = { id: string; category_id: string; name: string; description: string | null; price_type: string; base_price: number | null; thumbnail_url: string | null; video_url: string | null; order_index: number | null; is_active: boolean; stock?: number | null; stock_minimum?: number | null; unlimited?: boolean | null; sku?: string | null; allergens?: string[] | null; nutrition?: any; preparation_time?: number | null };
-type Profile = { first_name: string | null; last_name: string | null; phone: string | null; email: string | undefined };
+type Profile = { first_name: string | null; last_name: string | null; phone: string | null; address: string | null; city: string | null; email: string | undefined };
 
 // ─── Modal backdrop ─────────────────────────────────────────────────────────
 function Modal({ open, onClose, children, title }: { open: boolean; onClose: () => void; children: React.ReactNode; title: string }) {
@@ -622,6 +622,24 @@ function NewProductFormInline({ categoryId, anyProductExpanded, onOpen }: { cate
 
 // ─── Financeiro Modal ─────────────────────────────────────────────────────────
 function FinanceiroModal({ unit, analytics }: { unit: Unit | null; analytics: { views: number; clicks: number; orders: number } }) {
+  const [waCopied, setWaCopied] = useState(false);
+  const [deliveryPlatform, setDeliveryPlatform] = useState("");
+  const [deliveryLink, setDeliveryLink] = useState(unit?.delivery_link ?? "");
+  const [deliverySaving, setDeliverySaving] = useState(false);
+  const [deliverySaved, setDeliverySaved] = useState(false);
+
+  const waLink = unit?.whatsapp ? `https://wa.me/55${unit.whatsapp.replace(/\D/g, "")}` : null;
+
+  async function saveDeliveryLink() {
+    if (!unit || !deliveryLink.trim()) return;
+    setDeliverySaving(true);
+    const { createClient: cc } = await import("@/lib/supabase/client");
+    await cc().from("units").update({ delivery_link: deliveryLink.trim() }).eq("id", unit.id);
+    setDeliverySaving(false);
+    setDeliverySaved(true);
+    setTimeout(() => setDeliverySaved(false), 2000);
+  }
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingTop: 8 }}>
       {/* Resumo rápido */}
@@ -644,18 +662,85 @@ function FinanceiroModal({ unit, analytics }: { unit: Unit | null; analytics: { 
         </div>
         <span style={{ color: "#00ffae", fontSize: 18 }}>→</span>
       </a>
-      {/* WhatsApp */}
-      <div style={{ borderRadius: 16, padding: "18px 20px", background: "var(--dash-card)", border: "1px solid var(--dash-card-border)" }}>
-        <div style={{ fontSize: 22, marginBottom: 8 }}>💬</div>
-        <div style={{ color: "var(--dash-text)", fontSize: 15, fontWeight: 700, marginBottom: 4 }}>WhatsApp</div>
-        <div style={{ color: "var(--dash-text-muted)", fontSize: 13, marginBottom: 10 }}>Pedidos enviados automaticamente para o WhatsApp da unidade.</div>
-        <div style={{ color: "var(--dash-text-dim)", fontSize: 13 }}>Número atual: <span style={{ color: unit?.whatsapp ? "var(--dash-text)" : "#f87171" }}>{unit?.whatsapp ?? "Não configurado"}</span></div>
-      </div>
-      {/* iFood */}
-      <div style={{ borderRadius: 16, padding: "18px 20px", background: "var(--dash-card)", border: "1px solid var(--dash-card-border)" }}>
-        <div style={{ fontSize: 22, marginBottom: 8 }}>🛵</div>
-        <div style={{ color: "var(--dash-text)", fontSize: 15, fontWeight: 700, marginBottom: 4 }}>iFood / Delivery</div>
-        <div style={{ color: "var(--dash-text-muted)", fontSize: 13 }}>Configure o link da plataforma na seção Unidade.</div>
+
+      {/* ── Meus Links Delivery ─────────────────────────── */}
+      <div style={{ borderTop: "1px solid var(--dash-separator)", paddingTop: 12 }}>
+        <div style={{ color: "var(--dash-text)", fontSize: 14, fontWeight: 700, marginBottom: 10 }}>📦 Meus Links Delivery</div>
+
+        {/* WhatsApp */}
+        <div style={{ borderRadius: 14, padding: "16px", background: "var(--dash-card)", border: "1px solid rgba(22,163,74,0.25)", marginBottom: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+            <span style={{ fontSize: 18 }}>💬</span>
+            <div style={{ color: "var(--dash-text)", fontSize: 14, fontWeight: 700 }}>WhatsApp</div>
+          </div>
+          <div style={{ color: "var(--dash-text-muted)", fontSize: 12, marginBottom: 10 }}>
+            Pedidos enviados automaticamente com rastreamento
+          </div>
+          {waLink ? (
+            <>
+              <div style={{
+                padding: "8px 12px", borderRadius: 8, background: "rgba(255,255,255,0.04)",
+                border: "1px solid var(--dash-card-border)", fontSize: 12, color: "var(--dash-text-muted)",
+                fontFamily: "monospace", marginBottom: 8, wordBreak: "break-all",
+              }}>{waLink}</div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  onClick={() => { navigator.clipboard.writeText(waLink); setWaCopied(true); setTimeout(() => setWaCopied(false), 1800); }}
+                  style={{ flex: 1, padding: "9px", borderRadius: 9, border: "none", background: waCopied ? "rgba(0,255,174,0.15)" : "rgba(22,163,74,0.15)", color: waCopied ? "#00ffae" : "#4ade80", fontSize: 12, fontWeight: 700, cursor: "pointer" }}
+                >
+                  {waCopied ? "✓ Copiado!" : "Copiar link"}
+                </button>
+                <a href={`/painel`} style={{ flex: 1, padding: "9px", borderRadius: 9, border: "1px solid var(--dash-btn-border)", background: "transparent", color: "var(--dash-text-dim)", fontSize: 12, fontWeight: 600, cursor: "pointer", textDecoration: "none", textAlign: "center" }}>
+                  ✎ Editar número
+                </a>
+              </div>
+            </>
+          ) : (
+            <div style={{ color: "#f87171", fontSize: 12 }}>WhatsApp não configurado — edite na seção Unidade.</div>
+          )}
+        </div>
+
+        {/* iFood / Delivery */}
+        <div style={{ borderRadius: 14, padding: "16px", background: "var(--dash-card)", border: "1px solid rgba(234,88,12,0.25)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+            <span style={{ fontSize: 18 }}>🛵</span>
+            <div style={{ color: "var(--dash-text)", fontSize: 14, fontWeight: 700 }}>iFood / Delivery</div>
+          </div>
+          <div style={{ color: "var(--dash-text-muted)", fontSize: 12, marginBottom: 10 }}>
+            Configure o link da sua loja nas plataformas de delivery
+          </div>
+          <select
+            value={deliveryPlatform}
+            onChange={(e) => setDeliveryPlatform(e.target.value)}
+            style={{ ...inp, marginBottom: 8 }}
+          >
+            <option value="">Selecionar plataforma...</option>
+            <option value="ifood">iFood</option>
+            <option value="99food">99Food</option>
+            <option value="ubereats">Uber Eats</option>
+            <option value="outro">Outro</option>
+          </select>
+          <input
+            type="url"
+            value={deliveryLink}
+            onChange={(e) => { setDeliveryLink(e.target.value); setDeliverySaved(false); }}
+            placeholder="Cole o link da sua loja"
+            style={{ ...inp, marginBottom: 8 }}
+          />
+          <button
+            onClick={saveDeliveryLink}
+            disabled={deliverySaving || !deliveryLink.trim()}
+            style={{
+              width: "100%", padding: "10px", borderRadius: 9, border: "none",
+              background: deliverySaved ? "rgba(0,255,174,0.15)" : "rgba(234,88,12,0.15)",
+              color: deliverySaved ? "#00ffae" : "#fb923c",
+              fontSize: 13, fontWeight: 700, cursor: deliverySaving ? "not-allowed" : "pointer",
+              opacity: deliverySaving ? 0.6 : 1,
+            }}
+          >
+            {deliverySaved ? "✓ Salvo!" : deliverySaving ? "Salvando..." : "Salvar link"}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -989,6 +1074,8 @@ function ConfigModal({ profile }: { profile: Profile }) {
           { name: "first_name", label: "Nome", value: profile.first_name ?? "" },
           { name: "last_name", label: "Sobrenome", value: profile.last_name ?? "" },
           { name: "phone", label: "Telefone", value: profile.phone ?? "" },
+          { name: "address", label: "Endereço (opcional)", value: profile.address ?? "" },
+          { name: "city", label: "Cidade (opcional)", value: profile.city ?? "" },
         ].map((f) => (
           <div key={f.name}>
             <div style={{ color: "var(--dash-text-muted)", fontSize: 11, marginBottom: 4 }}>{f.label}</div>
@@ -1028,6 +1115,7 @@ function ConfigModal({ profile }: { profile: Profile }) {
         <div style={{ color: "var(--dash-text)", fontSize: 16, fontWeight: 700 }}>{[profile.first_name, profile.last_name].filter(Boolean).join(" ") || "Sem nome"}</div>
         <div style={{ color: "var(--dash-text-muted)", fontSize: 13, marginTop: 4 }}>{profile.email}</div>
         {profile.phone && <div style={{ color: "var(--dash-text-muted)", fontSize: 13, marginTop: 2 }}>{profile.phone}</div>}
+        {(profile.address || profile.city) && <div style={{ color: "var(--dash-text-muted)", fontSize: 13, marginTop: 2 }}>{[profile.address, profile.city].filter(Boolean).join(", ")}</div>}
       </div>
       <button onClick={() => setView("profile")} style={{ padding: "14px 20px", borderRadius: 14, background: "var(--dash-card)", border: "1px solid var(--dash-card-border)", color: "var(--dash-text)", fontSize: 14, fontWeight: 600, cursor: "pointer", textAlign: "left" }}>
         ✏️ Editar perfil
