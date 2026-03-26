@@ -2,6 +2,7 @@
 
 import { useRef, useState, useEffect, useCallback } from "react";
 import { Unit, Category, Product, ProductVariation } from "./menuTypes";
+import { useTrack } from "./useTrack";
 import CategoryPillsTop from "./CategoryPillsTop";
 import CategoryCarousel from "./CategoryCarousel";
 import FeaturedCarousel from "./FeaturedCarousel";
@@ -72,6 +73,14 @@ export default function MenuClient({
   const cartTotal = cart.reduce((s, i) => s + i.qty * i.unit_price, 0);
   const cartCount = cart.reduce((s, i) => s + i.qty, 0);
 
+  const { track } = useTrack(unit.id);
+
+  // Rastrear abertura do cardápio
+  useEffect(() => {
+    track({ event: "menu_view" });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const isScrollingTo = useRef(false); // evita loop: scroll programático ≠ scroll do usuário
 
@@ -121,6 +130,7 @@ export default function MenuClient({
 
   function handleOpenProduct(product: Product) {
     setSelectedProduct(product);
+    track({ event: "product_click", product_id: product.id, category_id: product.category_id });
   }
 
   function handleProductOrder(payload: OrderPayload) {

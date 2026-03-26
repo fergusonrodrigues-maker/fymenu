@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { OrderPayload, UpsellItem, buildOrderPayload, buildWhatsAppMessage, formatPrice } from "./orderBuilder";
+import { useTrack } from "./useTrack";
 
 export interface UpsellSuggestion {
   id: string;
@@ -14,6 +15,7 @@ interface UpsellModalProps {
   payload: OrderPayload | null;
   suggestions: UpsellSuggestion[];
   unit: {
+    id: string;
     whatsapp?: string | null;
   };
   onClose: () => void;
@@ -26,6 +28,7 @@ export default function UpsellModal({
   onClose,
 }: UpsellModalProps) {
   const [selectedUpsells, setSelectedUpsells] = useState<UpsellItem[]>([]);
+  const { track } = useTrack(unit.id);
 
   if (!payload) return null;
 
@@ -46,6 +49,7 @@ export default function UpsellModal({
   function handleWhatsApp() {
     if (!unit.whatsapp) return;
     const url = buildWhatsAppMessage(finalPayload, unit.whatsapp);
+    track({ event: "whatsapp_click", product_id: payload?.product.id });
     window.open(url, "_blank");
     onClose();
   }

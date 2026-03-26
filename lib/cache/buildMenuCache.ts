@@ -16,6 +16,7 @@ export interface MenuCacheData {
     id: string;
     name: string;
     position: number;
+    is_featured: boolean;
     products: Array<{
       id: string;
       name: string;
@@ -54,7 +55,7 @@ export async function buildMenuCache(unitId: string): Promise<{ menu_json: MenuC
 
   const { data: categories, error: catError } = await supabase
     .from("categories")
-    .select("id, name, order_index")
+    .select("id, name, order_index, is_featured")
     .eq("unit_id", unitId)
     .order("order_index", { ascending: true });
 
@@ -93,6 +94,7 @@ export async function buildMenuCache(unitId: string): Promise<{ menu_json: MenuC
       return {
         ...category,
         position: category.order_index ?? 0,
+        is_featured: category.is_featured ?? false,
         products: productsWithDetails,
       };
     })

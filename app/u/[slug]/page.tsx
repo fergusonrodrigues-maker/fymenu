@@ -98,7 +98,7 @@ export default async function Page({
     unit_id: unit.id,
     name: c.name,
     order_index: c.position,
-    is_featured: false,
+    is_featured: c.is_featured ?? false,
     slug: slugify(c.name || `categoria-${idx + 1}`),
     type: null,
   }));

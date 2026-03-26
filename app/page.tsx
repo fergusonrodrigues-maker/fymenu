@@ -21,7 +21,7 @@ export default function LandingPage() {
             Fy<span style={{ color: BRAND }}>Menu</span>
           </span>
           <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
-            <div style={{ display: "flex", gap: 28, fontSize: 14, color: "rgba(255,255,255,0.55)" }}>
+            <div className="nav-links" style={{ display: "flex", gap: 28, fontSize: 14, color: "rgba(255,255,255,0.55)" }}>
               {[["Funcionalidades", "#features"], ["Como funciona", "#how"], ["Planos", "#pricing"]].map(([l, h]) => (
                 <a key={h} href={h} className="nav-link">{l}</a>
               ))}
@@ -139,7 +139,7 @@ export default function LandingPage() {
           </p>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+        <div className="features-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
           {FEATURES.map((f, i) => (
             <FeatureCard key={i} {...f} />
           ))}
@@ -163,7 +163,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 32, position: "relative" }}>
+          <div className="steps-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 32, position: "relative" }}>
             {/* linha conectando os steps */}
             <div style={{
               position: "absolute", top: 28, left: "calc(16.6% + 20px)", right: "calc(16.6% + 20px)",
@@ -189,7 +189,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
+          <div className="pricing-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
             <PricingCard
               name="Basic"
               price="R$ —"
@@ -290,9 +290,13 @@ export default function LandingPage() {
           .hero-mock { display: none !important; }
         }
         @media (max-width: 768px) {
+          .nav-links { display: none !important; }
           .features-grid { grid-template-columns: 1fr !important; }
           .steps-grid { grid-template-columns: 1fr !important; }
           .pricing-grid { grid-template-columns: 1fr !important; }
+          .steps-grid > div:not(:last-child)::after {
+            display: none;
+          }
         }
       `}</style>
     </div>

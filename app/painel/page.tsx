@@ -55,9 +55,9 @@ export default async function DashboardPage() {
     .eq("unit_id", unit?.id)
     .gte("created_at", sevenDaysAgo);
 
-  const views = events?.filter((e) => e.event === "page_view").length ?? 0;
+  const views = events?.filter((e) => e.event === "menu_view").length ?? 0;
   const clicks = events?.filter((e) => e.event === "product_click").length ?? 0;
-  const orders = events?.filter((e) => e.event === "order_sent").length ?? 0;
+  const orders = events?.filter((e) => e.event === "whatsapp_click").length ?? 0;
 
   const { count: tvCount } = await supabase
     .from("tv_media")
