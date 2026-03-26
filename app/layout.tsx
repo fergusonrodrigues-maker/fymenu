@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   description: "Crie seu cardápio digital profissional, receba pedidos pelo WhatsApp e gerencie seu restaurante com facilidade.",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent",
+    statusBarStyle: "default",
     title: "FyMenu",
   },
 };
@@ -27,6 +27,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  themeColor: "#ffffff",
 };
 
 export default function RootLayout({
