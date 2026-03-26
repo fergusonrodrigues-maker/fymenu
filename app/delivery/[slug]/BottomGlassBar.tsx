@@ -68,7 +68,7 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
       <div style={{
         position: "relative",
         width: isMaximized ? "100%" : "min(96vw, 520px)",
-        height: isMaximized ? 260 : 80,
+        height: isMaximized ? "min(50vh, 340px)" : 80,
         borderRadius: isMaximized ? "28px 28px 0 0" : 24,
         background: "rgba(30,30,30,0.88)",
         backdropFilter: "blur(24px)",
@@ -171,86 +171,86 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
         {/* ── MAXIMIZADO (vertical) ── */}
         <div style={{
           position: "absolute", inset: 0,
-          padding: "48px 20px 16px",
+          padding: "52px 20px 20px",
           display: "flex", flexDirection: "column",
-          justifyContent: "center", gap: 6,
+          justifyContent: "center", gap: 8,
           opacity: isMaximized ? 1 : 0,
           pointerEvents: isMaximized ? "auto" : "none",
           transition: `opacity 250ms ease ${isMaximized ? "350ms" : "0ms"}`,
         }}>
+          {/* Botão voltar ao topo — canto superior direito */}
+          <button
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            style={{
+              position: "absolute",
+              top: 14,
+              right: 16,
+              width: 36,
+              height: 36,
+              borderRadius: 12,
+              background: "rgba(255,255,255,0.10)",
+              border: "0.5px solid rgba(255,255,255,0.12)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+            }}
+            aria-label="Voltar ao topo"
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M8 13V3M8 3L4 7M8 3L12 7" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+
           {wa && (
             <a href={wa} target="_blank" rel="noreferrer" style={{
               display: "flex", alignItems: "center",
-              width: "100%", height: 40, borderRadius: 14,
-              background: "#25D366", padding: "0 16px", gap: 10,
+              width: "100%", height: 48, borderRadius: 14,
+              background: "#25D366", padding: "0 18px", gap: 12,
               textDecoration: "none",
             }}>
-              <img src={ICONS.whatsapp} alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
-              <span style={{ color: "#fff", fontWeight: 800, fontSize: 15 }}>Pedir no WhatsApp</span>
+              <img src={ICONS.whatsapp} alt="" style={{ width: 32, height: 32, borderRadius: 10, objectFit: "cover" }} />
+              <span style={{ color: "#fff", fontWeight: 800, fontSize: 16 }}>Pedir no WhatsApp</span>
             </a>
           )}
 
           {ig && (
             <a href={ig} target="_blank" rel="noreferrer" style={{
               display: "flex", alignItems: "center",
-              width: "100%", height: 40, borderRadius: 14,
+              width: "100%", height: 48, borderRadius: 14,
               background: "linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)",
-              padding: "0 16px", gap: 10, textDecoration: "none",
+              padding: "0 18px", gap: 12, textDecoration: "none",
             }}>
-              <img src={ICONS.instagram} alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
-              <span style={{ color: "#fff", fontWeight: 800, fontSize: 15 }}>Siga no Instagram</span>
+              <img src={ICONS.instagram} alt="" style={{ width: 32, height: 32, borderRadius: 10, objectFit: "cover" }} />
+              <span style={{ color: "#fff", fontWeight: 800, fontSize: 16 }}>Siga no Instagram</span>
             </a>
           )}
 
           {maps && (
             <a href={maps} target="_blank" rel="noreferrer" style={{
               display: "flex", alignItems: "center",
-              width: "100%", height: 40, borderRadius: 14,
-              background: "#E53935", padding: "0 16px", gap: 10,
+              width: "100%", height: 48, borderRadius: 14,
+              background: "#E53935", padding: "0 18px", gap: 12,
               textDecoration: "none",
             }}>
-              <img src={ICONS.maps} alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
-              <span style={{ color: "#fff", fontWeight: 800, fontSize: 15 }}>Como Chegar</span>
+              <img src={ICONS.maps} alt="" style={{ width: 32, height: 32, borderRadius: 10, objectFit: "cover" }} />
+              <span style={{ color: "#fff", fontWeight: 800, fontSize: 16 }}>Como Chegar</span>
             </a>
           )}
 
           <div style={{
-            display: "flex", flexDirection: "column", alignItems: "center",
-            justifyContent: "center", width: "100%", height: 44,
-            borderRadius: 18, position: "relative", overflow: "hidden",
+            display: "flex", alignItems: "center",
+            width: "100%", height: 48, borderRadius: 14,
+            position: "relative", overflow: "hidden",
           }}>
             <img src={ICONS.unidade} alt="" style={{
               position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover",
             }} />
-            <div style={{ position: "relative", zIndex: 1, textAlign: "center" }}>
-              <div style={{ fontSize: 13, fontWeight: 900, color: "#1a1a1a" }}>{city}</div>
-              <div style={{ fontSize: 11, fontWeight: 600, color: "#444" }}>{unit.name}</div>
+            <div style={{ position: "relative", zIndex: 1, width: "100%", textAlign: "center", padding: "0 18px" }}>
+              <div style={{ fontSize: 14, fontWeight: 900, color: "#1a1a1a" }}>{city}</div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#444" }}>{unit.name}</div>
             </div>
           </div>
-
-          <button
-            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-            style={{
-              position: "absolute",
-              top: 10,
-              right: 14,
-              width: 32,
-              height: 32,
-              borderRadius: "50%",
-              background: "rgba(255,255,255,0.12)",
-              border: "0.5px solid rgba(255,255,255,0.15)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
-              pointerEvents: "auto",
-            }}
-            aria-label="Voltar ao topo"
-          >
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path d="M7 12V2M7 2L3 6M7 2L11 6" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
         </div>
 
       </div>
