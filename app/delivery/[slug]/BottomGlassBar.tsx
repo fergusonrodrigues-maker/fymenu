@@ -59,10 +59,11 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
 
   return (
     <div style={{
-      position: "fixed", bottom: 0, left: 0, right: 0,
+      position: "fixed", bottom: isMaximized ? 0 : 16, left: 0, right: 0,
       display: "flex", justifyContent: "center",
-      zIndex: 50, padding: isMaximized ? "0" : "0 8px",
+      zIndex: 50, padding: isMaximized ? "0" : "0 12px",
       pointerEvents: "none",
+      transition: "bottom 700ms cubic-bezier(0.34,1.56,0.64,1)",
     }}>
       <div style={{
         position: "relative",
@@ -174,7 +175,7 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
         {/* ── MAXIMIZADO (vertical) ── */}
         <div style={{
           position: "absolute", inset: 0,
-          padding: "48px 14px 12px",
+          padding: "48px 20px 16px",
           display: "flex", flexDirection: "column",
           justifyContent: "center", gap: 6,
           opacity: isMaximized ? 1 : 0,
@@ -230,6 +231,30 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
               <div style={{ fontSize: 11, fontWeight: 600, color: "#444" }}>{unit.name}</div>
             </div>
           </div>
+
+          <button
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            style={{
+              position: "absolute",
+              top: 10,
+              right: 14,
+              width: 32,
+              height: 32,
+              borderRadius: "50%",
+              background: "rgba(255,255,255,0.12)",
+              border: "0.5px solid rgba(255,255,255,0.15)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              pointerEvents: "auto",
+            }}
+            aria-label="Voltar ao topo"
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M7 12V2M7 2L3 6M7 2L11 6" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
         </div>
 
       </div>
