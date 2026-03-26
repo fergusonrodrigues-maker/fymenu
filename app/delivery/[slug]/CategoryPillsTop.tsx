@@ -160,8 +160,9 @@ export default function CategoryPillsTop({
       <div style={{
         position: "absolute",
         inset: 0,
-        backdropFilter: "blur(16px)",
-        WebkitBackdropFilter: "blur(16px)",
+        background: "linear-gradient(to bottom, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 50%, transparent 100%)",
+        backdropFilter: "blur(20px)",
+        WebkitBackdropFilter: "blur(20px)",
         maskImage: "linear-gradient(to bottom, black 0%, black 60%, transparent 100%)",
         WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 60%, transparent 100%)",
         pointerEvents: "none",
