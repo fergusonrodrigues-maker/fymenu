@@ -153,12 +153,12 @@ export default function CategoryPillsTop({
       left: 0,
       width: "100%",
       zIndex: 50,
-      background: "rgba(255,255,255,0.75)",
-      backdropFilter: "blur(20px)",
-      WebkitBackdropFilter: "blur(20px)",
+      background: "linear-gradient(to bottom, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 60%, rgba(255,255,255,0) 100%)",
+      backdropFilter: "blur(16px)",
+      WebkitBackdropFilter: "blur(16px)",
       borderBottom: "none",
       pointerEvents: "none",
-      padding: "10px 0 10px",
+      padding: "10px 0 18px",
     }}>
       <div style={{
         display: "flex",
