@@ -121,10 +121,13 @@ export default function MenuClient({
 
   // ── Scroll programático ao clicar num pill ───────────────────────────────
   const scrollToCategory = useCallback((id: string) => {
-    setActiveCategoryId(id);
     isScrollingTo.current = true;
-    sectionRefs.current[id]?.scrollIntoView({ behavior: "smooth", block: "start" });
-    // libera o observer após a animação de scroll
+    // Scroll ANTES do setState para evitar que o re-render invalide os refs
+    const el = sectionRefs.current[id];
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    setActiveCategoryId(id);
     setTimeout(() => { isScrollingTo.current = false; }, 800);
   }, []);
 
