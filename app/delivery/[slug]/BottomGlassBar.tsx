@@ -59,21 +59,21 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
 
   return (
     <div style={{
-      position: "fixed", bottom: 24, left: 0, right: 0,
+      position: "fixed", bottom: 0, left: 0, right: 0,
       display: "flex", justifyContent: "center",
-      zIndex: 50, padding: "0 8px",
+      zIndex: 50, padding: isMaximized ? "0" : "0 8px",
       pointerEvents: "none",
     }}>
       <div style={{
         position: "relative",
-        width: isMaximized ? "min(84vw, 300px)" : "min(96vw, 520px)",
-        height: isMaximized ? 196 : 80,
-        borderRadius: isMaximized ? 28 : 24,
-        background: "rgba(0,0,0,0.72)",
+        width: isMaximized ? "100%" : "min(96vw, 520px)",
+        height: isMaximized ? 260 : 80,
+        borderRadius: isMaximized ? "28px 28px 0 0" : 24,
+        background: "rgba(30,30,30,0.88)",
         backdropFilter: "blur(24px)",
         WebkitBackdropFilter: "blur(24px)",
         border: "1px solid rgba(255,255,255,0.10)",
-        boxShadow: "0 10px 40px rgba(0,0,0,0.6)",
+        boxShadow: "0 -4px 40px rgba(0,0,0,0.15)",
         display: "flex",
         justifyContent: "center",
         pointerEvents: "auto",
