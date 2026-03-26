@@ -59,7 +59,7 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
 
   return (
     <div style={{
-      position: "fixed", bottom: isMaximized ? 0 : 16, left: 0, right: 0,
+      position: "fixed", bottom: isMaximized ? 0 : "calc(16px + env(safe-area-inset-bottom, 0px))", left: 0, right: 0,
       display: "flex", justifyContent: "center",
       zIndex: 50, padding: isMaximized ? "0" : "0 12px",
       pointerEvents: "none",
