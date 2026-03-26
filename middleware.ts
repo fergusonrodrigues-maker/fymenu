@@ -1,4 +1,5 @@
 import { createServerClient } from "@supabase/ssr";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 
 const PROTECTED_ROUTES = ["/painel", "/garcom", "/cozinha", "/admin"];
@@ -34,7 +35,23 @@ export async function middleware(request: NextRequest) {
     hostname !== mainDomain;
 
   if (isSubdomain) {
-    const slug = hostname.replace(`.${mainDomain}`, "");
+    const subdomain = hostname.replace(`.${mainDomain}`, "");
+    let slug = subdomain;
+
+    // Resolve custom_domain → slug (allows user-customized subdomains)
+    try {
+      const db = createSupabaseClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      );
+      const { data: unit } = await db
+        .from("units")
+        .select("slug")
+        .eq("custom_domain", subdomain)
+        .maybeSingle();
+      if (unit?.slug) slug = unit.slug;
+    } catch { /* fall back to direct slug mapping */ }
+
     const url = request.nextUrl.clone();
     url.pathname = `/u/${slug}${pathname === "/" ? "" : pathname}`;
     return NextResponse.rewrite(url);

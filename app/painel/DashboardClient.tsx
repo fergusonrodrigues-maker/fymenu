@@ -15,10 +15,11 @@ import LogoUploader from "./LogoUploader";
 import ThemeToggle from "@/components/ThemeToggle";
 import RestaurantOperationsModal from "./components/RestaurantOperationsModal";
 import PedidosModal from "./components/PedidosModal";
+import DominioSection from "./components/DominioSection";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 type Restaurant = { id: string; name: string; plan: string; status: string; trial_ends_at: string; whatsapp: string | null; instagram: string | null };
-type Unit = { id: string; name: string; slug: string; address: string; city: string | null; neighborhood: string | null; whatsapp: string | null; instagram: string | null; logo_url: string | null; maps_url: string | null; is_published: boolean };
+type Unit = { id: string; name: string; slug: string; custom_domain: string | null; address: string; city: string | null; neighborhood: string | null; whatsapp: string | null; instagram: string | null; logo_url: string | null; maps_url: string | null; is_published: boolean };
 type StockStats = { low: number; out: number };
 type Category = { id: string; name: string; order_index: number | null };
 type Product = { id: string; category_id: string; name: string; description: string | null; price_type: string; base_price: number | null; thumbnail_url: string | null; video_url: string | null; order_index: number | null; is_active: boolean; stock?: number | null; stock_minimum?: number | null; unlimited?: boolean | null; sku?: string | null; allergens?: string[] | null; nutrition?: any; preparation_time?: number | null };
@@ -692,6 +693,13 @@ function UnidadeModal({ unit, isPro, onClose }: { unit: Unit | null; isPro: bool
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingTop: 8 }}>
+      <DominioSection
+        unitId={unit.id}
+        currentDomain={unit.custom_domain}
+        slug={unit.slug}
+        restaurantName={unit.name}
+      />
+
       <CopyLinkRow label="Link Delivery" url={`${origin}/u/${unit.slug}`} />
       <CopyLinkRow label="Link Presencial (QR Code / Mesa)" url={`${origin}/u/${unit.slug}/menu`} />
 

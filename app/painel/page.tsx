@@ -18,7 +18,7 @@ export default async function DashboardPage() {
 
   const { data: unit } = await supabase
     .from("units")
-    .select("id, name, slug, address, city, neighborhood, whatsapp, instagram, logo_url, maps_url, is_published")
+    .select("id, name, slug, custom_domain, address, city, neighborhood, whatsapp, instagram, logo_url, maps_url, is_published")
     .eq("restaurant_id", restaurant.id)
     .single();
 
