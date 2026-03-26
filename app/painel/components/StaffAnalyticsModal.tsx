@@ -34,6 +34,7 @@ const ROLES: Record<string, string> = {
   deliverer: "Entregador",
   cashier: "Caixa",
   manager: "Gerente",
+  freelancer: "Freelancer",
 };
 
 function RatingStars({ value }: { value: number | null }) {
@@ -54,10 +55,13 @@ export default function StaffAnalyticsModal({ unitId }: { unitId: string }) {
   const [delivererStats, setDelivererStats] = useState<DelivererStat[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newEmployee, setNewEmployee] = useState({ name: "", role: "waiter", phone: "", category_id: "", cpf: "", username: "", password: "" });
+  const [newEmployee, setNewEmployee] = useState({ name: "", role: "waiter", phone: "", category_id: "", cpf: "", username: "", password: "", freelancer_service: "", freelancer_date: "" });
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+  const [showCategoryForm, setShowCategoryForm] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [savingCategory, setSavingCategory] = useState(false);
 
   const supabase = createClient();
 
@@ -116,6 +120,18 @@ export default function StaffAnalyticsModal({ unitId }: { unitId: string }) {
       .update({ is_active: !emp.is_active })
       .eq("id", emp.id);
     loadEmployees();
+  }
+
+  async function saveCategory() {
+    if (!newCategoryName.trim()) return;
+    setSavingCategory(true);
+    const { error } = await supabase.from("employee_categories").insert({ unit_id: unitId, name: newCategoryName.trim() });
+    setSavingCategory(false);
+    if (!error) {
+      setNewCategoryName("");
+      setShowCategoryForm(false);
+      loadCategories();
+    }
   }
 
   async function saveEmployee() {
@@ -182,15 +198,42 @@ export default function StaffAnalyticsModal({ unitId }: { unitId: string }) {
       {/* ── Equipe ── */}
       {tab === "equipe" && (
         <div>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
             <div style={{ color: "#888", fontSize: 13 }}>{employees.length} funcionário{employees.length !== 1 ? "s" : ""}</div>
-            <button
-              onClick={() => setShowAddForm((v) => !v)}
-              style={{ padding: "7px 14px", borderRadius: 10, border: "none", background: "rgba(0,255,174,0.12)", color: "#00ffae", fontSize: 13, fontWeight: 700, cursor: "pointer" }}
-            >
-              {showAddForm ? "Cancelar" : "+ Adicionar"}
-            </button>
+            <div style={{ display: "flex", gap: 6 }}>
+              <button
+                onClick={() => { setShowCategoryForm((v) => !v); setShowAddForm(false); }}
+                style={{ padding: "7px 12px", borderRadius: 10, border: "none", background: "rgba(168,85,247,0.12)", color: "#c084fc", fontSize: 12, fontWeight: 700, cursor: "pointer" }}
+              >
+                {showCategoryForm ? "Cancelar" : "+ Categoria"}
+              </button>
+              <button
+                onClick={() => { setShowAddForm((v) => !v); setShowCategoryForm(false); }}
+                style={{ padding: "7px 14px", borderRadius: 10, border: "none", background: "rgba(0,255,174,0.12)", color: "#00ffae", fontSize: 13, fontWeight: 700, cursor: "pointer" }}
+              >
+                {showAddForm ? "Cancelar" : "+ Funcionário"}
+              </button>
+            </div>
           </div>
+
+          {showCategoryForm && (
+            <div style={{ background: "rgba(168,85,247,0.06)", borderRadius: 12, padding: 14, marginBottom: 12, border: "1px solid rgba(168,85,247,0.2)", display: "flex", gap: 8, alignItems: "center" }}>
+              <input
+                style={{ ...inp, flex: 1, fontSize: 14 }}
+                placeholder="Nome da categoria (ex: Cozinha Norte)"
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && saveCategory()}
+              />
+              <button
+                onClick={saveCategory}
+                disabled={savingCategory || !newCategoryName.trim()}
+                style={{ padding: "10px 14px", borderRadius: 10, border: "none", background: "rgba(168,85,247,0.2)", color: "#c084fc", fontSize: 13, fontWeight: 700, cursor: savingCategory ? "not-allowed" : "pointer", flexShrink: 0, opacity: savingCategory ? 0.6 : 1 }}
+              >
+                {savingCategory ? "..." : "Criar"}
+              </button>
+            </div>
+          )}
 
           {showAddForm && (
             <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 14, padding: 16, marginBottom: 16, border: "1px solid rgba(255,255,255,0.08)" }}>
@@ -207,6 +250,21 @@ export default function StaffAnalyticsModal({ unitId }: { unitId: string }) {
                 >
                   {Object.entries(ROLES).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                 </select>
+                {newEmployee.role === "freelancer" && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "10px 12px", borderRadius: 10, background: "rgba(168,85,247,0.06)", border: "1px solid rgba(168,85,247,0.25)" }}>
+                    <div style={{ color: "#c084fc", fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>🤝 Dados do freelancer</div>
+                    <input
+                      style={inp} placeholder="Tipo de serviço (ex: Bartender, Fotógrafo)"
+                      value={newEmployee.freelancer_service}
+                      onChange={(e) => setNewEmployee((p) => ({ ...p, freelancer_service: e.target.value }))}
+                    />
+                    <input
+                      style={inp} type="date" placeholder="Data do serviço"
+                      value={newEmployee.freelancer_date}
+                      onChange={(e) => setNewEmployee((p) => ({ ...p, freelancer_date: e.target.value }))}
+                    />
+                  </div>
+                )}
                 <input
                   style={inp} placeholder="Telefone (opcional)"
                   value={newEmployee.phone}
@@ -266,7 +324,7 @@ export default function StaffAnalyticsModal({ unitId }: { unitId: string }) {
               {employees.map((emp) => (
                 <div key={emp.id} style={{ background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: "12px 14px", border: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", gap: 12 }}>
                   <div style={{ width: 36, height: 36, borderRadius: "50%", background: emp.is_active ? "rgba(0,255,174,0.12)" : "rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>
-                    {emp.role === "deliverer" ? "🚴" : emp.role === "kitchen" ? "👨‍🍳" : "🧑‍🍳"}
+                    {emp.role === "deliverer" ? "🚴" : emp.role === "kitchen" ? "👨‍🍳" : emp.role === "freelancer" ? "🤝" : "🧑‍🍳"}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ color: emp.is_active ? "#fff" : "#666", fontSize: 14, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{emp.name}</div>

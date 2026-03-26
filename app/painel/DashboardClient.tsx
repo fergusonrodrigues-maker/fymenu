@@ -428,7 +428,7 @@ export default function DashboardClient({
 
       {/* Config */}
       <Modal open={modal === "config"} onClose={close} title="Configurações">
-        <ConfigModal profile={profile} />
+        <ConfigModal profile={profile} restaurant={restaurant} />
       </Modal>
 
       {/* Estoque */}
@@ -738,8 +738,8 @@ function FinanceiroModal({ unit, analytics }: { unit: Unit | null; analytics: { 
           >
             <option value="">Selecionar plataforma...</option>
             <option value="ifood">iFood</option>
+            <option value="rappi">Rappi</option>
             <option value="99food">99Food</option>
-            <option value="ubereats">Uber Eats</option>
             <option value="outro">Outro</option>
           </select>
           <input
@@ -1067,7 +1067,7 @@ function EstoqueModal({ unit, stockStats }: { unit: Unit | null; stockStats: Sto
 }
 
 // ─── Config Modal ─────────────────────────────────────────────────────────────
-function ConfigModal({ profile }: { profile: Profile }) {
+function ConfigModal({ profile, restaurant }: { profile: Profile; restaurant: Restaurant }) {
   const [view, setView] = useState<"home" | "profile" | "password">("home");
   const [pwLoading, setPwLoading] = useState(false);
   const [pwMsg, setPwMsg] = useState<string | null>(null);
@@ -1138,6 +1138,16 @@ function ConfigModal({ profile }: { profile: Profile }) {
         <div style={{ color: "var(--dash-text-muted)", fontSize: 13, marginTop: 4 }}>{profile.email}</div>
         {profile.phone && <div style={{ color: "var(--dash-text-muted)", fontSize: 13, marginTop: 2 }}>{profile.phone}</div>}
         {(profile.address || profile.city) && <div style={{ color: "var(--dash-text-muted)", fontSize: 13, marginTop: 2 }}>{[profile.address, profile.city].filter(Boolean).join(", ")}</div>}
+        <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--dash-card-border)", display: "flex", gap: 10 }}>
+          <div style={{ flex: 1, borderRadius: 10, padding: "10px 12px", background: restaurant.plan === "pro" ? "rgba(0,255,174,0.06)" : "rgba(255,255,255,0.04)", border: `1px solid ${restaurant.plan === "pro" ? "rgba(0,255,174,0.2)" : "var(--dash-card-border)"}` }}>
+            <div style={{ color: "var(--dash-text-muted)", fontSize: 11, marginBottom: 4 }}>📦 Plano atual</div>
+            <div style={{ color: restaurant.plan === "pro" ? "#00ffae" : "var(--dash-text)", fontSize: 15, fontWeight: 800 }}>{restaurant.plan === "pro" ? "Pro ⭐" : restaurant.plan === "trial" ? "Trial" : "Basic"}</div>
+          </div>
+          <div style={{ flex: 1, borderRadius: 10, padding: "10px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid var(--dash-card-border)" }}>
+            <div style={{ color: "var(--dash-text-muted)", fontSize: 11, marginBottom: 4 }}>📊 Status</div>
+            <div style={{ color: "var(--dash-text)", fontSize: 15, fontWeight: 800, textTransform: "capitalize" }}>{restaurant.status === "trial" ? "Trial ativo" : restaurant.status === "active" ? "Ativo" : restaurant.status}</div>
+          </div>
+        </div>
       </div>
       <button onClick={() => setView("profile")} style={{ padding: "14px 20px", borderRadius: 14, background: "var(--dash-card)", border: "1px solid var(--dash-card-border)", color: "var(--dash-text)", fontSize: 14, fontWeight: 600, cursor: "pointer", textAlign: "left" }}>
         ✏️ Editar perfil
