@@ -38,6 +38,7 @@ export type Product = {
   video_url: string | null;
   is_active: boolean;
   order_index: number | null;
+  is_age_restricted?: boolean;
 };
 
 // Categoria com produtos embutidos (usado em CategoryPillsTop e similares)

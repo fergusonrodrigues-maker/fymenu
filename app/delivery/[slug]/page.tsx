@@ -118,6 +118,7 @@ export default async function Page({
       thumbnail_url: p.thumbnail_url ?? null,
       video_url: p.video_url ?? null,
       is_active: p.is_active,
+      is_age_restricted: p.is_age_restricted ?? false,
       order_index: null,
     }))
   );

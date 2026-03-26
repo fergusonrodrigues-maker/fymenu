@@ -23,7 +23,7 @@ type Restaurant = { id: string; name: string; plan: string; status: string; tria
 type Unit = { id: string; name: string; slug: string; custom_domain: string | null; address: string; city: string | null; neighborhood: string | null; whatsapp: string | null; instagram: string | null; logo_url: string | null; maps_url: string | null; delivery_link: string | null; is_published: boolean };
 type StockStats = { low: number; out: number };
 type Category = { id: string; name: string; order_index: number | null };
-type Product = { id: string; category_id: string; name: string; description: string | null; price_type: string; base_price: number | null; thumbnail_url: string | null; video_url: string | null; order_index: number | null; is_active: boolean; stock?: number | null; stock_minimum?: number | null; unlimited?: boolean | null; sku?: string | null; allergens?: string[] | null; nutrition?: any; preparation_time?: number | null };
+type Product = { id: string; category_id: string; name: string; description: string | null; price_type: string; base_price: number | null; thumbnail_url: string | null; video_url: string | null; order_index: number | null; is_active: boolean; stock?: number | null; stock_minimum?: number | null; unlimited?: boolean | null; sku?: string | null; allergens?: string[] | null; nutrition?: any; preparation_time?: number | null; is_age_restricted?: boolean | null };
 type Profile = { first_name: string | null; last_name: string | null; phone: string | null; address: string | null; city: string | null; email: string | undefined };
 
 // ─── Modal backdrop ─────────────────────────────────────────────────────────

@@ -293,6 +293,7 @@ export async function updateProduct(formData: FormData): Promise<void> {
   const basePriceInput = String(formData.get("base_price") ?? "");
   const thumbnailUrl = normalizeText(String(formData.get("thumbnail_url") ?? ""));
   const videoUrl = normalizeText(String(formData.get("video_url") ?? ""));
+  const isAgeRestricted = formData.get("is_age_restricted") === "on";
 
   if (!id) throw new Error("ID inválido.");
   if (!name) throw new Error("Nome do produto é obrigatório.");
@@ -308,6 +309,7 @@ export async function updateProduct(formData: FormData): Promise<void> {
       base_price,
       thumbnail_url: thumbnailUrl || null,
       video_url: videoUrl || null,
+      is_age_restricted: isAgeRestricted,
     })
     .eq("id", id);
 

@@ -25,6 +25,7 @@ export interface MenuCacheData {
       thumbnail_url?: string;
       video_url?: string;
       is_active: boolean;
+      is_age_restricted: boolean;
       variations: Array<{
         id: string;
         name: string;
@@ -65,7 +66,7 @@ export async function buildMenuCache(unitId: string): Promise<{ menu_json: MenuC
     (categories || []).map(async (category) => {
       const { data: products } = await supabase
         .from("products")
-        .select("id, name, description, base_price, thumbnail_url, video_url, is_active, order_index")
+        .select("id, name, description, base_price, thumbnail_url, video_url, is_active, is_age_restricted, order_index")
         .eq("category_id", category.id)
         .eq("is_active", true)
         .order("order_index", { ascending: true });

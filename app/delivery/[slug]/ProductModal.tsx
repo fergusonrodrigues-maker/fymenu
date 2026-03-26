@@ -33,6 +33,7 @@ export default function ProductModal({
   const [thumbVisible, setThumbVisible] = useState(true);
   const [closing, setClosing] = useState(false);
   const [slideDir, setSlideDir] = useState<"left" | "right" | null>(null);
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
 
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -92,7 +93,7 @@ export default function ProductModal({
   const activePrice: number | null = isFixed
     ? fixedPrice
     : selectedVariation?.price ?? null;
-  const canOrder = (isFixed || selectedVariation !== null);
+  const canOrder = (isFixed || selectedVariation !== null) && (!currentProduct.is_age_restricted || ageConfirmed);
 
   // NUNCA usar: thumb_path | image_path | video_path
   const thumbUrl: string | null = currentProduct.thumbnail_url ?? null;
@@ -305,6 +306,25 @@ export default function ProductModal({
                   );
                 })}
               </div>
+            </div>
+          )}
+
+          {currentProduct.is_age_restricted && (
+            <div style={{
+              marginBottom: 10, padding: "8px 12px", borderRadius: 10,
+              background: "rgba(220,38,38,0.12)", border: "1px solid rgba(220,38,38,0.3)",
+            }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={ageConfirmed}
+                  onChange={(e) => setAgeConfirmed(e.target.checked)}
+                  style={{ width: 16, height: 16, accentColor: "#FF6B00", cursor: "pointer" }}
+                />
+                <span style={{ fontSize: 12, color: "rgba(255,255,255,0.75)", lineHeight: 1.4 }}>
+                  🔞 Confirmo que tenho 18 anos ou mais
+                </span>
+              </label>
             </div>
           )}
 

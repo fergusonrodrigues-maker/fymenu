@@ -67,7 +67,7 @@ export default async function MenuPresencialPage({
 
   const { data: productsData, error: prodErr } = await supabase
     .from("products")
-    .select("id, category_id, name, description, price_type, base_price, thumbnail_url, video_url, is_active, order_index")
+    .select("id, category_id, name, description, price_type, base_price, thumbnail_url, video_url, is_active, order_index, is_age_restricted")
     .in("category_id", Array.from(validCategoryIds))
     .eq("is_active", true)
     .order("order_index", { ascending: true, nullsFirst: false });
@@ -85,6 +85,7 @@ export default async function MenuPresencialPage({
     video_url: p.video_url ?? null,
     is_active: p.is_active !== false,
     order_index: typeof p.order_index === "number" ? p.order_index : null,
+    is_age_restricted: p.is_age_restricted ?? false,
   }));
 
   const productIds = products.map((p) => p.id);

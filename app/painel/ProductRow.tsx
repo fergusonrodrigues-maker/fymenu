@@ -20,6 +20,7 @@ type Product = {
   allergens?: string[] | null;
   nutrition?: { calories: number | null; protein: number | null; fat: number | null; carbs: number | null } | null;
   preparation_time?: number | null;
+  is_age_restricted?: boolean | null;
 };
 
 const BUCKET = "products";
@@ -237,6 +238,11 @@ export default function ProductRow({
               </div>
 
               {uploadError && <p style={{ color: "#f87171", fontSize: 12, margin: 0 }}>{uploadError}</p>}
+
+              <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", padding: "8px 10px", borderRadius: 8, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <input type="checkbox" name="is_age_restricted" defaultChecked={product.is_age_restricted ?? false} style={{ width: 16, height: 16, accentColor: "#FF6B00", cursor: "pointer" }} />
+                <span style={{ fontSize: 13, color: "rgba(255,255,255,0.7)" }}>🔞 Produto restrito para maiores de 18 anos</span>
+              </label>
 
               <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
                 <button type="submit" disabled={isPending || uploading !== null} style={{ flex: 1, padding: "10px 0", background: "#10b981", color: "#fff", border: "none", borderRadius: 8, fontWeight: 600, fontSize: 14, cursor: isPending ? "not-allowed" : "pointer", opacity: isPending ? 0.6 : 1 }}>
