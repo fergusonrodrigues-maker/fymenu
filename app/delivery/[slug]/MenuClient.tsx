@@ -106,7 +106,7 @@ export default function MenuClient({
           });
         },
         {
-          rootMargin: "-40% 0px -40% 0px", // zona central da viewport
+          rootMargin: "-30% 0px -50% 0px",
           threshold: 0,
         }
       );

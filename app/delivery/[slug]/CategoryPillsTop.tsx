@@ -156,7 +156,7 @@ export default function CategoryPillsTop({
       background: "rgba(255,255,255,0.75)",
       backdropFilter: "blur(20px)",
       WebkitBackdropFilter: "blur(20px)",
-      borderBottom: "0.5px solid rgba(0,0,0,0.08)",
+      borderBottom: "none",
       pointerEvents: "none",
       padding: "10px 0 10px",
     }}>
