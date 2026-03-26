@@ -14,6 +14,7 @@ import ProductRow from "./ProductRow";
 import LogoUploader from "./LogoUploader";
 import ThemeToggle from "@/components/ThemeToggle";
 import RestaurantOperationsModal from "./components/RestaurantOperationsModal";
+import PedidosModal from "./components/PedidosModal";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 type Restaurant = { id: string; name: string; plan: string; status: string; trial_ends_at: string; whatsapp: string | null; instagram: string | null };
@@ -97,7 +98,7 @@ export default function DashboardClient({
   tvCount: number; stockStats: StockStats;
 }) {
   const router = useRouter();
-  const [modal, setModal] = useState<"analytics" | "cardapio" | "financeiro" | "unidade" | "plano" | "config" | "tv" | "estoque" | "operacoes" | null>(null);
+  const [modal, setModal] = useState<"analytics" | "cardapio" | "pedidos" | "financeiro" | "unidade" | "plano" | "config" | "tv" | "estoque" | "operacoes" | null>(null);
   const open = (m: typeof modal) => setModal(m);
   const close = () => setModal(null);
 
@@ -217,6 +218,21 @@ export default function DashboardClient({
             </div>
           </div>
 
+          {/* Pedidos */}
+          <div className="card" onClick={() => open("pedidos")} style={{
+            borderRadius: 20, padding: "20px 18px",
+            background: "var(--dash-card)",
+            border: "1px solid var(--dash-card-border)",
+            cursor: "pointer", minHeight: 140,
+            display: "flex", flexDirection: "column", justifyContent: "space-between",
+          }}>
+            <div style={{ fontSize: 28 }}>🛒</div>
+            <div>
+              <div style={{ color: "var(--dash-text)", fontSize: 16, fontWeight: 800, marginBottom: 4 }}>Pedidos</div>
+              <div style={{ color: "var(--dash-text-muted)", fontSize: 12 }}>{analytics.orders} pedido{analytics.orders !== 1 ? "s" : ""} hoje</div>
+            </div>
+          </div>
+
           {/* Financeiro */}
           <div className="card" onClick={() => open("financeiro")} style={{
             borderRadius: 20, padding: "20px 18px",
@@ -228,7 +244,7 @@ export default function DashboardClient({
             <div style={{ fontSize: 28 }}>💰</div>
             <div>
               <div style={{ color: "var(--dash-text)", fontSize: 16, fontWeight: 800, marginBottom: 4 }}>Financeiro</div>
-              <div style={{ color: "var(--dash-text-muted)", fontSize: 12 }}>{analytics.orders} pedido{analytics.orders !== 1 ? "s" : ""} hoje</div>
+              <div style={{ color: "var(--dash-text-muted)", fontSize: 12 }}>Relatórios e receita</div>
             </div>
           </div>
 
@@ -354,6 +370,11 @@ export default function DashboardClient({
       {/* Analytics */}
       <Modal open={modal === "analytics"} onClose={close} title="Analytics">
         <AnalyticsModal analytics={analytics} unit={unit} />
+      </Modal>
+
+      {/* Pedidos */}
+      <Modal open={modal === "pedidos"} onClose={close} title="Pedidos de hoje">
+        {unit && <PedidosModal unitId={unit.id} />}
       </Modal>
 
       {/* Cardápio */}
