@@ -153,16 +153,22 @@ export default function CategoryPillsTop({
       left: 0,
       width: "100%",
       zIndex: 50,
-      background: "transparent",
-      backdropFilter: "blur(16px)",
-      WebkitBackdropFilter: "blur(16px)",
-      maskImage: "linear-gradient(to bottom, black 0%, black 55%, transparent 100%)",
-      WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 55%, transparent 100%)",
-      borderBottom: "none",
       pointerEvents: "none",
       padding: "10px 0 18px",
     }}>
+      {/* Camada de blur com degradê — não afeta os pills */}
       <div style={{
+        position: "absolute",
+        inset: 0,
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
+        maskImage: "linear-gradient(to bottom, black 0%, black 60%, transparent 100%)",
+        WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 60%, transparent 100%)",
+        pointerEvents: "none",
+      }} />
+      <div style={{
+        position: "relative",
+        zIndex: 1,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
