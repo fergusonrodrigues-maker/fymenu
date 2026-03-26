@@ -209,6 +209,16 @@ export async function updateCategory(formData: FormData): Promise<void> {
   revalidatePath("/u");
 }
 
+export async function reorderCategories(orderedIds: string[]): Promise<void> {
+  const supabase = await createClient();
+  await Promise.all(
+    orderedIds.map((id, index) =>
+      supabase.from("categories").update({ order_index: index }).eq("id", id)
+    )
+  );
+  revalidatePath("/painel");
+}
+
 export async function deleteCategory(formData: FormData): Promise<void> {
   const supabase = await createClient();
 

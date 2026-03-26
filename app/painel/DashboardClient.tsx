@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
-  createCategory, updateCategory, deleteCategory,
+  createCategory, updateCategory, deleteCategory, reorderCategories,
   createProduct,
   addUpsellItem, removeUpsellItem,
   updateUnit,
@@ -491,7 +491,21 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
   const [expandedProductId, setExpandedProductId] = useState<string | null>(null);
   const [newCatType, setNewCatType] = useState<"food" | "drink">("food");
   const [newCatAlcoholic, setNewCatAlcoholic] = useState(false);
-  const productsByCat = categories.reduce<Record<string, Product[]>>((acc, cat) => {
+  const [orderedCats, setOrderedCats] = useState<Category[]>(categories);
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [overIdx, setOverIdx] = useState<number | null>(null);
+
+  useEffect(() => { setOrderedCats(categories); }, [categories]);
+
+  async function handleReorder(from: number, to: number) {
+    const next = [...orderedCats];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    setOrderedCats(next);
+    await reorderCategories(next.map((c) => c.id));
+  }
+
+  const productsByCat = orderedCats.reduce<Record<string, Product[]>>((acc, cat) => {
     acc[cat.id] = products.filter((p) => p.category_id === cat.id);
     return acc;
   }, {});
@@ -537,16 +551,27 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
         </form>
       )}
 
-      {categories.length === 0 && (
+      {orderedCats.length === 0 && (
         <div style={{ textAlign: "center", padding: "40px 0", color: "var(--dash-text-subtle)", fontSize: 14 }}>Crie sua primeira categoria acima!</div>
       )}
 
-      {categories.map((cat) => {
+      {orderedCats.map((cat, catIdx) => {
         const isOpen = expandedCat === cat.id;
         const catProducts = productsByCat[cat.id] ?? [];
+        const isDragging = dragIdx === catIdx;
+        const isOver = overIdx === catIdx;
         return (
-          <div key={cat.id} style={{ borderRadius: 16, border: "1px solid var(--dash-card-border)", background: "var(--dash-card-subtle)", overflow: "hidden" }}>
+          <div
+            key={cat.id}
+            draggable
+            onDragStart={() => { setDragIdx(catIdx); }}
+            onDragOver={(e) => { e.preventDefault(); setOverIdx(catIdx); }}
+            onDragEnd={() => { setDragIdx(null); setOverIdx(null); }}
+            onDrop={() => { if (dragIdx !== null && dragIdx !== catIdx) handleReorder(dragIdx, catIdx); setDragIdx(null); setOverIdx(null); }}
+            style={{ borderRadius: 16, border: isOver && !isDragging ? "1px solid rgba(0,255,174,0.5)" : "1px solid var(--dash-card-border)", background: "var(--dash-card-subtle)", overflow: "hidden", opacity: isDragging ? 0.4 : 1, transition: "opacity 0.15s, border 0.15s" }}
+          >
             <div style={{ display: "flex", alignItems: "center", padding: "14px 16px", gap: 10, cursor: "pointer" }} onClick={() => setExpandedCat(isOpen ? null : cat.id)}>
+              <span style={{ color: "var(--dash-text-muted)", fontSize: 16, cursor: "grab", paddingRight: 2, lineHeight: 1 }} onMouseDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>⠿</span>
               <span style={{ color: "var(--dash-text-muted)", fontSize: 11, transform: isOpen ? "rotate(90deg)" : "none", transition: "transform 0.2s", display: "inline-block" }}>▶</span>
               <form action={updateCategory} onClick={(e) => e.stopPropagation()} style={{ flex: 1, display: "flex", gap: 8 }}>
                 <input type="hidden" name="id" value={cat.id} />
