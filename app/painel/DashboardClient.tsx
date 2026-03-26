@@ -8,6 +8,7 @@ import {
   addUpsellItem, removeUpsellItem,
   updateUnit,
   changePlan,
+  updateProfile,
 } from "./actions";
 import ProductRow from "./ProductRow";
 import LogoUploader from "./LogoUploader";
@@ -95,7 +96,7 @@ export default function DashboardClient({
   tvCount: number; stockStats: StockStats;
 }) {
   const router = useRouter();
-  const [modal, setModal] = useState<"analytics" | "cardapio" | "pedidos" | "unidade" | "plano" | "config" | "tv" | "estoque" | null>(null);
+  const [modal, setModal] = useState<"analytics" | "cardapio" | "financeiro" | "unidade" | "plano" | "config" | "tv" | "estoque" | null>(null);
   const open = (m: typeof modal) => setModal(m);
   const close = () => setModal(null);
 
@@ -215,18 +216,18 @@ export default function DashboardClient({
             </div>
           </div>
 
-          {/* Pedidos */}
-          <div className="card" onClick={() => open("pedidos")} style={{
+          {/* Financeiro */}
+          <div className="card" onClick={() => open("financeiro")} style={{
             borderRadius: 20, padding: "20px 18px",
             background: "var(--dash-card)",
             border: "1px solid var(--dash-card-border)",
             cursor: "pointer", minHeight: 140,
             display: "flex", flexDirection: "column", justifyContent: "space-between",
           }}>
-            <div style={{ fontSize: 28 }}>🛒</div>
+            <div style={{ fontSize: 28 }}>💰</div>
             <div>
-              <div style={{ color: "var(--dash-text)", fontSize: 16, fontWeight: 800, marginBottom: 4 }}>Pedidos</div>
-              <div style={{ color: "var(--dash-text-muted)", fontSize: 12 }}>{analytics.orders} hoje</div>
+              <div style={{ color: "var(--dash-text)", fontSize: 16, fontWeight: 800, marginBottom: 4 }}>Financeiro</div>
+              <div style={{ color: "var(--dash-text-muted)", fontSize: 12 }}>{analytics.orders} pedido{analytics.orders !== 1 ? "s" : ""} hoje</div>
             </div>
           </div>
 
@@ -346,14 +347,14 @@ export default function DashboardClient({
         />
       </Modal>
 
-      {/* Pedidos */}
-      <Modal open={modal === "pedidos"} onClose={close} title="Pedidos">
-        <PedidosModal unit={unit} />
+      {/* Financeiro */}
+      <Modal open={modal === "financeiro"} onClose={close} title="Financeiro">
+        <FinanceiroModal unit={unit} analytics={analytics} />
       </Modal>
 
       {/* Unidade */}
       <Modal open={modal === "unidade"} onClose={close} title="Unidade">
-        <UnidadeModal unit={unit} onClose={close} />
+        <UnidadeModal unit={unit} isPro={isPro} onClose={close} />
       </Modal>
 
       {/* Modo TV */}
@@ -417,8 +418,10 @@ function AnalyticsModal({ analytics, unit }: { analytics: any; unit: Unit | null
 function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
   unit: Unit | null; categories: Category[]; products: Product[]; upsellItems: any[]; onClose: () => void;
 }) {
-  const [expandedCat, setExpandedCat] = useState<string | null>(categories[0]?.id ?? null);
+  const [expandedCat, setExpandedCat] = useState<string | null>(null);
   const [expandedProductId, setExpandedProductId] = useState<string | null>(null);
+  const [newCatType, setNewCatType] = useState<"food" | "drink">("food");
+  const [newCatAlcoholic, setNewCatAlcoholic] = useState(false);
   const productsByCat = categories.reduce<Record<string, Product[]>>((acc, cat) => {
     acc[cat.id] = products.filter((p) => p.category_id === cat.id);
     return acc;
@@ -436,10 +439,32 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
 
       {/* Nova categoria */}
       {unit && (
-        <form action={createCategory} style={{ display: "flex", gap: 8 }}>
+        <form action={createCategory} style={{ display: "flex", flexDirection: "column", gap: 8, padding: "12px 14px", borderRadius: 14, border: "1px solid var(--dash-input-border)", background: "var(--dash-card)" }}>
           <input type="hidden" name="unit_id" value={unit.id} />
-          <input name="name" placeholder="+ Nova categoria" required style={{ ...inp, flex: 1 }} />
-          <button type="submit" style={{ padding: "11px 18px", borderRadius: 12, border: "none", background: "rgba(0,255,174,0.15)", color: "#00ffae", fontSize: 14, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>Criar</button>
+          <input type="hidden" name="category_type" value={newCatType} />
+          <input type="hidden" name="is_alcoholic" value={String(newCatType === "drink" && newCatAlcoholic)} />
+          <div style={{ display: "flex", gap: 8 }}>
+            <input name="name" placeholder="Nome da categoria" required style={{ ...inp, flex: 1 }} />
+            <button type="submit" style={{ padding: "11px 18px", borderRadius: 12, border: "none", background: "rgba(0,255,174,0.15)", color: "#00ffae", fontSize: 14, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>Criar</button>
+          </div>
+          {/* Tipo */}
+          <div style={{ display: "flex", gap: 6 }}>
+            {(["food", "drink"] as const).map((t) => (
+              <button key={t} type="button" onClick={() => { setNewCatType(t); if (t === "food") setNewCatAlcoholic(false); }}
+                style={{ flex: 1, padding: "7px 0", borderRadius: 10, border: "none", fontSize: 12, fontWeight: 600, cursor: "pointer",
+                  background: newCatType === t ? "rgba(0,255,174,0.15)" : "var(--dash-link-bg)",
+                  color: newCatType === t ? "#00ffae" : "var(--dash-text-muted)" }}>
+                {t === "food" ? "🍽️ Comida" : "🥤 Bebida"}
+              </button>
+            ))}
+          </div>
+          {/* +18 (só para bebida) */}
+          {newCatType === "drink" && (
+            <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 13, color: "var(--dash-text-muted)", padding: "6px 0" }}>
+              <input type="checkbox" checked={newCatAlcoholic} onChange={(e) => setNewCatAlcoholic(e.target.checked)} style={{ width: 16, height: 16, accentColor: "#f87171" }} />
+              <span>🔞 Bebida alcoólica (restrita a +18)</span>
+            </label>
+          )}
         </form>
       )}
 
@@ -548,23 +573,42 @@ function NewProductFormInline({ categoryId, anyProductExpanded, onOpen }: { cate
   );
 }
 
-// ─── Pedidos Modal ────────────────────────────────────────────────────────────
-function PedidosModal({ unit }: { unit: Unit | null }) {
+// ─── Financeiro Modal ─────────────────────────────────────────────────────────
+function FinanceiroModal({ unit, analytics }: { unit: Unit | null; analytics: { views: number; clicks: number; orders: number } }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingTop: 8 }}>
-      <div style={{ borderRadius: 16, padding: "18px 20px", background: "var(--dash-card)", border: "1px solid var(--dash-card-border)" }}>
-        <div style={{ fontSize: 24, marginBottom: 8 }}>💬</div>
-        <div style={{ color: "var(--dash-text)", fontSize: 16, fontWeight: 700, marginBottom: 4 }}>WhatsApp</div>
-        <div style={{ color: "var(--dash-text-muted)", fontSize: 13, marginBottom: 16 }}>Os pedidos são enviados automaticamente para o WhatsApp cadastrado na unidade com mensagem estruturada e tracking.</div>
-        <div style={{ color: "var(--dash-text-dim)", fontSize: 13 }}>WhatsApp atual: <span style={{ color: "var(--dash-text)" }}>{unit?.whatsapp ?? "Não configurado"}</span></div>
+      {/* Resumo rápido */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+        {[
+          { label: "Pedidos hoje", value: analytics.orders, color: "#00ffae" },
+          { label: "Visitas hoje", value: analytics.views, color: "#60a5fa" },
+        ].map((s) => (
+          <div key={s.label} style={{ borderRadius: 14, padding: "14px 16px", background: "var(--dash-card)", border: "1px solid var(--dash-card-border)", textAlign: "center" }}>
+            <div style={{ color: s.color, fontSize: 26, fontWeight: 900, lineHeight: 1 }}>{s.value}</div>
+            <div style={{ color: "var(--dash-text-muted)", fontSize: 11, marginTop: 4 }}>{s.label}</div>
+          </div>
+        ))}
       </div>
+      {/* Link relatórios completos */}
+      <a href="/painel/relatorios" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderRadius: 16, background: "rgba(0,255,174,0.06)", border: "1px solid rgba(0,255,174,0.15)", textDecoration: "none" }}>
+        <div>
+          <div style={{ color: "var(--dash-text)", fontSize: 15, fontWeight: 700 }}>📊 Relatórios completos</div>
+          <div style={{ color: "var(--dash-text-muted)", fontSize: 13, marginTop: 2 }}>Faturamento, métodos de pagamento, produtos mais vendidos</div>
+        </div>
+        <span style={{ color: "#00ffae", fontSize: 18 }}>→</span>
+      </a>
+      {/* WhatsApp */}
       <div style={{ borderRadius: 16, padding: "18px 20px", background: "var(--dash-card)", border: "1px solid var(--dash-card-border)" }}>
-        <div style={{ fontSize: 24, marginBottom: 8 }}>🛵</div>
-        <div style={{ color: "var(--dash-text)", fontSize: 16, fontWeight: 700, marginBottom: 4 }}>iFood</div>
-        <div style={{ color: "var(--dash-text-muted)", fontSize: 13 }}>Redireciona o cliente para o seu perfil no iFood. Configure na aba Unidade.</div>
+        <div style={{ fontSize: 22, marginBottom: 8 }}>💬</div>
+        <div style={{ color: "var(--dash-text)", fontSize: 15, fontWeight: 700, marginBottom: 4 }}>WhatsApp</div>
+        <div style={{ color: "var(--dash-text-muted)", fontSize: 13, marginBottom: 10 }}>Pedidos enviados automaticamente para o WhatsApp da unidade.</div>
+        <div style={{ color: "var(--dash-text-dim)", fontSize: 13 }}>Número atual: <span style={{ color: unit?.whatsapp ? "var(--dash-text)" : "#f87171" }}>{unit?.whatsapp ?? "Não configurado"}</span></div>
       </div>
-      <div style={{ borderRadius: 14, padding: "14px 16px", background: "rgba(255,180,0,0.06)", border: "1px solid rgba(255,180,0,0.15)" }}>
-        <div style={{ color: "#fbbf24", fontSize: 13 }}>💡 Configure o WhatsApp e as redes sociais na seção <strong>Unidade</strong> para ativar o recebimento de pedidos.</div>
+      {/* iFood */}
+      <div style={{ borderRadius: 16, padding: "18px 20px", background: "var(--dash-card)", border: "1px solid var(--dash-card-border)" }}>
+        <div style={{ fontSize: 22, marginBottom: 8 }}>🛵</div>
+        <div style={{ color: "var(--dash-text)", fontSize: 15, fontWeight: 700, marginBottom: 4 }}>iFood / Delivery</div>
+        <div style={{ color: "var(--dash-text-muted)", fontSize: 13 }}>Configure o link da plataforma na seção Unidade.</div>
       </div>
     </div>
   );
@@ -593,8 +637,9 @@ function CopyLinkRow({ label, url }: { label: string; url: string }) {
 }
 
 // ─── Unidade Modal ────────────────────────────────────────────────────────────
-function UnidadeModal({ unit, onClose }: { unit: Unit | null; onClose: () => void }) {
+function UnidadeModal({ unit, isPro, onClose }: { unit: Unit | null; isPro: boolean; onClose: () => void }) {
   const [isPublished, setIsPublished] = useState(unit?.is_published ?? false);
+  const [showNewUnit, setShowNewUnit] = useState(false);
 
   if (!unit) return <div style={{ color: "var(--dash-text-muted)", paddingTop: 16 }}>Nenhuma unidade encontrada.</div>;
   const origin = typeof window !== "undefined" ? window.location.origin : "";
@@ -651,6 +696,47 @@ function UnidadeModal({ unit, onClose }: { unit: Unit | null; onClose: () => voi
 
         <button type="submit" style={{ marginTop: 8, padding: "14px", borderRadius: 14, border: "none", background: "rgba(0,255,174,0.15)", color: "#00ffae", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>Salvar unidade</button>
       </form>
+
+      {/* ── Nova Unidade ── */}
+      <div style={{ marginTop: 8, borderTop: "1px solid var(--dash-separator)", paddingTop: 16 }}>
+        {!showNewUnit ? (
+          <button onClick={() => setShowNewUnit(true)} style={{ width: "100%", padding: "13px", borderRadius: 14, border: "1px dashed var(--dash-btn-border)", background: "transparent", color: "var(--dash-text-muted)", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
+            + Nova Unidade
+          </button>
+        ) : isPro ? (
+          <div style={{ borderRadius: 14, padding: "16px", border: "1px solid var(--dash-input-border)", background: "var(--dash-card)" }}>
+            <div style={{ color: "var(--dash-text)", fontSize: 14, fontWeight: 700, marginBottom: 12 }}>Nova Unidade</div>
+            <form action={async (fd) => {
+              const { createClient: cc } = await import("@/lib/supabase/client");
+              const supabase = cc();
+              const { data: { user } } = await supabase.auth.getUser();
+              if (!user) return;
+              const { data: rest } = await supabase.from("restaurants").select("id").eq("owner_id", user.id).single();
+              if (!rest) return;
+              await supabase.from("units").insert({ restaurant_id: rest.id, name: String(fd.get("name")), slug: String(fd.get("slug")) });
+              setShowNewUnit(false);
+              window.location.reload();
+            }} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <input name="name" placeholder="Nome da unidade" required style={inp} />
+              <input name="slug" placeholder="slug (ex: unidade-centro)" required style={inp} />
+              <div style={{ display: "flex", gap: 8 }}>
+                <button type="button" onClick={() => setShowNewUnit(false)} style={{ flex: 1, padding: "11px", borderRadius: 12, border: "1px solid var(--dash-btn-border)", background: "transparent", color: "var(--dash-text-dim)", fontSize: 13, cursor: "pointer" }}>Cancelar</button>
+                <button type="submit" style={{ flex: 1, padding: "11px", borderRadius: 12, border: "none", background: "rgba(0,255,174,0.15)", color: "#00ffae", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Criar</button>
+              </div>
+            </form>
+          </div>
+        ) : (
+          <div style={{ borderRadius: 14, padding: "16px", border: "1px solid rgba(250,204,21,0.2)", background: "rgba(250,204,21,0.04)" }}>
+            <div style={{ color: "#fbbf24", fontSize: 14, fontWeight: 700, marginBottom: 6 }}>⭐ Recurso Pro</div>
+            <div style={{ color: "var(--dash-text-muted)", fontSize: 13, marginBottom: 14, lineHeight: 1.5 }}>
+              Múltiplas unidades estão disponíveis no Plano Pro. Faça upgrade para adicionar novas unidades.
+            </div>
+            <button onClick={() => { setShowNewUnit(false); onClose(); }} style={{ width: "100%", padding: "12px", borderRadius: 12, border: "none", background: "linear-gradient(135deg, #00ffae, #00d9b8)", color: "#000", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>
+              Ver Planos →
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -821,6 +907,66 @@ function EstoqueModal({ unit, stockStats }: { unit: Unit | null; stockStats: Sto
 
 // ─── Config Modal ─────────────────────────────────────────────────────────────
 function ConfigModal({ profile }: { profile: Profile }) {
+  const [view, setView] = useState<"home" | "profile" | "password">("home");
+  const [pwLoading, setPwLoading] = useState(false);
+  const [pwMsg, setPwMsg] = useState<string | null>(null);
+
+  async function handlePasswordChange(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const newPw = String(fd.get("password") ?? "");
+    const confirm = String(fd.get("confirm") ?? "");
+    if (newPw !== confirm) { setPwMsg("Senhas não conferem."); return; }
+    if (newPw.length < 6) { setPwMsg("Mínimo 6 caracteres."); return; }
+    setPwLoading(true);
+    setPwMsg(null);
+    try {
+      const { createClient: cc } = await import("@/lib/supabase/client");
+      const { error } = await cc().auth.updateUser({ password: newPw });
+      if (error) { setPwMsg(error.message); } else { setPwMsg("Senha alterada com sucesso!"); setView("home"); }
+    } finally { setPwLoading(false); }
+  }
+
+  if (view === "profile") return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingTop: 8 }}>
+      <button onClick={() => setView("home")} style={{ background: "none", border: "none", color: "var(--dash-text-muted)", fontSize: 13, cursor: "pointer", textAlign: "left", padding: 0, marginBottom: 4 }}>← Voltar</button>
+      <form action={updateProfile} onSubmit={() => setTimeout(() => setView("home"), 300)} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {[
+          { name: "first_name", label: "Nome", value: profile.first_name ?? "" },
+          { name: "last_name", label: "Sobrenome", value: profile.last_name ?? "" },
+          { name: "phone", label: "Telefone", value: profile.phone ?? "" },
+        ].map((f) => (
+          <div key={f.name}>
+            <div style={{ color: "var(--dash-text-muted)", fontSize: 11, marginBottom: 4 }}>{f.label}</div>
+            <input name={f.name} defaultValue={f.value} style={inp} />
+          </div>
+        ))}
+        <button type="submit" style={{ marginTop: 4, padding: "13px", borderRadius: 12, border: "none", background: "rgba(0,255,174,0.15)", color: "#00ffae", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>Salvar perfil</button>
+      </form>
+    </div>
+  );
+
+  if (view === "password") return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingTop: 8 }}>
+      <button onClick={() => { setView("home"); setPwMsg(null); }} style={{ background: "none", border: "none", color: "var(--dash-text-muted)", fontSize: 13, cursor: "pointer", textAlign: "left", padding: 0, marginBottom: 4 }}>← Voltar</button>
+      <form onSubmit={handlePasswordChange} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {[
+          { name: "password", label: "Nova senha", placeholder: "Mínimo 6 caracteres" },
+          { name: "confirm", label: "Confirmar senha", placeholder: "Digite novamente" },
+        ].map((f) => (
+          <div key={f.name}>
+            <div style={{ color: "var(--dash-text-muted)", fontSize: 11, marginBottom: 4 }}>{f.label}</div>
+            <input type="password" name={f.name} placeholder={f.placeholder} required style={inp} />
+          </div>
+        ))}
+        {pwMsg && <div style={{ fontSize: 13, color: pwMsg.includes("sucesso") ? "#00ffae" : "#f87171", padding: "8px 12px", borderRadius: 8, background: pwMsg.includes("sucesso") ? "rgba(0,255,174,0.08)" : "rgba(248,113,113,0.08)" }}>{pwMsg}</div>}
+        <button type="submit" disabled={pwLoading} style={{ padding: "13px", borderRadius: 12, border: "none", background: "rgba(0,255,174,0.15)", color: "#00ffae", fontSize: 14, fontWeight: 700, cursor: "pointer", opacity: pwLoading ? 0.6 : 1 }}>
+          {pwLoading ? "Alterando..." : "Alterar senha"}
+        </button>
+      </form>
+    </div>
+  );
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingTop: 8 }}>
       <div style={{ borderRadius: 16, padding: "18px 20px", background: "var(--dash-card)", border: "1px solid var(--dash-card-border)" }}>
@@ -829,9 +975,12 @@ function ConfigModal({ profile }: { profile: Profile }) {
         <div style={{ color: "var(--dash-text-muted)", fontSize: 13, marginTop: 4 }}>{profile.email}</div>
         {profile.phone && <div style={{ color: "var(--dash-text-muted)", fontSize: 13, marginTop: 2 }}>{profile.phone}</div>}
       </div>
-      <a href="/auth/reset-password" style={{ display: "block", padding: "14px 20px", borderRadius: 14, background: "var(--dash-card)", border: "1px solid var(--dash-card-border)", color: "var(--dash-text)", fontSize: 14, fontWeight: 600, textDecoration: "none" }}>
+      <button onClick={() => setView("profile")} style={{ padding: "14px 20px", borderRadius: 14, background: "var(--dash-card)", border: "1px solid var(--dash-card-border)", color: "var(--dash-text)", fontSize: 14, fontWeight: 600, cursor: "pointer", textAlign: "left" }}>
+        ✏️ Editar perfil
+      </button>
+      <button onClick={() => setView("password")} style={{ padding: "14px 20px", borderRadius: 14, background: "var(--dash-card)", border: "1px solid var(--dash-card-border)", color: "var(--dash-text)", fontSize: 14, fontWeight: 600, cursor: "pointer", textAlign: "left" }}>
         🔑 Alterar senha
-      </a>
+      </button>
       <form action="/api/auth/signout" method="post">
         <button type="submit" style={{ width: "100%", padding: "14px 20px", borderRadius: 14, border: "none", background: "rgba(255,80,80,0.08)", color: "#f87171", fontSize: 14, fontWeight: 600, cursor: "pointer", textAlign: "left" }}>
           🚪 Sair da conta

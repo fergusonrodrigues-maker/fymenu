@@ -176,10 +176,15 @@ export async function createCategory(formData: FormData): Promise<void> {
 
   const nextOrder = typeof last?.order_index === "number" ? last.order_index + 1 : 0;
 
+  const categoryType = normalizeText(String(formData.get("category_type") ?? "food"));
+  const isAlcoholic = formData.get("is_alcoholic") === "true";
+
   const { error } = await supabase.from("categories").insert({
     unit_id: unitId,
     name,
     order_index: nextOrder,
+    category_type: categoryType || "food",
+    is_alcoholic: isAlcoholic,
   });
 
   if (error) throw new Error(error.message);
@@ -530,6 +535,26 @@ export async function updateProductNutrition(formData: FormData): Promise<void> 
 
   revalidatePath("/painel");
   revalidatePath("/u");
+}
+
+/* ========================= PROFILE ========================= */
+
+export async function updateProfile(formData: FormData): Promise<void> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Não autenticado.");
+
+  const firstName = normalizeText(String(formData.get("first_name") ?? ""));
+  const lastName = normalizeText(String(formData.get("last_name") ?? ""));
+  const phone = normalizeText(String(formData.get("phone") ?? ""));
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ first_name: firstName || null, last_name: lastName || null, phone: phone || null })
+    .eq("id", user.id);
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/painel");
 }
 
 /* ========================= PLAN ========================= */

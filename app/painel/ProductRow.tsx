@@ -3,6 +3,7 @@
 import { useState, useRef, useTransition, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { updateProduct, deleteProduct, updateProductStock, updateProductNutrition, updateProductVariations } from "./actions";
+import { DescribeAIButton } from "./ia/DescribeAIButton";
 
 type Product = {
   id: string;
@@ -49,6 +50,7 @@ export default function ProductRow({
   const [priceType, setPriceType] = useState(product.price_type ?? "fixed");
   const [variations, setVariations] = useState<{ id?: string; name: string; price: number }[]>([]);
   const [variationsLoaded, setVariationsLoaded] = useState(false);
+  const [description, setDescription] = useState(product.description ?? "");
   const [uploading, setUploading] = useState<"thumb" | "video" | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [unlimitedStock, setUnlimitedStock] = useState(product.unlimited !== false);
@@ -136,7 +138,16 @@ export default function ProductRow({
             >
               <input type="hidden" name="id" value={product.id} />
               <input name="name" defaultValue={product.name} placeholder="Nome do produto" style={inputStyle} />
-              <textarea name="description" defaultValue={product.description ?? ""} placeholder="Descrição (opcional)" rows={2} style={{ ...inputStyle, resize: "vertical" }} />
+              <div>
+                <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 4 }}>
+                  <DescribeAIButton
+                    productName={product.name}
+                    currentDescription={description}
+                    onGenerated={(d) => setDescription(d)}
+                  />
+                </div>
+                <textarea name="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Descrição (opcional)" rows={2} style={{ ...inputStyle, resize: "vertical" }} />
+              </div>
               <div style={{ display: "flex", gap: 8 }}>
                 <select
                   name="price_type"
