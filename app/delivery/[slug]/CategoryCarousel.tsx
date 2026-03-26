@@ -149,7 +149,7 @@ export default function CategoryCarousel({
                 overflow: "hidden",
                 cursor: "pointer",
                 transition: "all 0.32s cubic-bezier(0.34,1.56,0.64,1)",
-                opacity: active ? (isHero ? 1 : 0.9) : 0.7,
+                opacity: active ? (isHero ? 1 : 0.9) : 0.85,
                 border: isHero && active
                   ? "1.5px solid #FF6B00"
                   : "1px solid rgba(0,0,0,0.08)",
