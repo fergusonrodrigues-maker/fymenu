@@ -153,7 +153,7 @@ export default function CategoryPillsTop({
       left: 0,
       width: "100%",
       zIndex: 50,
-      background: "linear-gradient(to bottom, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 60%, rgba(255,255,255,0) 100%)",
+      background: "linear-gradient(to bottom, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.15) 60%, rgba(255,255,255,0) 100%)",
       backdropFilter: "blur(16px)",
       WebkitBackdropFilter: "blur(16px)",
       borderBottom: "none",
