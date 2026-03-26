@@ -21,7 +21,7 @@ export default async function WaiterPage() {
 
   const { data: unit } = await supabase
     .from("units")
-    .select("id, name")
+    .select("id, name, slug")
     .eq("restaurant_id", restaurant.id)
     .single();
 
@@ -38,6 +38,7 @@ export default async function WaiterPage() {
     <WaiterClient
       unitId={unit.id}
       unitName={unit.name}
+      unitSlug={unit.slug}
       restaurantName={restaurant.name}
       initialOrders={orders ?? []}
     />

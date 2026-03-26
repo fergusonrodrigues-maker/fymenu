@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { QRCodeSVG } from "qrcode.react";
 import TableCard from "./components/TableCard";
 import EditOrderModal from "./components/EditOrderModal";
 import PDVModal from "./components/PDVModal";
@@ -29,6 +30,7 @@ export type WaiterOrder = {
 interface WaiterClientProps {
   unitId: string;
   unitName: string;
+  unitSlug: string;
   restaurantName: string;
   initialOrders: WaiterOrder[];
 }
@@ -38,6 +40,7 @@ type Tab = "queue" | "tables";
 export default function WaiterClient({
   unitId,
   unitName,
+  unitSlug,
   restaurantName,
   initialOrders,
 }: WaiterClientProps) {
@@ -45,6 +48,7 @@ export default function WaiterClient({
   const [tab, setTab] = useState<Tab>("queue");
   const [editOrder, setEditOrder] = useState<WaiterOrder | null>(null);
   const [pdvOrder, setPdvOrder] = useState<WaiterOrder | null>(null);
+  const [qrOpen, setQrOpen] = useState(false);
   const supabase = createClient();
   const audioCtxRef = useRef<AudioContext | null>(null);
 
@@ -158,6 +162,12 @@ export default function WaiterClient({
                 {readyCount} pronto{readyCount > 1 ? "s" : ""}
               </span>
             )}
+            <button
+              onClick={() => setQrOpen(true)}
+              className="px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold border border-slate-600 transition-colors"
+            >
+              📱 QR Mesa
+            </button>
           </div>
         </div>
 
@@ -262,6 +272,14 @@ export default function WaiterClient({
         />
       )}
 
+      {/* QR Mesa Modal */}
+      {qrOpen && (
+        <QRMesaModal
+          unitSlug={unitSlug}
+          onClose={() => setQrOpen(false)}
+        />
+      )}
+
       {/* PDV Modal */}
       {pdvOrder && (
         <PDVModal
@@ -285,6 +303,55 @@ export default function WaiterClient({
           }}
         />
       )}
+    </div>
+  );
+}
+
+// ─── QR Mesa Modal ──────────────────────────────────────────────────────────
+
+function QRMesaModal({ unitSlug, onClose }: { unitSlug: string; onClose: () => void }) {
+  const [mesa, setMesa] = useState("");
+  const qrUrl = mesa
+    ? `${window.location.origin}/u/${unitSlug}?mesa=${mesa}&mode=presencial`
+    : null;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div className="w-full sm:max-w-sm bg-slate-900 border border-slate-700 rounded-t-2xl sm:rounded-2xl p-6">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-white font-bold text-lg">QR Code da Mesa</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-white text-xl leading-none">✕</button>
+        </div>
+
+        <div className="flex gap-3 mb-5">
+          <input
+            type="number"
+            min={1}
+            value={mesa}
+            onChange={(e) => setMesa(e.target.value)}
+            placeholder="Número da mesa"
+            className="flex-1 px-4 py-3 rounded-xl bg-slate-800 border border-slate-600 text-white placeholder-slate-500 text-base focus:outline-none focus:border-orange-500"
+            autoFocus
+          />
+        </div>
+
+        {qrUrl ? (
+          <div className="flex flex-col items-center gap-3">
+            <div className="bg-white p-4 rounded-xl">
+              <QRCodeSVG value={qrUrl} size={220} />
+            </div>
+            <p className="text-slate-400 text-xs text-center">Mesa {mesa} — cliente escaneia para pedir</p>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center py-8 text-slate-600">
+            <span className="text-4xl mb-2">📱</span>
+            <p className="text-sm">Digite o número da mesa para gerar o QR</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
