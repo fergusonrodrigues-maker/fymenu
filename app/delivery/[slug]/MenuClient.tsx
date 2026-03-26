@@ -164,7 +164,7 @@ export default function MenuClient({
       {/* Conteúdo scrollável */}
       <div
         className="min-h-dvh bg-white"
-        style={{ paddingTop: 68, paddingBottom: 340 }}
+        style={{ paddingTop: 58, paddingBottom: 340 }}
       >
         {/* Categorias em destaque */}
         {featuredCategories.map((cat) => {
@@ -193,7 +193,7 @@ export default function MenuClient({
                 marginBottom: 4,
                 transition: "opacity 0.4s ease",
                 opacity: isActive ? 1 : 0.55,
-                scrollMarginTop: 72,
+                scrollMarginTop: 56,
               }}
             >
               <CategoryCarousel
