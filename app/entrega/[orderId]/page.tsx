@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 
 interface DeliveryInfo {
   id: string;
-  status: "pending" | "in_transit" | "delivered" | "failed";
+  status: "pending" | "in_route" | "delivered" | "cancelled";
   picked_up_at: string | null;
   delivered_at: string | null;
   estimated_minutes: number | null;
@@ -16,9 +16,9 @@ interface DeliveryInfo {
 
 const STATUS_LABELS: Record<string, { label: string; color: string; icon: string }> = {
   pending: { label: "Aguardando coleta", color: "#fbbf24", icon: "⏳" },
-  in_transit: { label: "A caminho!", color: "#00ffae", icon: "🚴" },
+  in_route: { label: "A caminho!", color: "#00ffae", icon: "🚴" },
   delivered: { label: "Entregue!", color: "#00ffae", icon: "✅" },
-  failed: { label: "Entrega falhou", color: "#f87171", icon: "❌" },
+  cancelled: { label: "Entrega cancelada", color: "#f87171", icon: "❌" },
 };
 
 function formatTime(iso: string | null) {
@@ -57,7 +57,7 @@ export default function DeliveryTrackingPage() {
     fetchTracking();
     // Poll every 30 seconds while in transit
     const interval = setInterval(() => {
-      if (delivery?.status === "in_transit" || delivery?.status === "pending") {
+      if (delivery?.status === "in_route" || delivery?.status === "pending") {
         fetchTracking();
       }
     }, 30000);
@@ -112,7 +112,7 @@ export default function DeliveryTrackingPage() {
             }}>
               <div style={{ fontSize: 52, marginBottom: 8 }}>{statusInfo.icon}</div>
               <div style={{ color: statusInfo.color, fontSize: 20, fontWeight: 800, marginBottom: 4 }}>{statusInfo.label}</div>
-              {delivery.status === "in_transit" && delivery.estimated_minutes && (
+              {delivery.status === "in_route" && delivery.estimated_minutes && (
                 <div style={{ color: "#888", fontSize: 14 }}>
                   Previsão: ~{delivery.estimated_minutes} minutos
                 </div>
@@ -156,7 +156,7 @@ export default function DeliveryTrackingPage() {
               <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
                 {[
                   { key: "pending", label: "Pedido aceito", done: true, time: null },
-                  { key: "in_transit", label: "Saiu para entrega", done: delivery.status === "in_transit" || delivery.status === "delivered", time: formatTime(delivery.picked_up_at) },
+                  { key: "in_route", label: "Saiu para entrega", done: delivery.status === "in_route" || delivery.status === "delivered", time: formatTime(delivery.picked_up_at) },
                   { key: "delivered", label: "Entregue", done: delivery.status === "delivered", time: formatTime(delivery.delivered_at) },
                 ].map((step, i, arr) => (
                   <div key={step.key} style={{ display: "flex", gap: 14 }}>
@@ -204,7 +204,7 @@ export default function DeliveryTrackingPage() {
             {lastUpdated && (
               <div style={{ textAlign: "center", color: "#555", fontSize: 11 }}>
                 Atualizado às {formatTime(lastUpdated.toISOString())}
-                {delivery.status === "in_transit" && " · atualiza a cada 30s"}
+                {delivery.status === "in_route" && " · atualiza a cada 30s"}
               </div>
             )}
           </div>

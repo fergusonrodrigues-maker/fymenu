@@ -4,9 +4,13 @@ import { createClient } from "@/lib/supabase/server";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { order_intent_id, employee_id, rating, comment } = body;
+    // Support both camelCase (doc spec) and snake_case
+    const order_id = body.order_id ?? body.orderId;
+    const employee_id = body.employee_id ?? body.employeeId;
+    const { rating, comment } = body;
+    const rated_by = body.rated_by ?? body.ratedBy ?? "Cliente Anônimo";
 
-    if (!order_intent_id || !employee_id || !rating) {
+    if (!order_id || !employee_id || !rating) {
       return NextResponse.json({ error: "Campos obrigatórios ausentes" }, { status: 400 });
     }
 
@@ -16,22 +20,22 @@ export async function POST(req: NextRequest) {
 
     const supabase = await createClient();
 
-    // Verify the order_intent exists
-    const { data: order, error: orderErr } = await supabase
-      .from("order_intents")
+    // Get employee's unit_id
+    const { data: employee, error: empErr } = await supabase
+      .from("employees")
       .select("id, unit_id")
-      .eq("id", order_intent_id)
+      .eq("id", employee_id)
       .single();
 
-    if (orderErr || !order) {
-      return NextResponse.json({ error: "Pedido não encontrado" }, { status: 404 });
+    if (empErr || !employee) {
+      return NextResponse.json({ error: "Funcionário não encontrado" }, { status: 404 });
     }
 
-    // Check for duplicate rating
+    // Check for duplicate rating on same order+employee
     const { data: existing } = await supabase
       .from("employee_ratings")
       .select("id")
-      .eq("order_intent_id", order_intent_id)
+      .eq("order_id", order_id)
       .eq("employee_id", employee_id)
       .maybeSingle();
 
@@ -42,17 +46,19 @@ export async function POST(req: NextRequest) {
     const { data, error } = await supabase
       .from("employee_ratings")
       .insert({
-        order_intent_id,
+        order_id,
         employee_id,
+        unit_id: employee.unit_id,
         rating,
         comment: comment || null,
+        rated_by,
       })
       .select()
       .single();
 
     if (error) throw error;
 
-    return NextResponse.json({ success: true, rating: data });
+    return NextResponse.json({ success: true, message: "Avaliação registrada com sucesso!", rating: data });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
