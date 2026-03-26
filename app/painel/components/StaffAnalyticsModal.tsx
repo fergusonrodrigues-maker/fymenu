@@ -161,7 +161,7 @@ export default function StaffAnalyticsModal({ unitId }: { unitId: string }) {
       return;
     }
 
-    setNewEmployee({ name: "", role: "waiter", phone: "", category_id: "", cpf: "", username: "", password: "" });
+    setNewEmployee({ name: "", role: "waiter", phone: "", category_id: "", cpf: "", username: "", password: "", freelancer_service: "", freelancer_date: "" });
     setShowAddForm(false);
     setSaving(false);
     loadEmployees();
