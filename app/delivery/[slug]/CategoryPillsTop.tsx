@@ -155,6 +155,8 @@ export default function CategoryPillsTop({
       zIndex: 50,
       pointerEvents: "none",
       padding: "10px 0 18px",
+      transform: "translateZ(0)",
+      willChange: "transform",
     }}>
       {/* Camada de blur com degradê — não afeta os pills */}
       <div style={{
