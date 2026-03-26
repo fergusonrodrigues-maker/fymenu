@@ -13,6 +13,7 @@ import {
 import ProductRow from "./ProductRow";
 import LogoUploader from "./LogoUploader";
 import ThemeToggle from "@/components/ThemeToggle";
+import RestaurantOperationsModal from "./components/RestaurantOperationsModal";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 type Restaurant = { id: string; name: string; plan: string; status: string; trial_ends_at: string; whatsapp: string | null; instagram: string | null };
@@ -96,7 +97,7 @@ export default function DashboardClient({
   tvCount: number; stockStats: StockStats;
 }) {
   const router = useRouter();
-  const [modal, setModal] = useState<"analytics" | "cardapio" | "financeiro" | "unidade" | "plano" | "config" | "tv" | "estoque" | null>(null);
+  const [modal, setModal] = useState<"analytics" | "cardapio" | "financeiro" | "unidade" | "plano" | "config" | "tv" | "estoque" | "operacoes" | null>(null);
   const open = (m: typeof modal) => setModal(m);
   const close = () => setModal(null);
 
@@ -326,6 +327,25 @@ export default function DashboardClient({
             </div>
           </div>
 
+          {/* Operações */}
+          <div className="card" onClick={() => open("operacoes")} style={{
+            gridColumn: "span 2",
+            borderRadius: 20, padding: "20px 18px",
+            background: "linear-gradient(135deg, rgba(0,255,174,0.04) 0%, rgba(96,165,250,0.04) 100%)",
+            border: "1px solid rgba(0,255,174,0.15)",
+            cursor: "pointer", minHeight: 100,
+            display: "flex", alignItems: "center", gap: 16,
+          }}>
+            <div style={{ fontSize: 28 }}>🎛️</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ color: "var(--dash-text)", fontSize: 15, fontWeight: 800, marginBottom: 2 }}>Operações</div>
+              <div style={{ color: "var(--dash-text-muted)", fontSize: 12 }}>Cozinha · Garçom · Andamento</div>
+            </div>
+            <div style={{ color: "#00ffae", fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 20, background: "rgba(0,255,174,0.1)", border: "1px solid rgba(0,255,174,0.2)" }}>
+              Realtime
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -375,6 +395,11 @@ export default function DashboardClient({
       {/* Estoque */}
       <Modal open={modal === "estoque"} onClose={close} title="Estoque">
         <EstoqueModal unit={unit} stockStats={stockStats} />
+      </Modal>
+
+      {/* Operações */}
+      <Modal open={modal === "operacoes"} onClose={close} title="Operações">
+        {unit && <RestaurantOperationsModal unitId={unit.id} />}
       </Modal>
     </>
   );
