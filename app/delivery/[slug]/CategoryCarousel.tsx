@@ -149,7 +149,7 @@ export default function CategoryCarousel({
                 opacity: active ? (isHero ? 1 : 0.62) : 0.45,
                 border: isHero && active
                   ? "1.5px solid #FF6B00"
-                  : "1px solid rgba(255,255,255,0.07)",
+                  : "1px solid rgba(0,0,0,0.08)",
                 marginTop: mt,
               }}
             >
@@ -157,7 +157,7 @@ export default function CategoryCarousel({
                 style={{
                   aspectRatio: "9 / 16",
                   position: "relative",
-                  background: "#1a1a1a",
+                  background: "#f0f0f0",
                 }}
               >
                 {thumbUrl && (
@@ -251,8 +251,8 @@ function GhostCard({ width, marginTop }: { width: number; marginTop: number }) {
         width,
         aspectRatio: "9 / 16",
         borderRadius: 10,
-        border: "1px solid rgba(255,255,255,0.05)",
-        background: "rgba(255,255,255,0.02)",
+        border: "1px solid rgba(0,0,0,0.05)",
+        background: "rgba(0,0,0,0.02)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -262,7 +262,7 @@ function GhostCard({ width, marginTop }: { width: number; marginTop: number }) {
       <span
         style={{
           fontSize: 6,
-          color: "rgba(255,255,255,0.1)",
+          color: "rgba(0,0,0,0.15)",
           writingMode: "vertical-rl",
           letterSpacing: "0.1em",
           textTransform: "uppercase",

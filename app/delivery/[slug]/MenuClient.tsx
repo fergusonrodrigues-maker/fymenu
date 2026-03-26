@@ -160,7 +160,7 @@ export default function MenuClient({
 
       {/* Conteúdo scrollável */}
       <div
-        className="min-h-dvh bg-black"
+        className="min-h-dvh bg-white"
         style={{ paddingTop: 64, paddingBottom: 96 }}
       >
         {/* Categorias em destaque */}
