@@ -36,6 +36,19 @@ export async function middleware(request: NextRequest) {
 
   if (isSubdomain) {
     const subdomain = hostname.replace(`.${mainDomain}`, "");
+
+    // ── Employee subdomain: [role]-[username].fymenu.com ─────────────────
+    // e.g. garcom-joao.fymenu.com → /employee-login?subdomain=garcom-joao
+    const EMPLOYEE_ROLES = ["cozinha", "garcom", "entregador", "gerente", "financeiro", "limpeza", "caixa"];
+    const firstSegment = subdomain.split("-")[0].toLowerCase();
+    if (EMPLOYEE_ROLES.includes(firstSegment)) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/employee-login";
+      url.searchParams.set("subdomain", subdomain);
+      return NextResponse.rewrite(url);
+    }
+
+    // ── Restaurant menu subdomain ─────────────────────────────────────────
     let slug = subdomain;
 
     // Resolve custom_domain → slug (allows user-customized subdomains)

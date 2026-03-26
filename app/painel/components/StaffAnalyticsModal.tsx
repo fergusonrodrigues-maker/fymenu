@@ -54,8 +54,9 @@ export default function StaffAnalyticsModal({ unitId }: { unitId: string }) {
   const [delivererStats, setDelivererStats] = useState<DelivererStat[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newEmployee, setNewEmployee] = useState({ name: "", role: "waiter", phone: "", category_id: "" });
+  const [newEmployee, setNewEmployee] = useState({ name: "", role: "waiter", phone: "", category_id: "", cpf: "", username: "", password: "" });
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
 
   const supabase = createClient();
@@ -120,14 +121,31 @@ export default function StaffAnalyticsModal({ unitId }: { unitId: string }) {
   async function saveEmployee() {
     if (!newEmployee.name.trim()) return;
     setSaving(true);
-    await supabase.from("employees").insert({
-      unit_id: unitId,
-      name: newEmployee.name.trim(),
-      role: newEmployee.role,
-      phone: newEmployee.phone.trim() || null,
-      category_id: newEmployee.category_id || null,
+    setSaveError(null);
+
+    const res = await fetch("/api/employees/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        unit_id: unitId,
+        name: newEmployee.name.trim(),
+        role: newEmployee.role,
+        phone: newEmployee.phone.trim() || undefined,
+        cpf: newEmployee.cpf.trim() || undefined,
+        username: newEmployee.username.trim() || undefined,
+        password: newEmployee.password || undefined,
+        category_id: newEmployee.category_id || undefined,
+      }),
     });
-    setNewEmployee({ name: "", role: "waiter", phone: "", category_id: "" });
+    const json = await res.json();
+
+    if (!res.ok) {
+      setSaveError(json.error ?? "Erro ao salvar");
+      setSaving(false);
+      return;
+    }
+
+    setNewEmployee({ name: "", role: "waiter", phone: "", category_id: "", cpf: "", username: "", password: "" });
     setShowAddForm(false);
     setSaving(false);
     loadEmployees();
@@ -194,6 +212,24 @@ export default function StaffAnalyticsModal({ unitId }: { unitId: string }) {
                   value={newEmployee.phone}
                   onChange={(e) => setNewEmployee((p) => ({ ...p, phone: e.target.value }))}
                 />
+                <input
+                  style={inp} placeholder="CPF (opcional)"
+                  value={newEmployee.cpf}
+                  onChange={(e) => setNewEmployee((p) => ({ ...p, cpf: e.target.value }))}
+                />
+                <div style={{ color: "#888", fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px", marginTop: 4 }}>Acesso ao portal (opcional)</div>
+                <input
+                  style={inp} placeholder="Usuário (ex: joao.silva)"
+                  value={newEmployee.username}
+                  onChange={(e) => setNewEmployee((p) => ({ ...p, username: e.target.value }))}
+                  autoComplete="off"
+                />
+                <input
+                  style={inp} type="password" placeholder="Senha"
+                  value={newEmployee.password}
+                  onChange={(e) => setNewEmployee((p) => ({ ...p, password: e.target.value }))}
+                  autoComplete="new-password"
+                />
                 {categories.length > 0 && (
                   <select
                     style={inp}
@@ -203,6 +239,11 @@ export default function StaffAnalyticsModal({ unitId }: { unitId: string }) {
                     <option value="">Sem categoria</option>
                     {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
+                )}
+                {saveError && (
+                  <div style={{ padding: "8px 12px", borderRadius: 8, background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.2)", color: "#f87171", fontSize: 12 }}>
+                    {saveError}
+                  </div>
                 )}
                 <button
                   onClick={saveEmployee}
