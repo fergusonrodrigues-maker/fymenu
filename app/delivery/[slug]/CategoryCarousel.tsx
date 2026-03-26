@@ -102,10 +102,10 @@ export default function CategoryCarousel({
         width: "100%",
         padding: active ? "28px 0 32px" : "8px 0 10px",
         transition: "padding 0.35s ease",
-        cursor: "grab",
+        cursor: active ? "grab" : "default",
       }}
-      onPointerDown={onPointerDown}
-      onPointerUp={onPointerUp}
+      onPointerDown={active ? onPointerDown : undefined}
+      onPointerUp={active ? onPointerUp : undefined}
     >
       <div
         ref={trackRef}
@@ -137,7 +137,8 @@ export default function CategoryCarousel({
             <div
               key={p.id}
               onClick={() => {
-                if (active && idx !== heroIdx) { goTo(idx); return; }
+                if (!active) { onOpen(p, idx); return; }
+                if (idx !== heroIdx) { goTo(idx); return; }
                 onOpen(p, idx);
               }}
               style={{
