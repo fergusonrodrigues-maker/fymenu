@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/* Prevent iOS Safari auto-zoom on focused inputs */
+input, textarea, select {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -428,8 +434,10 @@ html.dark .ui-switch input:checked + .slider:hover {
 }
 
 .btn.secondary {
-  --button-color: #1a1a1a;
-  --highlight-color-hue: 120deg;
+  --button-color: rgba(0, 255, 174, 0.08);
+  --highlight-color-hue: 160deg;
+  border-color: rgba(0, 255, 174, 0.25);
+  color: #00ffae;
 }
 
 /* ===== AI LOADER STYLES ===== */

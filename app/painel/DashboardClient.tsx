@@ -82,7 +82,7 @@ const inp: React.CSSProperties = {
   width: "100%", padding: "11px 14px", borderRadius: 12,
   border: "1px solid var(--dash-input-border)",
   background: "var(--dash-input-bg)",
-  color: "var(--dash-text)", fontSize: 14, boxSizing: "border-box",
+  color: "var(--dash-text)", fontSize: 16, boxSizing: "border-box",
   outline: "none",
 };
 
