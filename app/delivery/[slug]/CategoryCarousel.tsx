@@ -32,6 +32,7 @@ export default function CategoryCarousel({
   const [heroIdx, setHeroIdx] = useState(0);
   const heroIdxRef = useRef(0);
   const dragStartX = useRef(0);
+  const dragStartY = useRef(0);
 
   const list = items ?? [];
 
@@ -80,13 +81,18 @@ export default function CategoryCarousel({
   // touch / mouse drag
   function onPointerDown(e: React.PointerEvent) {
     dragStartX.current = e.clientX;
+    dragStartY.current = e.clientY;
   }
 
   function onPointerUp(e: React.PointerEvent) {
     const dx = e.clientX - dragStartX.current;
-    if (Math.abs(dx) < 8) return;
-    if (dx < -30) goTo(heroIdxRef.current + 1);
-    else if (dx > 30) goTo(heroIdxRef.current - 1);
+    const dy = e.clientY - dragStartY.current;
+    // Ignorar se o gesto foi mais vertical que horizontal
+    if (Math.abs(dy) > Math.abs(dx)) return;
+    // Threshold mais alto para evitar indecisão
+    if (Math.abs(dx) < 40) return;
+    if (dx < -40) goTo(heroIdxRef.current + 1);
+    else if (dx > 40) goTo(heroIdxRef.current - 1);
   }
 
   if (!list.length) return null;
