@@ -100,7 +100,7 @@ export default function CategoryCarousel({
       style={{
         overflow: "hidden",
         width: "100%",
-        padding: active ? "47px 0 55px" : "8px 0 10px",
+        padding: active ? "12px 0 55px" : "8px 0 10px",
         transition: "padding 0.35s ease",
         cursor: active ? "grab" : "default",
         touchAction: "pan-y",
