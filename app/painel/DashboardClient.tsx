@@ -46,9 +46,9 @@ function Modal({ open, onClose, children, title }: { open: boolean; onClose: () 
     >
       <style>{`
         @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
-        @keyframes slideUp { from { transform: translateY(100%) } to { transform: translateY(0) } }
+        @keyframes modalScale { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
         @media (min-width: 640px) {
-          .modal-sheet { border-radius: 24px !important; max-width: 560px !important; margin: auto !important; align-self: center !important; max-height: 85vh !important; }
+          .modal-sheet { border-radius: 24px !important; max-width: 560px !important; margin: auto !important; align-self: center !important; max-height: 85vh !important; transform-origin: center center !important; }
         }
       `}</style>
       <div
@@ -59,7 +59,8 @@ function Modal({ open, onClose, children, title }: { open: boolean; onClose: () 
           borderRadius: "24px 24px 0 0",
           border: "1px solid var(--dash-modal-border)",
           overflow: "hidden", display: "flex", flexDirection: "column",
-          animation: "slideUp 0.3s cubic-bezier(0.32,0.72,0,1)",
+          animation: "modalScale 0.3s cubic-bezier(0.34,1.56,0.64,1)",
+          transformOrigin: "center bottom",
         }}
         onClick={(e) => e.stopPropagation()}
       >
