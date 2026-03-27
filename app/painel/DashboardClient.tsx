@@ -124,8 +124,8 @@ export default function DashboardClient({
         input::placeholder, textarea::placeholder { color: var(--dash-placeholder); }
         .delete-btn {
           position: relative;
-          width: 38px;
-          height: 38px;
+          width: 34px;
+          height: 34px;
           flex-shrink: 0;
           border: none;
           background: rgba(255, 80, 80, 0.12);
@@ -163,60 +163,31 @@ export default function DashboardClient({
         }
         .btn-gradient {
           position: relative;
-          font-weight: 700;
-          height: 38px;
-          border: none;
-          border-radius: 12px;
-          cursor: pointer;
-          transition: 0.4s ease;
-          overflow: hidden;
-          color: white;
-          font-size: 14px;
           display: flex;
-          justify-content: center;
           align-items: center;
+          justify-content: center;
+          gap: 4px;
+          border: none;
+          border-radius: 10px;
+          cursor: pointer;
+          font-weight: 700;
+          color: #000;
+          font-family: inherit;
+          background: linear-gradient(145deg, #00ffae 0%, #00d9ff 50%, #00ffae 100%);
+          background-size: 200% 200%;
+          box-shadow: 0 3px 12px rgba(0,255,174,0.25), inset 0 1px 0 rgba(255,255,255,0.3), inset 0 -2px 0 rgba(0,0,0,0.08);
+          transition: all 0.25s ease;
+          transform: translateY(0);
+          overflow: hidden;
         }
-        .btn-gradient .gradient-bg {
-          height: 100%;
-          width: 350%;
-          background: linear-gradient(to right, #00805a 25%, #00ffae 55%, #00c98a 90%);
-          position: absolute;
-          top: 0;
-          left: 60%;
-          transform: translateX(-50%);
-          z-index: 0;
-          transition: 0.4s ease;
-        }
-        .btn-gradient .btn-text {
-          position: relative;
-          z-index: 1;
-          transition: 0.4s ease 0.3s;
-        }
-        .btn-gradient .btn-text-done {
-          position: absolute;
-          z-index: 1;
-          opacity: 0;
-          transition: 0.4s;
-        }
-        .btn-gradient:hover .gradient-bg {
-          transform: translateX(-40%);
-        }
-        .btn-gradient:focus .gradient-bg {
-          background-size: 200%;
-          background-position: right;
-          transform: translateX(-88%);
-          transition: 1s ease;
-        }
-        .btn-gradient:focus .btn-text {
-          opacity: 0;
-          transition: 0.4s ease;
-        }
-        .btn-gradient:focus .btn-text-done {
-          opacity: 1;
-          transition: 1s ease 0.5s;
+        .btn-gradient:hover {
+          background-position: 100% 50%;
+          box-shadow: 0 5px 20px rgba(0,255,174,0.4), inset 0 1px 0 rgba(255,255,255,0.35), inset 0 -2px 0 rgba(0,0,0,0.06);
+          transform: translateY(-1px);
         }
         .btn-gradient:active {
-          transform: scale(0.96);
+          transform: translateY(1px);
+          box-shadow: 0 1px 4px rgba(0,255,174,0.15), inset 0 2px 4px rgba(0,0,0,0.12);
         }
         .btn-ai {
           position: relative;
@@ -300,12 +271,12 @@ export default function DashboardClient({
           background: linear-gradient(145deg, #7c3aed 0%, #5b21b6 50%, #4c1d95 100%);
         }
         .switch-toggle {
-          --sw-w: 46px;
-          --sw-h: 24px;
+          --sw-w: 36px;
+          --sw-h: 20px;
           --sw-bg: rgb(131, 131, 131);
           --sw-checked-bg: rgb(0, 218, 80);
-          --sw-offset: 3px;
-          --circle-d: 18px;
+          --sw-offset: 2px;
+          --circle-d: 16px;
           --sw-transition: all .2s cubic-bezier(0.27, 0.2, 0.25, 1.51);
           display: inline-block;
           cursor: pointer;
@@ -982,10 +953,8 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
           <input type="hidden" name="is_alcoholic" value="false" />
           <div style={{ display: "flex", gap: 8 }}>
             <input name="name" placeholder="Nome da categoria" required style={{ ...inp, flex: 1, height: 38, padding: "0 12px" }} />
-            <button type="submit" className="btn-gradient" style={{ padding: "0 18px", whiteSpace: "nowrap", minWidth: 70, height: 38, borderRadius: 10 }}>
-              <span className="gradient-bg" />
-              <span className="btn-text">Criar</span>
-              <span className="btn-text-done">✓</span>
+            <button type="submit" className="btn-gradient" style={{ padding: "0 18px", whiteSpace: "nowrap", minWidth: 70, height: 34, borderRadius: 10 }}>
+              Criar
             </button>
           </div>
           {/* Tipo */}
@@ -1048,10 +1017,8 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
               <form action={updateCategory} onClick={(e) => e.stopPropagation()} style={{ flex: 1, display: "flex", gap: 6, alignItems: "center" }}>
                 <input type="hidden" name="id" value={cat.id} />
                 <input name="name" defaultValue={cat.name} style={{ ...inp, flex: 1, fontSize: 14, fontWeight: 800, height: 38, padding: "0 12px" }} />
-                <button type="submit" className="btn-gradient" style={{ padding: "0 14px", height: 38, fontSize: 12, minWidth: 60, borderRadius: 8, flexShrink: 0 }}>
-                  <span className="gradient-bg" />
-                  <span className="btn-text">Salvar</span>
-                  <span className="btn-text-done">✓</span>
+                <button type="submit" className="btn-gradient" style={{ padding: "0 14px", height: 34, fontSize: 12, minWidth: 58, borderRadius: 8, flexShrink: 0 }}>
+                  Salvar
                 </button>
               </form>
               <form action={deleteCategory} onClick={(e) => e.stopPropagation()} onSubmit={(e) => { if (!confirm("Excluir categoria e todos os produtos?")) e.preventDefault(); }}>
