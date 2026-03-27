@@ -97,7 +97,7 @@ export default function ProductRow({
   }
 
   return (
-    <div style={{ border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, marginBottom: 8, overflow: "hidden", background: "rgba(255,255,255,0.03)" }}>
+    <div className="modal-neon-card" style={{ borderRadius: 12, marginBottom: 8, overflow: "hidden", background: "rgba(255,255,255,0.03)" }}>
       {/* Header row */}
       <div onClick={onToggle} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", cursor: "pointer" }}>
         <div style={{ width: 44, height: 44, borderRadius: 8, background: "rgba(255,255,255,0.06)", flexShrink: 0, overflow: "hidden" }}>

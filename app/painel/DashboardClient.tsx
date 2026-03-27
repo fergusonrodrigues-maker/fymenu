@@ -544,6 +544,15 @@ export default function DashboardClient({
         .cat-header-arrow[data-open="false"] {
           transform: rotate(0deg);
         }
+        .modal-neon-card {
+          border: 1px solid var(--dash-card-border) !important;
+          box-shadow: 0 0 12px rgba(0,255,174,0.04), inset 0 1px 0 rgba(255,255,255,0.03);
+          transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .modal-neon-card:hover {
+          border-color: var(--dash-btn-border) !important;
+          box-shadow: 0 0 20px rgba(0,255,174,0.08), inset 0 1px 0 rgba(255,255,255,0.05);
+        }
         .dash-shine {
           background: linear-gradient(to right, var(--dash-text-muted) 0%, var(--dash-text) 10%, var(--dash-text-muted) 20%);
           background-position: 0;
@@ -860,7 +869,7 @@ function AnalyticsModal({ analytics, unit }: { analytics: any; unit: Unit | null
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingTop: 8 }}>
       {stats.map((s) => (
-        <div key={s.label} style={{ borderRadius: 16, padding: "18px 20px", background: "var(--dash-card)", border: "1px solid var(--dash-card-border)", display: "flex", alignItems: "center", gap: 16 }}>
+        <div key={s.label} className="modal-neon-card" style={{ borderRadius: 16, padding: "18px 20px", background: "var(--dash-card)", display: "flex", alignItems: "center", gap: 16 }}>
           <div style={{ fontSize: 28 }}>{s.icon}</div>
           <div style={{ flex: 1 }}>
             <div style={{ color: "var(--dash-text-dim)", fontSize: 12 }}>{s.label}</div>
@@ -869,7 +878,7 @@ function AnalyticsModal({ analytics, unit }: { analytics: any; unit: Unit | null
           </div>
         </div>
       ))}
-      <div style={{ borderRadius: 16, padding: "18px 20px", background: "var(--dash-card)", border: "1px solid var(--dash-card-border)" }}>
+      <div className="modal-neon-card" style={{ borderRadius: 16, padding: "18px 20px", background: "var(--dash-card)" }}>
         <div style={{ color: "var(--dash-text-dim)", fontSize: 12, marginBottom: 4 }}>Taxa de conversão</div>
         <div style={{ color: "var(--dash-text)", fontSize: 32, fontWeight: 900 }}>{conversion}%</div>
         <div style={{ color: "var(--dash-text-subtle)", fontSize: 11 }}>visitas → pedidos</div>
@@ -984,7 +993,7 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
 
       {/* Nova categoria */}
       {unit && (
-        <form action={createCategory} style={{ display: "flex", flexDirection: "column", gap: 8, padding: "12px 14px", borderRadius: 14, border: "1px solid var(--dash-input-border)", background: "var(--dash-card)" }}>
+        <form action={createCategory} className="modal-neon-card" style={{ display: "flex", flexDirection: "column", gap: 8, padding: "12px 14px", borderRadius: 14, background: "var(--dash-card)" }}>
           <input type="hidden" name="unit_id" value={unit.id} />
           <input type="hidden" name="category_type" value={newCatType} />
           <input type="hidden" name="is_alcoholic" value="false" />
@@ -1030,9 +1039,10 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
             onDragOver={(e) => { e.preventDefault(); setOverIdx(catIdx); }}
             onDragEnd={() => { if (dragIdx !== null && overIdx !== null) handleReorder(dragIdx, overIdx); setDragIdx(null); setOverIdx(null); }}
             onDrop={() => { if (dragIdx !== null) handleReorder(dragIdx, catIdx); setDragIdx(null); setOverIdx(null); }}
+            className={overIdx === catIdx ? "" : "modal-neon-card"}
             style={{
               borderRadius: 16,
-              border: overIdx === catIdx ? "2px solid #FF6B00" : "1px solid var(--dash-card-border)",
+              border: overIdx === catIdx ? "2px solid #FF6B00" : undefined,
               background: dragIdx === catIdx ? "var(--dash-card-hover, rgba(255,255,255,0.08))" : "var(--dash-card-subtle)",
               overflow: "hidden",
               opacity: dragIdx === catIdx ? 0.7 : 1,
@@ -1598,7 +1608,7 @@ function PlanoModal({ restaurant, trialDays, onUpgrade, onClose }: { restaurant:
 function EstoqueModal({ unit, stockStats }: { unit: Unit | null; stockStats: StockStats }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingTop: 8 }}>
-      <div style={{ borderRadius: 16, padding: "20px", background: "var(--dash-card)", border: "1px solid var(--dash-card-border)", textAlign: "center" }}>
+      <div className="modal-neon-card" style={{ borderRadius: 16, padding: "20px", background: "var(--dash-card)", textAlign: "center" }}>
         <div style={{ fontSize: 40, marginBottom: 12 }}>📦</div>
         <div style={{ display: "flex", justifyContent: "center", gap: 12, marginBottom: 12 }}>
           <div style={{ textAlign: "center" }}>
@@ -1616,7 +1626,7 @@ function EstoqueModal({ unit, stockStats }: { unit: Unit | null; stockStats: Sto
           Gerenciar estoque →
         </a>
       </div>
-      <div style={{ borderRadius: 14, padding: "14px 16px", background: "var(--dash-card-subtle)", border: "1px solid var(--dash-card-border)" }}>
+      <div className="modal-neon-card" style={{ borderRadius: 14, padding: "14px 16px", background: "var(--dash-card-subtle)" }}>
         <div style={{ color: "var(--dash-text-muted)", fontSize: 13 }}>📊 Ajuste estoque · Registre movimentações · Configure alertas</div>
       </div>
     </div>
@@ -1689,7 +1699,7 @@ function ConfigModal({ profile, restaurant }: { profile: Profile; restaurant: Re
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingTop: 8 }}>
-      <div style={{ borderRadius: 16, padding: "18px 20px", background: "var(--dash-card)", border: "1px solid var(--dash-card-border)" }}>
+      <div className="modal-neon-card" style={{ borderRadius: 16, padding: "18px 20px", background: "var(--dash-card)" }}>
         <div style={{ color: "var(--dash-text-muted)", fontSize: 12, marginBottom: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.4px" }}>Conta</div>
         <div className="dash-gradient-text" style={{ fontSize: 16, fontWeight: 700 }}>{[profile.first_name, profile.last_name].filter(Boolean).join(" ") || "Sem nome"}</div>
         <div style={{ color: "var(--dash-text-muted)", fontSize: 13, marginTop: 4 }}>{profile.email}</div>
@@ -1706,10 +1716,10 @@ function ConfigModal({ profile, restaurant }: { profile: Profile; restaurant: Re
           </div>
         </div>
       </div>
-      <button onClick={() => setView("profile")} style={{ padding: "14px 20px", borderRadius: 14, background: "var(--dash-card)", border: "1px solid var(--dash-card-border)", color: "var(--dash-text)", fontSize: 14, fontWeight: 600, cursor: "pointer", textAlign: "left" }}>
+      <button onClick={() => setView("profile")} className="modal-neon-card" style={{ padding: "14px 20px", borderRadius: 14, background: "var(--dash-card)", color: "var(--dash-text)", fontSize: 14, fontWeight: 600, cursor: "pointer", textAlign: "left" }}>
         ✏️ Editar perfil
       </button>
-      <button onClick={() => setView("password")} style={{ padding: "14px 20px", borderRadius: 14, background: "var(--dash-card)", border: "1px solid var(--dash-card-border)", color: "var(--dash-text)", fontSize: 14, fontWeight: 600, cursor: "pointer", textAlign: "left" }}>
+      <button onClick={() => setView("password")} className="modal-neon-card" style={{ padding: "14px 20px", borderRadius: 14, background: "var(--dash-card)", color: "var(--dash-text)", fontSize: 14, fontWeight: 600, cursor: "pointer", textAlign: "left" }}>
         🔑 Alterar senha
       </button>
       <form action="/api/auth/signout" method="post">
