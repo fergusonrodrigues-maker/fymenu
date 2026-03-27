@@ -230,38 +230,67 @@ export default function ProductModal({
           className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 pt-4"
           style={{ zIndex: 10 }}
         >
+          {/* Close — esquerda */}
           <button
             onClick={handleClose}
             className="flex items-center justify-center"
             style={{
-              width: 34, height: 34, borderRadius: "50%",
-              background: "rgba(255,255,255,0.1)",
-              border: "0.5px solid rgba(255,255,255,0.15)",
-              cursor: "pointer", color: "#fff", fontSize: 14, fontWeight: 700,
+              width: 36, height: 36, borderRadius: "50%",
+              background: "rgba(0,0,0,0.45)",
+              backdropFilter: "blur(12px)",
+              WebkitBackdropFilter: "blur(12px)",
+              border: "0.5px solid rgba(255,255,255,0.12)",
+              cursor: "pointer",
             }}
             aria-label="Fechar"
           >
-            ✕
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M1 1L13 13M13 1L1 13" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
+            </svg>
           </button>
 
+          {/* Indicador numérico — centro */}
           {total > 1 && (
-            <div className="flex items-center" style={{ gap: 5 }}>
-              {allProducts.map((_, i) => (
-                <div
-                  key={i}
-                  style={{
-                    width: i === currentIndex ? 6 : 5,
-                    height: i === currentIndex ? 6 : 5,
-                    borderRadius: "50%",
-                    background: i === currentIndex ? "#FF6B00" : "rgba(255,255,255,0.25)",
-                    transition: "all 0.2s",
-                  }}
-                />
-              ))}
-            </div>
+            <span style={{
+              fontSize: 13,
+              fontWeight: 600,
+              color: "rgba(255,255,255,0.7)",
+              letterSpacing: "0.02em",
+              position: "absolute",
+              left: "50%",
+              transform: "translateX(-50%)",
+            }}>
+              <span style={{ color: "#FF6B00", fontWeight: 700 }}>{currentIndex + 1}</span>
+              <span style={{ color: "rgba(255,255,255,0.35)", margin: "0 2px" }}>/</span>
+              {total}
+            </span>
           )}
 
-          <div style={{ width: 34 }} />
+          {/* Heart — direita */}
+          <button
+            onClick={() => {
+              if (currentProduct && typeof window !== "undefined") {
+                window.dispatchEvent(new CustomEvent("fy:track", {
+                  detail: { event: "product_favorite", product_id: currentProduct.id, category_id: currentProduct.category_id },
+                }));
+              }
+            }}
+            className="flex items-center justify-center"
+            style={{
+              width: 36, height: 36, borderRadius: "50%",
+              background: "rgba(0,0,0,0.45)",
+              backdropFilter: "blur(12px)",
+              WebkitBackdropFilter: "blur(12px)",
+              border: "0.5px solid rgba(255,255,255,0.12)",
+              cursor: "pointer",
+            }}
+            aria-label="Favoritar"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+              stroke="rgba(255,255,255,0.8)" strokeWidth="1.5" fill="none" />
+            </svg>
+          </button>
         </div>
 
         {/* Info + CTA */}
@@ -269,27 +298,27 @@ export default function ProductModal({
           className="absolute inset-x-0 bottom-0"
           style={{ zIndex: 5, padding: "0 16px 18px" }}
         >
-          <p style={{ color: "#fff", fontSize: 15, fontWeight: 500, lineHeight: 1.2, margin: "0 0 4px" }}>
+          <p style={{ color: "#fff", fontSize: 15, fontWeight: 500, lineHeight: 1.2, margin: "0 0 4px", textAlign: "center" }}>
             {currentProduct.name}
           </p>
 
           {currentProduct.description && (
             <div className="fy-desc-scroll" style={{ maxHeight: 32, overflowY: "auto", marginBottom: 8 }}>
-              <p style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", lineHeight: 1.45, margin: 0 }}>
+              <p style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", lineHeight: 1.45, margin: 0, textAlign: "center" }}>
                 {currentProduct.description}
               </p>
             </div>
           )}
 
           {!hasVariations && productBasePrice && (
-            <p style={{ color: "#FF6B00", fontSize: 18, fontWeight: 500, margin: "0 0 12px" }}>
+            <p style={{ color: "#FF6B00", fontSize: 18, fontWeight: 500, margin: "0 0 12px", textAlign: "center" }}>
               {productBasePrice}
             </p>
           )}
 
           {hasVariations && (
             <div style={{ marginBottom: 12 }}>
-              <p style={{ color: "#FF6B00", fontSize: 18, fontWeight: 500, margin: "0 0 10px" }}>
+              <p style={{ color: "#FF6B00", fontSize: 18, fontWeight: 500, margin: "0 0 10px", textAlign: "center" }}>
                 {displayPrice ?? "\u00a0"}
               </p>
               <div style={{ display: "flex", gap: 5 }}>
