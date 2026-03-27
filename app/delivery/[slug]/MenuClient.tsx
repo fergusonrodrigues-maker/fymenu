@@ -119,6 +119,30 @@ export default function MenuClient({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [regularCategories.length]);
 
+  // ── Auto-snap: quando o scroll parar, centraliza a categoria ativa ───────
+  useEffect(() => {
+    let snapTimer: ReturnType<typeof setTimeout> | null = null;
+
+    function onScrollEnd() {
+      if (isScrollingTo.current) return;
+      if (snapTimer) clearTimeout(snapTimer);
+      snapTimer = setTimeout(() => {
+        const el = sectionRefs.current[activeCategoryId];
+        if (el) {
+          isScrollingTo.current = true;
+          el.scrollIntoView({ behavior: "smooth", block: "start" });
+          setTimeout(() => { isScrollingTo.current = false; }, 600);
+        }
+      }, 150);
+    }
+
+    window.addEventListener("scroll", onScrollEnd, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScrollEnd);
+      if (snapTimer) clearTimeout(snapTimer);
+    };
+  }, [activeCategoryId]);
+
   // ── Scroll programático ao clicar num pill ───────────────────────────────
   const scrollToCategory = useCallback((id: string) => {
     isScrollingTo.current = true;
