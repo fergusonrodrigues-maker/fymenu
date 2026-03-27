@@ -605,6 +605,7 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
 }) {
   const [expandedCat, setExpandedCat] = useState<string | null>(null);
   const [expandedProductId, setExpandedProductId] = useState<string | null>(null);
+  const [showAllProducts, setShowAllProducts] = useState<Record<string, boolean>>({});
   const [newCatType, setNewCatType] = useState<"food" | "drink">("food");
   const [orderedCats, setOrderedCats] = useState(categories);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
@@ -753,7 +754,7 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
               transform: overIdx === catIdx && dragIdx !== catIdx ? "scale(1.02)" : "none",
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", padding: "10px 12px", gap: 6, cursor: "pointer" }} onClick={() => setExpandedCat(isOpen ? null : cat.id)}>
+            <div style={{ display: "flex", alignItems: "center", padding: "10px 12px", gap: 6, cursor: "pointer" }} onClick={() => { setExpandedCat(isOpen ? null : cat.id); if (isOpen) setShowAllProducts(prev => ({ ...prev, [cat.id]: false })); }}>
               <span
                 style={{ cursor: "grab", fontSize: 16, color: "var(--dash-text-muted)", opacity: 0.5, userSelect: "none", WebkitUserSelect: "none", touchAction: "none", WebkitTouchCallout: "none", padding: "0 2px", lineHeight: 1, flexShrink: 0, width: 18, textAlign: "center" }}
                 onMouseDown={(e) => e.stopPropagation()}
@@ -786,7 +787,7 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
                 {isOpen && (
                   <>
                     {catProducts.length === 0 && <div style={{ color: "var(--dash-text-subtle)", fontSize: 13, padding: "8px 0" }}>Nenhum produto nesta categoria.</div>}
-                    {catProducts.map((p) => (
+                    {(showAllProducts[cat.id] ? catProducts : catProducts.slice(0, 4)).map((p) => (
                       <ProductRow
                         key={p.id}
                         product={p}
@@ -795,6 +796,26 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
                         onClose={() => setExpandedProductId(null)}
                       />
                     ))}
+                    {catProducts.length > 4 && !showAllProducts[cat.id] && (
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setShowAllProducts(prev => ({ ...prev, [cat.id]: true })); }}
+                        style={{
+                          width: "100%",
+                          padding: "10px 0",
+                          background: "rgba(255,255,255,0.04)",
+                          border: "1px solid rgba(255,255,255,0.08)",
+                          borderRadius: 8,
+                          color: "#00ffae",
+                          fontSize: 13,
+                          fontWeight: 600,
+                          cursor: "pointer",
+                          transition: "all 0.2s",
+                        }}
+                      >
+                        Ver mais {catProducts.length - 4} produto{catProducts.length - 4 !== 1 ? "s" : ""} ↓
+                      </button>
+                    )}
                     <NewProductFormInline
                       categoryId={cat.id}
                       anyProductExpanded={expandedProductId !== null}
