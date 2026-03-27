@@ -312,6 +312,35 @@ export default function DashboardClient({
           font-weight: 700;
           color: transparent;
         }
+        .cat-dropdown-content {
+          transition: all 500ms ease;
+          overflow: hidden;
+        }
+        .cat-dropdown-content[data-open="true"] {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+          max-height: 2000px;
+          padding: 0 12px 12px;
+          margin-top: 0;
+        }
+        .cat-dropdown-content[data-open="false"] {
+          opacity: 0;
+          transform: translateY(-1rem) scale(0.98);
+          max-height: 0;
+          padding: 0 12px;
+          margin-top: -8px;
+          pointer-events: none;
+        }
+        .cat-header-arrow {
+          transition: transform 350ms ease;
+          display: inline-block;
+        }
+        .cat-header-arrow[data-open="true"] {
+          transform: rotate(180deg);
+        }
+        .cat-header-arrow[data-open="false"] {
+          transform: rotate(0deg);
+        }
       `}</style>
 
       <div style={{
@@ -809,7 +838,7 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
                 onTouchEnd={() => onTouchEndDrag()}
                 title="Segurar e arrastar para reordenar"
               >⠿</span>
-              <span style={{ color: "var(--dash-text-muted)", fontSize: 11, transform: isOpen ? "rotate(90deg)" : "none", transition: "transform 0.2s", display: "inline-block" }}>▶</span>
+              <span className="cat-header-arrow" data-open={isOpen ? "true" : "false"} style={{ color: "var(--dash-text-muted)", fontSize: 13 }}>▼</span>
               <form action={updateCategory} onClick={(e) => e.stopPropagation()} style={{ flex: 1, display: "flex", gap: 8 }}>
                 <input type="hidden" name="id" value={cat.id} />
                 <input name="name" defaultValue={cat.name} style={{ ...inp, flex: 1, fontSize: 15, fontWeight: 800 }} />
@@ -827,25 +856,29 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
                 </button>
               </form>
             </div>
-            {isOpen && (
-              <div style={{ padding: "0 12px 12px", display: "flex", flexDirection: "column", gap: 8 }}>
-                {catProducts.length === 0 && <div style={{ color: "var(--dash-text-subtle)", fontSize: 13, padding: "8px 0" }}>Nenhum produto nesta categoria.</div>}
-                {catProducts.map((p) => (
-                  <ProductRow
-                    key={p.id}
-                    product={p}
-                    expanded={expandedProductId === p.id}
-                    onToggle={() => setExpandedProductId(expandedProductId === p.id ? null : p.id)}
-                    onClose={() => setExpandedProductId(null)}
-                  />
-                ))}
-                <NewProductFormInline
-                  categoryId={cat.id}
-                  anyProductExpanded={expandedProductId !== null}
-                  onOpen={() => setExpandedProductId(null)}
-                />
+            <div className="cat-dropdown-content" data-open={isOpen ? "true" : "false"}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {isOpen && (
+                  <>
+                    {catProducts.length === 0 && <div style={{ color: "var(--dash-text-subtle)", fontSize: 13, padding: "8px 0" }}>Nenhum produto nesta categoria.</div>}
+                    {catProducts.map((p) => (
+                      <ProductRow
+                        key={p.id}
+                        product={p}
+                        expanded={expandedProductId === p.id}
+                        onToggle={() => setExpandedProductId(expandedProductId === p.id ? null : p.id)}
+                        onClose={() => setExpandedProductId(null)}
+                      />
+                    ))}
+                    <NewProductFormInline
+                      categoryId={cat.id}
+                      anyProductExpanded={expandedProductId !== null}
+                      onOpen={() => setExpandedProductId(null)}
+                    />
+                  </>
+                )}
               </div>
-            )}
+            </div>
           </div>
         );
       })}
