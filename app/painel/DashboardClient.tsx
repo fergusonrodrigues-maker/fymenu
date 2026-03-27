@@ -761,9 +761,9 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
               transform: overIdx === catIdx && dragIdx !== catIdx ? "scale(1.02)" : "none",
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", padding: "12px 14px", gap: 8, cursor: "pointer" }} onClick={() => setExpandedCat(isOpen ? null : cat.id)}>
+            <div style={{ display: "flex", alignItems: "center", padding: "10px 12px", gap: 6, cursor: "pointer" }} onClick={() => setExpandedCat(isOpen ? null : cat.id)}>
               <span
-                style={{ cursor: "grab", fontSize: 18, color: "var(--dash-text-muted)", opacity: 0.7, userSelect: "none", WebkitUserSelect: "none", touchAction: "none", WebkitTouchCallout: "none", padding: "4px 6px" }}
+                style={{ cursor: "grab", fontSize: 16, color: "var(--dash-text-muted)", opacity: 0.5, userSelect: "none", WebkitUserSelect: "none", touchAction: "none", WebkitTouchCallout: "none", padding: "0 2px", lineHeight: 1, flexShrink: 0, width: 18, textAlign: "center" }}
                 onMouseDown={(e) => e.stopPropagation()}
                 onContextMenu={(e) => e.preventDefault()}
                 onTouchStart={(e) => { e.preventDefault(); onTouchStartDrag(e, catIdx); }}
@@ -771,11 +771,11 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
                 onTouchEnd={() => onTouchEndDrag()}
                 title="Segurar e arrastar para reordenar"
               >⠿</span>
-              <span className="cat-header-arrow" data-open={isOpen ? "true" : "false"} style={{ color: "var(--dash-text-muted)", fontSize: 13 }}>▼</span>
-              <form action={updateCategory} onClick={(e) => e.stopPropagation()} style={{ flex: 1, display: "flex", gap: 8 }}>
+              <span className="cat-header-arrow" data-open={isOpen ? "true" : "false"} style={{ color: "var(--dash-text-muted)", fontSize: 11, flexShrink: 0, width: 14, textAlign: "center", lineHeight: 1 }}>▼</span>
+              <form action={updateCategory} onClick={(e) => e.stopPropagation()} style={{ flex: 1, display: "flex", gap: 6, alignItems: "center" }}>
                 <input type="hidden" name="id" value={cat.id} />
-                <input name="name" defaultValue={cat.name} style={{ ...inp, flex: 1, fontSize: 15, fontWeight: 800 }} />
-                <button type="submit" className="btn-gradient" style={{ padding: "0 14px", height: 38, fontSize: 12, minWidth: 65, borderRadius: 8 }}>
+                <input name="name" defaultValue={cat.name} style={{ ...inp, flex: 1, fontSize: 14, fontWeight: 800, height: 38, padding: "0 12px" }} />
+                <button type="submit" className="btn-gradient" style={{ padding: "0 14px", height: 38, fontSize: 12, minWidth: 60, borderRadius: 8, flexShrink: 0 }}>
                   <span className="gradient-bg" />
                   <span className="btn-text">Salvar</span>
                   <span className="btn-text-done">✓</span>
