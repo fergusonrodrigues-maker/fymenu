@@ -68,7 +68,7 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
       <div style={{
         position: "relative",
         width: isMaximized ? "100%" : "min(96vw, 520px)",
-        height: isMaximized ? "min(50vh, 340px)" : 80,
+        height: isMaximized ? "min(50vh, 340px)" : 86,
         borderRadius: isMaximized ? "28px 28px 0 0" : 24,
         background: "rgba(40,40,40,0.45)",
         backdropFilter: "blur(40px) saturate(1.8)",
@@ -86,7 +86,7 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
         <div style={{
           position: "absolute",
           left: "50%", transform: "translateX(-50%)",
-          top: isMaximized ? -32 : -18,
+          top: isMaximized ? -32 : -12,
           width: isMaximized ? 72 : 80,
           height: isMaximized ? 72 : 80,
           borderRadius: isMaximized ? 20 : 22,
@@ -116,7 +116,7 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
         }}>
           {maps && (
             <a href={maps} target="_blank" rel="noreferrer" style={{
-              width: 52, height: 52, borderRadius: 15,
+              width: 58, height: 58, borderRadius: 16,
               overflow: "hidden", flexShrink: 0,
             }}>
               <img src={ICONS.maps} alt="Maps"
@@ -125,7 +125,7 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
           )}
 
           <div style={{
-            width: 52, height: 52, borderRadius: 15,
+            width: 58, height: 58, borderRadius: 16,
             position: "relative", overflow: "hidden", flexShrink: 0,
           }}>
             <img src={ICONS.unidade} alt=""
@@ -149,7 +149,7 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
 
           {wa && (
             <a href={wa} target="_blank" rel="noreferrer" style={{
-              width: 52, height: 52, borderRadius: 15,
+              width: 58, height: 58, borderRadius: 16,
               overflow: "hidden", flexShrink: 0,
             }}>
               <img src={ICONS.whatsapp} alt="WhatsApp"
@@ -159,7 +159,7 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
 
           {ig && (
             <a href={ig} target="_blank" rel="noreferrer" style={{
-              width: 52, height: 52, borderRadius: 15,
+              width: 58, height: 58, borderRadius: 16,
               overflow: "hidden", flexShrink: 0,
             }}>
               <img src={ICONS.instagram} alt="Instagram"
