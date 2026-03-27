@@ -17,6 +17,8 @@ import RestaurantOperationsModal from "./components/RestaurantOperationsModal";
 import PedidosModal from "./components/PedidosModal";
 import DominioSection from "./components/DominioSection";
 import StaffAnalyticsModal from "./components/StaffAnalyticsModal";
+import dynamic from "next/dynamic";
+const ImportClient = dynamic(() => import("./ia/ImportClient"), { ssr: false });
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 type Restaurant = { id: string; name: string; plan: string; status: string; trial_ends_at: string; whatsapp: string | null; instagram: string | null };
@@ -915,6 +917,7 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
   const [expandedProductId, setExpandedProductId] = useState<string | null>(null);
   const [showAllProducts, setShowAllProducts] = useState<Record<string, boolean>>({});
   const [newCatType, setNewCatType] = useState<"food" | "drink">("food");
+  const [showImport, setShowImport] = useState(false);
   const [orderedCats, setOrderedCats] = useState(categories);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [overIdx, setOverIdx] = useState<number | null>(null);
@@ -1001,10 +1004,17 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
         {unit && (
           <a href={`/delivery/${unit.slug}`} target="_blank" rel="noreferrer" style={{ flex: 1, textAlign: "center", padding: "10px", borderRadius: 12, background: "var(--dash-link-bg)", border: "1px solid var(--dash-card-border)", color: "var(--dash-text-secondary)", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>Ver cardápio ↗</a>
         )}
-        <a href="/painel/ia" className="btn-ai" style={{ flex: 1 }}>
-          ✨ Importar com IA
-        </a>
+        <button type="button" className="btn-ai" style={{ flex: 1 }} onClick={() => setShowImport(!showImport)}>
+          {showImport ? "← Voltar ao cardápio" : "✨ Importar com IA"}
+        </button>
       </div>
+
+      {showImport ? (
+        <div style={{ marginTop: 8 }}>
+          {unit && <ImportClient unitId={unit.id} unitName={unit.name} embedded />}
+        </div>
+      ) : (
+        <>
 
       {/* Nova categoria */}
       {unit && (
@@ -1162,6 +1172,8 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
           </div>
         );
       })}
+        </>
+      )}
     </div>
   );
 }

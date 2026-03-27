@@ -70,7 +70,7 @@ const inp: React.CSSProperties = {
   outline: "none", fontFamily: "inherit",
 };
 
-export default function ImportClient({ unitId, unitName }: { unitId: string; unitName: string }) {
+export default function ImportClient({ unitId, unitName, embedded = false }: { unitId: string; unitName: string; embedded?: boolean }) {
   const router = useRouter();
   const supabase = createClient();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -184,23 +184,29 @@ export default function ImportClient({ unitId, unitName }: { unitId: string; uni
 
   return (
     <div style={{
-      minHeight: "100vh",
-      background: "radial-gradient(ellipse 80% 50% at 50% -10%, rgba(0,255,174,0.07) 0%, transparent 60%), #0a0a0a",
-      fontFamily: "-apple-system, 'SF Pro Display', BlinkMacSystemFont, sans-serif",
+      minHeight: embedded ? "auto" : "100vh",
+      background: embedded ? "transparent" : "radial-gradient(ellipse 80% 50% at 50% -10%, rgba(0,255,174,0.07) 0%, transparent 60%), #0a0a0a",
+      fontFamily: "'Montserrat', -apple-system, 'SF Pro Display', BlinkMacSystemFont, sans-serif",
       color: "#fff",
     }}>
-      <style>{`* { box-sizing: border-box; } input::placeholder, textarea::placeholder { color: rgba(255,255,255,0.25); } option { background: #1a1a1a; }`}</style>
+      {!embedded && (
+        <style>{`* { box-sizing: border-box; } input::placeholder, textarea::placeholder { color: rgba(255,255,255,0.25); } option { background: #1a1a1a; }`}</style>
+      )}
 
-      {/* Header */}
-      <div style={{ padding: "56px 24px 16px", display: "flex", alignItems: "center", gap: 12, borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-        <a href="/painel" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: 10, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(255,255,255,0.6)", textDecoration: "none", fontSize: 18 }}>←</a>
-        <div>
-          <div style={{ color: "#fff", fontSize: 18, fontWeight: 800, letterSpacing: "-0.5px" }}>Importar cardápio com IA</div>
-          <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 12 }}>{unitName}</div>
-        </div>
-      </div>
+      {!embedded && (
+        <>
+          {/* Header */}
+          <div style={{ padding: "56px 24px 16px", display: "flex", alignItems: "center", gap: 12, borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+            <a href="/painel" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: 10, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(255,255,255,0.6)", textDecoration: "none", fontSize: 18 }}>←</a>
+            <div>
+              <div style={{ color: "#fff", fontSize: 18, fontWeight: 800, letterSpacing: "-0.5px" }}>Importar cardápio com IA</div>
+              <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 12 }}>{unitName}</div>
+            </div>
+          </div>
+        </>
+      )}
 
-      <div style={{ maxWidth: 640, margin: "0 auto", padding: "24px 16px 80px" }}>
+      <div style={{ maxWidth: embedded ? "100%" : 640, margin: "0 auto", padding: embedded ? "8px 0 0" : "24px 16px 80px" }}>
 
         {/* STEP: Upload */}
         {step === "upload" && (
@@ -371,8 +377,8 @@ export default function ImportClient({ unitId, unitName }: { unitId: string; uni
               <button onClick={() => { setStep("upload"); setImportData(null); setRawText(""); setSelectedFiles([]); if (fileRef.current) fileRef.current.value = ""; }} style={{ flex: 1, padding: "14px", borderRadius: 14, border: "1px solid rgba(255,255,255,0.10)", background: "transparent", color: "rgba(255,255,255,0.6)", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
                 Nova importação
               </button>
-              <button onClick={() => router.push("/painel")} style={{ flex: 1, padding: "14px", borderRadius: 14, border: "none", background: "linear-gradient(135deg, #6366f1, #4f46e5)", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
-                Ver cardápio
+              <button onClick={() => { if (embedded) { setStep("upload"); setImportData(null); setRawText(""); setSelectedFiles([]); if (fileRef.current) fileRef.current.value = ""; window.location.reload(); } else { router.push("/painel"); } }} style={{ flex: 1, padding: "14px", borderRadius: 14, border: "none", background: "linear-gradient(135deg, #6366f1, #4f46e5)", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
+                {embedded ? "Concluído" : "Ver cardápio"}
               </button>
             </div>
           </div>
