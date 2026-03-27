@@ -26,7 +26,7 @@ function PageLoader({ visible }: { visible: boolean }) {
 }
 
 // ── Dot Reveal Background ─────────────────────────────────────────────────────
-function DotRevealBG() {
+function DotRevealBG({ isDark }: { isDark: boolean }) {
   return (
     <div
       style={{
@@ -36,13 +36,14 @@ function DotRevealBG() {
         zIndex: 0,
       }}
     >
-      <div className="dot-grid" />
+      <div className={isDark ? "dot-grid-dark" : "dot-grid-light"} />
       <div
         style={{
           position: "absolute",
           inset: 0,
-          background:
-            "radial-gradient(circle at 50% 50%, transparent 0%, rgba(0,0,0,0.6) 50%, rgba(0,0,0,0.95) 100%)",
+          background: isDark
+            ? "radial-gradient(circle at 50% 50%, transparent 0%, rgba(0,0,0,0.6) 50%, rgba(0,0,0,0.95) 100%)"
+            : "radial-gradient(circle at 50% 50%, transparent 0%, rgba(250,250,250,0.5) 50%, rgba(250,250,250,0.9) 100%)",
           zIndex: 1,
         }}
       />
@@ -50,8 +51,9 @@ function DotRevealBG() {
         style={{
           position: "absolute",
           inset: 0,
-          background:
-            "linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, transparent 30%, transparent 70%, rgba(0,0,0,0.95) 100%)",
+          background: isDark
+            ? "linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, transparent 30%, transparent 70%, rgba(0,0,0,0.95) 100%)"
+            : "linear-gradient(to bottom, rgba(250,250,250,0.85) 0%, transparent 30%, transparent 70%, rgba(250,250,250,0.9) 100%)",
           zIndex: 2,
         }}
       />
@@ -90,7 +92,7 @@ function AnimatedCounter({ target, suffix = "" }: { target: number; suffix?: str
   }, [target]);
 
   return (
-    <div ref={ref} style={{ fontSize: 48, fontWeight: 900, lineHeight: 1, color: "#fff" }}>
+    <div ref={ref} style={{ fontSize: 48, fontWeight: 900, lineHeight: 1, color: "inherit" }}>
       {count}
       {suffix}
     </div>
@@ -198,6 +200,7 @@ function PricingCard({
 export default function LandingPage() {
   const [loading, setLoading] = useState(true);
   const [heroVisible, setHeroVisible] = useState(false);
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -252,18 +255,100 @@ export default function LandingPage() {
         }
 
         /* ── Dot Grid Background ── */
-        .dot-grid {
+        .dot-grid-dark {
           position: absolute;
           inset: 0;
-          background-image: radial-gradient(rgba(0,255,174,0.15) 1px, transparent 1px);
+          background-image: radial-gradient(rgba(0,255,174,0.25) 1.5px, transparent 1.5px);
           background-size: 24px 24px;
           animation: dotFadeIn 3s ease forwards;
           opacity: 0;
+          filter: drop-shadow(0 0 3px rgba(0,255,174,0.3));
+        }
+        .dot-grid-light {
+          position: absolute;
+          inset: 0;
+          background-image: radial-gradient(rgba(0,60,40,0.18) 1.5px, transparent 1.5px);
+          background-size: 24px 24px;
+          animation: dotFadeIn 3s ease forwards;
+          opacity: 0;
+          filter: drop-shadow(0 0 2px rgba(0,60,40,0.15));
         }
         @keyframes dotFadeIn {
           0% { opacity: 0; }
           100% { opacity: 1; }
         }
+
+        /* ── Light Theme Overrides ── */
+        .landing-light { background: #fafafa !important; color: #111 !important; }
+        .landing-light .fy-nav {
+          background: rgba(255,255,255,0.7) !important;
+          border-color: rgba(0,0,0,0.08) !important;
+        }
+        .landing-light .fy-nav a { color: rgba(0,0,0,0.5) !important; }
+        .landing-light .fy-nav a:hover { color: #000 !important; }
+        .landing-light h1, .landing-light h2 { color: #111 !important; }
+        .landing-light .feature-card {
+          background: rgba(0,0,0,0.02) !important;
+          border-color: rgba(0,0,0,0.06) !important;
+        }
+        .landing-light .feature-card:hover {
+          background: rgba(0,255,174,0.04) !important;
+          border-color: rgba(0,255,174,0.15) !important;
+        }
+        .landing-light .feature-card h3 { color: #111 !important; }
+        .landing-light .feature-card p { color: rgba(0,0,0,0.5) !important; }
+        .landing-light .pricing-card {
+          background: rgba(0,0,0,0.02) !important;
+          border-color: rgba(0,0,0,0.08) !important;
+        }
+        .landing-light .pricing-card:hover {
+          border-color: rgba(0,255,174,0.3) !important;
+        }
+        .landing-light .pricing-highlight {
+          background: rgba(0,255,174,0.04) !important;
+          border-color: rgba(0,255,174,0.25) !important;
+        }
+        .landing-light .btn-outline {
+          border-color: rgba(0,0,0,0.12) !important;
+          color: #333 !important;
+          background: rgba(0,0,0,0.02) !important;
+        }
+        .landing-light .btn-outline:hover {
+          border-color: rgba(0,255,174,0.4) !important;
+          color: #00805a !important;
+        }
+        .landing-light footer { border-color: rgba(0,0,0,0.06) !important; }
+
+        /* ── Theme Toggle ── */
+        .theme-toggle-landing {
+          position: fixed;
+          bottom: 24px;
+          right: 24px;
+          z-index: 100;
+          width: 48px;
+          height: 48px;
+          border-radius: 50%;
+          border: 1px solid rgba(255,255,255,0.12);
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 20px;
+          transition: all 0.3s ease;
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+        }
+        .theme-toggle-dark {
+          background: rgba(255,255,255,0.08);
+          box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+        }
+        .theme-toggle-dark:hover { background: rgba(255,255,255,0.15); }
+        .theme-toggle-light {
+          background: rgba(0,0,0,0.05);
+          border-color: rgba(0,0,0,0.1);
+          box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        }
+        .theme-toggle-light:hover { background: rgba(0,0,0,0.1); }
 
         /* ── Buttons ── */
         .btn-primary {
@@ -442,8 +527,8 @@ export default function LandingPage() {
 
       <PageLoader visible={loading} />
 
-      <div style={{ minHeight: "100vh", position: "relative" }}>
-        <DotRevealBG />
+      <div className={theme === "light" ? "landing-light" : ""} style={{ minHeight: "100vh", position: "relative", background: theme === "light" ? "#fafafa" : "#000", transition: "background 0.5s ease" }}>
+        <DotRevealBG isDark={theme === "dark"} />
 
         {/* ── NAVBAR ── */}
         <nav className="fy-nav">
@@ -472,7 +557,7 @@ export default function LandingPage() {
           }}
         >
           {/* Glow orbs */}
-          <div className="glow-orb" style={{ width: 400, height: 400, background: "rgba(0,255,174,0.08)", top: "20%", left: "10%" }} />
+          <div className="glow-orb" style={{ width: 400, height: 400, background: theme === "dark" ? "rgba(0,255,174,0.08)" : "rgba(0,255,174,0.06)", top: "20%", left: "10%" }} />
           <div className="glow-orb" style={{ width: 300, height: 300, background: "rgba(0,217,255,0.06)", bottom: "20%", right: "10%" }} />
 
           <div
@@ -525,7 +610,7 @@ export default function LandingPage() {
               className="hero-sub"
               style={{
                 fontSize: 20,
-                color: "rgba(255,255,255,0.5)",
+                color: theme === "dark" ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.5)",
                 maxWidth: 560,
                 margin: "0 auto 48px",
                 lineHeight: 1.6,
@@ -588,7 +673,7 @@ export default function LandingPage() {
             ].map((s) => (
               <div key={s.label}>
                 <AnimatedCounter target={s.value} suffix={s.suffix} />
-                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginTop: 8, fontWeight: 600 }}>
+                <div style={{ fontSize: 13, color: theme === "dark" ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.4)", marginTop: 8, fontWeight: 600 }}>
                   {s.label}
                 </div>
               </div>
@@ -764,6 +849,15 @@ export default function LandingPage() {
             © {new Date().getFullYear()} FyMenu — Todos os direitos reservados.
           </div>
         </footer>
+
+        {/* Theme Toggle */}
+        <button
+          className={`theme-toggle-landing ${theme === "dark" ? "theme-toggle-dark" : "theme-toggle-light"}`}
+          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          aria-label="Alternar tema"
+        >
+          {theme === "dark" ? "☀️" : "🌙"}
+        </button>
       </div>
     </>
   );
