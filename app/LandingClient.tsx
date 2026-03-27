@@ -105,11 +105,13 @@ function FeatureCard({
   title,
   desc,
   delay,
+  theme = "dark",
 }: {
   icon: string;
   title: string;
   desc: string;
   delay: number;
+  theme?: "dark" | "light";
 }) {
   const [visible, setVisible] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -143,14 +145,14 @@ function FeatureCard({
         style={{
           fontSize: 20,
           fontWeight: 800,
-          color: "#fff",
+          color: theme === "dark" ? "#fff" : "#222",
           marginBottom: 8,
           letterSpacing: "-0.3px",
         }}
       >
         {title}
       </h3>
-      <p style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{desc}</p>
+      <p style={{ fontSize: 14, color: theme === "dark" ? "rgba(255,255,255,0.5)" : "rgba(34,34,34,0.5)", lineHeight: 1.6 }}>{desc}</p>
     </div>
   );
 }
@@ -162,19 +164,21 @@ function PricingCard({
   features,
   highlight,
   cta,
+  theme = "dark",
 }: {
   name: string;
   price: string;
   features: string[];
   highlight?: boolean;
   cta: string;
+  theme?: "dark" | "light";
 }) {
   return (
     <div
       className={highlight ? "pricing-card pricing-highlight" : "pricing-card"}
     >
       {highlight && <div className="pricing-badge">Popular</div>}
-      <div style={{ fontSize: 14, fontWeight: 700, color: "#00ffae", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 8 }}>
+      <div style={{ fontSize: 14, fontWeight: 700, color: theme === "dark" ? "#00ffae" : "#d51659", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 8 }}>
         {name}
       </div>
       <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginBottom: 24 }}>
@@ -184,7 +188,7 @@ function PricingCard({
       <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 32, flex: 1 }}>
         {features.map((f, i) => (
           <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14, color: "rgba(255,255,255,0.7)" }}>
-            <span style={{ color: "#00ffae", fontSize: 16 }}>✓</span>
+            <span style={{ color: theme === "dark" ? "#00ffae" : "#d51659", fontSize: 16 }}>✓</span>
             {f}
           </div>
         ))}
@@ -258,20 +262,20 @@ export default function LandingPage() {
         .dot-grid-dark {
           position: absolute;
           inset: 0;
-          background-image: radial-gradient(rgba(0,255,174,0.25) 1.5px, transparent 1.5px);
-          background-size: 24px 24px;
+          background-image: radial-gradient(rgba(0,255,174,0.3) 1.5px, transparent 1.5px);
+          background-size: 22px 22px;
           animation: dotFadeIn 3s ease forwards;
           opacity: 0;
-          filter: drop-shadow(0 0 3px rgba(0,255,174,0.3));
+          filter: drop-shadow(0 0 4px rgba(0,255,174,0.35));
         }
         .dot-grid-light {
           position: absolute;
           inset: 0;
-          background-image: radial-gradient(rgba(0,60,40,0.18) 1.5px, transparent 1.5px);
-          background-size: 24px 24px;
+          background-image: radial-gradient(rgba(213,22,89,0.15) 1.5px, transparent 1.5px);
+          background-size: 22px 22px;
           animation: dotFadeIn 3s ease forwards;
           opacity: 0;
-          filter: drop-shadow(0 0 2px rgba(0,60,40,0.15));
+          filter: drop-shadow(0 0 3px rgba(213,22,89,0.2));
         }
         @keyframes dotFadeIn {
           0% { opacity: 0; }
@@ -281,32 +285,53 @@ export default function LandingPage() {
         /* ── Light Theme Overrides ── */
         .landing-light { background: #fafafa !important; color: #111 !important; }
         .landing-light .fy-nav {
-          background: rgba(255,255,255,0.7) !important;
-          border-color: rgba(0,0,0,0.08) !important;
+          background: rgba(255,255,255,0.75) !important;
+          border-color: rgba(213,22,89,0.1) !important;
         }
-        .landing-light .fy-nav a { color: rgba(0,0,0,0.5) !important; }
-        .landing-light .fy-nav a:hover { color: #000 !important; }
+        .landing-light .fy-nav a { color: rgba(34,34,34,0.5) !important; }
+        .landing-light .fy-nav a:hover { color: #222 !important; }
         .landing-light h1, .landing-light h2 { color: #111 !important; }
         .landing-light .feature-card {
-          background: rgba(0,0,0,0.02) !important;
-          border-color: rgba(0,0,0,0.06) !important;
+          background: rgba(0,0,0,0.015);
+          border-color: rgba(213,22,89,0.08);
         }
         .landing-light .feature-card:hover {
-          background: rgba(0,255,174,0.04) !important;
-          border-color: rgba(0,255,174,0.15) !important;
+          border-color: rgba(213,22,89,0.2);
+          background: rgba(213,22,89,0.03);
         }
-        .landing-light .feature-card h3 { color: #111 !important; }
-        .landing-light .feature-card p { color: rgba(0,0,0,0.5) !important; }
         .landing-light .pricing-card {
-          background: rgba(0,0,0,0.02) !important;
-          border-color: rgba(0,0,0,0.08) !important;
+          background: rgba(0,0,0,0.015);
+          border-color: rgba(213,22,89,0.1);
         }
         .landing-light .pricing-card:hover {
-          border-color: rgba(0,255,174,0.3) !important;
+          border-color: rgba(213,22,89,0.25);
         }
         .landing-light .pricing-highlight {
-          background: rgba(0,255,174,0.04) !important;
-          border-color: rgba(0,255,174,0.25) !important;
+          border-color: rgba(213,22,89,0.3);
+          background: rgba(213,22,89,0.03);
+          box-shadow: 0 0 60px rgba(213,22,89,0.06);
+        }
+        .landing-light .pricing-badge {
+          background: linear-gradient(135deg, #d51659, #fe4a2c);
+          color: #fff;
+        }
+        .landing-light .btn-primary {
+          background: linear-gradient(145deg, #d51659 0%, #fe4a2c 100%);
+          box-shadow: 0 4px 20px rgba(213,22,89,0.25), inset 0 1px 0 rgba(255,255,255,0.25), inset 0 -2px 0 rgba(0,0,0,0.1);
+          color: #fff;
+        }
+        .landing-light .btn-primary:hover {
+          box-shadow: 0 8px 32px rgba(213,22,89,0.4), inset 0 1px 0 rgba(255,255,255,0.3);
+        }
+        .landing-light .btn-hero {
+          background: linear-gradient(135deg, #d51659 0%, #fe4a2c 50%, #d51659 100%);
+          background-size: 200% 200%;
+          animation: gradientShift 4s ease infinite;
+          color: #fff;
+          box-shadow: 0 6px 32px rgba(213,22,89,0.3), inset 0 1px 0 rgba(255,255,255,0.3), inset 0 -2px 0 rgba(0,0,0,0.1);
+        }
+        .landing-light .btn-hero:hover {
+          box-shadow: 0 12px 48px rgba(213,22,89,0.45), inset 0 1px 0 rgba(255,255,255,0.35);
         }
         .landing-light .btn-outline {
           border-color: rgba(0,0,0,0.12) !important;
@@ -314,10 +339,23 @@ export default function LandingPage() {
           background: rgba(0,0,0,0.02) !important;
         }
         .landing-light .btn-outline:hover {
-          border-color: rgba(0,255,174,0.4) !important;
-          color: #00805a !important;
+          border-color: rgba(213,22,89,0.35) !important;
+          color: #d51659 !important;
         }
         .landing-light footer { border-color: rgba(0,0,0,0.06) !important; }
+        /* ── Gradient Text ── */
+        .gradient-text-dark {
+          background: linear-gradient(135deg, #00ffae 0%, #00d9ff 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+        }
+        .gradient-text-light {
+          background: linear-gradient(135deg, #d51659 0%, #fe4a2c 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+        }
 
         /* ── Theme Toggle ── */
         .theme-toggle-landing {
@@ -557,8 +595,8 @@ export default function LandingPage() {
           }}
         >
           {/* Glow orbs */}
-          <div className="glow-orb" style={{ width: 400, height: 400, background: theme === "dark" ? "rgba(0,255,174,0.08)" : "rgba(0,255,174,0.06)", top: "20%", left: "10%" }} />
-          <div className="glow-orb" style={{ width: 300, height: 300, background: "rgba(0,217,255,0.06)", bottom: "20%", right: "10%" }} />
+          <div className="glow-orb" style={{ width: 400, height: 400, background: theme === "dark" ? "rgba(0,255,174,0.08)" : "rgba(213,22,89,0.04)", top: "20%", left: "10%" }} />
+          <div className="glow-orb" style={{ width: 300, height: 300, background: theme === "dark" ? "rgba(0,217,255,0.06)" : "rgba(254,74,44,0.04)", bottom: "20%", right: "10%" }} />
 
           <div
             style={{
@@ -572,11 +610,11 @@ export default function LandingPage() {
                 display: "inline-block",
                 padding: "6px 18px",
                 borderRadius: 999,
-                background: "rgba(0,255,174,0.08)",
-                border: "1px solid rgba(0,255,174,0.2)",
+                background: theme === "dark" ? "rgba(0,255,174,0.08)" : "rgba(213,22,89,0.06)",
+                border: theme === "dark" ? "1px solid rgba(0,255,174,0.2)" : "1px solid rgba(213,22,89,0.15)",
                 fontSize: 13,
                 fontWeight: 600,
-                color: "#00ffae",
+                color: theme === "dark" ? "#00ffae" : "#d51659",
                 marginBottom: 32,
               }}
             >
@@ -595,13 +633,7 @@ export default function LandingPage() {
               }}
             >
               Seu cardápio.{" "}
-              <span
-                style={{
-                  background: "linear-gradient(135deg, #00ffae 0%, #00d9ff 100%)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                }}
-              >
+              <span className={theme === "dark" ? "gradient-text-dark" : "gradient-text-light"}>
                 Inteligente.
               </span>
             </h1>
@@ -610,7 +642,7 @@ export default function LandingPage() {
               className="hero-sub"
               style={{
                 fontSize: 20,
-                color: theme === "dark" ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.5)",
+                color: theme === "dark" ? "rgba(255,255,255,0.5)" : "rgba(34,34,34,0.5)",
                 maxWidth: 560,
                 margin: "0 auto 48px",
                 lineHeight: 1.6,
@@ -673,7 +705,7 @@ export default function LandingPage() {
             ].map((s) => (
               <div key={s.label}>
                 <AnimatedCounter target={s.value} suffix={s.suffix} />
-                <div style={{ fontSize: 13, color: theme === "dark" ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.4)", marginTop: 8, fontWeight: 600 }}>
+                <div style={{ fontSize: 13, color: theme === "dark" ? "rgba(255,255,255,0.4)" : "rgba(34,34,34,0.4)", marginTop: 8, fontWeight: 600 }}>
                   {s.label}
                 </div>
               </div>
@@ -700,17 +732,11 @@ export default function LandingPage() {
               }}
             >
               Tudo que seu restaurante{" "}
-              <span
-                style={{
-                  background: "linear-gradient(135deg, #00ffae, #00d9ff)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                }}
-              >
+              <span className={theme === "dark" ? "gradient-text-dark" : "gradient-text-light"}>
                 precisa
               </span>
             </h2>
-            <p style={{ fontSize: 16, color: "rgba(255,255,255,0.4)", maxWidth: 500, margin: "0 auto" }}>
+            <p style={{ fontSize: 16, color: theme === "dark" ? "rgba(255,255,255,0.4)" : "rgba(34,34,34,0.4)", maxWidth: 500, margin: "0 auto" }}>
               Funcionalidades pensadas para maximizar vendas e simplificar operações.
             </p>
           </div>
@@ -725,12 +751,12 @@ export default function LandingPage() {
               gap: 20,
             }}
           >
-            <FeatureCard icon="📱" title="Cardápio 9:16" desc="Design mobile-first com vídeo e swipe. UX estilo reels para engajar clientes." delay={0} />
-            <FeatureCard icon="📊" title="Analytics em tempo real" desc="12 eventos de tracking, tempo de atenção por produto e taxa de conversão." delay={100} />
-            <FeatureCard icon="🤖" title="IA integrada" desc="Geração automática de descrições, sugestões de upsell e análise do cardápio." delay={200} />
-            <FeatureCard icon="📺" title="Modo TV" desc="Autoplay vertical ou horizontal. Ideal para telas no restaurante." delay={300} />
-            <FeatureCard icon="📦" title="Pedidos WhatsApp" desc="Pedido estruturado direto pelo WhatsApp com variações e upsell." delay={400} />
-            <FeatureCard icon="🏭" title="Hub de operações" desc="Cozinha, garçom e comanda digital em tempo real com Supabase Realtime." delay={500} />
+            <FeatureCard icon="📱" title="Cardápio 9:16" desc="Design mobile-first com vídeo e swipe. UX estilo reels para engajar clientes." delay={0} theme={theme} />
+            <FeatureCard icon="📊" title="Analytics em tempo real" desc="12 eventos de tracking, tempo de atenção por produto e taxa de conversão." delay={100} theme={theme} />
+            <FeatureCard icon="🤖" title="IA integrada" desc="Geração automática de descrições, sugestões de upsell e análise do cardápio." delay={200} theme={theme} />
+            <FeatureCard icon="📺" title="Modo TV" desc="Autoplay vertical ou horizontal. Ideal para telas no restaurante." delay={300} theme={theme} />
+            <FeatureCard icon="📦" title="Pedidos WhatsApp" desc="Pedido estruturado direto pelo WhatsApp com variações e upsell." delay={400} theme={theme} />
+            <FeatureCard icon="🏭" title="Hub de operações" desc="Cozinha, garçom e comanda digital em tempo real com Supabase Realtime." delay={500} theme={theme} />
           </div>
         </section>
 
@@ -753,13 +779,7 @@ export default function LandingPage() {
               }}
             >
               Planos simples,{" "}
-              <span
-                style={{
-                  background: "linear-gradient(135deg, #00ffae, #00d9ff)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                }}
-              >
+              <span className={theme === "dark" ? "gradient-text-dark" : "gradient-text-light"}>
                 resultado real
               </span>
             </h2>
@@ -781,6 +801,7 @@ export default function LandingPage() {
               price="R$ 97"
               features={["1 unidade", "Cardápio delivery", "Pedidos WhatsApp", "Analytics básico", "Modo TV"]}
               cta="Começar agora"
+              theme={theme}
             />
             <PricingCard
               name="Pro"
@@ -788,12 +809,14 @@ export default function LandingPage() {
               features={["Múltiplas unidades", "Analytics avançado", "IA integrada", "Relatórios completos", "Hub de operações", "Suporte prioritário"]}
               highlight
               cta="Quero o Pro"
+              theme={theme}
             />
             <PricingCard
               name="Pro+"
               price="R$ 397"
               features={["Tudo do Pro", "PDV integrado", "CRM + WhatsApp", "Comanda digital", "Consultoria IA", "API dedicada"]}
               cta="Fale conosco"
+              theme={theme}
             />
           </div>
         </section>
@@ -807,21 +830,15 @@ export default function LandingPage() {
             zIndex: 1,
           }}
         >
-          <div className="glow-orb" style={{ width: 500, height: 500, background: "rgba(0,255,174,0.06)", top: "50%", left: "50%", transform: "translate(-50%, -50%)" }} />
+          <div className="glow-orb" style={{ width: 500, height: 500, background: theme === "dark" ? "rgba(0,255,174,0.06)" : "rgba(213,22,89,0.04)", top: "50%", left: "50%", transform: "translate(-50%, -50%)" }} />
 
           <h2 style={{ fontSize: 40, fontWeight: 900, letterSpacing: "-1px", marginBottom: 16 }}>
             Pronto pra{" "}
-            <span
-              style={{
-                background: "linear-gradient(135deg, #00ffae, #00d9ff)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-              }}
-            >
+            <span className={theme === "dark" ? "gradient-text-dark" : "gradient-text-light"}>
               vender mais?
             </span>
           </h2>
-          <p style={{ fontSize: 16, color: "rgba(255,255,255,0.4)", maxWidth: 400, margin: "0 auto 40px" }}>
+          <p style={{ fontSize: 16, color: theme === "dark" ? "rgba(255,255,255,0.4)" : "rgba(34,34,34,0.4)", maxWidth: 400, margin: "0 auto 40px" }}>
             Comece grátis por 7 dias. Sem cartão de crédito.
           </p>
           <a href="/cadastro" className="btn-hero">
@@ -840,12 +857,12 @@ export default function LandingPage() {
           }}
         >
           <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 24, flexWrap: "wrap" }}>
-            <span style={{ fontWeight: 900, fontSize: 18, color: "#00ffae" }}>FyMenu</span>
-            <a href="#features" style={{ color: "rgba(255,255,255,0.4)", textDecoration: "none", fontSize: 13 }}>Recursos</a>
-            <a href="#pricing" style={{ color: "rgba(255,255,255,0.4)", textDecoration: "none", fontSize: 13 }}>Planos</a>
-            <a href="/entrar" style={{ color: "rgba(255,255,255,0.4)", textDecoration: "none", fontSize: 13 }}>Entrar</a>
+            <span className={theme === "dark" ? "gradient-text-dark" : "gradient-text-light"} style={{ fontWeight: 900, fontSize: 18 }}>FyMenu</span>
+            <a href="#features" style={{ color: theme === "dark" ? "rgba(255,255,255,0.4)" : "rgba(34,34,34,0.4)", textDecoration: "none", fontSize: 13 }}>Recursos</a>
+            <a href="#pricing" style={{ color: theme === "dark" ? "rgba(255,255,255,0.4)" : "rgba(34,34,34,0.4)", textDecoration: "none", fontSize: 13 }}>Planos</a>
+            <a href="/entrar" style={{ color: theme === "dark" ? "rgba(255,255,255,0.4)" : "rgba(34,34,34,0.4)", textDecoration: "none", fontSize: 13 }}>Entrar</a>
           </div>
-          <div style={{ marginTop: 20, fontSize: 12, color: "rgba(255,255,255,0.2)" }}>
+          <div style={{ marginTop: 20, fontSize: 12, color: theme === "dark" ? "rgba(255,255,255,0.2)" : "rgba(34,34,34,0.2)" }}>
             © {new Date().getFullYear()} FyMenu — Todos os direitos reservados.
           </div>
         </footer>
