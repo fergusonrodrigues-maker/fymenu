@@ -152,7 +152,7 @@ function FeatureCard({
       >
         {title}
       </h3>
-      <p className={theme === "dark" ? "text-shine-dark" : "text-shine-light"} style={{ fontSize: 14, lineHeight: 1.6 }}>{desc}</p>
+      <p style={{ fontSize: 14, color: theme === "dark" ? "rgba(255,255,255,0.45)" : "rgba(34,34,34,0.45)", lineHeight: 1.6 }}>{desc}</p>
     </div>
   );
 }
@@ -183,11 +183,11 @@ function PricingCard({
       </div>
       <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginBottom: 24 }}>
         <span style={{ fontSize: 42, fontWeight: 900, color: theme === "dark" ? "#fff" : "#222" }}>{price}</span>
-        <span className={theme === "dark" ? "text-shine-dark" : "text-shine-light"} style={{ fontSize: 14 }}>/mês</span>
+        <span style={{ fontSize: 14, color: theme === "dark" ? "rgba(255,255,255,0.4)" : "rgba(34,34,34,0.4)" }}>/mês</span>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 32, flex: 1 }}>
         {features.map((f, i) => (
-          <div key={i} className={theme === "dark" ? "text-shine-dark" : "text-shine-light"} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}>
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14, color: theme === "dark" ? "rgba(255,255,255,0.65)" : "rgba(34,34,34,0.65)" }}>
             <span style={{ color: theme === "dark" ? "#00ffae" : "#d51659", fontSize: 16 }}>✓</span>
             {f}
           </div>
@@ -555,43 +555,27 @@ export default function LandingPage() {
 
         /* ── Shine Text Effect ── */
         .text-shine-dark {
-          background: linear-gradient(to right, rgba(255,255,255,0.4) 0%, #fff 10%, rgba(255,255,255,0.4) 20%);
+          background: linear-gradient(to right, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.9) 15%, rgba(255,255,255,0.35) 30%);
           background-position: 0;
-          background-size: 180px;
+          background-size: 400px;
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
-          animation: textShine 3s infinite linear;
+          animation: textShine 6s infinite linear;
         }
         .text-shine-light {
-          background: linear-gradient(to right, rgba(34,34,34,0.4) 0%, #222 10%, rgba(34,34,34,0.4) 20%);
+          background: linear-gradient(to right, rgba(34,34,34,0.35) 0%, rgba(34,34,34,0.85) 15%, rgba(34,34,34,0.35) 30%);
           background-position: 0;
-          background-size: 180px;
+          background-size: 400px;
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
-          animation: textShine 3s infinite linear;
+          animation: textShine 6s infinite linear;
         }
         @keyframes textShine {
           0% { background-position: 0; }
-          60% { background-position: 180px; }
-          100% { background-position: 180px; }
-        }
-        .fy-nav a.shine-dark {
-          background: linear-gradient(to right, rgba(255,255,255,0.4) 0%, #fff 10%, rgba(255,255,255,0.4) 20%) !important;
-          background-size: 180px !important;
-          -webkit-background-clip: text !important;
-          -webkit-text-fill-color: transparent !important;
-          background-clip: text !important;
-          animation: textShine 3s infinite linear !important;
-        }
-        .fy-nav a.shine-light {
-          background: linear-gradient(to right, rgba(34,34,34,0.4) 0%, #222 10%, rgba(34,34,34,0.4) 20%) !important;
-          background-size: 180px !important;
-          -webkit-background-clip: text !important;
-          -webkit-text-fill-color: transparent !important;
-          background-clip: text !important;
-          animation: textShine 3s infinite linear !important;
+          60% { background-position: 400px; }
+          100% { background-position: 400px; }
         }
 
         /* ── Responsive ── */
@@ -616,8 +600,8 @@ export default function LandingPage() {
           <div style={{ fontWeight: 900, fontSize: 18, color: "#00ffae", letterSpacing: "-0.5px" }}>
             FyMenu
           </div>
-          <a href="#features" className={theme === "dark" ? "shine-dark" : "shine-light"}>Recursos</a>
-          <a href="#pricing" className={theme === "dark" ? "shine-dark" : "shine-light"}>Planos</a>
+          <a href="#features">Recursos</a>
+          <a href="#pricing">Planos</a>
           <a href="/painel" className="btn-primary" style={{ width: "auto", padding: "8px 20px", fontSize: 12, borderRadius: 999, fontWeight: 800, color: theme === "dark" ? "#000" : "#fff" }}>
             Entrar
           </a>
@@ -901,11 +885,11 @@ export default function LandingPage() {
         >
           <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 24, flexWrap: "wrap" }}>
             <span className={theme === "dark" ? "gradient-text-dark" : "gradient-text-light"} style={{ fontWeight: 900, fontSize: 18 }}>FyMenu</span>
-            <a href="#features" className={theme === "dark" ? "text-shine-dark" : "text-shine-light"} style={{ textDecoration: "none", fontSize: 13 }}>Recursos</a>
-            <a href="#pricing" className={theme === "dark" ? "text-shine-dark" : "text-shine-light"} style={{ textDecoration: "none", fontSize: 13 }}>Planos</a>
-            <a href="/entrar" className={theme === "dark" ? "text-shine-dark" : "text-shine-light"} style={{ textDecoration: "none", fontSize: 13 }}>Entrar</a>
+            <a href="#features" style={{ color: theme === "dark" ? "rgba(255,255,255,0.4)" : "rgba(34,34,34,0.4)", textDecoration: "none", fontSize: 13 }}>Recursos</a>
+            <a href="#pricing" style={{ color: theme === "dark" ? "rgba(255,255,255,0.4)" : "rgba(34,34,34,0.4)", textDecoration: "none", fontSize: 13 }}>Planos</a>
+            <a href="/entrar" style={{ color: theme === "dark" ? "rgba(255,255,255,0.4)" : "rgba(34,34,34,0.4)", textDecoration: "none", fontSize: 13 }}>Entrar</a>
           </div>
-          <div className={theme === "dark" ? "text-shine-dark" : "text-shine-light"} style={{ marginTop: 20, fontSize: 12 }}>
+          <div style={{ marginTop: 20, fontSize: 12, color: theme === "dark" ? "rgba(255,255,255,0.2)" : "rgba(34,34,34,0.2)" }}>
             © {new Date().getFullYear()} FyMenu — Todos os direitos reservados.
           </div>
         </footer>
