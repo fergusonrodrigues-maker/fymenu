@@ -249,6 +249,56 @@ export default function DashboardClient({
           transform: translateY(1px);
           color: #d4c4f0;
         }
+        .type-toggle-container {
+          display: flex;
+          gap: 0;
+          padding: 3px;
+          background: rgba(255,255,255,0.04);
+          border-radius: 12px;
+          border: 1px solid rgba(255,255,255,0.08);
+          position: relative;
+        }
+        .type-toggle-btn {
+          flex: 1;
+          padding: 9px 0;
+          border-radius: 10px;
+          border: none;
+          font-size: 13px;
+          font-weight: 600;
+          cursor: pointer;
+          position: relative;
+          z-index: 1;
+          transition: color 0.3s ease, text-shadow 0.3s ease;
+          background: transparent;
+        }
+        .type-toggle-btn[data-active="true"] {
+          color: #fff;
+          text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+        .type-toggle-btn[data-active="false"] {
+          color: rgba(255,255,255,0.45);
+        }
+        .type-toggle-btn[data-active="false"]:hover {
+          color: rgba(255,255,255,0.7);
+        }
+        .type-toggle-slider {
+          position: absolute;
+          top: 3px;
+          height: calc(100% - 6px);
+          width: calc(50% - 3px);
+          border-radius: 10px;
+          transition: left 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s ease;
+          z-index: 0;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1), inset 0 -1px 0 rgba(0,0,0,0.15);
+        }
+        .type-toggle-slider[data-type="food"] {
+          left: 3px;
+          background: linear-gradient(145deg, #00c98a 0%, #00805a 50%, #005f3f 100%);
+        }
+        .type-toggle-slider[data-type="drink"] {
+          left: calc(50%);
+          background: linear-gradient(145deg, #7c3aed 0%, #5b21b6 50%, #4c1d95 100%);
+        }
         .switch-toggle {
           --sw-w: 46px;
           --sw-h: 24px;
@@ -939,12 +989,16 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
             </button>
           </div>
           {/* Tipo */}
-          <div style={{ display: "flex", gap: 6 }}>
+          <div className="type-toggle-container">
+            <div className="type-toggle-slider" data-type={newCatType} />
             {(["food", "drink"] as const).map((t) => (
-              <button key={t} type="button" onClick={() => setNewCatType(t)}
-                style={{ flex: 1, padding: "7px 0", borderRadius: 10, border: "none", fontSize: 12, fontWeight: 600, cursor: "pointer",
-                  background: newCatType === t ? "rgba(0,255,174,0.15)" : "var(--dash-link-bg)",
-                  color: newCatType === t ? "#00ffae" : "var(--dash-text-muted)" }}>
+              <button
+                key={t}
+                type="button"
+                className="type-toggle-btn"
+                data-active={newCatType === t ? "true" : "false"}
+                onClick={() => setNewCatType(t)}
+              >
                 {t === "food" ? "🍽️ Pratos" : "🥤 Bebidas"}
               </button>
             ))}
