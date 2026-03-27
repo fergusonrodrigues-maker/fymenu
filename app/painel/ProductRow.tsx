@@ -53,6 +53,7 @@ export default function ProductRow({
   const [variations, setVariations] = useState<{ id?: string; name: string; price: number }[]>([]);
   const [variationsLoaded, setVariationsLoaded] = useState(false);
   const [description, setDescription] = useState(product.description ?? "");
+  const [productName, setProductName] = useState(product.name);
   const [uploading, setUploading] = useState<"thumb" | "video" | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [unlimitedStock, setUnlimitedStock] = useState(product.unlimited !== false);
@@ -167,12 +168,12 @@ export default function ProductRow({
               style={{ padding: "12px 16px 16px", display: "flex", flexDirection: "column", gap: 10 }}
             >
               <input type="hidden" name="id" value={product.id} />
-              <input name="name" defaultValue={product.name} placeholder="Nome do produto" style={inputStyle} />
+              <input name="name" value={productName} onChange={(e) => setProductName(e.target.value)} placeholder="Nome do produto" style={inputStyle} />
               <div style={{ position: "relative" }}>
                 <textarea name="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Descrição (opcional)" rows={3} style={{ ...inputStyle, resize: "vertical", paddingBottom: 44 }} />
                 <div style={{ position: "absolute", bottom: 8, right: 8, zIndex: 2 }}>
                   <DescribeAIButton
-                    productName={product.name}
+                    productName={productName}
                     currentDescription={description}
                     onGenerated={(d) => setDescription(d)}
                     renderButton={(onClick, loading) => (
