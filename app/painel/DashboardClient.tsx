@@ -143,16 +143,16 @@ export default function DashboardClient({
         @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:0.5 } }
         .card:active { transform: scale(0.97); }
         .card { transition: transform 0.15s, background 0.2s, border-color 0.2s; }
-        .card:hover { background: var(--dash-card-hover) !important; border-color: rgba(255,255,255,0.14) !important; }
+        .card:hover { background: rgba(0,255,174,0.03) !important; border-color: rgba(0,255,174,0.25) !important; }
         .dash-dots {
-          position: absolute;
+          position: fixed;
           inset: 0;
-          pointer-events: none;
           z-index: 0;
-          background-image: radial-gradient(circle, var(--dash-dot-color) 1px, transparent 1px);
-          background-size: 28px 28px;
-          mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 30%, transparent 80%);
-          -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 30%, transparent 80%);
+          pointer-events: none;
+          background-image: radial-gradient(rgba(0,255,174,0.25) 1.2px, transparent 1.2px);
+          background-size: 22px 22px;
+          filter: drop-shadow(0 0 4px rgba(0,255,174,0.3));
+          opacity: 0.9;
         }
         .dash-gradient-text {
           background: var(--dash-accent-gradient);
@@ -568,16 +568,16 @@ export default function DashboardClient({
           transform: rotate(0deg);
         }
         .modal-neon-card {
-          border: 1px solid var(--dash-card-border) !important;
-          box-shadow: 0 0 12px rgba(0,255,174,0.04), inset 0 1px 0 rgba(255,255,255,0.03);
+          border: 1px solid rgba(0,255,174,0.15) !important;
+          box-shadow: 0 0 15px rgba(0,255,174,0.06), 0 0 2px rgba(0,255,174,0.1), inset 0 1px 0 rgba(255,255,255,0.04);
           transition: border-color 0.3s ease, box-shadow 0.3s ease;
-          background: rgba(255,255,255,0.03) !important;
-          backdrop-filter: blur(8px);
-          -webkit-backdrop-filter: blur(8px);
+          background: rgba(255,255,255,0.025) !important;
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
         }
         .modal-neon-card:hover {
-          border-color: var(--dash-btn-border) !important;
-          box-shadow: 0 0 20px rgba(0,255,174,0.08), inset 0 1px 0 rgba(255,255,255,0.05);
+          border-color: rgba(0,255,174,0.3) !important;
+          box-shadow: 0 0 25px rgba(0,255,174,0.1), 0 0 4px rgba(0,255,174,0.15), inset 0 1px 0 rgba(255,255,255,0.06);
         }
         .dash-shine {
           background: linear-gradient(to right, var(--dash-text-muted) 0%, var(--dash-text) 10%, var(--dash-text-muted) 20%);
