@@ -230,22 +230,24 @@ export default function DashboardClient({
           cursor: pointer;
           font-size: 13px;
           font-weight: 700;
-          color: #fff;
+          color: #e8dff5;
           text-decoration: none;
-          background: linear-gradient(145deg, #00c98a 0%, #00805a 50%, #005f3f 100%);
-          box-shadow: 0 4px 12px rgba(0,200,138,0.25), inset 0 1px 0 rgba(255,255,255,0.15), inset 0 -2px 0 rgba(0,0,0,0.15);
+          background: linear-gradient(145deg, #7c3aed 0%, #5b21b6 40%, #4c1d95 100%);
+          box-shadow: 0 4px 14px rgba(124,58,237,0.3), inset 0 1px 0 rgba(255,255,255,0.15), inset 0 -2px 0 rgba(0,0,0,0.2);
           transition: all 0.2s ease;
           transform: translateY(0);
         }
         .btn-ai:hover {
-          background: linear-gradient(145deg, #00dfaa 0%, #00a872 50%, #007a52 100%);
-          box-shadow: 0 6px 18px rgba(0,200,138,0.35), inset 0 1px 0 rgba(255,255,255,0.2), inset 0 -2px 0 rgba(0,0,0,0.1);
+          background: linear-gradient(145deg, #8b5cf6 0%, #6d28d9 40%, #5b21b6 100%);
+          box-shadow: 0 6px 20px rgba(139,92,246,0.4), inset 0 1px 0 rgba(255,255,255,0.2), inset 0 -2px 0 rgba(0,0,0,0.15);
           transform: translateY(-1px);
+          color: #fff;
         }
         .btn-ai:active {
-          background: linear-gradient(145deg, #007a52 0%, #005f3f 50%, #004d32 100%);
-          box-shadow: 0 1px 4px rgba(0,200,138,0.15), inset 0 2px 4px rgba(0,0,0,0.2);
+          background: linear-gradient(145deg, #4c1d95 0%, #3b0f7a 40%, #2e0a63 100%);
+          box-shadow: 0 1px 4px rgba(124,58,237,0.15), inset 0 2px 6px rgba(0,0,0,0.3);
           transform: translateY(1px);
+          color: #d4c4f0;
         }
         .cat-dropdown-content {
           transition: all 500ms ease;
