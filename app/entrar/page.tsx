@@ -1,4 +1,4 @@
-﻿import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
 export default async function LoginPage({
@@ -8,7 +8,7 @@ export default async function LoginPage({
 }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  
+
   if (user) {
     redirect("/painel");
   }
@@ -38,29 +38,52 @@ export default async function LoginPage({
   }
 
   return (
-    <main style={{ 
+    <main style={{
       minHeight: "100vh",
-      background: "linear-gradient(135deg, #2c2c2c 0%, #1a1a2e 100%)",
+      background: "#050505",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
       padding: "20px",
-      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+      fontFamily: "'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif",
+      position: "relative",
+      overflow: "hidden",
     }}>
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap');
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        
+
+        .auth-dots {
+          position: fixed;
+          inset: 0;
+          z-index: 0;
+          pointer-events: none;
+          background-image: radial-gradient(rgba(0,255,174,0.25) 1.2px, transparent 1.2px);
+          background-size: 22px 22px;
+          filter: drop-shadow(0 0 3px rgba(0,255,174,0.25));
+          opacity: 0.7;
+        }
+
+        .auth-glow {
+          position: fixed;
+          border-radius: 50%;
+          filter: blur(120px);
+          pointer-events: none;
+          z-index: 0;
+        }
+
         .glass-container {
           position: relative;
+          z-index: 1;
           width: 100%;
           max-width: 420px;
-          backdrop-filter: blur(20px);
-          -webkit-backdrop-filter: blur(20px);
-          background: rgba(255, 255, 255, 0.08);
-          border: 1px solid rgba(255, 255, 255, 0.15);
+          backdrop-filter: blur(24px);
+          -webkit-backdrop-filter: blur(24px);
+          background: rgba(255,255,255,0.03);
+          border: 1px solid rgba(0,255,174,0.12);
           border-radius: 24px;
           padding: 48px 36px;
-          box-shadow: 0 8px 32px rgba(0, 255, 205, 0.1);
+          box-shadow: 0 8px 40px rgba(0,255,174,0.06), inset 0 1px 0 rgba(255,255,255,0.05);
         }
 
         .logo {
@@ -69,25 +92,31 @@ export default async function LoginPage({
           justify-content: center;
           margin-bottom: 32px;
           font-size: 32px;
-          font-weight: 700;
+          font-weight: 900;
           letter-spacing: -1px;
         }
 
-        .logo-fy { color: #00ffcd; }
-        .logo-circle { color: #f84233; }
-        .logo-menu { color: #ffffff; }
+        .logo-gradient {
+          background: linear-gradient(135deg, #00ffae 0%, #00d9ff 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+        }
 
         .title {
           font-size: 28px;
-          font-weight: 600;
-          color: #ffffff;
+          font-weight: 800;
           margin-bottom: 8px;
           text-align: center;
+          background: linear-gradient(135deg, #00ffae 0%, #00d9ff 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
         }
 
         .subtitle {
           font-size: 14px;
-          color: rgba(255, 255, 255, 0.6);
+          color: rgba(255,255,255,0.4);
           text-align: center;
           margin-bottom: 32px;
         }
@@ -98,65 +127,63 @@ export default async function LoginPage({
 
         .form-group label {
           display: block;
-          font-size: 13px;
-          font-weight: 500;
-          color: rgba(255, 255, 255, 0.8);
+          font-size: 12px;
+          font-weight: 600;
+          color: rgba(255,255,255,0.5);
           margin-bottom: 8px;
           text-transform: uppercase;
           letter-spacing: 0.5px;
         }
 
-        .input-wrapper {
-          position: relative;
-        }
-
         .input-wrapper input {
           width: 100%;
           padding: 12px 16px;
-          background: rgba(255, 255, 255, 0.08);
-          border: 1px solid rgba(255, 255, 255, 0.12);
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(0,255,174,0.1);
           border-radius: 12px;
           color: #ffffff;
           font-size: 14px;
+          font-family: inherit;
           transition: all 0.3s ease;
-          backdrop-filter: blur(10px);
         }
 
         .input-wrapper input::placeholder {
-          color: rgba(255, 255, 255, 0.4);
+          color: rgba(255,255,255,0.25);
         }
 
         .input-wrapper input:focus {
           outline: none;
-          background: rgba(255, 255, 255, 0.12);
-          border: 1px solid #00ffcd;
-          box-shadow: 0 0 0 3px rgba(0, 255, 205, 0.1);
+          background: rgba(255,255,255,0.06);
+          border: 1px solid rgba(0,255,174,0.35);
+          box-shadow: 0 0 0 3px rgba(0,255,174,0.08), 0 0 20px rgba(0,255,174,0.05);
         }
 
         .submit-btn {
           width: 100%;
           padding: 14px 24px;
           margin-top: 24px;
-          background: linear-gradient(135deg, #00ffcd 0%, #00d9b8 100%);
+          background: linear-gradient(135deg, #00ffae 0%, #00d9ff 100%);
           border: none;
-          border-radius: 12px;
+          border-radius: 14px;
           color: #000;
           font-size: 15px;
-          font-weight: 600;
+          font-weight: 700;
           cursor: pointer;
           transition: all 0.3s ease;
-          box-shadow: 0 8px 24px rgba(0, 255, 205, 0.3);
-          letter-spacing: 0.5px;
+          box-shadow: 0 4px 20px rgba(0,255,174,0.25), inset 0 1px 0 rgba(255,255,255,0.25), inset 0 -2px 0 rgba(0,0,0,0.08);
+          letter-spacing: 0.3px;
+          font-family: inherit;
+          transform: translateY(0);
         }
 
         .submit-btn:hover {
           transform: translateY(-2px);
-          box-shadow: 0 12px 32px rgba(0, 255, 205, 0.4);
+          box-shadow: 0 8px 32px rgba(0,255,174,0.4), inset 0 1px 0 rgba(255,255,255,0.3);
         }
 
         .submit-btn:active {
-          transform: translateY(0);
-          box-shadow: 0 4px 16px rgba(0, 255, 205, 0.2);
+          transform: translateY(1px);
+          box-shadow: 0 2px 8px rgba(0,255,174,0.15), inset 0 2px 4px rgba(0,0,0,0.12);
         }
 
         .divider {
@@ -171,47 +198,50 @@ export default async function LoginPage({
           content: '';
           flex: 1;
           height: 1px;
-          background: rgba(255, 255, 255, 0.1);
+          background: rgba(0,255,174,0.08);
         }
 
         .divider-text {
-          font-size: 13px;
-          color: rgba(255, 255, 255, 0.5);
+          font-size: 12px;
+          color: rgba(255,255,255,0.3);
           text-transform: uppercase;
-          letter-spacing: 0.5px;
+          letter-spacing: 1px;
         }
 
         .social-btn {
           width: 100%;
           padding: 12px 16px;
-          background: rgba(255, 255, 255, 0.08);
-          border: 1px solid rgba(255, 255, 255, 0.12);
+          background: rgba(255,255,255,0.03);
+          border: 1px solid rgba(0,255,174,0.1);
           border-radius: 12px;
-          color: #ffffff;
+          color: rgba(255,255,255,0.7);
           font-size: 14px;
           cursor: pointer;
           transition: all 0.3s ease;
           margin-bottom: 12px;
-          backdrop-filter: blur(10px);
+          font-family: inherit;
         }
 
         .social-btn:hover {
-          background: rgba(255, 255, 255, 0.12);
-          border: 1px solid rgba(255, 255, 255, 0.2);
+          background: rgba(0,255,174,0.04);
+          border-color: rgba(0,255,174,0.2);
+          color: #fff;
         }
 
         .footer-text {
           text-align: center;
           font-size: 13px;
-          color: rgba(255, 255, 255, 0.6);
+          color: rgba(255,255,255,0.4);
           margin-top: 24px;
         }
 
         .footer-text a {
-          color: #00ffcd;
+          background: linear-gradient(135deg, #00ffae 0%, #00d9ff 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
           text-decoration: none;
-          font-weight: 500;
-          transition: color 0.3s ease;
+          font-weight: 600;
         }
 
         .footer-text a:hover {
@@ -219,8 +249,8 @@ export default async function LoginPage({
         }
 
         .error-message {
-          background: rgba(248, 66, 51, 0.15);
-          border: 1px solid rgba(248, 66, 51, 0.3);
+          background: rgba(248,66,51,0.08);
+          border: 1px solid rgba(248,66,51,0.2);
           color: #ff9999;
           padding: 12px 16px;
           border-radius: 12px;
@@ -229,9 +259,9 @@ export default async function LoginPage({
         }
 
         .success-message {
-          background: rgba(0, 255, 205, 0.15);
-          border: 1px solid rgba(0, 255, 205, 0.3);
-          color: #00ffcd;
+          background: rgba(0,255,174,0.06);
+          border: 1px solid rgba(0,255,174,0.15);
+          color: #00ffae;
           padding: 12px 16px;
           border-radius: 12px;
           font-size: 13px;
@@ -246,10 +276,12 @@ export default async function LoginPage({
 
         .forgot-password a {
           font-size: 13px;
-          color: #00ffcd;
+          background: linear-gradient(135deg, #00ffae 0%, #00d9ff 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
           text-decoration: none;
           font-weight: 500;
-          transition: color 0.3s ease;
         }
 
         .forgot-password a:hover {
@@ -257,9 +289,14 @@ export default async function LoginPage({
         }
       `}</style>
 
+      {/* Dot background + glow */}
+      <div className="auth-dots" />
+      <div className="auth-glow" style={{ width: 400, height: 400, background: "rgba(0,255,174,0.06)", top: "20%", left: "10%" }} />
+      <div className="auth-glow" style={{ width: 300, height: 300, background: "rgba(0,217,255,0.04)", bottom: "20%", right: "10%" }} />
+
       <div className="glass-container">
         <div className="logo">
-          <span className="logo-fy">f</span><span className="logo-fy">y</span><span className="logo-circle">●</span><span className="logo-menu">menu</span>
+          <span className="logo-gradient">FyMenu</span>
         </div>
 
         <h1 className="title">Bem-vindo</h1>
