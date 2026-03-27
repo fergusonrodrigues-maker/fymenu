@@ -249,6 +249,83 @@ export default function DashboardClient({
           transform: translateY(1px);
           color: #d4c4f0;
         }
+        .switch-toggle {
+          --sw-w: 46px;
+          --sw-h: 24px;
+          --sw-bg: rgb(131, 131, 131);
+          --sw-checked-bg: rgb(0, 218, 80);
+          --sw-offset: 3px;
+          --circle-d: 18px;
+          --sw-transition: all .2s cubic-bezier(0.27, 0.2, 0.25, 1.51);
+          display: inline-block;
+          cursor: pointer;
+        }
+        .switch-toggle input { display: none; }
+        .switch-toggle .sw-slider {
+          box-sizing: border-box;
+          width: var(--sw-w);
+          height: var(--sw-h);
+          background: var(--sw-bg);
+          border-radius: 999px;
+          display: flex;
+          align-items: center;
+          position: relative;
+          transition: var(--sw-transition);
+          cursor: pointer;
+        }
+        .switch-toggle .sw-circle {
+          width: var(--circle-d);
+          height: var(--circle-d);
+          background: #fff;
+          border-radius: inherit;
+          box-shadow: 1px 1px 2px rgba(146,146,146,0.45);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: var(--sw-transition);
+          z-index: 1;
+          position: absolute;
+          left: var(--sw-offset);
+        }
+        .switch-toggle .sw-check {
+          width: 10px;
+          color: var(--sw-checked-bg);
+          transform: scale(0);
+          transition: var(--sw-transition);
+          position: absolute;
+        }
+        .switch-toggle .sw-cross {
+          width: 6px;
+          color: var(--sw-bg);
+          transition: var(--sw-transition);
+          position: absolute;
+        }
+        .switch-toggle .sw-slider::before {
+          content: "";
+          position: absolute;
+          width: 9px;
+          height: 3px;
+          left: calc(var(--sw-offset) + 4px);
+          background: #fff;
+          border-radius: 1px;
+          transition: var(--sw-transition);
+        }
+        .switch-toggle input:checked + .sw-slider {
+          background: var(--sw-checked-bg);
+        }
+        .switch-toggle input:checked + .sw-slider .sw-check {
+          transform: scale(1);
+        }
+        .switch-toggle input:checked + .sw-slider .sw-cross {
+          transform: scale(0);
+        }
+        .switch-toggle input:checked + .sw-slider::before {
+          left: calc(100% - 9px - 4px - var(--sw-offset));
+        }
+        .switch-toggle input:checked + .sw-slider .sw-circle {
+          left: calc(100% - var(--circle-d) - var(--sw-offset));
+          box-shadow: -1px 1px 2px rgba(163,163,163,0.45);
+        }
         .ios-checkbox {
           position: relative;
           display: inline-block;

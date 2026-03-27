@@ -97,7 +97,7 @@ export default function ProductRow({
   return (
     <div style={{ border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, marginBottom: 8, overflow: "hidden", background: "rgba(255,255,255,0.03)" }}>
       {/* Header row */}
-      <div onClick={onToggle} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", cursor: "pointer" }}>
+      <div onClick={onToggle} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", cursor: "pointer" }}>
         <div style={{ width: 44, height: 44, borderRadius: 8, background: "rgba(255,255,255,0.06)", flexShrink: 0, overflow: "hidden" }}>
           {thumbnailUrl && <img src={thumbnailUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
         </div>
@@ -108,7 +108,31 @@ export default function ProductRow({
             <StockBadge product={product} />
           </div>
         </div>
-        <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 18 }}>{expanded ? "▲" : "▼"}</span>
+        <label className="switch-toggle" onClick={(e) => e.stopPropagation()}>
+          <input
+            type="checkbox"
+            checked={product.is_active !== false}
+            onChange={async (e) => {
+              const fd = new FormData();
+              fd.set("id", product.id);
+              fd.set("name", product.name);
+              fd.set("is_active", String(e.target.checked));
+              updateProduct(fd);
+            }}
+          />
+          <div className="sw-slider">
+            <div className="sw-circle">
+              <svg className="sw-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              <svg className="sw-cross" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </div>
+          </div>
+        </label>
+        <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 14, flexShrink: 0 }}>{expanded ? "▲" : "▼"}</span>
       </div>
 
       {/* Expanded */}
