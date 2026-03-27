@@ -126,6 +126,7 @@ export default function DashboardClient({
           position: relative;
           width: 38px;
           height: 38px;
+          flex-shrink: 0;
           border: none;
           background: rgba(255, 80, 80, 0.12);
           border-radius: 8px;
@@ -828,7 +829,7 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
               transform: overIdx === catIdx && dragIdx !== catIdx ? "scale(1.02)" : "none",
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", padding: "14px 16px", gap: 10, cursor: "pointer" }} onClick={() => setExpandedCat(isOpen ? null : cat.id)}>
+            <div style={{ display: "flex", alignItems: "center", padding: "12px 14px", gap: 8, cursor: "pointer" }} onClick={() => setExpandedCat(isOpen ? null : cat.id)}>
               <span
                 style={{ cursor: "grab", fontSize: 18, color: "var(--dash-text-muted)", opacity: 0.7, userSelect: "none", WebkitUserSelect: "none", touchAction: "none", WebkitTouchCallout: "none", padding: "4px 6px" }}
                 onMouseDown={(e) => e.stopPropagation()}
@@ -842,7 +843,7 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
               <form action={updateCategory} onClick={(e) => e.stopPropagation()} style={{ flex: 1, display: "flex", gap: 8 }}>
                 <input type="hidden" name="id" value={cat.id} />
                 <input name="name" defaultValue={cat.name} style={{ ...inp, flex: 1, fontSize: 15, fontWeight: 800 }} />
-                <button type="submit" className="btn-gradient" style={{ padding: "0 14px", height: 36, fontSize: 12, minWidth: 70, borderRadius: 10 }}>
+                <button type="submit" className="btn-gradient" style={{ padding: "0 14px", height: 38, fontSize: 12, minWidth: 65, borderRadius: 8 }}>
                   <span className="gradient-bg" />
                   <span className="btn-text">Salvar</span>
                   <span className="btn-text-done">✓</span>
