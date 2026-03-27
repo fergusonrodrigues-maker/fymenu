@@ -281,23 +281,20 @@ export default function DashboardClient({
           transform: none;
         }
         .cat-dropdown-content {
-          transition: all 500ms ease;
-          overflow: hidden;
+          display: grid;
+          transition: grid-template-rows 350ms ease, opacity 250ms ease;
         }
         .cat-dropdown-content[data-open="true"] {
+          grid-template-rows: 1fr;
           opacity: 1;
-          transform: translateY(0) scale(1);
-          max-height: 2000px;
-          padding: 0 12px 12px;
-          margin-top: 0;
         }
         .cat-dropdown-content[data-open="false"] {
+          grid-template-rows: 0fr;
           opacity: 0;
-          transform: translateY(-1rem) scale(0.98);
-          max-height: 0;
-          padding: 0 12px;
-          margin-top: -8px;
           pointer-events: none;
+        }
+        .cat-dropdown-content > div {
+          overflow: hidden;
         }
         .cat-header-arrow {
           transition: transform 350ms ease;
@@ -816,46 +813,47 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
               </form>
             </div>
             <div className="cat-dropdown-content" data-open={isOpen ? "true" : "false"}>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {isOpen && (
-                  <>
-                    {catProducts.length === 0 && <div style={{ color: "var(--dash-text-subtle)", fontSize: 13, padding: "8px 0" }}>Nenhum produto nesta categoria.</div>}
-                    {(showAllProducts[cat.id] ? catProducts : catProducts.slice(0, 4)).map((p) => (
-                      <ProductRow
-                        key={p.id}
-                        product={p}
-                        expanded={expandedProductId === p.id}
-                        onToggle={() => setExpandedProductId(expandedProductId === p.id ? null : p.id)}
-                        onClose={() => setExpandedProductId(null)}
+              <div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: isOpen ? "0 12px 12px" : "0 12px" }}>
+                  {isOpen && (
+                    <>
+                      {catProducts.length === 0 && <div style={{ color: "var(--dash-text-subtle)", fontSize: 13, padding: "8px 0" }}>Nenhum produto nesta categoria.</div>}
+                      {(showAllProducts[cat.id] ? catProducts : catProducts.slice(0, 4)).map((p) => (
+                        <ProductRow
+                          key={p.id}
+                          product={p}
+                          expanded={expandedProductId === p.id}
+                          onToggle={() => setExpandedProductId(expandedProductId === p.id ? null : p.id)}
+                          onClose={() => setExpandedProductId(null)}
+                        />
+                      ))}
+                      {catProducts.length > 4 && !showAllProducts[cat.id] && (
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); setShowAllProducts(prev => ({ ...prev, [cat.id]: true })); }}
+                          style={{
+                            width: "100%",
+                            padding: "10px 0",
+                            background: "rgba(255,255,255,0.04)",
+                            border: "1px solid rgba(255,255,255,0.08)",
+                            borderRadius: 8,
+                            color: "#00ffae",
+                            fontSize: 13,
+                            fontWeight: 600,
+                            cursor: "pointer",
+                          }}
+                        >
+                          Ver mais {catProducts.length - 4} produto{catProducts.length - 4 !== 1 ? "s" : ""} ↓
+                        </button>
+                      )}
+                      <NewProductFormInline
+                        categoryId={cat.id}
+                        anyProductExpanded={expandedProductId !== null}
+                        onOpen={() => setExpandedProductId(null)}
                       />
-                    ))}
-                    {catProducts.length > 4 && !showAllProducts[cat.id] && (
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); setShowAllProducts(prev => ({ ...prev, [cat.id]: true })); }}
-                        style={{
-                          width: "100%",
-                          padding: "10px 0",
-                          background: "rgba(255,255,255,0.04)",
-                          border: "1px solid rgba(255,255,255,0.08)",
-                          borderRadius: 8,
-                          color: "#00ffae",
-                          fontSize: 13,
-                          fontWeight: 600,
-                          cursor: "pointer",
-                          transition: "all 0.2s",
-                        }}
-                      >
-                        Ver mais {catProducts.length - 4} produto{catProducts.length - 4 !== 1 ? "s" : ""} ↓
-                      </button>
-                    )}
-                    <NewProductFormInline
-                      categoryId={cat.id}
-                      anyProductExpanded={expandedProductId !== null}
-                      onOpen={() => setExpandedProductId(null)}
-                    />
-                  </>
-                )}
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           </div>
