@@ -24,7 +24,7 @@ export default async function DashboardPage() {
 
   const { data: categories } = await supabase
     .from("categories")
-    .select("id, name, order_index")
+    .select("id, name, order_index, is_active")
     .eq("unit_id", unit?.id)
     .order("order_index");
 

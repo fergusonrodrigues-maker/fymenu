@@ -22,7 +22,7 @@ import StaffAnalyticsModal from "./components/StaffAnalyticsModal";
 type Restaurant = { id: string; name: string; plan: string; status: string; trial_ends_at: string; whatsapp: string | null; instagram: string | null };
 type Unit = { id: string; name: string; slug: string; custom_domain: string | null; address: string; city: string | null; neighborhood: string | null; whatsapp: string | null; instagram: string | null; logo_url: string | null; maps_url: string | null; delivery_link: string | null; is_published: boolean };
 type StockStats = { low: number; out: number };
-type Category = { id: string; name: string; order_index: number | null };
+type Category = { id: string; name: string; order_index: number | null; is_active?: boolean };
 type Product = { id: string; category_id: string; name: string; description: string | null; price_type: string; base_price: number | null; thumbnail_url: string | null; video_url: string | null; order_index: number | null; is_active: boolean; stock?: number | null; stock_minimum?: number | null; unlimited?: boolean | null; sku?: string | null; allergens?: string[] | null; nutrition?: any; preparation_time?: number | null; is_age_restricted?: boolean | null };
 type Profile = { first_name: string | null; last_name: string | null; phone: string | null; address: string | null; city: string | null; email: string | undefined };
 
@@ -1007,6 +1007,30 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
                   <span className="x-line" />
                 </button>
               </form>
+              <label className="switch-toggle" onClick={(e) => e.stopPropagation()}>
+                <input
+                  type="checkbox"
+                  checked={cat.is_active !== false}
+                  onChange={async (e) => {
+                    const fd = new FormData();
+                    fd.set("id", cat.id);
+                    fd.set("name", cat.name);
+                    fd.set("is_active", String(e.target.checked));
+                    await updateCategory(fd);
+                  }}
+                />
+                <div className="sw-slider">
+                  <div className="sw-circle">
+                    <svg className="sw-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    <svg className="sw-cross" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                  </div>
+                </div>
+              </label>
             </div>
             <div className="cat-dropdown-content" data-open={isOpen ? "true" : "false"}>
               <div>
