@@ -38,7 +38,7 @@ function Modal({ open, onClose, children, title }: { open: boolean; onClose: () 
   return (
     <div style={{
       position: "fixed", inset: 0, zIndex: 100,
-      background: "var(--dash-overlay)", backdropFilter: "blur(12px)",
+      background: "var(--dash-overlay)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)",
       display: "flex", alignItems: "flex-end",
       animation: "fadeIn 0.2s ease",
     }}
@@ -58,6 +58,9 @@ function Modal({ open, onClose, children, title }: { open: boolean; onClose: () 
           background: "var(--dash-modal-bg)",
           borderRadius: "24px 24px 0 0",
           border: "1px solid var(--dash-modal-border)",
+          boxShadow: "0 0 40px rgba(0,255,174,0.04), 0 20px 60px rgba(0,0,0,0.4)",
+          backdropFilter: "blur(24px)",
+          WebkitBackdropFilter: "blur(24px)",
           overflow: "hidden", display: "flex", flexDirection: "column",
           animation: "modalScale 0.3s cubic-bezier(0.34,1.56,0.64,1)",
           transformOrigin: "center bottom",
@@ -66,12 +69,12 @@ function Modal({ open, onClose, children, title }: { open: boolean; onClose: () 
       >
         {/* Handle */}
         <div style={{ display: "flex", justifyContent: "center", padding: "12px 0 0" }}>
-          <div style={{ width: 36, height: 4, borderRadius: 2, background: "var(--dash-handle)" }} />
+          <div style={{ width: 36, height: 4, borderRadius: 2, background: "var(--dash-handle)", boxShadow: "0 0 8px var(--dash-handle)" }} />
         </div>
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 24px 12px" }}>
-          <h2 style={{ margin: 0, color: "var(--dash-text)", fontSize: 20, fontWeight: 800, letterSpacing: "-0.5px" }}>{title}</h2>
-          <button onClick={onClose} style={{ background: "var(--dash-close-btn)", border: "none", borderRadius: "50%", width: 32, height: 32, color: "var(--dash-close-color)", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+          <h2 className="dash-gradient-text" style={{ margin: 0, fontSize: 20, fontWeight: 800, letterSpacing: "-0.5px" }}>{title}</h2>
+          <button onClick={onClose} style={{ background: "var(--dash-close-btn)", border: "1px solid var(--dash-modal-border)", borderRadius: "50%", width: 32, height: 32, color: "var(--dash-close-color)", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s" }}>✕</button>
         </div>
         {/* Content */}
         <div style={{ overflowY: "auto", padding: "0 24px 32px", flex: 1 }}>
@@ -541,6 +544,20 @@ export default function DashboardClient({
         .cat-header-arrow[data-open="false"] {
           transform: rotate(0deg);
         }
+        .dash-shine {
+          background: linear-gradient(to right, var(--dash-text-muted) 0%, var(--dash-text) 10%, var(--dash-text-muted) 20%);
+          background-position: 0;
+          background-size: 200px;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          animation: dashShine 3s infinite linear;
+        }
+        @keyframes dashShine {
+          0% { background-position: 0; }
+          60% { background-position: 200px; }
+          100% { background-position: 200px; }
+        }
       `}</style>
 
       <div style={{
@@ -846,19 +863,19 @@ function AnalyticsModal({ analytics, unit }: { analytics: any; unit: Unit | null
         <div key={s.label} style={{ borderRadius: 16, padding: "18px 20px", background: "var(--dash-card)", border: "1px solid var(--dash-card-border)", display: "flex", alignItems: "center", gap: 16 }}>
           <div style={{ fontSize: 28 }}>{s.icon}</div>
           <div style={{ flex: 1 }}>
-            <div style={{ color: "var(--dash-text-dim)", fontSize: 12 }}>{s.label}</div>
+            <div className="dash-shine" style={{ fontSize: 12 }}>{s.label}</div>
             <div style={{ color: s.color, fontSize: 28, fontWeight: 900, lineHeight: 1.1 }}>{s.value}</div>
-            <div style={{ color: "var(--dash-text-subtle)", fontSize: 11 }}>{s.desc}</div>
+            <div className="dash-shine" style={{ fontSize: 11 }}>{s.desc}</div>
           </div>
         </div>
       ))}
       <div style={{ borderRadius: 16, padding: "18px 20px", background: "var(--dash-card)", border: "1px solid var(--dash-card-border)" }}>
-        <div style={{ color: "var(--dash-text-dim)", fontSize: 12, marginBottom: 4 }}>Taxa de conversão</div>
+        <div className="dash-shine" style={{ fontSize: 12, marginBottom: 4 }}>Taxa de conversão</div>
         <div style={{ color: "var(--dash-text)", fontSize: 32, fontWeight: 900 }}>{conversion}%</div>
         <div style={{ color: "var(--dash-text-subtle)", fontSize: 11 }}>visitas → pedidos</div>
       </div>
       {unit && (
-        <a href={`/delivery/${unit.slug}`} target="_blank" rel="noreferrer" style={{ display: "block", textAlign: "center", padding: "14px", borderRadius: 14, background: "var(--dash-link-bg)", border: "1px solid var(--dash-card-border)", color: "var(--dash-text-secondary)", fontSize: 14, fontWeight: 600, textDecoration: "none" }}>
+        <a href={`/delivery/${unit.slug}`} target="_blank" rel="noreferrer" style={{ display: "block", textAlign: "center", padding: "14px", borderRadius: 14, background: "var(--dash-link-bg)", border: "1px solid var(--dash-card-border)", color: "var(--dash-text-secondary)", fontSize: 14, fontWeight: 600, textDecoration: "none", transition: "all 0.2s" }}>
           Ver cardápio público ↗
         </a>
       )}
@@ -1078,7 +1095,7 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
                 <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: isOpen ? "0 12px 12px" : "0 12px" }}>
                   {isOpen && (
                     <>
-                      {catProducts.length === 0 && <div style={{ color: "var(--dash-text-subtle)", fontSize: 13, padding: "8px 0" }}>Nenhum produto nesta categoria.</div>}
+                      {catProducts.length === 0 && <div className="dash-shine" style={{ fontSize: 13, padding: "8px 0" }}>Nenhum produto nesta categoria.</div>}
                       {(showAllProducts[cat.id] ? catProducts : catProducts.slice(0, 4)).map((p) => (
                         <ProductRow
                           key={p.id}
@@ -1594,7 +1611,7 @@ function EstoqueModal({ unit, stockStats }: { unit: Unit | null; stockStats: Sto
             <div style={{ color: "var(--dash-text-muted)", fontSize: 11, marginTop: 4 }}>Estoque baixo</div>
           </div>
         </div>
-        <div style={{ color: "var(--dash-text-muted)", fontSize: 13, marginBottom: 16 }}>Gerencie o estoque dos seus produtos e acompanhe movimentações.</div>
+        <div className="dash-shine" style={{ fontSize: 13, marginBottom: 16 }}>Gerencie o estoque dos seus produtos e acompanhe movimentações.</div>
         <a href="/painel/estoque" style={{ display: "block", padding: "12px", borderRadius: 12, border: "none", background: "rgba(0,255,174,0.15)", color: "#00ffae", fontSize: 14, fontWeight: 700, textDecoration: "none" }}>
           Gerenciar estoque →
         </a>
@@ -1674,7 +1691,7 @@ function ConfigModal({ profile, restaurant }: { profile: Profile; restaurant: Re
     <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingTop: 8 }}>
       <div style={{ borderRadius: 16, padding: "18px 20px", background: "var(--dash-card)", border: "1px solid var(--dash-card-border)" }}>
         <div style={{ color: "var(--dash-text-muted)", fontSize: 12, marginBottom: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.4px" }}>Conta</div>
-        <div style={{ color: "var(--dash-text)", fontSize: 16, fontWeight: 700 }}>{[profile.first_name, profile.last_name].filter(Boolean).join(" ") || "Sem nome"}</div>
+        <div className="dash-gradient-text" style={{ fontSize: 16, fontWeight: 700 }}>{[profile.first_name, profile.last_name].filter(Boolean).join(" ") || "Sem nome"}</div>
         <div style={{ color: "var(--dash-text-muted)", fontSize: 13, marginTop: 4 }}>{profile.email}</div>
         {profile.phone && <div style={{ color: "var(--dash-text-muted)", fontSize: 13, marginTop: 2 }}>{profile.phone}</div>}
         {(profile.address || profile.city) && <div style={{ color: "var(--dash-text-muted)", fontSize: 13, marginTop: 2 }}>{[profile.address, profile.city].filter(Boolean).join(", ")}</div>}
