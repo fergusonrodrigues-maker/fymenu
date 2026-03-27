@@ -78,7 +78,7 @@ function Modal({ open, onClose, children, title }: { open: boolean; onClose: () 
         className="modal-sheet"
         style={{
           width: "100%", maxHeight: "92vh",
-          background: "rgba(10,10,10,0.75)",
+          background: "var(--dash-modal-bg)",
           backdropFilter: "blur(40px) saturate(1.5)",
           WebkitBackdropFilter: "blur(40px) saturate(1.5)",
           borderRadius: "24px 24px 0 0",
@@ -92,7 +92,7 @@ function Modal({ open, onClose, children, title }: { open: boolean; onClose: () 
       >
         {/* Handle */}
         <div style={{ display: "flex", justifyContent: "center", padding: "12px 0 0" }}>
-          <div style={{ width: 36, height: 4, borderRadius: 2, background: "rgba(0,255,174,0.2)", boxShadow: "0 0 12px rgba(0,255,174,0.15)" }} />
+          <div style={{ width: 36, height: 4, borderRadius: 2, background: "var(--dash-handle)", boxShadow: "0 0 8px var(--dash-handle)" }} />
         </div>
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 24px 12px" }}>
@@ -143,23 +143,34 @@ export default function DashboardClient({
         @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:0.5 } }
         .card:active { transform: scale(0.97); }
         .card { transition: transform 0.15s, background 0.2s, border-color 0.2s; }
-        .card:hover { background: rgba(0,255,174,0.03) !important; border-color: rgba(0,255,174,0.25) !important; }
+        .dark .card:hover { background: rgba(0,255,174,0.03) !important; border-color: rgba(0,255,174,0.25) !important; }
+        html:not(.dark) .card:hover { background: rgba(213,22,89,0.02) !important; border-color: rgba(213,22,89,0.2) !important; }
         .dash-dots {
           position: fixed;
           inset: 0;
           z-index: 0;
           pointer-events: none;
-          background-image: radial-gradient(rgba(0,255,174,0.25) 1.2px, transparent 1.2px);
           background-size: 22px 22px;
-          filter: drop-shadow(0 0 4px rgba(0,255,174,0.3));
           opacity: 0.9;
         }
+        .dark .dash-dots {
+          background-image: radial-gradient(rgba(0,255,174,0.25) 1.2px, transparent 1.2px);
+          filter: drop-shadow(0 0 4px rgba(0,255,174,0.3));
+        }
+        html:not(.dark) .dash-dots {
+          background-image: radial-gradient(rgba(213,22,89,0.12) 1.2px, transparent 1.2px);
+          filter: drop-shadow(0 0 3px rgba(213,22,89,0.15));
+        }
         .dash-gradient-text {
-          background: var(--dash-accent-gradient);
-          background-size: 200% 200%;
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
+        }
+        .dark .dash-gradient-text {
+          background: linear-gradient(135deg, #00ffae 0%, #00d9ff 100%);
+        }
+        html:not(.dark) .dash-gradient-text {
+          background: linear-gradient(135deg, #d51659 0%, #fe4a2c 100%);
         }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -232,6 +243,15 @@ export default function DashboardClient({
         .btn-gradient:active {
           transform: translateY(1px);
           box-shadow: 0 1px 4px rgba(0,255,174,0.15), inset 0 2px 4px rgba(0,0,0,0.12);
+        }
+        html:not(.dark) .btn-gradient {
+          background: linear-gradient(145deg, #d51659 0%, #fe4a2c 50%, #d51659 100%) !important;
+          background-size: 200% 200% !important;
+          color: #fff !important;
+          box-shadow: 0 3px 12px rgba(213,22,89,0.2), inset 0 1px 0 rgba(255,255,255,0.2), inset 0 -2px 0 rgba(0,0,0,0.08) !important;
+        }
+        html:not(.dark) .btn-gradient:hover {
+          box-shadow: 0 5px 20px rgba(213,22,89,0.35), inset 0 1px 0 rgba(255,255,255,0.25) !important;
         }
         .btn-ai {
           position: relative;
@@ -314,6 +334,12 @@ export default function DashboardClient({
           left: calc(50%);
           background: linear-gradient(145deg, #7c3aed 0%, #5b21b6 50%, #4c1d95 100%);
         }
+        html:not(.dark) .type-toggle-slider[data-type="food"] {
+          background: linear-gradient(145deg, #d51659 0%, #fe4a2c 50%, #d51659 100%);
+        }
+        html:not(.dark) .type-toggle-slider[data-type="drink"] {
+          background: linear-gradient(145deg, #7c3aed 0%, #5b21b6 50%, #4c1d95 100%);
+        }
         .switch-toggle {
           --sw-w: 36px;
           --sw-h: 20px;
@@ -391,6 +417,7 @@ export default function DashboardClient({
           left: calc(100% - var(--circle-d) - var(--sw-offset));
           box-shadow: -1px 1px 2px rgba(163,163,163,0.45);
         }
+        html:not(.dark) .switch-toggle .sw-slider { --sw-checked-bg: #d51659; }
         .ios-checkbox {
           position: relative;
           display: inline-block;
@@ -567,7 +594,7 @@ export default function DashboardClient({
         .cat-header-arrow[data-open="false"] {
           transform: rotate(0deg);
         }
-        .modal-neon-card {
+        .dark .modal-neon-card {
           border: 1px solid rgba(0,255,174,0.15) !important;
           box-shadow: 0 0 15px rgba(0,255,174,0.06), 0 0 2px rgba(0,255,174,0.1), inset 0 1px 0 rgba(255,255,255,0.04);
           transition: border-color 0.3s ease, box-shadow 0.3s ease;
@@ -575,9 +602,21 @@ export default function DashboardClient({
           backdrop-filter: blur(12px);
           -webkit-backdrop-filter: blur(12px);
         }
-        .modal-neon-card:hover {
+        .dark .modal-neon-card:hover {
           border-color: rgba(0,255,174,0.3) !important;
           box-shadow: 0 0 25px rgba(0,255,174,0.1), 0 0 4px rgba(0,255,174,0.15), inset 0 1px 0 rgba(255,255,255,0.06);
+        }
+        html:not(.dark) .modal-neon-card {
+          border: 1px solid rgba(213,22,89,0.12) !important;
+          box-shadow: 0 0 15px rgba(213,22,89,0.04), 0 0 2px rgba(213,22,89,0.06), inset 0 1px 0 rgba(0,0,0,0.02);
+          transition: border-color 0.3s ease, box-shadow 0.3s ease;
+          background: rgba(0,0,0,0.015) !important;
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+        }
+        html:not(.dark) .modal-neon-card:hover {
+          border-color: rgba(213,22,89,0.25) !important;
+          box-shadow: 0 0 25px rgba(213,22,89,0.08), 0 0 4px rgba(213,22,89,0.1), inset 0 1px 0 rgba(0,0,0,0.03);
         }
         .dash-shine {
           background: linear-gradient(to right, var(--dash-text-muted) 0%, var(--dash-text) 10%, var(--dash-text-muted) 20%);
