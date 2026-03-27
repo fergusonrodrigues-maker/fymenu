@@ -603,9 +603,10 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
           >
             <div style={{ display: "flex", alignItems: "center", padding: "14px 16px", gap: 10, cursor: "pointer" }} onClick={() => setExpandedCat(isOpen ? null : cat.id)}>
               <span
-                style={{ cursor: "grab", fontSize: 18, color: "var(--dash-text-muted)", opacity: 0.7, userSelect: "none", touchAction: "none", padding: "4px 6px" }}
+                style={{ cursor: "grab", fontSize: 18, color: "var(--dash-text-muted)", opacity: 0.7, userSelect: "none", WebkitUserSelect: "none", touchAction: "none", WebkitTouchCallout: "none", padding: "4px 6px" }}
                 onMouseDown={(e) => e.stopPropagation()}
-                onTouchStart={(e) => onTouchStartDrag(e, catIdx)}
+                onContextMenu={(e) => e.preventDefault()}
+                onTouchStart={(e) => { e.preventDefault(); onTouchStartDrag(e, catIdx); }}
                 onTouchMove={(e) => onTouchMoveDrag(e)}
                 onTouchEnd={() => onTouchEndDrag()}
                 title="Segurar e arrastar para reordenar"
