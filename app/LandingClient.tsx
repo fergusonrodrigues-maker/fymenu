@@ -452,7 +452,7 @@ export default function LandingPage() {
           </div>
           <a href="#features">Recursos</a>
           <a href="#pricing">Planos</a>
-          <a href="/entrar" className="btn-primary" style={{ width: "auto", padding: "8px 20px", fontSize: 12, borderRadius: 999 }}>
+          <a href="/painel" className="btn-primary" style={{ width: "auto", padding: "8px 20px", fontSize: 12, borderRadius: 999 }}>
             Entrar
           </a>
         </nav>
