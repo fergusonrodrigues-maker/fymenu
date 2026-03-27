@@ -192,7 +192,7 @@ export default function MenuClient({
               style={{
                 marginBottom: 4,
                 transition: "opacity 0.4s ease",
-                opacity: isActive ? 1 : 0.55,
+                opacity: isActive ? 1 : 1,
                 scrollMarginTop: 56,
               }}
             >
