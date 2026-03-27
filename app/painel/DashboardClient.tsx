@@ -595,28 +595,28 @@ export default function DashboardClient({
           transform: rotate(0deg);
         }
         .dark .modal-neon-card {
-          border: 1px solid rgba(0,255,174,0.15) !important;
-          box-shadow: 0 0 15px rgba(0,255,174,0.06), 0 0 2px rgba(0,255,174,0.1), inset 0 1px 0 rgba(255,255,255,0.04);
+          border: 1px solid rgba(0,255,174,0.08) !important;
+          box-shadow: 0 0 10px rgba(0,255,174,0.03), inset 0 1px 0 rgba(255,255,255,0.02);
           transition: border-color 0.3s ease, box-shadow 0.3s ease;
-          background: rgba(255,255,255,0.025) !important;
-          backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
+          background: rgba(255,255,255,0.02) !important;
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
         }
         .dark .modal-neon-card:hover {
-          border-color: rgba(0,255,174,0.3) !important;
-          box-shadow: 0 0 25px rgba(0,255,174,0.1), 0 0 4px rgba(0,255,174,0.15), inset 0 1px 0 rgba(255,255,255,0.06);
+          border-color: rgba(0,255,174,0.15) !important;
+          box-shadow: 0 0 18px rgba(0,255,174,0.06), inset 0 1px 0 rgba(255,255,255,0.04);
         }
         html:not(.dark) .modal-neon-card {
-          border: 1px solid rgba(213,22,89,0.12) !important;
-          box-shadow: 0 0 15px rgba(213,22,89,0.04), 0 0 2px rgba(213,22,89,0.06), inset 0 1px 0 rgba(0,0,0,0.02);
+          border: 1px solid rgba(213,22,89,0.06) !important;
+          box-shadow: 0 0 10px rgba(213,22,89,0.02), inset 0 1px 0 rgba(0,0,0,0.01);
           transition: border-color 0.3s ease, box-shadow 0.3s ease;
-          background: rgba(0,0,0,0.015) !important;
-          backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
+          background: rgba(0,0,0,0.01) !important;
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
         }
         html:not(.dark) .modal-neon-card:hover {
-          border-color: rgba(213,22,89,0.25) !important;
-          box-shadow: 0 0 25px rgba(213,22,89,0.08), 0 0 4px rgba(213,22,89,0.1), inset 0 1px 0 rgba(0,0,0,0.03);
+          border-color: rgba(213,22,89,0.12) !important;
+          box-shadow: 0 0 18px rgba(213,22,89,0.04), inset 0 1px 0 rgba(0,0,0,0.02);
         }
         .dash-shine {
           background: linear-gradient(to right, var(--dash-text-muted) 0%, var(--dash-text) 10%, var(--dash-text-muted) 20%);
