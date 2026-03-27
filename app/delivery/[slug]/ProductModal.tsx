@@ -34,6 +34,7 @@ export default function ProductModal({
   const [closing, setClosing] = useState(false);
   const [slideDir, setSlideDir] = useState<"left" | "right" | null>(null);
   const [ageConfirmed, setAgeConfirmed] = useState(false);
+  const [starred, setStarred] = useState(false);
 
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -53,6 +54,7 @@ export default function ProductModal({
     if (currentProduct) {
       setSelectedVariation(null);
       setThumbVisible(true);
+      setStarred(false);
     }
   }, [currentProduct?.id]);
 
@@ -174,6 +176,65 @@ export default function ProductModal({
           }
           .fy-desc-scroll::-webkit-scrollbar { display: none; }
           .fy-desc-scroll { scrollbar-width: none; }
+          .star-btn {
+            position: relative;
+            width: 36px;
+            height: 36px;
+            border: none;
+            background: rgba(0,0,0,0.45);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+          .star-btn .star-outline,
+          .star-btn .star-filled {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            transition: all 0.3s ease;
+          }
+          .star-btn .star-filled {
+            opacity: 0;
+            transform: scale(0);
+          }
+          .star-btn.active .star-outline { opacity: 0; }
+          .star-btn.active .star-filled {
+            opacity: 1;
+            transform: scale(1);
+            animation: star-pop 0.6s ease;
+          }
+          @keyframes star-pop {
+            0% { transform: scale(0); opacity: 0; }
+            25% { transform: scale(1.3); opacity: 1; }
+            50% { transform: scale(1); filter: brightness(1.5); }
+            100% { transform: scale(1); }
+          }
+          .star-btn .star-particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: #fabe15;
+            opacity: 0;
+            pointer-events: none;
+          }
+          .star-btn.active .star-particle { display: block; }
+          .star-btn.active .star-particle:nth-child(3) { animation: sp1 0.8s ease-out forwards; }
+          .star-btn.active .star-particle:nth-child(4) { animation: sp2 0.8s ease-out forwards; }
+          .star-btn.active .star-particle:nth-child(5) { animation: sp3 0.8s ease-out forwards; }
+          .star-btn.active .star-particle:nth-child(6) { animation: sp4 0.8s ease-out forwards; }
+          .star-btn.active .star-particle:nth-child(7) { animation: sp5 0.8s ease-out forwards; }
+          .star-btn.active .star-particle:nth-child(8) { animation: sp6 0.8s ease-out forwards; }
+          @keyframes sp1 { 0% { opacity:1; transform:translate(0,0); } 100% { opacity:0; transform:translate(-14px,-16px); } }
+          @keyframes sp2 { 0% { opacity:1; transform:translate(0,0); } 100% { opacity:0; transform:translate(14px,-16px); } }
+          @keyframes sp3 { 0% { opacity:1; transform:translate(0,0); } 100% { opacity:0; transform:translate(-18px,8px); } }
+          @keyframes sp4 { 0% { opacity:1; transform:translate(0,0); } 100% { opacity:0; transform:translate(18px,8px); } }
+          @keyframes sp5 { 0% { opacity:1; transform:translate(0,0); } 100% { opacity:0; transform:translate(0,-20px); } }
+          @keyframes sp6 { 0% { opacity:1; transform:translate(0,0); } 100% { opacity:0; transform:translate(0,18px); } }
         `}</style>
 
         {/* Media */}
@@ -268,28 +329,32 @@ export default function ProductModal({
 
           {/* Heart — direita */}
           <button
+            className={`star-btn${starred ? " active" : ""}`}
+            style={{ border: "0.5px solid rgba(255,255,255,0.12)" }}
             onClick={() => {
+              setStarred(!starred);
               if (currentProduct && typeof window !== "undefined") {
                 window.dispatchEvent(new CustomEvent("fy:track", {
                   detail: { event: "product_favorite", product_id: currentProduct.id, category_id: currentProduct.category_id },
                 }));
               }
             }}
-            className="flex items-center justify-center"
-            style={{
-              width: 36, height: 36, borderRadius: "50%",
-              background: "rgba(0,0,0,0.45)",
-              backdropFilter: "blur(12px)",
-              WebkitBackdropFilter: "blur(12px)",
-              border: "0.5px solid rgba(255,255,255,0.12)",
-              cursor: "pointer",
-            }}
             aria-label="Favoritar"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-              stroke="rgba(255,255,255,0.8)" strokeWidth="1.5" fill="none" />
+            <svg className="star-outline" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+                stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" strokeLinejoin="round" fill="none" />
             </svg>
+            <svg className="star-filled" viewBox="0 0 24 24">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+                fill="#fabe15" stroke="#fabe15" strokeWidth="1" strokeLinejoin="round" />
+            </svg>
+            <span className="star-particle" />
+            <span className="star-particle" />
+            <span className="star-particle" />
+            <span className="star-particle" />
+            <span className="star-particle" />
+            <span className="star-particle" />
           </button>
         </div>
 
