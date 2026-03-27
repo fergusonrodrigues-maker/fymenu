@@ -182,7 +182,7 @@ function PricingCard({
         {name}
       </div>
       <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginBottom: 24 }}>
-        <span style={{ fontSize: 42, fontWeight: 900, color: "#fff" }}>{price}</span>
+        <span style={{ fontSize: 42, fontWeight: 900, color: theme === "dark" ? "#fff" : "#222" }}>{price}</span>
         <span className={theme === "dark" ? "text-shine-dark" : "text-shine-light"} style={{ fontSize: 14 }}>/mês</span>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 32, flex: 1 }}>
@@ -220,7 +220,7 @@ export default function LandingPage() {
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap');
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: #000; color: #fff; font-family: 'Montserrat', -apple-system, sans-serif; overflow-x: hidden; }
+        body { background: #000; color: #fff; font-family: 'Montserrat', -apple-system, sans-serif; overflow-x: hidden; font-weight: 500; }
 
         /* ── Loader ── */
         .fy-loader {
@@ -262,20 +262,20 @@ export default function LandingPage() {
         .dot-grid-dark {
           position: absolute;
           inset: 0;
-          background-image: radial-gradient(rgba(0,255,174,0.3) 1.5px, transparent 1.5px);
+          background-image: radial-gradient(rgba(0,255,174,0.4) 1.5px, transparent 1.5px);
           background-size: 22px 22px;
           animation: dotFadeIn 3s ease forwards;
           opacity: 0;
-          filter: drop-shadow(0 0 4px rgba(0,255,174,0.35));
+          filter: drop-shadow(0 0 6px rgba(0,255,174,0.45));
         }
         .dot-grid-light {
           position: absolute;
           inset: 0;
-          background-image: radial-gradient(rgba(213,22,89,0.15) 1.5px, transparent 1.5px);
+          background-image: radial-gradient(rgba(213,22,89,0.22) 1.5px, transparent 1.5px);
           background-size: 22px 22px;
           animation: dotFadeIn 3s ease forwards;
           opacity: 0;
-          filter: drop-shadow(0 0 3px rgba(213,22,89,0.2));
+          filter: drop-shadow(0 0 5px rgba(213,22,89,0.25));
         }
         @keyframes dotFadeIn {
           0% { opacity: 0; }
@@ -290,7 +290,7 @@ export default function LandingPage() {
         }
         .landing-light .fy-nav a { color: rgba(34,34,34,0.5) !important; }
         .landing-light .fy-nav a:hover { color: #222 !important; }
-        .landing-light h1, .landing-light h2 { color: #111 !important; }
+        .landing-light h1, .landing-light h2 { color: #222 !important; }
         .landing-light .feature-card {
           background: rgba(0,0,0,0.015);
           border-color: rgba(213,22,89,0.08);
@@ -302,6 +302,7 @@ export default function LandingPage() {
         .landing-light .pricing-card {
           background: rgba(0,0,0,0.015);
           border-color: rgba(213,22,89,0.1);
+          color: #222 !important;
         }
         .landing-light .pricing-card:hover {
           border-color: rgba(213,22,89,0.25);
@@ -336,6 +337,7 @@ export default function LandingPage() {
         .landing-light .btn-outline {
           border-color: rgba(0,0,0,0.12) !important;
           color: #333 !important;
+          font-weight: 700 !important;
           background: rgba(0,0,0,0.02) !important;
         }
         .landing-light .btn-outline:hover {
@@ -616,7 +618,7 @@ export default function LandingPage() {
           </div>
           <a href="#features" className={theme === "dark" ? "shine-dark" : "shine-light"}>Recursos</a>
           <a href="#pricing" className={theme === "dark" ? "shine-dark" : "shine-light"}>Planos</a>
-          <a href="/painel" className="btn-primary" style={{ width: "auto", padding: "8px 20px", fontSize: 12, borderRadius: 999 }}>
+          <a href="/painel" className="btn-primary" style={{ width: "auto", padding: "8px 20px", fontSize: 12, borderRadius: 999, fontWeight: 800, color: theme === "dark" ? "#000" : "#fff" }}>
             Entrar
           </a>
         </nav>
@@ -855,6 +857,7 @@ export default function LandingPage() {
               name="Pro+"
               price="R$ 397"
               features={["Tudo do Pro", "PDV integrado", "CRM + WhatsApp", "Comanda digital", "Consultoria IA", "API dedicada"]}
+              highlight
               cta="Fale conosco"
               theme={theme}
             />
