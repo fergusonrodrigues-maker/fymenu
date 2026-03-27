@@ -91,75 +91,6 @@ const inp: React.CSSProperties = {
   outline: "none",
 };
 
-// ─── DashCard — inline dropdown card ────────────────────────────────────────
-function DashCard({
-  id, icon, title, subtitle, activeId, onToggle, children, gridSpan, cardStyle,
-}: {
-  id: string; icon: string; title: string; subtitle: string;
-  activeId: string | null; onToggle: (id: string | null) => void;
-  children: React.ReactNode; gridSpan?: 1 | 2; cardStyle?: React.CSSProperties;
-}) {
-  const isOpen = activeId === id;
-  return (
-    <div style={{
-      gridColumn: gridSpan === 2 ? "span 2" : undefined,
-      borderRadius: 20,
-      background: "var(--dash-card)",
-      border: isOpen ? "1px solid rgba(0,255,174,0.3)" : "1px solid var(--dash-card-border)",
-      cursor: "pointer",
-      overflow: "hidden",
-      transition: "all 0.3s ease",
-      ...cardStyle,
-    }}>
-      <div
-        className="card"
-        onClick={() => onToggle(isOpen ? null : id)}
-        style={{
-          padding: gridSpan === 2 ? "20px 24px" : "20px 18px",
-          display: "flex",
-          alignItems: gridSpan === 2 ? "center" : "flex-start",
-          flexDirection: gridSpan === 2 ? "row" : "column",
-          justifyContent: "space-between",
-          gap: gridSpan === 2 ? 16 : 0,
-          minHeight: gridSpan === 2 ? 80 : 140,
-        }}
-      >
-        <div style={{ fontSize: 28 }}>{icon}</div>
-        <div style={{ flex: gridSpan === 2 ? 1 : undefined }}>
-          <div style={{ color: "var(--dash-text)", fontSize: gridSpan === 2 ? 15 : 16, fontWeight: 800, marginBottom: gridSpan === 2 ? 2 : 4 }}>{title}</div>
-          <div style={{
-            color: "var(--dash-text-muted)", fontSize: 12,
-            transition: "all 400ms ease",
-            opacity: isOpen ? 0 : 1,
-            maxHeight: isOpen ? 0 : 20,
-            overflow: "hidden",
-          }}>{subtitle}</div>
-        </div>
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
-          style={{
-            color: "var(--dash-text-muted)",
-            transition: "transform 400ms cubic-bezier(0.4,0,0.2,1)",
-            transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
-            flexShrink: 0,
-            alignSelf: gridSpan === 2 ? "center" : "flex-end",
-          }}
-        >
-          <path d="M4 6L8 10L12 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </div>
-      <div className="dropdown-expand" data-open={isOpen ? "true" : "false"}>
-        <div>
-          <div style={{ padding: "0 18px 20px", borderTop: "1px solid var(--dash-card-border)" }}>
-            <div style={{ paddingTop: 16 }}>
-              {isOpen && children}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ─── Main Component ──────────────────────────────────────────────────────────
 export default function DashboardClient({
   restaurant, unit, profile, categories, products, upsellItems, analytics, tvCount, stockStats,
@@ -170,8 +101,9 @@ export default function DashboardClient({
   tvCount: number; stockStats: StockStats;
 }) {
   const router = useRouter();
-  const [activeCard, setActiveCard] = useState<string | null>(null);
-  const toggleCard = (id: string | null) => setActiveCard(id);
+  const [modal, setModal] = useState<"analytics" | "cardapio" | "pedidos" | "financeiro" | "unidade" | "plano" | "config" | "tv" | "estoque" | "operacoes" | "equipe" | null>(null);
+  const open = (m: typeof modal) => setModal(m);
+  const close = () => setModal(null);
 
   const trialDays = Math.max(0, Math.ceil((new Date(restaurant.trial_ends_at).getTime() - Date.now()) / 86400000));
   const isPro = restaurant.plan === "pro";
@@ -190,21 +122,6 @@ export default function DashboardClient({
         ::-webkit-scrollbar-thumb { background: var(--dash-scrollbar); border-radius: 4px; }
         input, textarea, select { outline: none; font-family: inherit; }
         input::placeholder, textarea::placeholder { color: var(--dash-placeholder); }
-        .dropdown-expand {
-          display: grid;
-          transition: all 500ms cubic-bezier(0.4,0,0.2,1);
-        }
-        .dropdown-expand[data-open="true"] {
-          grid-template-rows: 1fr;
-          opacity: 1;
-        }
-        .dropdown-expand[data-open="false"] {
-          grid-template-rows: 0fr;
-          opacity: 0;
-        }
-        .dropdown-expand > div {
-          overflow: hidden;
-        }
       `}</style>
 
       <div style={{
@@ -248,7 +165,7 @@ export default function DashboardClient({
             <div style={{ color: "#fbbf24", fontSize: 13, fontWeight: 600 }}>
               ⏳ {trialDays} dia{trialDays !== 1 ? "s" : ""} de trial restante{trialDays !== 1 ? "s" : ""}
             </div>
-            <button onClick={() => toggleCard("plano")} style={{ padding: "6px 12px", borderRadius: 8, border: "none", background: "rgba(255,180,0,0.2)", color: "#fbbf24", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Ver planos</button>
+            <button onClick={() => open("plano")} style={{ padding: "6px 12px", borderRadius: 8, border: "none", background: "rgba(255,180,0,0.2)", color: "#fbbf24", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Ver planos</button>
           </div>
         )}
 
@@ -260,52 +177,236 @@ export default function DashboardClient({
           gap: 12,
         }}>
 
-          <DashCard id="analytics" icon="📊" title="Analytics" subtitle={`${analytics.views} visitas · ${analytics.clicks} cliques · ${analytics.orders} pedidos`} activeId={activeCard} onToggle={toggleCard} gridSpan={2}>
-            <AnalyticsModal analytics={analytics} unit={unit} />
-          </DashCard>
+          {/* Analytics */}
+          <div className="card" onClick={() => open("analytics")} style={{
+            gridColumn: "span 2",
+            borderRadius: 20, padding: "20px 24px",
+            background: "var(--dash-card)",
+            border: "1px solid var(--dash-card-border)",
+            cursor: "pointer",
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
+              <div>
+                <div style={{ color: "var(--dash-text-muted)", fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 4 }}>Últimos 7 dias</div>
+                <div style={{ color: "var(--dash-text)", fontSize: 18, fontWeight: 800 }}>Analytics</div>
+              </div>
+              <div style={{ fontSize: 24 }}>📊</div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+              {[
+                { label: "Visitas", value: analytics.views, color: "#00ffae" },
+                { label: "Cliques", value: analytics.clicks, color: "#60a5fa" },
+                { label: "Pedidos", value: analytics.orders, color: "#f472b6" },
+              ].map((stat) => (
+                <div key={stat.label} style={{ textAlign: "center" }}>
+                  <div style={{ color: stat.color, fontSize: 26, fontWeight: 900, lineHeight: 1 }}>{stat.value}</div>
+                  <div style={{ color: "var(--dash-text-muted)", fontSize: 11, marginTop: 4 }}>{stat.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
 
-          <DashCard id="cardapio" icon="📋" title="Cardápio" subtitle={`${products.length} produto${products.length !== 1 ? "s" : ""}`} activeId={activeCard} onToggle={toggleCard}>
-            <CardapioModal unit={unit} categories={categories} products={products} upsellItems={upsellItems} onClose={() => toggleCard(null)} />
-          </DashCard>
+          {/* Cardápio */}
+          <div className="card" onClick={() => open("cardapio")} style={{
+            borderRadius: 20, padding: "20px 18px",
+            background: "var(--dash-card)",
+            border: "1px solid var(--dash-card-border)",
+            cursor: "pointer", minHeight: 140,
+            display: "flex", flexDirection: "column", justifyContent: "space-between",
+          }}>
+            <div style={{ fontSize: 28 }}>📋</div>
+            <div>
+              <div style={{ color: "var(--dash-text)", fontSize: 16, fontWeight: 800, marginBottom: 4 }}>Cardápio</div>
+              <div style={{ color: "var(--dash-text-muted)", fontSize: 12 }}>{products.length} produto{products.length !== 1 ? "s" : ""}</div>
+            </div>
+          </div>
 
-          <DashCard id="pedidos" icon="🛒" title="Pedidos" subtitle={`${analytics.orders} pedido${analytics.orders !== 1 ? "s" : ""} hoje`} activeId={activeCard} onToggle={toggleCard}>
-            {unit && <PedidosModal unitId={unit.id} />}
-          </DashCard>
+          {/* Pedidos */}
+          <div className="card" onClick={() => open("pedidos")} style={{
+            borderRadius: 20, padding: "20px 18px",
+            background: "var(--dash-card)",
+            border: "1px solid var(--dash-card-border)",
+            cursor: "pointer", minHeight: 140,
+            display: "flex", flexDirection: "column", justifyContent: "space-between",
+          }}>
+            <div style={{ fontSize: 28 }}>🛒</div>
+            <div>
+              <div style={{ color: "var(--dash-text)", fontSize: 16, fontWeight: 800, marginBottom: 4 }}>Pedidos</div>
+              <div style={{ color: "var(--dash-text-muted)", fontSize: 12 }}>{analytics.orders} pedido{analytics.orders !== 1 ? "s" : ""} hoje</div>
+            </div>
+          </div>
 
-          <DashCard id="financeiro" icon="💰" title="Financeiro" subtitle="Relatórios e receita" activeId={activeCard} onToggle={toggleCard}>
-            <FinanceiroModal unit={unit} analytics={analytics} />
-          </DashCard>
+          {/* Financeiro */}
+          <div className="card" onClick={() => open("financeiro")} style={{
+            borderRadius: 20, padding: "20px 18px",
+            background: "var(--dash-card)",
+            border: "1px solid var(--dash-card-border)",
+            cursor: "pointer", minHeight: 140,
+            display: "flex", flexDirection: "column", justifyContent: "space-between",
+          }}>
+            <div style={{ fontSize: 28 }}>💰</div>
+            <div>
+              <div style={{ color: "var(--dash-text)", fontSize: 16, fontWeight: 800, marginBottom: 4 }}>Financeiro</div>
+              <div style={{ color: "var(--dash-text-muted)", fontSize: 12 }}>Relatórios e receita</div>
+            </div>
+          </div>
 
-          <DashCard id="unidade" icon="📍" title="Unidade" subtitle={unit?.is_published ? "Publicado" : "Não publicado"} activeId={activeCard} onToggle={toggleCard}>
-            <UnidadeModal unit={unit} isPro={isPro} onClose={() => toggleCard(null)} />
-          </DashCard>
+          {/* Unidade */}
+          <div className="card" onClick={() => open("unidade")} style={{
+            borderRadius: 20, padding: "20px 18px",
+            background: "var(--dash-card)",
+            border: "1px solid var(--dash-card-border)",
+            cursor: "pointer", minHeight: 120,
+            display: "flex", flexDirection: "column", justifyContent: "space-between",
+          }}>
+            <div style={{ fontSize: 24 }}>📍</div>
+            <div>
+              <div style={{ color: "var(--dash-text)", fontSize: 15, fontWeight: 800, marginBottom: 2 }}>Unidade</div>
+              <div style={{ color: unit?.is_published ? "#00ffae" : "var(--dash-text-muted)", fontSize: 11, display: "flex", alignItems: "center", gap: 4 }}>
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: unit?.is_published ? "#00ffae" : "var(--dash-card-border)", display: "inline-block", animation: unit?.is_published ? "pulse 2s infinite" : "none" }} />
+                {unit?.is_published ? "Publicado" : "Não publicado"}
+              </div>
+            </div>
+          </div>
 
-          <DashCard id="tv" icon="📺" title="Modo TV" subtitle={`${tvCount} vídeo${tvCount !== 1 ? "s" : ""} ativo${tvCount !== 1 ? "s" : ""}`} activeId={activeCard} onToggle={toggleCard}>
-            <TVModal unit={unit} tvCount={tvCount} />
-          </DashCard>
+          {/* Modo TV */}
+          <div className="card" onClick={() => open("tv")} style={{
+            borderRadius: 20, padding: "20px 18px",
+            background: "var(--dash-card)",
+            border: "1px solid var(--dash-card-border)",
+            cursor: "pointer", minHeight: 120,
+            display: "flex", flexDirection: "column", justifyContent: "space-between",
+          }}>
+            <div style={{ fontSize: 24 }}>📺</div>
+            <div>
+              <div style={{ color: "var(--dash-text)", fontSize: 15, fontWeight: 800, marginBottom: 2 }}>Modo TV</div>
+              <div style={{ color: "var(--dash-text-muted)", fontSize: 11 }}>{tvCount} vídeo{tvCount !== 1 ? "s" : ""} ativo{tvCount !== 1 ? "s" : ""}</div>
+            </div>
+          </div>
 
-          <DashCard id="plano" icon="⭐" title="Plano" subtitle={isPro ? "Pro" : restaurant.status === "trial" ? `Trial · ${trialDays}d` : "Basic"} activeId={activeCard} onToggle={toggleCard}>
-            <PlanoModal restaurant={restaurant} trialDays={trialDays} onUpgrade={() => { toggleCard(null); router.push("/painel/planos"); }} onClose={() => toggleCard(null)} />
-          </DashCard>
+          {/* Plano */}
+          <div className="card" onClick={() => open("plano")} style={{
+            borderRadius: 20, padding: "20px 18px",
+            background: isPro ? "linear-gradient(135deg, rgba(255,215,0,0.06) 0%, rgba(255,215,0,0.02) 100%)" : "var(--dash-card)",
+            border: isPro ? "1px solid rgba(255,215,0,0.15)" : "1px solid var(--dash-card-border)",
+            cursor: "pointer", minHeight: 120,
+            display: "flex", flexDirection: "column", justifyContent: "space-between",
+          }}>
+            <div style={{ fontSize: 24 }}>⭐</div>
+            <div>
+              <div style={{ color: "var(--dash-text)", fontSize: 15, fontWeight: 800, marginBottom: 2 }}>Plano</div>
+              <div style={{ color: isPro ? "#fbbf24" : "var(--dash-text-muted)", fontSize: 11, fontWeight: isPro ? 700 : 400 }}>
+                {isPro ? "Pro" : restaurant.status === "trial" ? `Trial · ${trialDays}d` : "Basic"}
+              </div>
+            </div>
+          </div>
 
-          <DashCard id="config" icon="⚙️" title="Configurações" subtitle={profile.email?.split("@")[0] || ""} activeId={activeCard} onToggle={toggleCard}>
-            <ConfigModal profile={profile} restaurant={restaurant} />
-          </DashCard>
+          {/* Config */}
+          <div className="card" onClick={() => open("config")} style={{
+            borderRadius: 20, padding: "20px 18px",
+            background: "var(--dash-card)",
+            border: "1px solid var(--dash-card-border)",
+            cursor: "pointer", minHeight: 120,
+            display: "flex", flexDirection: "column", justifyContent: "space-between",
+          }}>
+            <div style={{ fontSize: 24 }}>⚙️</div>
+            <div>
+              <div style={{ color: "var(--dash-text)", fontSize: 15, fontWeight: 800, marginBottom: 2 }}>Configurações</div>
+              <div style={{ color: "var(--dash-text-muted)", fontSize: 11 }}>{profile.email?.split("@")[0]}</div>
+            </div>
+          </div>
 
-          <DashCard id="estoque" icon="📦" title="Estoque" subtitle={stockStats.out > 0 ? `${stockStats.out} esgotado${stockStats.out !== 1 ? "s" : ""}` : stockStats.low > 0 ? `${stockStats.low} baixo` : "Tudo em ordem"} activeId={activeCard} onToggle={toggleCard} gridSpan={2} cardStyle={stockStats.out > 0 ? { background: "rgba(248,113,113,0.04)", border: "1px solid rgba(248,113,113,0.15)" } : stockStats.low > 0 ? { background: "rgba(251,191,36,0.04)", border: "1px solid rgba(251,191,36,0.15)" } : undefined}>
-            <EstoqueModal unit={unit} stockStats={stockStats} />
-          </DashCard>
+          {/* Estoque */}
+          <div className="card" onClick={() => open("estoque")} style={{
+            gridColumn: "span 2",
+            borderRadius: 20, padding: "20px 18px",
+            background: stockStats.out > 0 ? "rgba(248,113,113,0.04)" : stockStats.low > 0 ? "rgba(251,191,36,0.04)" : "var(--dash-card)",
+            border: stockStats.out > 0 ? "1px solid rgba(248,113,113,0.15)" : stockStats.low > 0 ? "1px solid rgba(251,191,36,0.15)" : "1px solid var(--dash-card-border)",
+            cursor: "pointer", minHeight: 100,
+            display: "flex", alignItems: "center", gap: 16,
+          }}>
+            <div style={{ fontSize: 28 }}>📦</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ color: "var(--dash-text)", fontSize: 15, fontWeight: 800, marginBottom: 2 }}>Estoque</div>
+              <div style={{ fontSize: 12, display: "flex", gap: 8 }}>
+                {stockStats.out > 0 && <span style={{ color: "#f87171" }}>{stockStats.out} esgotado{stockStats.out !== 1 ? "s" : ""}</span>}
+                {stockStats.low > 0 && <span style={{ color: "#fbbf24" }}>{stockStats.low} baixo{stockStats.low !== 1 ? "s" : ""}</span>}
+                {stockStats.out === 0 && stockStats.low === 0 && <span style={{ color: "var(--dash-text-muted)" }}>Tudo em ordem</span>}
+              </div>
+            </div>
+          </div>
 
-          <DashCard id="operacoes" icon="🎛️" title="Operações" subtitle="Cozinha · Garçom · Andamento" activeId={activeCard} onToggle={toggleCard} gridSpan={2} cardStyle={{ background: "linear-gradient(135deg, rgba(0,255,174,0.04) 0%, rgba(96,165,250,0.04) 100%)", border: "1px solid rgba(0,255,174,0.15)" }}>
-            {unit && <RestaurantOperationsModal unitId={unit.id} />}
-          </DashCard>
+          {/* Operações */}
+          <div className="card" onClick={() => open("operacoes")} style={{
+            gridColumn: "span 2",
+            borderRadius: 20, padding: "20px 18px",
+            background: "linear-gradient(135deg, rgba(0,255,174,0.04) 0%, rgba(96,165,250,0.04) 100%)",
+            border: "1px solid rgba(0,255,174,0.15)",
+            cursor: "pointer", minHeight: 100,
+            display: "flex", alignItems: "center", gap: 16,
+          }}>
+            <div style={{ fontSize: 28 }}>🎛️</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ color: "var(--dash-text)", fontSize: 15, fontWeight: 800, marginBottom: 2 }}>Operações</div>
+              <div style={{ color: "var(--dash-text-muted)", fontSize: 12 }}>Cozinha · Garçom · Andamento</div>
+            </div>
+            <div style={{ color: "#00ffae", fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 20, background: "rgba(0,255,174,0.1)", border: "1px solid rgba(0,255,174,0.2)" }}>
+              Realtime
+            </div>
+          </div>
 
-          <DashCard id="equipe" icon="👥" title="Equipe" subtitle="Funcionários · Avaliações · Entregas" activeId={activeCard} onToggle={toggleCard} gridSpan={2}>
-            {unit && <StaffAnalyticsModal unitId={unit.id} />}
-          </DashCard>
+          {/* Equipe */}
+          <div className="card" onClick={() => open("equipe")} style={{
+            gridColumn: "span 2",
+            borderRadius: 20, padding: "20px 18px",
+            background: "var(--dash-card)",
+            border: "1px solid var(--dash-card-border)",
+            cursor: "pointer", minHeight: 100,
+            display: "flex", alignItems: "center", gap: 16,
+          }}>
+            <div style={{ fontSize: 28 }}>👥</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ color: "var(--dash-text)", fontSize: 15, fontWeight: 800, marginBottom: 2 }}>Equipe</div>
+              <div style={{ color: "var(--dash-text-muted)", fontSize: 12 }}>Funcionários · Avaliações · Entregas</div>
+            </div>
+          </div>
 
         </div>
       </div>
+
+      <Modal open={modal === "analytics"} onClose={close} title="Analytics">
+        <AnalyticsModal analytics={analytics} unit={unit} />
+      </Modal>
+      <Modal open={modal === "pedidos"} onClose={close} title="Pedidos de hoje">
+        {unit && <PedidosModal unitId={unit.id} />}
+      </Modal>
+      <Modal open={modal === "cardapio"} onClose={close} title="Cardápio">
+        <CardapioModal unit={unit} categories={categories} products={products} upsellItems={upsellItems} onClose={close} />
+      </Modal>
+      <Modal open={modal === "financeiro"} onClose={close} title="Financeiro">
+        <FinanceiroModal unit={unit} analytics={analytics} />
+      </Modal>
+      <Modal open={modal === "unidade"} onClose={close} title="Unidade">
+        <UnidadeModal unit={unit} isPro={isPro} onClose={close} />
+      </Modal>
+      <Modal open={modal === "tv"} onClose={close} title="Modo TV">
+        <TVModal unit={unit} tvCount={tvCount} />
+      </Modal>
+      <Modal open={modal === "plano"} onClose={close} title="Plano">
+        <PlanoModal restaurant={restaurant} trialDays={trialDays} onUpgrade={() => { close(); router.push("/painel/planos"); }} onClose={close} />
+      </Modal>
+      <Modal open={modal === "config"} onClose={close} title="Configurações">
+        <ConfigModal profile={profile} restaurant={restaurant} />
+      </Modal>
+      <Modal open={modal === "estoque"} onClose={close} title="Estoque">
+        <EstoqueModal unit={unit} stockStats={stockStats} />
+      </Modal>
+      <Modal open={modal === "operacoes"} onClose={close} title="Operações">
+        {unit && <RestaurantOperationsModal unitId={unit.id} />}
+      </Modal>
+      <Modal open={modal === "equipe"} onClose={close} title="Equipe">
+        {unit && <StaffAnalyticsModal unitId={unit.id} />}
+      </Modal>
     </>
   );
 }
