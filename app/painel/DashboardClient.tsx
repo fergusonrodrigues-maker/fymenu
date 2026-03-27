@@ -122,6 +122,44 @@ export default function DashboardClient({
         ::-webkit-scrollbar-thumb { background: var(--dash-scrollbar); border-radius: 4px; }
         input, textarea, select { outline: none; font-family: inherit; }
         input::placeholder, textarea::placeholder { color: var(--dash-placeholder); }
+        .delete-btn {
+          position: relative;
+          width: 38px;
+          height: 38px;
+          border: none;
+          background: rgba(255, 80, 80, 0.12);
+          border-radius: 8px;
+          cursor: pointer;
+          transition: background 0.3s, transform 0.15s;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+        .delete-btn:hover {
+          background: rgb(211, 21, 21);
+          transform: scale(1.05);
+        }
+        .delete-btn:active {
+          background: rgb(130, 0, 0);
+          transform: scale(0.95);
+        }
+        .delete-btn .x-line {
+          position: absolute;
+          width: 16px;
+          height: 1.5px;
+          background-color: #f87171;
+          transition: background-color 0.3s;
+        }
+        .delete-btn:hover .x-line {
+          background-color: #fff;
+        }
+        .delete-btn .x-line:first-child {
+          transform: rotate(45deg);
+        }
+        .delete-btn .x-line:last-child {
+          transform: rotate(-45deg);
+        }
       `}</style>
 
       <div style={{
@@ -619,7 +657,10 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
               </form>
               <form action={deleteCategory} onClick={(e) => e.stopPropagation()} onSubmit={(e) => { if (!confirm("Excluir categoria e todos os produtos?")) e.preventDefault(); }}>
                 <input type="hidden" name="id" value={cat.id} />
-                <button type="submit" style={{ padding: "6px 12px", borderRadius: 8, border: "none", background: "rgba(255,80,80,0.12)", color: "#f87171", fontSize: 12, cursor: "pointer" }}>✕</button>
+                <button type="submit" className="delete-btn">
+                  <span className="x-line" />
+                  <span className="x-line" />
+                </button>
               </form>
             </div>
             {isOpen && (
