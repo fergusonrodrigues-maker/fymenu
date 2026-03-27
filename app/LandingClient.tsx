@@ -335,8 +335,8 @@ export default function LandingPage() {
           box-shadow: 0 12px 48px rgba(213,22,89,0.45), inset 0 1px 0 rgba(255,255,255,0.35);
         }
         .landing-light .btn-outline {
-          border-color: rgba(0,0,0,0.12) !important;
-          color: #333 !important;
+          border-color: rgba(213,22,89,0.15) !important;
+          color: #222 !important;
           font-weight: 700 !important;
           background: rgba(0,0,0,0.02) !important;
         }
