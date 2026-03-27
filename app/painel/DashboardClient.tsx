@@ -606,7 +606,6 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
   const [expandedCat, setExpandedCat] = useState<string | null>(null);
   const [expandedProductId, setExpandedProductId] = useState<string | null>(null);
   const [newCatType, setNewCatType] = useState<"food" | "drink">("food");
-  const [newCatAlcoholic, setNewCatAlcoholic] = useState(false);
   const [orderedCats, setOrderedCats] = useState(categories);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [overIdx, setOverIdx] = useState<number | null>(null);
@@ -703,7 +702,7 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
         <form action={createCategory} style={{ display: "flex", flexDirection: "column", gap: 8, padding: "12px 14px", borderRadius: 14, border: "1px solid var(--dash-input-border)", background: "var(--dash-card)" }}>
           <input type="hidden" name="unit_id" value={unit.id} />
           <input type="hidden" name="category_type" value={newCatType} />
-          <input type="hidden" name="is_alcoholic" value={String(newCatType === "drink" && newCatAlcoholic)} />
+          <input type="hidden" name="is_alcoholic" value="false" />
           <div style={{ display: "flex", gap: 8 }}>
             <input name="name" placeholder="Nome da categoria" required style={{ ...inp, flex: 1 }} />
             <button type="submit" className="btn-gradient" style={{ padding: "0 20px", whiteSpace: "nowrap", minWidth: 80 }}>
@@ -715,21 +714,14 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
           {/* Tipo */}
           <div style={{ display: "flex", gap: 6 }}>
             {(["food", "drink"] as const).map((t) => (
-              <button key={t} type="button" onClick={() => { setNewCatType(t); if (t === "food") setNewCatAlcoholic(false); }}
+              <button key={t} type="button" onClick={() => setNewCatType(t)}
                 style={{ flex: 1, padding: "7px 0", borderRadius: 10, border: "none", fontSize: 12, fontWeight: 600, cursor: "pointer",
                   background: newCatType === t ? "rgba(0,255,174,0.15)" : "var(--dash-link-bg)",
                   color: newCatType === t ? "#00ffae" : "var(--dash-text-muted)" }}>
-                {t === "food" ? "🍽️ Comida" : "🥤 Bebida"}
+                {t === "food" ? "🍽️ Pratos" : "🥤 Bebidas"}
               </button>
             ))}
           </div>
-          {/* +18 (só para bebida) */}
-          {newCatType === "drink" && (
-            <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 13, color: "var(--dash-text-muted)", padding: "6px 0" }}>
-              <input type="checkbox" checked={newCatAlcoholic} onChange={(e) => setNewCatAlcoholic(e.target.checked)} style={{ width: 16, height: 16, accentColor: "#f87171" }} />
-              <span>🔞 Bebida alcoólica (restrita a +18)</span>
-            </label>
-          )}
         </form>
       )}
 
