@@ -164,7 +164,7 @@ export default function DashboardClient({
         .btn-gradient {
           position: relative;
           font-weight: 700;
-          height: 42px;
+          height: 38px;
           border: none;
           border-radius: 12px;
           cursor: pointer;
@@ -735,8 +735,8 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
           <input type="hidden" name="category_type" value={newCatType} />
           <input type="hidden" name="is_alcoholic" value="false" />
           <div style={{ display: "flex", gap: 8 }}>
-            <input name="name" placeholder="Nome da categoria" required style={{ ...inp, flex: 1 }} />
-            <button type="submit" className="btn-gradient" style={{ padding: "0 20px", whiteSpace: "nowrap", minWidth: 80 }}>
+            <input name="name" placeholder="Nome da categoria" required style={{ ...inp, flex: 1, height: 38, padding: "0 12px" }} />
+            <button type="submit" className="btn-gradient" style={{ padding: "0 18px", whiteSpace: "nowrap", minWidth: 70, height: 38, borderRadius: 10 }}>
               <span className="gradient-bg" />
               <span className="btn-text">Criar</span>
               <span className="btn-text-done">✓</span>
