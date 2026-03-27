@@ -29,16 +29,37 @@ type Profile = { first_name: string | null; last_name: string | null; phone: str
 // ─── Modal backdrop ─────────────────────────────────────────────────────────
 function Modal({ open, onClose, children, title }: { open: boolean; onClose: () => void; children: React.ReactNode; title: string }) {
   useEffect(() => {
-    if (open) document.body.style.overflow = "hidden";
-    else document.body.style.overflow = "";
-    return () => { document.body.style.overflow = ""; };
+    if (open) {
+      document.body.style.overflow = "hidden";
+      document.body.style.touchAction = "none";
+      document.body.style.position = "fixed";
+      document.body.style.width = "100%";
+      document.body.style.top = `-${window.scrollY}px`;
+    } else {
+      const scrollY = document.body.style.top;
+      document.body.style.overflow = "";
+      document.body.style.touchAction = "";
+      document.body.style.position = "";
+      document.body.style.width = "";
+      document.body.style.top = "";
+      if (scrollY) window.scrollTo(0, parseInt(scrollY || "0") * -1);
+    }
+    return () => {
+      const scrollY = document.body.style.top;
+      document.body.style.overflow = "";
+      document.body.style.touchAction = "";
+      document.body.style.position = "";
+      document.body.style.width = "";
+      document.body.style.top = "";
+      if (scrollY) window.scrollTo(0, parseInt(scrollY || "0") * -1);
+    };
   }, [open]);
 
   if (!open) return null;
   return (
     <div style={{
       position: "fixed", inset: 0, zIndex: 100,
-      background: "var(--dash-overlay)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)",
+      background: "rgba(0,0,0,0.4)", backdropFilter: "blur(24px) saturate(1.2)", WebkitBackdropFilter: "blur(24px) saturate(1.2)",
       display: "flex", alignItems: "flex-end",
       animation: "fadeIn 0.2s ease",
     }}
@@ -48,19 +69,19 @@ function Modal({ open, onClose, children, title }: { open: boolean; onClose: () 
         @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
         @keyframes modalScale { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
         @media (min-width: 640px) {
-          .modal-sheet { border-radius: 24px !important; max-width: 560px !important; margin: auto !important; align-self: center !important; max-height: 85vh !important; transform-origin: center center !important; }
+          .modal-sheet { border-radius: 24px !important; max-width: 560px !important; margin: auto !important; align-self: center !important; max-height: 85vh !important; transform-origin: center center !important; background: rgba(10,10,10,0.7) !important; }
         }
       `}</style>
       <div
         className="modal-sheet"
         style={{
           width: "100%", maxHeight: "92vh",
-          background: "var(--dash-modal-bg)",
+          background: "rgba(10,10,10,0.75)",
+          backdropFilter: "blur(40px) saturate(1.5)",
+          WebkitBackdropFilter: "blur(40px) saturate(1.5)",
           borderRadius: "24px 24px 0 0",
           border: "1px solid var(--dash-modal-border)",
-          boxShadow: "0 0 40px rgba(0,255,174,0.04), 0 20px 60px rgba(0,0,0,0.4)",
-          backdropFilter: "blur(24px)",
-          WebkitBackdropFilter: "blur(24px)",
+          boxShadow: "0 -8px 60px rgba(0,0,0,0.3), 0 0 30px rgba(0,255,174,0.03), inset 0 1px 0 rgba(255,255,255,0.06)",
           overflow: "hidden", display: "flex", flexDirection: "column",
           animation: "modalScale 0.3s cubic-bezier(0.34,1.56,0.64,1)",
           transformOrigin: "center bottom",
@@ -69,7 +90,7 @@ function Modal({ open, onClose, children, title }: { open: boolean; onClose: () 
       >
         {/* Handle */}
         <div style={{ display: "flex", justifyContent: "center", padding: "12px 0 0" }}>
-          <div style={{ width: 36, height: 4, borderRadius: 2, background: "var(--dash-handle)", boxShadow: "0 0 8px var(--dash-handle)" }} />
+          <div style={{ width: 36, height: 4, borderRadius: 2, background: "rgba(0,255,174,0.2)", boxShadow: "0 0 12px rgba(0,255,174,0.15)" }} />
         </div>
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 24px 12px" }}>
@@ -77,7 +98,7 @@ function Modal({ open, onClose, children, title }: { open: boolean; onClose: () 
           <button onClick={onClose} style={{ background: "var(--dash-close-btn)", border: "1px solid var(--dash-modal-border)", borderRadius: "50%", width: 32, height: 32, color: "var(--dash-close-color)", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s" }}>✕</button>
         </div>
         {/* Content */}
-        <div style={{ overflowY: "auto", padding: "0 24px 32px", flex: 1 }}>
+        <div style={{ overflowY: "auto", padding: "0 24px 32px", flex: 1, WebkitOverflowScrolling: "touch" }}>
           {children}
         </div>
       </div>
@@ -548,6 +569,9 @@ export default function DashboardClient({
           border: 1px solid var(--dash-card-border) !important;
           box-shadow: 0 0 12px rgba(0,255,174,0.04), inset 0 1px 0 rgba(255,255,255,0.03);
           transition: border-color 0.3s ease, box-shadow 0.3s ease;
+          background: rgba(255,255,255,0.03) !important;
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
         }
         .modal-neon-card:hover {
           border-color: var(--dash-btn-border) !important;
@@ -625,11 +649,10 @@ export default function DashboardClient({
         }}>
 
           {/* Analytics */}
-          <div className="card" onClick={() => open("analytics")} style={{
+          <div className="card modal-neon-card" onClick={() => open("analytics")} style={{
             gridColumn: "span 2",
             borderRadius: 20, padding: "20px 24px",
             background: "var(--dash-card)",
-            border: "1px solid var(--dash-card-border)",
             cursor: "pointer",
           }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
@@ -654,10 +677,9 @@ export default function DashboardClient({
           </div>
 
           {/* Cardápio */}
-          <div className="card" onClick={() => open("cardapio")} style={{
+          <div className="card modal-neon-card" onClick={() => open("cardapio")} style={{
             borderRadius: 20, padding: "20px 18px",
             background: "var(--dash-card)",
-            border: "1px solid var(--dash-card-border)",
             cursor: "pointer", minHeight: 140,
             display: "flex", flexDirection: "column", justifyContent: "space-between",
           }}>
@@ -669,10 +691,9 @@ export default function DashboardClient({
           </div>
 
           {/* Pedidos */}
-          <div className="card" onClick={() => open("pedidos")} style={{
+          <div className="card modal-neon-card" onClick={() => open("pedidos")} style={{
             borderRadius: 20, padding: "20px 18px",
             background: "var(--dash-card)",
-            border: "1px solid var(--dash-card-border)",
             cursor: "pointer", minHeight: 140,
             display: "flex", flexDirection: "column", justifyContent: "space-between",
           }}>
@@ -684,10 +705,9 @@ export default function DashboardClient({
           </div>
 
           {/* Financeiro */}
-          <div className="card" onClick={() => open("financeiro")} style={{
+          <div className="card modal-neon-card" onClick={() => open("financeiro")} style={{
             borderRadius: 20, padding: "20px 18px",
             background: "var(--dash-card)",
-            border: "1px solid var(--dash-card-border)",
             cursor: "pointer", minHeight: 140,
             display: "flex", flexDirection: "column", justifyContent: "space-between",
           }}>
@@ -699,10 +719,9 @@ export default function DashboardClient({
           </div>
 
           {/* Unidade */}
-          <div className="card" onClick={() => open("unidade")} style={{
+          <div className="card modal-neon-card" onClick={() => open("unidade")} style={{
             borderRadius: 20, padding: "20px 18px",
             background: "var(--dash-card)",
-            border: "1px solid var(--dash-card-border)",
             cursor: "pointer", minHeight: 120,
             display: "flex", flexDirection: "column", justifyContent: "space-between",
           }}>
@@ -717,10 +736,9 @@ export default function DashboardClient({
           </div>
 
           {/* Modo TV */}
-          <div className="card" onClick={() => open("tv")} style={{
+          <div className="card modal-neon-card" onClick={() => open("tv")} style={{
             borderRadius: 20, padding: "20px 18px",
             background: "var(--dash-card)",
-            border: "1px solid var(--dash-card-border)",
             cursor: "pointer", minHeight: 120,
             display: "flex", flexDirection: "column", justifyContent: "space-between",
           }}>
@@ -732,10 +750,10 @@ export default function DashboardClient({
           </div>
 
           {/* Plano */}
-          <div className="card" onClick={() => open("plano")} style={{
+          <div className={`card ${isPro ? "" : "modal-neon-card"}`} onClick={() => open("plano")} style={{
             borderRadius: 20, padding: "20px 18px",
             background: isPro ? "linear-gradient(135deg, rgba(255,215,0,0.06) 0%, rgba(255,215,0,0.02) 100%)" : "var(--dash-card)",
-            border: isPro ? "1px solid rgba(255,215,0,0.15)" : "1px solid var(--dash-card-border)",
+            border: isPro ? "1px solid rgba(255,215,0,0.15)" : undefined,
             cursor: "pointer", minHeight: 120,
             display: "flex", flexDirection: "column", justifyContent: "space-between",
           }}>
@@ -749,10 +767,9 @@ export default function DashboardClient({
           </div>
 
           {/* Config */}
-          <div className="card" onClick={() => open("config")} style={{
+          <div className="card modal-neon-card" onClick={() => open("config")} style={{
             borderRadius: 20, padding: "20px 18px",
             background: "var(--dash-card)",
-            border: "1px solid var(--dash-card-border)",
             cursor: "pointer", minHeight: 120,
             display: "flex", flexDirection: "column", justifyContent: "space-between",
           }}>
@@ -764,11 +781,11 @@ export default function DashboardClient({
           </div>
 
           {/* Estoque */}
-          <div className="card" onClick={() => open("estoque")} style={{
+          <div className={`card ${stockStats.out === 0 && stockStats.low === 0 ? "modal-neon-card" : ""}`} onClick={() => open("estoque")} style={{
             gridColumn: "span 2",
             borderRadius: 20, padding: "20px 18px",
             background: stockStats.out > 0 ? "rgba(248,113,113,0.04)" : stockStats.low > 0 ? "rgba(251,191,36,0.04)" : "var(--dash-card)",
-            border: stockStats.out > 0 ? "1px solid rgba(248,113,113,0.15)" : stockStats.low > 0 ? "1px solid rgba(251,191,36,0.15)" : "1px solid var(--dash-card-border)",
+            border: stockStats.out > 0 ? "1px solid rgba(248,113,113,0.15)" : stockStats.low > 0 ? "1px solid rgba(251,191,36,0.15)" : undefined,
             cursor: "pointer", minHeight: 100,
             display: "flex", alignItems: "center", gap: 16,
           }}>
@@ -784,11 +801,10 @@ export default function DashboardClient({
           </div>
 
           {/* Operações */}
-          <div className="card" onClick={() => open("operacoes")} style={{
+          <div className="card modal-neon-card" onClick={() => open("operacoes")} style={{
             gridColumn: "span 2",
             borderRadius: 20, padding: "20px 18px",
             background: "linear-gradient(135deg, rgba(0,255,174,0.04) 0%, rgba(96,165,250,0.04) 100%)",
-            border: "1px solid rgba(0,255,174,0.15)",
             cursor: "pointer", minHeight: 100,
             display: "flex", alignItems: "center", gap: 16,
           }}>
@@ -803,11 +819,10 @@ export default function DashboardClient({
           </div>
 
           {/* Equipe */}
-          <div className="card" onClick={() => open("equipe")} style={{
+          <div className="card modal-neon-card" onClick={() => open("equipe")} style={{
             gridColumn: "span 2",
             borderRadius: 20, padding: "20px 18px",
             background: "var(--dash-card)",
-            border: "1px solid var(--dash-card-border)",
             cursor: "pointer", minHeight: 100,
             display: "flex", alignItems: "center", gap: 16,
           }}>
