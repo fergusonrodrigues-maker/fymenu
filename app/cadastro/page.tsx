@@ -153,10 +153,15 @@ export default async function SignupPage({
           display: block;
           font-size: 12px;
           font-weight: 600;
-          color: rgba(255,255,255,0.5);
           margin-bottom: 8px;
           text-transform: uppercase;
           letter-spacing: 0.5px;
+          background: linear-gradient(to right, rgba(255,255,255,0.4) 0%, #fff 10%, rgba(255,255,255,0.4) 20%);
+          background-size: 180px;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          animation: textShine 3s infinite linear;
         }
 
         .input-wrapper input {
@@ -227,9 +232,14 @@ export default async function SignupPage({
 
         .divider-text {
           font-size: 12px;
-          color: rgba(255,255,255,0.3);
           text-transform: uppercase;
           letter-spacing: 1px;
+          background: linear-gradient(to right, rgba(255,255,255,0.3) 0%, #fff 10%, rgba(255,255,255,0.3) 20%);
+          background-size: 180px;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          animation: textShine 3s infinite linear;
         }
 
         .social-btn {
@@ -291,6 +301,21 @@ export default async function SignupPage({
           font-size: 13px;
           margin-bottom: 16px;
         }
+
+        .text-shine {
+          background: linear-gradient(to right, rgba(255,255,255,0.4) 0%, #fff 10%, rgba(255,255,255,0.4) 20%);
+          background-position: 0;
+          background-size: 180px;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          animation: textShine 3s infinite linear;
+        }
+        @keyframes textShine {
+          0% { background-position: 0; }
+          60% { background-position: 180px; }
+          100% { background-position: 180px; }
+        }
       `}</style>
 
       {/* Dot background + glow */}
@@ -304,7 +329,7 @@ export default async function SignupPage({
         </div>
 
         <h1 className="title">Criar Conta</h1>
-        <p className="subtitle">Cardápio digital em minutos</p>
+        <p className="subtitle text-shine">Cardápio digital em minutos</p>
 
         {sp.err && <div className="error-message">{decodeURIComponent(sp.err)}</div>}
         {sp.ok && <div className="success-message">{decodeURIComponent(sp.ok)}</div>}
@@ -358,7 +383,7 @@ export default async function SignupPage({
 
         <button className="social-btn">Continuar com Google</button>
 
-        <div className="footer-text">
+        <div className="footer-text text-shine">
           Já tem conta? <a href="/entrar">Fazer login</a>
         </div>
       </div>

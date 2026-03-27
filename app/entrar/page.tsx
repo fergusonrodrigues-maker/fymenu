@@ -129,10 +129,15 @@ export default async function LoginPage({
           display: block;
           font-size: 12px;
           font-weight: 600;
-          color: rgba(255,255,255,0.5);
           margin-bottom: 8px;
           text-transform: uppercase;
           letter-spacing: 0.5px;
+          background: linear-gradient(to right, rgba(255,255,255,0.4) 0%, #fff 10%, rgba(255,255,255,0.4) 20%);
+          background-size: 180px;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          animation: textShine 3s infinite linear;
         }
 
         .input-wrapper input {
@@ -203,9 +208,14 @@ export default async function LoginPage({
 
         .divider-text {
           font-size: 12px;
-          color: rgba(255,255,255,0.3);
           text-transform: uppercase;
           letter-spacing: 1px;
+          background: linear-gradient(to right, rgba(255,255,255,0.3) 0%, #fff 10%, rgba(255,255,255,0.3) 20%);
+          background-size: 180px;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          animation: textShine 3s infinite linear;
         }
 
         .social-btn {
@@ -287,6 +297,21 @@ export default async function LoginPage({
         .forgot-password a:hover {
           text-decoration: underline;
         }
+
+        .text-shine {
+          background: linear-gradient(to right, rgba(255,255,255,0.4) 0%, #fff 10%, rgba(255,255,255,0.4) 20%);
+          background-position: 0;
+          background-size: 180px;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          animation: textShine 3s infinite linear;
+        }
+        @keyframes textShine {
+          0% { background-position: 0; }
+          60% { background-position: 180px; }
+          100% { background-position: 180px; }
+        }
       `}</style>
 
       {/* Dot background + glow */}
@@ -300,7 +325,7 @@ export default async function LoginPage({
         </div>
 
         <h1 className="title">Bem-vindo</h1>
-        <p className="subtitle">Gerencie seu cardápio digital</p>
+        <p className="subtitle text-shine">Gerencie seu cardápio digital</p>
 
         {err && <div className="error-message">{err}</div>}
         {ok && <div className="success-message">{ok}</div>}
@@ -345,7 +370,7 @@ export default async function LoginPage({
 
         <button className="social-btn">Continuar com Google</button>
 
-        <div className="footer-text">
+        <div className="footer-text text-shine">
           Não tem conta? <a href="/cadastro">Criar uma agora</a>
         </div>
       </div>
