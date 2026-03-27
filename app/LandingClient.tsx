@@ -602,7 +602,7 @@ export default function LandingPage() {
           </div>
           <a href="#features">Recursos</a>
           <a href="#pricing">Planos</a>
-          <a href="/painel" className="btn-primary" style={{ width: "auto", padding: "8px 20px", fontSize: 12, borderRadius: 999, fontWeight: 800, color: theme === "dark" ? "#000" : "#fff" }}>
+          <a href="/painel" className="btn-primary" style={{ width: "auto", padding: "8px 20px", fontSize: 12, borderRadius: 999, fontWeight: 800, color: theme === "dark" ? "#000" : "#fff", WebkitTextFillColor: theme === "dark" ? "#000" : "#fff" }}>
             Entrar
           </a>
         </nav>
