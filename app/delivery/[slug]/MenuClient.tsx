@@ -188,7 +188,12 @@ export default function MenuClient({
       {/* Conteúdo scrollável */}
       <div
         className="min-h-dvh bg-white"
-        style={{ paddingTop: "calc(58px + env(safe-area-inset-top, 0px))", paddingBottom: "calc(340px + env(safe-area-inset-bottom, 0px))" }}
+        style={{
+          paddingTop: "calc(58px + env(safe-area-inset-top, 0px))",
+          paddingBottom: "calc(340px + env(safe-area-inset-bottom, 0px))",
+          backgroundImage: "radial-gradient(rgba(0,0,0,0.07) 1px, transparent 1px)",
+          backgroundSize: "18px 18px",
+        }}
       >
         {/* Categorias em destaque */}
         {featuredCategories.map((cat) => {

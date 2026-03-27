@@ -202,6 +202,39 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
             </svg>
           </button>
 
+          {/* Toggle tema */}
+          <button
+            onClick={() => {
+              const html = document.documentElement;
+              const isDark = html.classList.contains("dark");
+              if (isDark) {
+                html.classList.remove("dark");
+                html.classList.add("light");
+              } else {
+                html.classList.remove("light");
+                html.classList.add("dark");
+              }
+            }}
+            style={{
+              position: "absolute",
+              top: 14,
+              left: 16,
+              width: 36,
+              height: 36,
+              borderRadius: 12,
+              background: "rgba(255,255,255,0.10)",
+              border: "0.5px solid rgba(255,255,255,0.12)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              fontSize: 16,
+            }}
+            aria-label="Alternar tema"
+          >
+            🌗
+          </button>
+
           {wa && (
             <a href={wa} target="_blank" rel="noreferrer" style={{
               display: "flex", alignItems: "center",
