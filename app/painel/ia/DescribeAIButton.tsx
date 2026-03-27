@@ -49,6 +49,7 @@ interface DescribeAIButtonProps {
   categoryName?: string;
   currentDescription?: string;
   onGenerated: (description: string) => void;
+  renderButton?: (onClick: () => void, loading: boolean) => React.ReactNode;
 }
 
 export function DescribeAIButton({
@@ -56,6 +57,7 @@ export function DescribeAIButton({
   categoryName,
   currentDescription,
   onGenerated,
+  renderButton,
 }: DescribeAIButtonProps) {
   const { generating, generate } = useDescribeAI();
 
@@ -63,6 +65,8 @@ export function DescribeAIButton({
     const result = await generate(productName, categoryName, currentDescription);
     if (result) onGenerated(result);
   }
+
+  if (renderButton) return <>{renderButton(handleClick, generating)}</>;
 
   return (
     <button

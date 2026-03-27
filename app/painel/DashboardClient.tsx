@@ -249,6 +249,62 @@ export default function DashboardClient({
           transform: translateY(1px);
           color: #d4c4f0;
         }
+        .btn-ai-sparkle {
+          --sz: 32px;
+          position: relative;
+          width: var(--sz);
+          height: var(--sz);
+          border: none;
+          border-radius: 10px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: linear-gradient(45deg, #efad21, #ffd60f);
+          box-shadow: rgba(60,64,67,0.3) 0 1px 2px 0, rgba(60,64,67,0.15) 0 2px 6px 2px, rgba(0,0,0,0.3) 0 12px 24px -12px, rgba(52,52,52,0.35) 0 -2px 6px 0 inset;
+          transition: transform 0.2s;
+        }
+        .btn-ai-sparkle:active {
+          transform: scale(0.92);
+        }
+        .btn-ai-sparkle:hover {
+          box-shadow: rgba(60,64,67,0.3) 0 1px 2px 0, rgba(60,64,67,0.15) 0 2px 6px 2px, rgba(0,0,0,0.4) 0 16px 32px -12px, rgba(52,52,52,0.35) 0 -2px 6px 0 inset;
+        }
+        .btn-ai-sparkle .sparkle-svg {
+          width: 18px;
+          height: 18px;
+          color: #ffea50;
+          transition: all 0.3s;
+          animation: sparkle-pulse 2s ease-in-out infinite;
+        }
+        .btn-ai-sparkle:hover .sparkle-svg {
+          color: #fff;
+          width: 22px;
+          height: 22px;
+        }
+        .btn-ai-sparkle .ai-label {
+          position: absolute;
+          font-size: 9px;
+          font-weight: 900;
+          color: #fff;
+          opacity: 1;
+          transition: opacity 0.2s;
+          bottom: 2px;
+          right: 3px;
+          text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+        .btn-ai-sparkle:hover .ai-label {
+          opacity: 0;
+        }
+        @keyframes sparkle-pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.7; }
+        }
+        .btn-ai-sparkle:disabled {
+          opacity: 0.5;
+          cursor: wait;
+          transform: none;
+        }
         .btn-ai-mini {
           display: flex;
           align-items: center;
