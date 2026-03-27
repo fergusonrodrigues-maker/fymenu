@@ -1144,11 +1144,17 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
                   type="checkbox"
                   checked={cat.is_active !== false}
                   onChange={async (e) => {
-                    const fd = new FormData();
-                    fd.set("id", cat.id);
-                    fd.set("name", cat.name);
-                    fd.set("is_active", String(e.target.checked));
-                    await updateCategory(fd);
+                    const newActive = e.target.checked;
+                    const { createClient: cc } = await import("@/lib/supabase/client");
+                    const supabase = cc();
+                    const { error } = await supabase
+                      .from("categories")
+                      .update({ is_active: newActive })
+                      .eq("id", cat.id);
+                    if (error) {
+                      console.error("Toggle category active error:", error);
+                      e.target.checked = !newActive;
+                    }
                   }}
                 />
                 <div className="sw-slider">
