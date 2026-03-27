@@ -139,15 +139,15 @@ export default function ProductRow({
             >
               <input type="hidden" name="id" value={product.id} />
               <input name="name" defaultValue={product.name} placeholder="Nome do produto" style={inputStyle} />
-              <div>
-                <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 4 }}>
+              <div style={{ position: "relative" }}>
+                <textarea name="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Descrição (opcional)" rows={3} style={{ ...inputStyle, resize: "vertical", paddingBottom: 40 }} />
+                <div style={{ position: "absolute", bottom: 8, right: 8, zIndex: 2 }}>
                   <DescribeAIButton
                     productName={product.name}
                     currentDescription={description}
                     onGenerated={(d) => setDescription(d)}
                   />
                 </div>
-                <textarea name="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Descrição (opcional)" rows={2} style={{ ...inputStyle, resize: "vertical" }} />
               </div>
               <div style={{ display: "flex", gap: 8 }}>
                 <select

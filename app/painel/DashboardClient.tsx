@@ -249,6 +249,37 @@ export default function DashboardClient({
           transform: translateY(1px);
           color: #d4c4f0;
         }
+        .btn-ai-mini {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          padding: 5px 10px;
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+          font-size: 11px;
+          font-weight: 700;
+          color: #fff;
+          background: linear-gradient(145deg, #d4a017 0%, #b8860b 50%, #8b6914 100%);
+          box-shadow: 0 2px 8px rgba(212,160,23,0.3), inset 0 1px 0 rgba(255,255,255,0.2), inset 0 -1px 0 rgba(0,0,0,0.15);
+          transition: all 0.2s ease;
+          transform: translateY(0);
+        }
+        .btn-ai-mini:hover {
+          background: linear-gradient(145deg, #e6b422 0%, #c9960f 50%, #a07818 100%);
+          box-shadow: 0 3px 12px rgba(212,160,23,0.4), inset 0 1px 0 rgba(255,255,255,0.25), inset 0 -1px 0 rgba(0,0,0,0.1);
+          transform: translateY(-1px);
+        }
+        .btn-ai-mini:active {
+          background: linear-gradient(145deg, #8b6914 0%, #705510 50%, #5a440c 100%);
+          box-shadow: 0 1px 3px rgba(212,160,23,0.15), inset 0 2px 4px rgba(0,0,0,0.25);
+          transform: translateY(1px);
+        }
+        .btn-ai-mini:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+          transform: none;
+        }
         .cat-dropdown-content {
           transition: all 500ms ease;
           overflow: hidden;
