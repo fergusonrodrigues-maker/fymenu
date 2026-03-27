@@ -42,19 +42,9 @@ function DotRevealBG({ isDark }: { isDark: boolean }) {
           position: "absolute",
           inset: 0,
           background: isDark
-            ? "radial-gradient(circle at 50% 50%, transparent 0%, rgba(0,0,0,0.6) 50%, rgba(0,0,0,0.95) 100%)"
-            : "radial-gradient(circle at 50% 50%, transparent 0%, rgba(250,250,250,0.5) 50%, rgba(250,250,250,0.9) 100%)",
+            ? "linear-gradient(to bottom, transparent 0%, transparent 75%, rgba(0,0,0,0.8) 100%)"
+            : "linear-gradient(to bottom, transparent 0%, transparent 75%, rgba(250,250,250,0.8) 100%)",
           zIndex: 1,
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          background: isDark
-            ? "linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, transparent 30%, transparent 70%, rgba(0,0,0,0.95) 100%)"
-            : "linear-gradient(to bottom, rgba(250,250,250,0.85) 0%, transparent 30%, transparent 70%, rgba(250,250,250,0.9) 100%)",
-          zIndex: 2,
         }}
       />
     </div>
