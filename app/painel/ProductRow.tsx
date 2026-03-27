@@ -225,9 +225,15 @@ export default function ProductRow({
                 <label style={labelStyle}>Vídeo (opcional)</label>
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                   {videoUrl ? (
-                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, position: "relative" }}>
                       <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>🎬 {videoUrl.split("/").pop()}</span>
-                      <button type="button" onClick={() => setVideoUrl("")} style={removeBtnStyle}>×</button>
+                      <button type="button" onClick={() => setVideoUrl("")} style={{
+                        width: 22, height: 22, borderRadius: "50%",
+                        background: "#ef4444", color: "#fff", border: "none",
+                        fontSize: 13, cursor: "pointer",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        lineHeight: 1, flexShrink: 0,
+                      }}>×</button>
                     </div>
                   ) : null}
                   <button type="button" onClick={() => videoRef.current?.click()} disabled={uploading === "video"} style={uploadBtnStyle}>
