@@ -80,6 +80,18 @@ export default function ProductModal({
     onSwipeDown: () => handleClose(),
   });
 
+  // Travar scroll do body quando modal aberto
+  useEffect(() => {
+    if (product) {
+      document.body.style.overflow = "hidden";
+      document.body.style.touchAction = "none";
+    }
+    return () => {
+      document.body.style.overflow = "";
+      document.body.style.touchAction = "";
+    };
+  }, [product]);
+
   function handleClose() {
     setClosing(true);
     setTimeout(() => onClose(), 280);
