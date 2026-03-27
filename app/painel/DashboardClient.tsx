@@ -863,14 +863,14 @@ function AnalyticsModal({ analytics, unit }: { analytics: any; unit: Unit | null
         <div key={s.label} style={{ borderRadius: 16, padding: "18px 20px", background: "var(--dash-card)", border: "1px solid var(--dash-card-border)", display: "flex", alignItems: "center", gap: 16 }}>
           <div style={{ fontSize: 28 }}>{s.icon}</div>
           <div style={{ flex: 1 }}>
-            <div className="dash-shine" style={{ fontSize: 12 }}>{s.label}</div>
+            <div style={{ color: "var(--dash-text-dim)", fontSize: 12 }}>{s.label}</div>
             <div style={{ color: s.color, fontSize: 28, fontWeight: 900, lineHeight: 1.1 }}>{s.value}</div>
-            <div className="dash-shine" style={{ fontSize: 11 }}>{s.desc}</div>
+            <div style={{ color: "var(--dash-text-subtle)", fontSize: 11 }}>{s.desc}</div>
           </div>
         </div>
       ))}
       <div style={{ borderRadius: 16, padding: "18px 20px", background: "var(--dash-card)", border: "1px solid var(--dash-card-border)" }}>
-        <div className="dash-shine" style={{ fontSize: 12, marginBottom: 4 }}>Taxa de conversão</div>
+        <div style={{ color: "var(--dash-text-dim)", fontSize: 12, marginBottom: 4 }}>Taxa de conversão</div>
         <div style={{ color: "var(--dash-text)", fontSize: 32, fontWeight: 900 }}>{conversion}%</div>
         <div style={{ color: "var(--dash-text-subtle)", fontSize: 11 }}>visitas → pedidos</div>
       </div>
@@ -1095,7 +1095,7 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
                 <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: isOpen ? "0 12px 12px" : "0 12px" }}>
                   {isOpen && (
                     <>
-                      {catProducts.length === 0 && <div className="dash-shine" style={{ fontSize: 13, padding: "8px 0" }}>Nenhum produto nesta categoria.</div>}
+                      {catProducts.length === 0 && <div style={{ color: "var(--dash-text-subtle)", fontSize: 13, padding: "8px 0" }}>Nenhum produto nesta categoria.</div>}
                       {(showAllProducts[cat.id] ? catProducts : catProducts.slice(0, 4)).map((p) => (
                         <ProductRow
                           key={p.id}
@@ -1611,7 +1611,7 @@ function EstoqueModal({ unit, stockStats }: { unit: Unit | null; stockStats: Sto
             <div style={{ color: "var(--dash-text-muted)", fontSize: 11, marginTop: 4 }}>Estoque baixo</div>
           </div>
         </div>
-        <div className="dash-shine" style={{ fontSize: 13, marginBottom: 16 }}>Gerencie o estoque dos seus produtos e acompanhe movimentações.</div>
+        <div style={{ color: "var(--dash-text-muted)", fontSize: 13, marginBottom: 16 }}>Gerencie o estoque dos seus produtos e acompanhe movimentações.</div>
         <a href="/painel/estoque" style={{ display: "block", padding: "12px", borderRadius: 12, border: "none", background: "rgba(0,255,174,0.15)", color: "#00ffae", fontSize: 14, fontWeight: 700, textDecoration: "none" }}>
           Gerenciar estoque →
         </a>
