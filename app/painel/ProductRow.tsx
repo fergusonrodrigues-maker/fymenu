@@ -174,7 +174,7 @@ export default function ProductRow({
                   <option value="variable">Preço variável</option>
                 </select>
                 {priceType === "fixed" && (
-                  <input name="base_price" type="number" step="0.01" defaultValue={product.base_price != null ? product.base_price / 100 : ""} placeholder="Preço (R$)" style={{ ...inputStyle, flex: 1 }} />
+                  <input name="base_price" type="text" inputMode="decimal" defaultValue={product.base_price != null ? (product.base_price / 100).toFixed(2).replace(".", ",") : ""} placeholder="R$ 0,00" style={{ ...inputStyle, flex: 1 }} />
                 )}
               </div>
 
@@ -191,13 +191,17 @@ export default function ProductRow({
                         style={{ ...inputStyle, flex: 2, fontSize: 13 }}
                       />
                       <input
-                        type="number"
-                        placeholder="Preço"
-                        value={v.price}
-                        onChange={(e) => setVariations(variations.map((x, j) => j === i ? { ...x, price: parseFloat(e.target.value) || 0 } : x))}
+                        type="text"
+                        inputMode="decimal"
+                        placeholder="R$ 0,00"
+                        value={v.price ? (v.price / 100).toFixed(2).replace(".", ",") : ""}
+                        onChange={(e) => {
+                          const raw = e.target.value.replace(/[^\d,]/g, "");
+                          const normalized = raw.replace(",", ".");
+                          const cents = Math.round(parseFloat(normalized) * 100) || 0;
+                          setVariations(variations.map((x, j) => j === i ? { ...x, price: cents } : x));
+                        }}
                         style={{ ...inputStyle, flex: 1, fontSize: 13 }}
-                        step="1"
-                        min="0"
                       />
                       <button
                         type="button"
