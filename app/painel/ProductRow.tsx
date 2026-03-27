@@ -21,6 +21,7 @@ type Product = {
   nutrition?: { calories: number | null; protein: number | null; fat: number | null; carbs: number | null } | null;
   preparation_time?: number | null;
   is_age_restricted?: boolean | null;
+  is_active?: boolean | null;
 };
 
 const BUCKET = "products";
