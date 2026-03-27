@@ -21,6 +21,8 @@ const GAP = 13;
 const heroH = HW * (16 / 9);
 const sideH = SW * (16 / 9);
 const SIDE_MT = Math.round((heroH - sideH) / 2);
+// Altura fixa do viewport quando ativo — baseada no hero + paddings
+const ACTIVE_VP_HEIGHT = Math.round(heroH + 12 + 55); // heroH + paddingTop + paddingBottom
 
 export default function CategoryCarousel({
   items,
@@ -107,7 +109,8 @@ export default function CategoryCarousel({
         overflow: "hidden",
         width: "100%",
         padding: active ? "12px 0 55px" : "8px 0 10px",
-        transition: "padding 0.35s ease",
+        height: active ? ACTIVE_VP_HEIGHT : "auto",
+        transition: "padding 0.35s ease, height 0.35s ease",
         cursor: active ? "grab" : "default",
         touchAction: "pan-y",
       }}
