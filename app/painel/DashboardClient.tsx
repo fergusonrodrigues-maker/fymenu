@@ -111,12 +111,30 @@ export default function DashboardClient({
   return (
     <>
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap');
         * { box-sizing: border-box; }
         body { margin: 0; background: var(--dash-bg); }
         @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:0.5 } }
         .card:active { transform: scale(0.97); }
-        .card { transition: transform 0.15s, background 0.2s; }
-        .card:hover { background: var(--dash-card-hover) !important; }
+        .card { transition: transform 0.15s, background 0.2s, border-color 0.2s; }
+        .card:hover { background: var(--dash-card-hover) !important; border-color: rgba(255,255,255,0.14) !important; }
+        .dash-dots {
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          z-index: 0;
+          background-image: radial-gradient(circle, var(--dash-dot-color) 1px, transparent 1px);
+          background-size: 28px 28px;
+          mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 30%, transparent 80%);
+          -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 30%, transparent 80%);
+        }
+        .dash-gradient-text {
+          background: var(--dash-accent-gradient);
+          background-size: 200% 200%;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+        }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--dash-scrollbar); border-radius: 4px; }
@@ -528,9 +546,11 @@ export default function DashboardClient({
       <div style={{
         minHeight: "100vh",
         background: "var(--dash-bg-gradient)",
-        fontFamily: "-apple-system, 'SF Pro Display', BlinkMacSystemFont, sans-serif",
+        fontFamily: "'Montserrat', -apple-system, 'SF Pro Display', BlinkMacSystemFont, sans-serif",
         padding: "env(safe-area-inset-top, 0) 0 env(safe-area-inset-bottom, 0)",
+        position: "relative",
       }}>
+        <div className="dash-dots" />
 
         {/* Header */}
         <div style={{ padding: "56px 24px 8px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -542,7 +562,7 @@ export default function DashboardClient({
                 <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(0,255,174,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>🍽</div>
               )}
               <div>
-                <div style={{ color: "var(--dash-text)", fontSize: 18, fontWeight: 800, letterSpacing: "-0.5px", lineHeight: 1.1 }}>{unit?.name ?? restaurant.name}</div>
+                <div className="dash-gradient-text" style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.5px", lineHeight: 1.1 }}>{unit?.name ?? restaurant.name}</div>
                 <div style={{ color: "var(--dash-text-muted)", fontSize: 12 }}>{unit?.is_published ? "● Publicado" : "○ Não publicado"}</div>
               </div>
             </div>
@@ -589,7 +609,7 @@ export default function DashboardClient({
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
               <div>
                 <div style={{ color: "var(--dash-text-muted)", fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 4 }}>Últimos 7 dias</div>
-                <div style={{ color: "var(--dash-text)", fontSize: 18, fontWeight: 800 }}>Analytics</div>
+                <div className="dash-gradient-text" style={{ fontSize: 18, fontWeight: 800 }}>Analytics</div>
               </div>
               <div style={{ fontSize: 24 }}>📊</div>
             </div>
@@ -617,7 +637,7 @@ export default function DashboardClient({
           }}>
             <div style={{ fontSize: 28 }}>📋</div>
             <div>
-              <div style={{ color: "var(--dash-text)", fontSize: 16, fontWeight: 800, marginBottom: 4 }}>Cardápio</div>
+              <div className="dash-gradient-text" style={{ fontSize: 16, fontWeight: 800, marginBottom: 4 }}>Cardápio</div>
               <div style={{ color: "var(--dash-text-muted)", fontSize: 12 }}>{products.length} produto{products.length !== 1 ? "s" : ""}</div>
             </div>
           </div>
@@ -632,7 +652,7 @@ export default function DashboardClient({
           }}>
             <div style={{ fontSize: 28 }}>🛒</div>
             <div>
-              <div style={{ color: "var(--dash-text)", fontSize: 16, fontWeight: 800, marginBottom: 4 }}>Pedidos</div>
+              <div className="dash-gradient-text" style={{ fontSize: 16, fontWeight: 800, marginBottom: 4 }}>Pedidos</div>
               <div style={{ color: "var(--dash-text-muted)", fontSize: 12 }}>{analytics.orders} pedido{analytics.orders !== 1 ? "s" : ""} hoje</div>
             </div>
           </div>
@@ -647,7 +667,7 @@ export default function DashboardClient({
           }}>
             <div style={{ fontSize: 28 }}>💰</div>
             <div>
-              <div style={{ color: "var(--dash-text)", fontSize: 16, fontWeight: 800, marginBottom: 4 }}>Financeiro</div>
+              <div className="dash-gradient-text" style={{ fontSize: 16, fontWeight: 800, marginBottom: 4 }}>Financeiro</div>
               <div style={{ color: "var(--dash-text-muted)", fontSize: 12 }}>Relatórios e receita</div>
             </div>
           </div>
@@ -662,7 +682,7 @@ export default function DashboardClient({
           }}>
             <div style={{ fontSize: 24 }}>📍</div>
             <div>
-              <div style={{ color: "var(--dash-text)", fontSize: 15, fontWeight: 800, marginBottom: 2 }}>Unidade</div>
+              <div className="dash-gradient-text" style={{ fontSize: 15, fontWeight: 800, marginBottom: 2 }}>Unidade</div>
               <div style={{ color: unit?.is_published ? "#00ffae" : "var(--dash-text-muted)", fontSize: 11, display: "flex", alignItems: "center", gap: 4 }}>
                 <span style={{ width: 6, height: 6, borderRadius: "50%", background: unit?.is_published ? "#00ffae" : "var(--dash-card-border)", display: "inline-block", animation: unit?.is_published ? "pulse 2s infinite" : "none" }} />
                 {unit?.is_published ? "Publicado" : "Não publicado"}
@@ -680,7 +700,7 @@ export default function DashboardClient({
           }}>
             <div style={{ fontSize: 24 }}>📺</div>
             <div>
-              <div style={{ color: "var(--dash-text)", fontSize: 15, fontWeight: 800, marginBottom: 2 }}>Modo TV</div>
+              <div className="dash-gradient-text" style={{ fontSize: 15, fontWeight: 800, marginBottom: 2 }}>Modo TV</div>
               <div style={{ color: "var(--dash-text-muted)", fontSize: 11 }}>{tvCount} vídeo{tvCount !== 1 ? "s" : ""} ativo{tvCount !== 1 ? "s" : ""}</div>
             </div>
           </div>
@@ -695,7 +715,7 @@ export default function DashboardClient({
           }}>
             <div style={{ fontSize: 24 }}>⭐</div>
             <div>
-              <div style={{ color: "var(--dash-text)", fontSize: 15, fontWeight: 800, marginBottom: 2 }}>Plano</div>
+              <div className="dash-gradient-text" style={{ fontSize: 15, fontWeight: 800, marginBottom: 2 }}>Plano</div>
               <div style={{ color: isPro ? "#fbbf24" : "var(--dash-text-muted)", fontSize: 11, fontWeight: isPro ? 700 : 400 }}>
                 {isPro ? "Pro" : restaurant.status === "trial" ? `Trial · ${trialDays}d` : "Basic"}
               </div>
@@ -712,7 +732,7 @@ export default function DashboardClient({
           }}>
             <div style={{ fontSize: 24 }}>⚙️</div>
             <div>
-              <div style={{ color: "var(--dash-text)", fontSize: 15, fontWeight: 800, marginBottom: 2 }}>Configurações</div>
+              <div className="dash-gradient-text" style={{ fontSize: 15, fontWeight: 800, marginBottom: 2 }}>Configurações</div>
               <div style={{ color: "var(--dash-text-muted)", fontSize: 11 }}>{profile.email?.split("@")[0]}</div>
             </div>
           </div>
@@ -728,7 +748,7 @@ export default function DashboardClient({
           }}>
             <div style={{ fontSize: 28 }}>📦</div>
             <div style={{ flex: 1 }}>
-              <div style={{ color: "var(--dash-text)", fontSize: 15, fontWeight: 800, marginBottom: 2 }}>Estoque</div>
+              <div className="dash-gradient-text" style={{ fontSize: 15, fontWeight: 800, marginBottom: 2 }}>Estoque</div>
               <div style={{ fontSize: 12, display: "flex", gap: 8 }}>
                 {stockStats.out > 0 && <span style={{ color: "#f87171" }}>{stockStats.out} esgotado{stockStats.out !== 1 ? "s" : ""}</span>}
                 {stockStats.low > 0 && <span style={{ color: "#fbbf24" }}>{stockStats.low} baixo{stockStats.low !== 1 ? "s" : ""}</span>}
@@ -748,7 +768,7 @@ export default function DashboardClient({
           }}>
             <div style={{ fontSize: 28 }}>🎛️</div>
             <div style={{ flex: 1 }}>
-              <div style={{ color: "var(--dash-text)", fontSize: 15, fontWeight: 800, marginBottom: 2 }}>Operações</div>
+              <div className="dash-gradient-text" style={{ fontSize: 15, fontWeight: 800, marginBottom: 2 }}>Operações</div>
               <div style={{ color: "var(--dash-text-muted)", fontSize: 12 }}>Cozinha · Garçom · Andamento</div>
             </div>
             <div style={{ color: "#00ffae", fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 20, background: "rgba(0,255,174,0.1)", border: "1px solid rgba(0,255,174,0.2)" }}>
@@ -767,7 +787,7 @@ export default function DashboardClient({
           }}>
             <div style={{ fontSize: 28 }}>👥</div>
             <div style={{ flex: 1 }}>
-              <div style={{ color: "var(--dash-text)", fontSize: 15, fontWeight: 800, marginBottom: 2 }}>Equipe</div>
+              <div className="dash-gradient-text" style={{ fontSize: 15, fontWeight: 800, marginBottom: 2 }}>Equipe</div>
               <div style={{ color: "var(--dash-text-muted)", fontSize: 12 }}>Funcionários · Avaliações · Entregas</div>
             </div>
           </div>
