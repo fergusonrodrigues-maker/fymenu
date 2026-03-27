@@ -249,6 +249,69 @@ export default function DashboardClient({
           transform: translateY(1px);
           color: #d4c4f0;
         }
+        .ios-checkbox {
+          position: relative;
+          display: inline-block;
+          cursor: pointer;
+          user-select: none;
+          -webkit-tap-highlight-color: transparent;
+        }
+        .ios-checkbox input {
+          display: none;
+        }
+        .ios-checkbox .cb-wrap {
+          position: relative;
+          width: 24px;
+          height: 24px;
+          border-radius: 7px;
+          transition: transform 0.2s ease;
+        }
+        .ios-checkbox .cb-bg {
+          position: absolute;
+          inset: 0;
+          border-radius: 7px;
+          border: 2px solid rgba(255,255,255,0.2);
+          background: rgba(255,255,255,0.06);
+          transition: all 0.2s ease;
+        }
+        .ios-checkbox .cb-icon {
+          position: absolute;
+          inset: 0;
+          margin: auto;
+          width: 80%;
+          height: 80%;
+          color: white;
+          transform: scale(0);
+          transition: all 0.2s ease;
+        }
+        .ios-checkbox .cb-icon .check-path {
+          stroke-dasharray: 40;
+          stroke-dashoffset: 40;
+          transition: stroke-dashoffset 0.3s ease 0.1s;
+        }
+        .ios-checkbox input:checked + .cb-wrap .cb-bg {
+          background: #ef4444;
+          border-color: #ef4444;
+        }
+        .ios-checkbox input:checked + .cb-wrap .cb-icon {
+          transform: scale(1);
+        }
+        .ios-checkbox input:checked + .cb-wrap .check-path {
+          stroke-dashoffset: 0;
+        }
+        .ios-checkbox:hover .cb-wrap {
+          transform: scale(1.05);
+        }
+        .ios-checkbox:active .cb-wrap {
+          transform: scale(0.95);
+        }
+        .ios-checkbox input:checked + .cb-wrap {
+          animation: cb-bounce 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        @keyframes cb-bounce {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.15); }
+        }
         .btn-ai-sparkle {
           --sz: 32px;
           position: relative;
