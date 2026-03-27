@@ -160,6 +160,63 @@ export default function DashboardClient({
         .delete-btn .x-line:last-child {
           transform: rotate(-45deg);
         }
+        .btn-gradient {
+          position: relative;
+          font-weight: 700;
+          height: 42px;
+          border: none;
+          border-radius: 12px;
+          cursor: pointer;
+          transition: 0.4s ease;
+          overflow: hidden;
+          color: white;
+          font-size: 14px;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+        }
+        .btn-gradient .gradient-bg {
+          height: 100%;
+          width: 350%;
+          background: linear-gradient(to right, #00805a 25%, #00ffae 55%, #00c98a 90%);
+          position: absolute;
+          top: 0;
+          left: 60%;
+          transform: translateX(-50%);
+          z-index: 0;
+          transition: 0.4s ease;
+        }
+        .btn-gradient .btn-text {
+          position: relative;
+          z-index: 1;
+          transition: 0.4s ease 0.3s;
+        }
+        .btn-gradient .btn-text-done {
+          position: absolute;
+          z-index: 1;
+          opacity: 0;
+          transition: 0.4s;
+        }
+        .btn-gradient:hover .gradient-bg {
+          transform: translateX(-40%);
+        }
+        .btn-gradient:focus .gradient-bg {
+          background-size: 200%;
+          background-position: right;
+          transform: translateX(-88%);
+          transition: 1s ease;
+        }
+        .btn-gradient:focus .btn-text {
+          opacity: 0;
+          transition: 0.4s ease;
+        }
+        .btn-gradient:focus .btn-text-done {
+          opacity: 1;
+          transition: 1s ease 0.5s;
+        }
+        .btn-gradient:active {
+          transform: scale(0.96);
+        }
       `}</style>
 
       <div style={{
@@ -588,7 +645,11 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
           <input type="hidden" name="is_alcoholic" value={String(newCatType === "drink" && newCatAlcoholic)} />
           <div style={{ display: "flex", gap: 8 }}>
             <input name="name" placeholder="Nome da categoria" required style={{ ...inp, flex: 1 }} />
-            <button type="submit" style={{ padding: "11px 18px", borderRadius: 12, border: "none", background: "rgba(0,255,174,0.15)", color: "#00ffae", fontSize: 14, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>Criar</button>
+            <button type="submit" className="btn-gradient" style={{ padding: "0 20px", whiteSpace: "nowrap", minWidth: 80 }}>
+              <span className="gradient-bg" />
+              <span className="btn-text">Criar</span>
+              <span className="btn-text-done">✓</span>
+            </button>
           </div>
           {/* Tipo */}
           <div style={{ display: "flex", gap: 6 }}>
@@ -653,7 +714,11 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
               <form action={updateCategory} onClick={(e) => e.stopPropagation()} style={{ flex: 1, display: "flex", gap: 8 }}>
                 <input type="hidden" name="id" value={cat.id} />
                 <input name="name" defaultValue={cat.name} style={{ ...inp, flex: 1, fontSize: 15, fontWeight: 800 }} />
-                <button type="submit" style={{ padding: "8px 14px", borderRadius: 10, border: "1px solid var(--dash-btn-border)", background: "transparent", color: "var(--dash-text-dim)", fontSize: 12, cursor: "pointer" }}>Salvar</button>
+                <button type="submit" className="btn-gradient" style={{ padding: "0 14px", height: 36, fontSize: 12, minWidth: 70, borderRadius: 10 }}>
+                  <span className="gradient-bg" />
+                  <span className="btn-text">Salvar</span>
+                  <span className="btn-text-done">✓</span>
+                </button>
               </form>
               <form action={deleteCategory} onClick={(e) => e.stopPropagation()} onSubmit={(e) => { if (!confirm("Excluir categoria e todos os produtos?")) e.preventDefault(); }}>
                 <input type="hidden" name="id" value={cat.id} />
