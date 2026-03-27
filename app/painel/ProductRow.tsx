@@ -114,11 +114,15 @@ export default function ProductRow({
             type="checkbox"
             checked={product.is_active !== false}
             onChange={async (e) => {
-              const fd = new FormData();
-              fd.set("id", product.id);
-              fd.set("name", product.name);
-              fd.set("is_active", String(e.target.checked));
-              updateProduct(fd);
+              const newActive = e.target.checked;
+              const { error } = await supabase
+                .from("products")
+                .update({ is_active: newActive })
+                .eq("id", product.id);
+              if (error) {
+                console.error("Toggle active error:", error);
+                e.target.checked = !newActive;
+              }
             }}
           />
           <div className="sw-slider">
