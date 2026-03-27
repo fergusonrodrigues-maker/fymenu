@@ -217,6 +217,101 @@ export default function DashboardClient({
         .btn-gradient:active {
           transform: scale(0.96);
         }
+        .btn-ai {
+          --ai-dark: hsla(160, 100%, 12%, 1);
+          cursor: pointer;
+          position: relative;
+          display: flex;
+          align-items: center;
+          gap: 0.4rem;
+          transform-origin: center;
+          padding: 10px 18px;
+          background-color: transparent;
+          border: none;
+          border-radius: 12px;
+          transform: scale(calc(1 + (var(--active, 0) * 0.05)));
+          transition: transform 0.3s ease-in-out;
+          text-decoration: none;
+        }
+        .btn-ai::before {
+          content: "";
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 100%;
+          height: 100%;
+          background-color: var(--ai-dark);
+          border-radius: 12px;
+          box-shadow: inset 0 0.5px hsl(0, 0%, 100%),
+            inset 0 -1px 2px 0 hsl(0, 0%, 0%),
+            0px 4px 10px -4px hsla(0 0% 0% / calc(1 - var(--active, 0))),
+            0 0 0 calc(var(--active, 0) * 0.3rem) hsla(160, 97%, 40%, 0.5);
+          transition: all 0.3s ease-in-out;
+          z-index: 0;
+        }
+        .btn-ai::after {
+          content: "";
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 100%;
+          height: 100%;
+          background-color: hsla(160, 90%, 40%, 0.6);
+          background-image: radial-gradient(at 51% 89%, hsla(160, 60%, 55%, 1) 0px, transparent 50%),
+            radial-gradient(at 100% 100%, hsla(160, 50%, 45%, 1) 0px, transparent 50%),
+            radial-gradient(at 22% 91%, hsla(160, 50%, 45%, 1) 0px, transparent 50%);
+          background-position: top;
+          opacity: var(--active, 0);
+          border-radius: 12px;
+          transition: opacity 0.3s ease-in-out;
+          z-index: 2;
+        }
+        .btn-ai:is(:hover, :focus-visible) { --active: 1; }
+        .btn-ai:active { transform: scale(1); }
+        .btn-ai .dots-border {
+          overflow: hidden;
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: calc(100% + 2px);
+          height: calc(100% + 2px);
+          background-color: transparent;
+          border-radius: 12px;
+          z-index: -10;
+        }
+        .btn-ai .dots-border::before {
+          content: "";
+          position: absolute;
+          top: 30%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          transform-origin: left;
+          width: 100%;
+          height: 2rem;
+          background-color: #00ffae;
+          mask: linear-gradient(transparent 0%, white 120%);
+          animation: ai-rotate 2s linear infinite;
+        }
+        @keyframes ai-rotate { to { transform: rotate(360deg); } }
+        .btn-ai .sparkle-icon {
+          position: relative;
+          z-index: 10;
+          width: 1.2rem;
+          height: 1.2rem;
+        }
+        .btn-ai .ai-text {
+          position: relative;
+          z-index: 10;
+          background-image: linear-gradient(90deg, hsla(0 0% 100% / 1) 0%, hsla(0 0% 100% / var(--active, 0.85)) 120%);
+          background-clip: text;
+          -webkit-background-clip: text;
+          font-size: 13px;
+          font-weight: 700;
+          color: transparent;
+        }
       `}</style>
 
       <div style={{
@@ -634,7 +729,11 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
         {unit && (
           <a href={`/delivery/${unit.slug}`} target="_blank" rel="noreferrer" style={{ flex: 1, textAlign: "center", padding: "10px", borderRadius: 12, background: "var(--dash-link-bg)", border: "1px solid var(--dash-card-border)", color: "var(--dash-text-secondary)", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>Ver cardápio ↗</a>
         )}
-        <a href="/painel/ia" style={{ flex: 1, textAlign: "center", padding: "10px", borderRadius: 12, background: "rgba(0,255,174,0.08)", border: "1px solid rgba(0,255,174,0.15)", color: "#00ffae", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>✨ Importar com IA</a>
+        <a href="/painel/ia" className="btn-ai" style={{ flex: 1, justifyContent: "center" }}>
+          <span className="dots-border" />
+          <span className="sparkle-icon">✨</span>
+          <span className="ai-text">Importar com IA</span>
+        </a>
       </div>
 
       {/* Nova categoria */}
