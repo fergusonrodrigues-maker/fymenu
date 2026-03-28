@@ -188,28 +188,71 @@ export default function DashboardClient({
           background: rgba(10,10,10,0.75) !important;
           box-shadow: 0 -8px 60px rgba(0,0,0,0.3), 0 0 30px rgba(0,255,174,0.03), inset 0 1px 0 rgba(255,255,255,0.06) !important;
         }
+        /* ── Light Theme Text Overrides ── */
+        html:not(.dark) .card {
+          color: #1a1a1a !important;
+        }
+        html:not(.dark) .card .dash-gradient-text ~ div,
+        html:not(.dark) .card .dash-gradient-text ~ span {
+          color: rgba(26,26,26,0.55) !important;
+        }
         html:not(.dark) .modal-sheet {
           background: rgba(255,255,255,0.85) !important;
           box-shadow: 0 -8px 60px rgba(0,0,0,0.08), 0 0 30px rgba(213,22,89,0.03), inset 0 1px 0 rgba(255,255,255,0.5) !important;
-          color: #222 !important;
+          color: #1a1a1a !important;
         }
         html:not(.dark) .modal-sheet input {
-          color: #222 !important;
+          color: #1a1a1a !important;
+          background: rgba(0,0,0,0.03) !important;
+          border-color: rgba(213,22,89,0.1) !important;
         }
         html:not(.dark) .modal-sheet input::placeholder {
-          color: rgba(34,34,34,0.35) !important;
+          color: rgba(26,26,26,0.3) !important;
+        }
+        html:not(.dark) .modal-sheet textarea {
+          color: #1a1a1a !important;
+          background: rgba(0,0,0,0.03) !important;
+          border-color: rgba(213,22,89,0.1) !important;
+        }
+        html:not(.dark) .modal-sheet textarea::placeholder {
+          color: rgba(26,26,26,0.3) !important;
+        }
+        html:not(.dark) .modal-sheet select {
+          color: #1a1a1a !important;
+          background: rgba(0,0,0,0.03) !important;
+          border-color: rgba(213,22,89,0.1) !important;
+        }
+        html:not(.dark) .modal-neon-card {
+          color: #1a1a1a !important;
         }
         html:not(.dark) .modal-sheet .cat-header-arrow {
-          color: rgba(34,34,34,0.4) !important;
+          color: rgba(26,26,26,0.4) !important;
         }
         html:not(.dark) .modal-sheet input[name="name"] {
-          color: #222 !important;
+          color: #1a1a1a !important;
           border-color: rgba(213,22,89,0.1) !important;
           background: rgba(0,0,0,0.03) !important;
         }
         html:not(.dark) .modal-sheet .delete-btn {
           background: rgba(213,22,89,0.06) !important;
-          border-color: rgba(213,22,89,0.15) !important;
+          border-color: rgba(213,22,89,0.12) !important;
+        }
+        html:not(.dark) .modal-sheet .btn-ai {
+          color: #e8dff5 !important;
+        }
+        html:not(.dark) .modal-sheet a {
+          color: rgba(26,26,26,0.6) !important;
+          border-color: rgba(213,22,89,0.1) !important;
+        }
+        html:not(.dark) .modal-sheet a:hover {
+          color: #d51659 !important;
+          border-color: rgba(213,22,89,0.2) !important;
+        }
+        html:not(.dark) .modal-sheet button[aria-label],
+        html:not(.dark) .modal-close-btn {
+          background: rgba(0,0,0,0.04) !important;
+          color: rgba(26,26,26,0.5) !important;
+          border-color: rgba(213,22,89,0.08) !important;
         }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }

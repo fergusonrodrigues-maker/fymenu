@@ -74,11 +74,11 @@ body {
 html:not(.dark) {
   --dash-bg: #fafafa;
   --dash-bg-gradient: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(213,22,89,0.05) 0%, transparent 60%), #fafafa;
-  --dash-text: #111111;
-  --dash-text-secondary: rgba(0,0,0,0.6);
-  --dash-text-dim: rgba(0,0,0,0.45);
-  --dash-text-muted: rgba(0,0,0,0.4);
-  --dash-text-subtle: rgba(0,0,0,0.25);
+  --dash-text: #1a1a1a;
+  --dash-text-secondary: rgba(26,26,26,0.7);
+  --dash-text-dim: rgba(26,26,26,0.5);
+  --dash-text-muted: rgba(26,26,26,0.4);
+  --dash-text-subtle: rgba(26,26,26,0.25);
   --dash-card: rgba(0,0,0,0.03);
   --dash-card-subtle: rgba(0,0,0,0.02);
   --dash-card-hover: rgba(0,0,0,0.06);
