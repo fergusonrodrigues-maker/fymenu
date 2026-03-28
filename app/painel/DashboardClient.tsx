@@ -72,7 +72,7 @@ function Modal({ open, onClose, children, title }: { open: boolean; onClose: () 
         @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
         @keyframes modalScale { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
         @media (min-width: 640px) {
-          .modal-sheet { border-radius: 24px !important; max-width: 560px !important; margin: auto !important; align-self: center !important; max-height: 85vh !important; transform-origin: center center !important; background: rgba(10,10,10,0.7) !important; }
+          .modal-sheet { border-radius: 24px !important; max-width: 560px !important; margin: auto !important; align-self: center !important; max-height: 85vh !important; transform-origin: center center !important; }
         }
       `}</style>
       <div
@@ -177,6 +177,39 @@ export default function DashboardClient({
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
+        }
+        .dark .modal-backdrop {
+          background: rgba(0,0,0,0.15) !important;
+        }
+        html:not(.dark) .modal-backdrop {
+          background: rgba(0,0,0,0.08) !important;
+        }
+        .dark .modal-sheet {
+          background: rgba(10,10,10,0.75) !important;
+          box-shadow: 0 -8px 60px rgba(0,0,0,0.3), 0 0 30px rgba(0,255,174,0.03), inset 0 1px 0 rgba(255,255,255,0.06) !important;
+        }
+        html:not(.dark) .modal-sheet {
+          background: rgba(255,255,255,0.85) !important;
+          box-shadow: 0 -8px 60px rgba(0,0,0,0.08), 0 0 30px rgba(213,22,89,0.03), inset 0 1px 0 rgba(255,255,255,0.5) !important;
+          color: #222 !important;
+        }
+        html:not(.dark) .modal-sheet input {
+          color: #222 !important;
+        }
+        html:not(.dark) .modal-sheet input::placeholder {
+          color: rgba(34,34,34,0.35) !important;
+        }
+        html:not(.dark) .modal-sheet .cat-header-arrow {
+          color: rgba(34,34,34,0.4) !important;
+        }
+        html:not(.dark) .modal-sheet input[name="name"] {
+          color: #222 !important;
+          border-color: rgba(213,22,89,0.1) !important;
+          background: rgba(0,0,0,0.03) !important;
+        }
+        html:not(.dark) .modal-sheet .delete-btn {
+          background: rgba(213,22,89,0.06) !important;
+          border-color: rgba(213,22,89,0.15) !important;
         }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
