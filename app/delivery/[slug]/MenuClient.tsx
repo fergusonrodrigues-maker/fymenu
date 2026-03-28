@@ -178,6 +178,19 @@ export default function MenuClient({
 
   return (
     <>
+      <style>{`
+  .menu-bg-themed {
+    background-color: #ffffff;
+    background-image: radial-gradient(rgba(0,0,0,0.06) 1px, transparent 1px);
+    background-size: 18px 18px;
+    transition: background-color 0.4s ease;
+  }
+  html.dark .menu-bg-themed {
+    background-color: #050505;
+    background-image: radial-gradient(rgba(0,255,174,0.12) 1px, transparent 1px);
+    background-size: 18px 18px;
+  }
+`}</style>
       {/* Pills fixos no topo */}
       <CategoryPillsTop
         categories={regularCategories}
@@ -187,12 +200,10 @@ export default function MenuClient({
 
       {/* Conteúdo scrollável */}
       <div
-        className="min-h-dvh bg-white"
+        className="min-h-dvh menu-bg-themed"
         style={{
           paddingTop: "calc(58px + env(safe-area-inset-top, 0px))",
           paddingBottom: "calc(340px + env(safe-area-inset-bottom, 0px))",
-          backgroundImage: "radial-gradient(rgba(0,0,0,0.07) 1px, transparent 1px)",
-          backgroundSize: "18px 18px",
         }}
       >
         {/* Categorias em destaque */}
