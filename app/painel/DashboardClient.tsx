@@ -10,6 +10,7 @@ import {
   changePlan,
   updateProfile,
 } from "./actions";
+import { createClient as createSupabaseClient } from "@/lib/supabase/client";
 import ProductRow from "./ProductRow";
 import LogoUploader from "./LogoUploader";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -59,9 +60,9 @@ function Modal({ open, onClose, children, title }: { open: boolean; onClose: () 
 
   if (!open) return null;
   return (
-    <div style={{
+    <div className="modal-backdrop" style={{
       position: "fixed", inset: 0, zIndex: 100,
-      background: "rgba(0,0,0,0.15)", backdropFilter: "blur(28px) saturate(1.3)", WebkitBackdropFilter: "blur(28px) saturate(1.3)",
+      backdropFilter: "blur(28px) saturate(1.3)", WebkitBackdropFilter: "blur(28px) saturate(1.3)",
       display: "flex", alignItems: "flex-end",
       animation: "fadeIn 0.2s ease",
     }}
@@ -78,12 +79,10 @@ function Modal({ open, onClose, children, title }: { open: boolean; onClose: () 
         className="modal-sheet"
         style={{
           width: "100%", maxHeight: "92vh",
-          background: "var(--dash-modal-bg)",
           backdropFilter: "blur(40px) saturate(1.5)",
           WebkitBackdropFilter: "blur(40px) saturate(1.5)",
           borderRadius: "24px 24px 0 0",
           border: "1px solid var(--dash-modal-border)",
-          boxShadow: "0 -8px 60px rgba(0,0,0,0.3), 0 0 30px rgba(0,255,174,0.03), inset 0 1px 0 rgba(255,255,255,0.06)",
           overflow: "hidden", display: "flex", flexDirection: "column",
           animation: "modalScale 0.3s cubic-bezier(0.34,1.56,0.64,1)",
           transformOrigin: "center bottom",
@@ -962,6 +961,12 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
   const [expandedCat, setExpandedCat] = useState<string | null>(null);
   const [expandedProductId, setExpandedProductId] = useState<string | null>(null);
   const [showAllProducts, setShowAllProducts] = useState<Record<string, boolean>>({});
+  const [catActiveState, setCatActiveState] = useState<Record<string, boolean>>({});
+
+  function isCatActive(cat: any) {
+    if (catActiveState[cat.id] !== undefined) return catActiveState[cat.id];
+    return cat.is_active !== false;
+  }
   const [newCatType, setNewCatType] = useState<"food" | "drink">("food");
   const [showImport, setShowImport] = useState(false);
   const [orderedCats, setOrderedCats] = useState(categories);
@@ -1149,18 +1154,18 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
               <label className="switch-toggle" onClick={(e) => e.stopPropagation()}>
                 <input
                   type="checkbox"
-                  checked={cat.is_active !== false}
+                  checked={isCatActive(cat)}
                   onChange={async (e) => {
                     const newActive = e.target.checked;
-                    const { createClient: cc } = await import("@/lib/supabase/client");
-                    const supabase = cc();
+                    setCatActiveState(prev => ({ ...prev, [cat.id]: newActive }));
+                    const supabase = createSupabaseClient();
                     const { error } = await supabase
                       .from("categories")
                       .update({ is_active: newActive })
                       .eq("id", cat.id);
                     if (error) {
                       console.error("Toggle category active error:", error);
-                      e.target.checked = !newActive;
+                      setCatActiveState(prev => ({ ...prev, [cat.id]: !newActive }));
                     }
                   }}
                 />
