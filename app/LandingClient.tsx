@@ -26,7 +26,7 @@ function PageLoader({ visible }: { visible: boolean }) {
 }
 
 // ── Dot Reveal Background ─────────────────────────────────────────────────────
-function DotRevealBG({ isDark }: { isDark: boolean }) {
+function DotRevealBG({ isDark, dotOpacity = 1 }: { isDark: boolean; dotOpacity?: number }) {
   return (
     <div
       style={{
@@ -36,7 +36,10 @@ function DotRevealBG({ isDark }: { isDark: boolean }) {
         zIndex: 0,
       }}
     >
-      <div className={isDark ? "dot-grid-dark" : "dot-grid-light"} />
+      <div
+        className={isDark ? "dot-grid-dark" : "dot-grid-light"}
+        style={{ opacity: dotOpacity, transition: "opacity 0.15s ease-out" }}
+      />
       <div
         style={{
           position: "absolute",
@@ -195,6 +198,20 @@ export default function LandingPage() {
   const [loading, setLoading] = useState(true);
   const [heroVisible, setHeroVisible] = useState(false);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [dotOpacity, setDotOpacity] = useState(1);
+
+  useEffect(() => {
+    function handleScroll() {
+      const scrollY = window.scrollY;
+      const windowH = window.innerHeight;
+      // De 100% no topo até 25% na metade da página, depois continua diminuindo
+      const maxScroll = windowH * 1.5;
+      const opacity = Math.max(0.15, 1 - (scrollY / maxScroll) * 0.85);
+      setDotOpacity(opacity);
+    }
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -254,8 +271,6 @@ export default function LandingPage() {
           inset: 0;
           background-image: radial-gradient(rgba(0,255,174,0.4) 1.5px, transparent 1.5px);
           background-size: 22px 22px;
-          animation: dotFadeIn 3s ease forwards;
-          opacity: 0;
           filter: drop-shadow(0 0 6px rgba(0,255,174,0.45));
         }
         .dot-grid-light {
@@ -263,8 +278,6 @@ export default function LandingPage() {
           inset: 0;
           background-image: radial-gradient(rgba(213,22,89,0.22) 1.5px, transparent 1.5px);
           background-size: 22px 22px;
-          animation: dotFadeIn 3s ease forwards;
-          opacity: 0;
           filter: drop-shadow(0 0 5px rgba(213,22,89,0.25));
         }
         @keyframes dotFadeIn {
@@ -583,7 +596,7 @@ export default function LandingPage() {
       <PageLoader visible={loading} />
 
       <div className={theme === "light" ? "landing-light" : ""} style={{ minHeight: "100vh", position: "relative", background: theme === "light" ? "#fafafa" : "#000", transition: "background 0.5s ease" }}>
-        <DotRevealBG isDark={theme === "dark"} />
+        <DotRevealBG isDark={theme === "dark"} dotOpacity={dotOpacity} />
 
         {/* ── NAVBAR ── */}
         <nav className="fy-nav">
