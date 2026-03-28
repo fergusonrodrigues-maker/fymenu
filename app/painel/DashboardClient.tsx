@@ -117,13 +117,21 @@ const inp: React.CSSProperties = {
 };
 
 // ─── Main Component ──────────────────────────────────────────────────────────
+type Daystat = { date: string; orders: number; revenue: number };
+type PeriodStats = { orders: number; completed: number; revenue: number; avgTicket: number; payments: { cash: number; card: number; pix: number }; products: { name: string; qty: number; revenue: number }[] };
+type ReportData = {
+  today: PeriodStats;
+  weekly: PeriodStats & { byDay: Daystat[] };
+  monthly: PeriodStats & { byDay: Daystat[]; growthOrders: number | null; growthRevenue: number | null };
+};
+
 export default function DashboardClient({
-  restaurant, unit, profile, categories, products, upsellItems, analytics, tvCount, stockStats,
+  restaurant, unit, profile, categories, products, upsellItems, analytics, tvCount, stockStats, reportData,
 }: {
   restaurant: Restaurant; unit: Unit | null; profile: Profile;
   categories: Category[]; products: Product[];
   upsellItems: any[]; analytics: { views: number; clicks: number; orders: number };
-  tvCount: number; stockStats: StockStats;
+  tvCount: number; stockStats: StockStats; reportData?: ReportData;
 }) {
   const router = useRouter();
   const [modal, setModal] = useState<"analytics" | "cardapio" | "pedidos" | "financeiro" | "unidade" | "plano" | "config" | "tv" | "estoque" | "operacoes" | "equipe" | null>(null);
