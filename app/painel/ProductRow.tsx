@@ -54,6 +54,7 @@ export default function ProductRow({
   const [variationsLoaded, setVariationsLoaded] = useState(false);
   const [description, setDescription] = useState(product.description ?? "");
   const [productName, setProductName] = useState(product.name);
+  const [isActive, setIsActive] = useState(product.is_active !== false);
   const [uploading, setUploading] = useState<"thumb" | "video" | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [unlimitedStock, setUnlimitedStock] = useState(product.unlimited !== false);
@@ -113,16 +114,17 @@ export default function ProductRow({
         <label className="switch-toggle" onClick={(e) => e.stopPropagation()}>
           <input
             type="checkbox"
-            checked={product.is_active !== false}
+            checked={isActive}
             onChange={async (e) => {
               const newActive = e.target.checked;
+              setIsActive(newActive);
               const { error } = await supabase
                 .from("products")
                 .update({ is_active: newActive })
                 .eq("id", product.id);
               if (error) {
                 console.error("Toggle active error:", error);
-                e.target.checked = !newActive;
+                setIsActive(!newActive);
               }
             }}
           />
