@@ -108,7 +108,7 @@ export default async function Page({
   }
 
   const products: Product[] = cachedMenu.categories.flatMap((c) =>
-    c.products.map((p) => ({
+    c.products.filter((p) => p.is_active !== false).map((p) => ({
       id: p.id,
       category_id: c.id,
       name: p.name,

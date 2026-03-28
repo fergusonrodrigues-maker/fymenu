@@ -36,7 +36,7 @@ export default function CategoryCarousel({
   const dragStartX = useRef(0);
   const dragStartY = useRef(0);
 
-  const list = items ?? [];
+  const list = (items ?? []).filter((p: any) => p.is_active !== false);
 
   // posiciona o track para centralizar heroIdx
   function positionTrack(idx: number, animate: boolean) {
