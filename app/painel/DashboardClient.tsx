@@ -79,8 +79,8 @@ function Modal({ open, onClose, children, title }: { open: boolean; onClose: () 
         className="modal-sheet"
         style={{
           width: "100%", maxHeight: "92vh",
-          backdropFilter: "blur(40px) saturate(1.5)",
-          WebkitBackdropFilter: "blur(40px) saturate(1.5)",
+          backdropFilter: "blur(60px) saturate(1.8)",
+          WebkitBackdropFilter: "blur(60px) saturate(1.8)",
           borderRadius: "24px 24px 0 0",
           border: "1px solid var(--dash-modal-border)",
           overflow: "hidden", display: "flex", flexDirection: "column",
@@ -185,8 +185,9 @@ export default function DashboardClient({
           background: rgba(0,0,0,0.08) !important;
         }
         .dark .modal-sheet {
-          background: rgba(10,10,10,0.75) !important;
-          box-shadow: 0 -8px 60px rgba(0,0,0,0.3), 0 0 30px rgba(0,255,174,0.03), inset 0 1px 0 rgba(255,255,255,0.06) !important;
+          background: rgba(10,10,10,0.25) !important;
+          border-color: rgba(0,255,174,0.08) !important;
+          box-shadow: 0 -4px 40px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.03) !important;
         }
         /* ── Light Theme Text Overrides ── */
         html:not(.dark) .card {
@@ -197,8 +198,9 @@ export default function DashboardClient({
           color: rgba(26,26,26,0.55) !important;
         }
         html:not(.dark) .modal-sheet {
-          background: rgba(255,255,255,0.85) !important;
-          box-shadow: 0 -8px 60px rgba(0,0,0,0.08), 0 0 30px rgba(213,22,89,0.03), inset 0 1px 0 rgba(255,255,255,0.5) !important;
+          background: rgba(255,255,255,0.3) !important;
+          border-color: rgba(213,22,89,0.06) !important;
+          box-shadow: 0 -4px 40px rgba(0,0,0,0.03), inset 0 1px 0 rgba(255,255,255,0.3) !important;
           color: #1a1a1a !important;
         }
         html:not(.dark) .modal-sheet input {
