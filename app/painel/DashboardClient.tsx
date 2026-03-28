@@ -61,7 +61,7 @@ function Modal({ open, onClose, children, title }: { open: boolean; onClose: () 
   return (
     <div style={{
       position: "fixed", inset: 0, zIndex: 100,
-      background: "rgba(0,0,0,0.4)", backdropFilter: "blur(24px) saturate(1.2)", WebkitBackdropFilter: "blur(24px) saturate(1.2)",
+      background: "rgba(0,0,0,0.15)", backdropFilter: "blur(28px) saturate(1.3)", WebkitBackdropFilter: "blur(28px) saturate(1.3)",
       display: "flex", alignItems: "flex-end",
       animation: "fadeIn 0.2s ease",
     }}
