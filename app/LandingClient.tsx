@@ -310,10 +310,13 @@ export default function LandingPage() {
         .landing-light .btn-primary {
           background: linear-gradient(145deg, #d51659 0%, #fe4a2c 100%);
           box-shadow: 0 4px 20px rgba(213,22,89,0.25), inset 0 1px 0 rgba(255,255,255,0.25), inset 0 -2px 0 rgba(0,0,0,0.1);
-          color: #fff;
+          color: #fff !important;
+          -webkit-text-fill-color: #fff !important;
         }
         .landing-light .btn-primary:hover {
           box-shadow: 0 8px 32px rgba(213,22,89,0.4), inset 0 1px 0 rgba(255,255,255,0.3);
+          color: #fff !important;
+          -webkit-text-fill-color: #fff !important;
         }
         .landing-light .btn-hero {
           background: linear-gradient(135deg, #d51659 0%, #fe4a2c 50%, #d51659 100%);
