@@ -343,7 +343,7 @@ export default function ImportClient({ unitId, unitName, embedded = false }: { u
 
             {inputMode === "file" ? (
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                <div onClick={() => fileRef.current?.click()} style={{ borderRadius: 20, border: "2px dashed rgba(255,255,255,0.12)", padding: "40px 20px", textAlign: "center", cursor: "pointer" }}>
+                <div onClick={() => fileRef.current?.click()} style={{ borderRadius: 20, border: "2px dashed rgba(255,255,255,0.12)", padding: "40px 20px", textAlign: "center", cursor: "pointer", minHeight: 200 }}>
                   <div className="folder-icon">
                     <div className="folder-back"></div>
                     <div className="folder-paper folder-paper-1"></div>
@@ -352,7 +352,7 @@ export default function ImportClient({ unitId, unitName, embedded = false }: { u
                     <div className="folder-front"></div>
                   </div>
                   <div style={{ color: "#fff", fontSize: 14, fontWeight: 600, marginBottom: 4 }}>Clique para selecionar</div>
-                  <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 12 }}>Até 10 fotos · print, screenshot, Word, Excel, TXT</div>
+                  <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 12 }}>Até 15 fotos · print, screenshot, Word, Excel, TXT</div>
                   <input ref={fileRef} type="file" accept={ACCEPTED_TYPES} multiple onChange={(e) => {
                     const newFiles = Array.from(e.target.files ?? []);
                     e.target.value = "";
@@ -363,14 +363,14 @@ export default function ImportClient({ unitId, unitName, embedded = false }: { u
                       const seen = new Set<string>();
                       const deduped: File[] = [];
                       for (const f of merged) { const key = f.name + "-" + f.size; if (!seen.has(key)) { seen.add(key); deduped.push(f); } }
-                      return deduped.slice(0, 10);
+                      return deduped.slice(0, 15);
                     });
                   }} style={{ display: "none" }} />
                 </div>
                 {selectedFiles.length > 0 && (
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 12 }}>{selectedFiles.length}/10 arquivo{selectedFiles.length > 1 ? "s" : ""}</span>
+                      <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 12 }}>{selectedFiles.length}/15 arquivo{selectedFiles.length > 1 ? "s" : ""}</span>
                       <button onClick={() => { setSelectedFiles([]); if (fileRef.current) fileRef.current.value = ""; }} style={{ background: "none", border: "none", color: "#f87171", fontSize: 12, cursor: "pointer" }}>Limpar tudo</button>
                     </div>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
@@ -399,7 +399,7 @@ export default function ImportClient({ unitId, unitName, embedded = false }: { u
                 )}
               </div>
             ) : (
-              <textarea value={rawText} onChange={(e) => setRawText(e.target.value)} placeholder="Cole aqui o texto do seu cardápio..." rows={10} style={{ ...inp, resize: "vertical" }} />
+              <textarea value={rawText} onChange={(e) => setRawText(e.target.value)} placeholder="Cole aqui o texto do seu cardápio..." rows={10} style={{ ...inp, resize: "vertical", minHeight: 200 }} />
             )}
 
             {error && <div style={{ borderRadius: 12, padding: "12px 14px", background: "rgba(255,80,80,0.08)", border: "1px solid rgba(255,80,80,0.2)", color: "#f87171", fontSize: 13 }}>{error}</div>}
