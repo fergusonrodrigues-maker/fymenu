@@ -171,7 +171,7 @@ export default function ProductRow({
               <input name="name" value={productName} onChange={(e) => setProductName(e.target.value)} placeholder="Nome do produto" style={inputStyle} />
               <div style={{ position: "relative" }}>
                 <textarea name="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Descrição (opcional)" rows={3} style={{ ...inputStyle, resize: "vertical", paddingBottom: 44 }} />
-                <div style={{ position: "absolute", bottom: 8, right: 8, zIndex: 2 }}>
+                <div style={{ position: "absolute", bottom: 12, right: 12, zIndex: 2 }}>
                   <DescribeAIButton
                     productName={productName}
                     currentDescription={description}
