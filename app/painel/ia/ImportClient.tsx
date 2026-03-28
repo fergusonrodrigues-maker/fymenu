@@ -316,9 +316,26 @@ export default function ImportClient({ unitId, unitName, embedded = false }: { u
         {step === "upload" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             {/* Tabs */}
-            <div style={{ display: "flex", background: "rgba(255,255,255,0.04)", borderRadius: 14, padding: 4, gap: 4, border: "1px solid rgba(255,255,255,0.07)" }}>
+            <div style={{ display: "flex", gap: 0, padding: 3, background: "rgba(255,255,255,0.04)", borderRadius: 12, border: "1px solid rgba(255,255,255,0.08)", position: "relative" }}>
+              <div style={{
+                position: "absolute",
+                top: 3,
+                height: "calc(100% - 6px)",
+                width: "calc(50% - 3px)",
+                borderRadius: 10,
+                transition: "left 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)",
+                zIndex: 0,
+                boxShadow: "0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1), inset 0 -1px 0 rgba(0,0,0,0.15)",
+                left: inputMode === "file" ? 3 : "50%",
+                background: "linear-gradient(145deg, #7c3aed 0%, #5b21b6 50%, #4c1d95 100%)",
+              }} />
               {(["file", "text"] as const).map((mode) => (
-                <button key={mode} onClick={() => setInputMode(mode)} style={{ flex: 1, padding: "10px", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 14, fontWeight: 600, background: inputMode === mode ? "rgba(255,255,255,0.10)" : "transparent", color: inputMode === mode ? "#fff" : "rgba(255,255,255,0.4)", transition: "all 0.2s" }}>
+                <button key={mode} onClick={() => setInputMode(mode)} style={{
+                  flex: 1, padding: "9px 0", borderRadius: 10, border: "none", fontSize: 13, fontWeight: 600,
+                  cursor: "pointer", position: "relative", zIndex: 1, transition: "color 0.3s ease",
+                  background: "transparent",
+                  color: inputMode === mode ? "#fff" : "rgba(255,255,255,0.4)",
+                }}>
                   {mode === "file" ? "📎 Arquivo" : "✏️ Colar texto"}
                 </button>
               ))}
@@ -388,11 +405,36 @@ export default function ImportClient({ unitId, unitName, embedded = false }: { u
             {error && <div style={{ borderRadius: 12, padding: "12px 14px", background: "rgba(255,80,80,0.08)", border: "1px solid rgba(255,80,80,0.2)", color: "#f87171", fontSize: 13 }}>{error}</div>}
 
             <div style={{ display: "flex", justifyContent: "center" }}>
-              <AIButton onClick={handleImport} isLoading={loading}>
-                Analisar cardápio
-              </AIButton>
+              <button
+                type="button"
+                onClick={handleImport}
+                disabled={loading}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                  padding: "12px 32px",
+                  border: "none",
+                  borderRadius: 12,
+                  cursor: loading ? "not-allowed" : "pointer",
+                  fontSize: 14,
+                  fontWeight: 700,
+                  color: "#e8dff5",
+                  fontFamily: "inherit",
+                  background: loading
+                    ? "rgba(124,58,237,0.3)"
+                    : "linear-gradient(145deg, #7c3aed 0%, #5b21b6 40%, #4c1d95 100%)",
+                  boxShadow: loading
+                    ? "none"
+                    : "0 4px 14px rgba(124,58,237,0.3), inset 0 1px 0 rgba(255,255,255,0.15), inset 0 -2px 0 rgba(0,0,0,0.2)",
+                  transition: "all 0.2s ease",
+                  opacity: loading ? 0.6 : 1,
+                }}
+              >
+                {loading ? "⏳ Analisando..." : "✨ Analisar cardápio"}
+              </button>
             </div>
-            <div style={{ textAlign: "center", color: "rgba(255,255,255,0.25)", fontSize: 12 }}>Custo estimado: menos de R$0,01 por importação</div>
           </div>
         )}
 

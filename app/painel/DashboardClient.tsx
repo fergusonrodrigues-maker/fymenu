@@ -1128,12 +1128,29 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
     <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingTop: 8 }}>
       {/* Links rápidos */}
       <div style={{ display: "flex", gap: 8 }}>
-        {unit && (
-          <a href={`/delivery/${unit.slug}`} target="_blank" rel="noreferrer" style={{ flex: 1, textAlign: "center", padding: "10px", borderRadius: 12, background: "var(--dash-link-bg)", border: "1px solid var(--dash-card-border)", color: "var(--dash-text-secondary)", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>Ver cardápio ↗</a>
+        {showImport ? (
+          <>
+            <button type="button" className="btn-ai" style={{ flex: 1 }} onClick={() => setShowImport(false)}>
+              ← Voltar ao cardápio
+            </button>
+            {unit && (
+              <a href={`/delivery/${unit.slug}`} target="_blank" rel="noreferrer" style={{ flex: 1, textAlign: "center", padding: "10px", borderRadius: 12, background: "var(--dash-link-bg)", border: "1px solid var(--dash-card-border)", color: "var(--dash-text-secondary)", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>
+                Ver cardápio ↗
+              </a>
+            )}
+          </>
+        ) : (
+          <>
+            {unit && (
+              <a href={`/delivery/${unit.slug}`} target="_blank" rel="noreferrer" style={{ flex: 1, textAlign: "center", padding: "10px", borderRadius: 12, background: "var(--dash-link-bg)", border: "1px solid var(--dash-card-border)", color: "var(--dash-text-secondary)", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>
+                Ver cardápio ↗
+              </a>
+            )}
+            <button type="button" className="btn-ai" style={{ flex: 1 }} onClick={() => setShowImport(true)}>
+              ✨ Importar com IA
+            </button>
+          </>
         )}
-        <button type="button" className="btn-ai" style={{ flex: 1 }} onClick={() => setShowImport(!showImport)}>
-          {showImport ? "← Voltar ao cardápio" : "✨ Importar com IA"}
-        </button>
       </div>
 
       {showImport ? (
