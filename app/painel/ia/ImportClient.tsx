@@ -192,6 +192,110 @@ export default function ImportClient({ unitId, unitName, embedded = false }: { u
       {!embedded && (
         <style>{`* { box-sizing: border-box; } input::placeholder, textarea::placeholder { color: rgba(255,255,255,0.25); } option { background: #1a1a1a; }`}</style>
       )}
+      <style>{`
+        .folder-icon {
+          position: relative;
+          width: 80px;
+          height: 56px;
+          cursor: pointer;
+          perspective: 1500px;
+          transform-origin: bottom;
+          margin: 0 auto 12px;
+        }
+        .folder-back {
+          position: absolute;
+          width: 100%;
+          height: 100%;
+          background: #d97706;
+          border-radius: 12px;
+          border-top-left-radius: 0;
+          transition: all 0.3s ease;
+        }
+        .folder-back::after {
+          content: "";
+          position: absolute;
+          bottom: 99%;
+          left: 0;
+          width: 28px;
+          height: 8px;
+          background: #d97706;
+          border-radius: 8px 8px 0 0;
+        }
+        .folder-back::before {
+          content: "";
+          position: absolute;
+          top: -7px;
+          left: 27px;
+          width: 8px;
+          height: 8px;
+          background: #d97706;
+          clip-path: polygon(0 35%, 0% 100%, 50% 100%);
+        }
+        .folder-paper {
+          position: absolute;
+          inset: 3px;
+          border-radius: 10px;
+          transition: all 0.3s ease;
+          transform-origin: bottom;
+        }
+        .folder-paper-1 { background: #a1a1aa; }
+        .folder-paper-2 { background: #d4d4d8; }
+        .folder-paper-3 { background: #e4e4e7; }
+        .folder-front {
+          position: absolute;
+          bottom: 0;
+          width: 100%;
+          height: 52px;
+          border-radius: 12px;
+          border-top-right-radius: 0;
+          background: linear-gradient(to top, #d97706, #f59e0b);
+          transition: all 0.3s ease;
+          transform-origin: bottom;
+          display: flex;
+          align-items: flex-end;
+          justify-content: center;
+          padding-bottom: 8px;
+        }
+        .folder-front::after {
+          content: "";
+          position: absolute;
+          bottom: 99%;
+          right: 0;
+          width: 52px;
+          height: 8px;
+          background: #f59e0b;
+          border-radius: 8px 8px 0 0;
+        }
+        .folder-front::before {
+          content: "";
+          position: absolute;
+          top: -5px;
+          right: 50px;
+          width: 7px;
+          height: 7px;
+          background: #f59e0b;
+          clip-path: polygon(100% 14%, 50% 100%, 100% 100%);
+        }
+        .folder-icon:hover .folder-front {
+          transform: rotateX(-46deg) translateY(1px);
+          box-shadow: inset 0 20px 40px #fbbf24, inset 0 -20px 40px #d97706;
+        }
+        .folder-icon:hover .folder-back {
+          box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+        .folder-icon:hover .folder-paper-1 {
+          transform: rotateX(-20deg);
+        }
+        .folder-icon:hover .folder-paper-2 {
+          transform: rotateX(-30deg);
+        }
+        .folder-icon:hover .folder-paper-3 {
+          transform: rotateX(-38deg);
+        }
+        .folder-icon:active {
+          transform: scale(0.95);
+        }
+      `}</style>
 
       {!embedded && (
         <>
@@ -223,7 +327,13 @@ export default function ImportClient({ unitId, unitName, embedded = false }: { u
             {inputMode === "file" ? (
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 <div onClick={() => fileRef.current?.click()} style={{ borderRadius: 20, border: "2px dashed rgba(255,255,255,0.12)", padding: "40px 20px", textAlign: "center", cursor: "pointer" }}>
-                  <div style={{ fontSize: 40, marginBottom: 12 }}>📸</div>
+                  <div className="folder-icon">
+                    <div className="folder-back"></div>
+                    <div className="folder-paper folder-paper-1"></div>
+                    <div className="folder-paper folder-paper-2"></div>
+                    <div className="folder-paper folder-paper-3"></div>
+                    <div className="folder-front"></div>
+                  </div>
                   <div style={{ color: "#fff", fontSize: 14, fontWeight: 600, marginBottom: 4 }}>Clique para selecionar</div>
                   <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 12 }}>Até 10 fotos · print, screenshot, Word, Excel, TXT</div>
                   <input ref={fileRef} type="file" accept={ACCEPTED_TYPES} multiple onChange={(e) => {
