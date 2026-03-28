@@ -261,8 +261,8 @@ export default function DashboardClient({
         input::placeholder, textarea::placeholder { color: var(--dash-placeholder); }
         .delete-btn {
           position: relative;
-          width: 34px;
-          height: 34px;
+          width: 30px;
+          height: 30px;
           flex-shrink: 0;
           border: none;
           background: rgba(255, 80, 80, 0.12);
@@ -1151,7 +1151,7 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
           <input type="hidden" name="is_alcoholic" value="false" />
           <div style={{ display: "flex", gap: 8 }}>
             <input name="name" placeholder="Nome da categoria" required style={{ ...inp, flex: 1, height: 38, padding: "0 12px" }} />
-            <button type="submit" className="btn-gradient" style={{ padding: "0 18px", whiteSpace: "nowrap", minWidth: 70, height: 34, borderRadius: 10 }}>
+            <button type="submit" className="btn-gradient" style={{ padding: "0 14px", whiteSpace: "nowrap", minWidth: 60, height: 30, borderRadius: 8 }}>
               Criar
             </button>
           </div>
@@ -1216,7 +1216,7 @@ function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
               <form action={updateCategory} onClick={(e) => e.stopPropagation()} style={{ flex: 1, display: "flex", gap: 6, alignItems: "center" }}>
                 <input type="hidden" name="id" value={cat.id} />
                 <input name="name" defaultValue={cat.name} style={{ ...inp, flex: 1, fontSize: 14, fontWeight: 800, height: 38, padding: "0 12px" }} />
-                <button type="submit" className="btn-gradient" style={{ padding: "0 14px", height: 34, fontSize: 12, minWidth: 58, borderRadius: 8, flexShrink: 0 }}>
+                <button type="submit" className="btn-gradient" style={{ padding: "0 10px", height: 30, fontSize: 11, minWidth: 50, borderRadius: 7, flexShrink: 0 }}>
                   Salvar
                 </button>
               </form>
