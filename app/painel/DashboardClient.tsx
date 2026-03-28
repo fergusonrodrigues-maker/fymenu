@@ -165,12 +165,19 @@ export default function DashboardClient({
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
+          width: fit-content;
         }
         .dark .dash-gradient-text {
           background: linear-gradient(135deg, #00ffae 0%, #00d9ff 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
         }
         html:not(.dark) .dash-gradient-text {
           background: linear-gradient(135deg, #d51659 0%, #fe4a2c 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
         }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
