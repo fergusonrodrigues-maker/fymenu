@@ -116,7 +116,7 @@ function FeatureCard({
       >
         {title}
       </h3>
-      <p style={{ fontSize: 14, color: theme === "dark" ? "rgba(255,255,255,0.45)" : "rgba(34,34,34,0.45)", lineHeight: 1.6 }}>{desc}</p>
+      <p style={{ fontSize: 14, color: theme === "dark" ? "rgba(255,255,255,0.7)" : "rgba(34,34,34,0.65)", lineHeight: 1.6 }}>{desc}</p>
     </div>
   );
 }
@@ -147,7 +147,7 @@ function PricingCard({
       </div>
       <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginBottom: 24 }}>
         <span style={{ fontSize: 42, fontWeight: 900, color: theme === "dark" ? "#fff" : "#222" }}>{price}</span>
-        <span style={{ fontSize: 14, color: theme === "dark" ? "rgba(255,255,255,0.4)" : "rgba(34,34,34,0.4)" }}>/mês</span>
+        <span style={{ fontSize: 14, color: theme === "dark" ? "rgba(255,255,255,0.7)" : "rgba(34,34,34,0.65)" }}>/mês</span>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 32, flex: 1 }}>
         {features.map((f, i) => (
@@ -323,7 +323,7 @@ export default function LandingPage() {
           background: rgba(255,255,255,0.75) !important;
           border-color: rgba(213,22,89,0.1) !important;
         }
-        .landing-light .fy-nav a { color: rgba(34,34,34,0.5) !important; }
+        .landing-light .fy-nav a { color: rgba(34,34,34,0.7) !important; }
         .landing-light .fy-nav a:hover { color: #222 !important; }
         .landing-light h1, .landing-light h2 { color: #222 !important; }
         .landing-light .feature-card {
@@ -574,7 +574,7 @@ export default function LandingPage() {
           border: 1px solid rgba(255,255,255,0.08);
         }
         .fy-nav a {
-          color: rgba(255,255,255,0.6);
+          color: rgba(255,255,255,0.8);
           text-decoration: none;
           font-size: 13px;
           font-weight: 600;
@@ -923,9 +923,9 @@ export default function LandingPage() {
         >
           <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 24, flexWrap: "wrap" }}>
             <span className={theme === "dark" ? "gradient-text-dark" : "gradient-text-light"} style={{ fontWeight: 900, fontSize: 18 }}>FyMenu</span>
-            <a href="#features" style={{ color: theme === "dark" ? "rgba(255,255,255,0.4)" : "rgba(34,34,34,0.4)", textDecoration: "none", fontSize: 13 }}>Recursos</a>
-            <a href="#pricing" style={{ color: theme === "dark" ? "rgba(255,255,255,0.4)" : "rgba(34,34,34,0.4)", textDecoration: "none", fontSize: 13 }}>Planos</a>
-            <a href="/entrar" style={{ color: theme === "dark" ? "rgba(255,255,255,0.4)" : "rgba(34,34,34,0.4)", textDecoration: "none", fontSize: 13 }}>Entrar</a>
+            <a href="#features" style={{ color: theme === "dark" ? "rgba(255,255,255,0.7)" : "rgba(34,34,34,0.65)", textDecoration: "none", fontSize: 13 }}>Recursos</a>
+            <a href="#pricing" style={{ color: theme === "dark" ? "rgba(255,255,255,0.7)" : "rgba(34,34,34,0.65)", textDecoration: "none", fontSize: 13 }}>Planos</a>
+            <a href="/entrar" style={{ color: theme === "dark" ? "rgba(255,255,255,0.7)" : "rgba(34,34,34,0.65)", textDecoration: "none", fontSize: 13 }}>Entrar</a>
           </div>
           <div style={{ marginTop: 20, fontSize: 12, color: theme === "dark" ? "rgba(255,255,255,0.2)" : "rgba(34,34,34,0.2)" }}>
             © {new Date().getFullYear()} FyMenu — Todos os direitos reservados.
