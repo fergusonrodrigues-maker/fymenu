@@ -161,7 +161,8 @@ export default function MenuClient({
     <>
       <style>{`
   html.menu-snap {
-    scroll-snap-type: y proximity;
+    scroll-snap-type: y mandatory;
+    scroll-behavior: smooth;
     scroll-padding-top: calc(44px + env(safe-area-inset-top, 0px));
     -webkit-overflow-scrolling: touch;
   }
