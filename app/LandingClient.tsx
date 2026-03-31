@@ -196,7 +196,7 @@ export default function LandingPage() {
       dots = [];
       for (let x = 12; x < canvas.width; x += 24) {
         for (let y = 12; y < canvas.height; y += 24) {
-          dots.push({ x, y, opacity: 0.30 });
+          dots.push({ x, y, opacity: 0.25 });
         }
       }
     }
@@ -239,10 +239,7 @@ export default function LandingPage() {
       });
 
       const dark = isDarkMode();
-      const baseOpacity = 0.30;
-
-      let haloCount = 0;
-      const MAX_HALOS = 80;
+      const baseOpacity = 0.25;
 
       for (const dot of dots) {
         let targetOpacity = baseOpacity;
@@ -267,42 +264,16 @@ export default function LandingPage() {
         dot.opacity += (targetOpacity - dot.opacity) * 0.08;
 
         const extra = Math.max(0, dot.opacity - baseOpacity);
+        const radius = 1.5 + extra * 3;
 
-        // 1) Halo externo individual — fumaça/glow por dot aceso
-        if (extra > 0.05 && haloCount < MAX_HALOS) {
-          haloCount++;
-          const haloRadius = 12 + extra * 20;
-          const haloGradient = ctx.createRadialGradient(dot.x, dot.y, 1, dot.x, dot.y, haloRadius);
-          if (dark) {
-            haloGradient.addColorStop(0, `rgba(0, 255, 174, ${extra * 0.35})`);
-            haloGradient.addColorStop(0.5, `rgba(0, 255, 174, ${extra * 0.12})`);
-            haloGradient.addColorStop(1, 'rgba(0, 255, 174, 0)');
-          } else {
-            haloGradient.addColorStop(0, `rgba(0, 0, 0, ${extra * 0.25})`);
-            haloGradient.addColorStop(0.5, `rgba(0, 0, 0, ${extra * 0.08})`);
-            haloGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
-          }
-          ctx.fillStyle = haloGradient;
-          ctx.fillRect(dot.x - haloRadius, dot.y - haloRadius, haloRadius * 2, haloRadius * 2);
-        }
-
-        // 2) O dot em si
         ctx.beginPath();
-        ctx.arc(dot.x, dot.y, 2, 0, Math.PI * 2);
-        ctx.fillStyle = dark
-          ? `rgba(0, 255, 174, ${dot.opacity})`
-          : `rgba(0, 0, 0, ${dot.opacity * 0.7})`;
-        ctx.fill();
-
-        // 3) Core super brilhante — só dots muito acesos
-        if (extra > 0.2) {
-          ctx.beginPath();
-          ctx.arc(dot.x, dot.y, 1, 0, Math.PI * 2);
-          ctx.fillStyle = dark
-            ? `rgba(255, 255, 255, ${extra * 0.4})`
-            : `rgba(0, 0, 0, ${extra * 0.5})`;
-          ctx.fill();
+        ctx.arc(dot.x, dot.y, radius, 0, Math.PI * 2);
+        if (dark) {
+          ctx.fillStyle = `rgba(0, 255, 174, ${dot.opacity})`;
+        } else {
+          ctx.fillStyle = `rgba(0, 0, 0, ${dot.opacity * 0.7})`;
         }
+        ctx.fill();
       }
 
       animId = requestAnimationFrame(draw);
