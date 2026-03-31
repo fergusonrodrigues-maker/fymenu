@@ -81,6 +81,22 @@ export default function CategoryCarousel({
   }
 
   // touch / mouse drag
+  function springBack(direction: 'left' | 'right') {
+    const track = trackRef.current;
+    if (!track) return;
+    const current = track.style.transform;
+    const match = current.match(/translateX\((-?[\d.]+)px\)/);
+    if (!match) return;
+    const currentX = parseFloat(match[1]);
+    const offset = direction === 'right' ? 30 : -30;
+    track.style.transition = 'transform 0.15s ease-out';
+    track.style.transform = `translateX(${currentX + offset}px)`;
+    setTimeout(() => {
+      track.style.transition = 'transform 0.4s cubic-bezier(0.22, 1, 0.36, 1)';
+      track.style.transform = `translateX(${currentX}px)`;
+    }, 150);
+  }
+
   function onPointerDown(e: React.PointerEvent) {
     dragStartX.current = e.clientX;
     dragStartY.current = e.clientY;
@@ -93,8 +109,13 @@ export default function CategoryCarousel({
     if (Math.abs(dy) > Math.abs(dx)) return;
     // Threshold mais alto para evitar indecisão
     if (Math.abs(dx) < 40) return;
-    if (dx < -40) goTo(heroIdxRef.current + 1);
-    else if (dx > 40) goTo(heroIdxRef.current - 1);
+    if (dx < -40) {
+      if (heroIdxRef.current >= list.length - 1) { springBack('left'); }
+      else { goTo(heroIdxRef.current + 1); }
+    } else if (dx > 40) {
+      if (heroIdxRef.current <= 0) { springBack('right'); }
+      else { goTo(heroIdxRef.current - 1); }
+    }
   }
 
   if (!list.length) return null;
