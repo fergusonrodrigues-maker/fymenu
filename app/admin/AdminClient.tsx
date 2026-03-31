@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { createClient } from "@/lib/supabase/client";
 
 type Stats = {
   totalRestaurants: number;
@@ -416,9 +417,21 @@ export default function AdminClient({
           <h1 className="text-2xl font-black tracking-tight">📊 Admin Dashboard</h1>
           <p className="text-gray-400 text-sm">Plataforma FyMenu — visão geral</p>
         </div>
-        <span className="px-3 py-1.5 rounded-full bg-purple-900/40 text-purple-300 border border-purple-700/50 text-xs font-bold uppercase tracking-widest">
-          ADMIN
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="px-3 py-1.5 rounded-full bg-purple-900/40 text-purple-300 border border-purple-700/50 text-xs font-bold uppercase tracking-widest">
+            ADMIN
+          </span>
+          <button
+            onClick={async () => {
+              const supabase = createClient();
+              await supabase.auth.signOut();
+              window.location.href = "/admin/login";
+            }}
+            className="px-3 py-1.5 rounded-lg border border-gray-700 bg-transparent text-gray-500 hover:text-gray-300 hover:border-gray-600 text-xs transition-colors cursor-pointer"
+          >
+            Sair
+          </button>
+        </div>
       </header>
 
       {/* Tabs */}

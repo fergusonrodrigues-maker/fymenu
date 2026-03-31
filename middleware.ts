@@ -2,7 +2,8 @@ import { createServerClient } from "@supabase/ssr";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PROTECTED_ROUTES = ["/painel", "/garcom", "/cozinha", "/admin"];
+const PROTECTED_ROUTES = ["/painel", "/garcom", "/cozinha"];
+// /admin routes are NOT in PROTECTED_ROUTES — they self-manage redirects to /admin/login
 const AUTH_ROUTES = ["/entrar", "/cadastro", "/auth/reset-password", "/auth/confirm-email"];
 
 // Rate limiting simples em memória (por IP)
