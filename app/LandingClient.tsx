@@ -196,7 +196,7 @@ export default function LandingPage() {
       dots = [];
       for (let x = 12; x < canvas.width; x += 24) {
         for (let y = 12; y < canvas.height; y += 24) {
-          dots.push({ x, y, opacity: 0.20 });
+          dots.push({ x, y, opacity: 0.30 });
         }
       }
     }
@@ -217,6 +217,13 @@ export default function LandingPage() {
     window.addEventListener("click", onClick);
     window.addEventListener("touchstart", onTouchStart, { passive: true });
 
+    const isDarkMode = () =>
+      document.documentElement.classList.contains("dark") ||
+      !document.documentElement.classList.contains("light");
+
+    const themeObs = new MutationObserver(() => {});
+    themeObs.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+
     let animId: number;
     function draw() {
       if (!canvas || !ctx) return;
@@ -231,23 +238,25 @@ export default function LandingPage() {
         return true;
       });
 
+      const dark = isDarkMode();
+
       for (const dot of dots) {
-        let targetOpacity = 0.20;
+        let targetOpacity = 0.30;
 
         const distToMouse = Math.hypot(dot.x - mouseX, dot.y - mouseY);
         if (distToMouse < 150) {
-          const mouseBrightness = 0.50 * (1 - distToMouse / 150);
-          targetOpacity = Math.max(targetOpacity, 0.20 + mouseBrightness);
+          const mouseBrightness = 0.70 * (1 - distToMouse / 150);
+          targetOpacity = Math.max(targetOpacity, 0.30 + mouseBrightness);
         }
 
         for (const ripple of ripples) {
           const distToCenter = Math.hypot(dot.x - ripple.x, dot.y - ripple.y);
           const distToRing = Math.abs(distToCenter - ripple.radius);
           if (distToRing < 20) {
-            const rippleBrightness = 0.80 * (1 - distToRing / 20);
+            const rippleBrightness = 1.0 * (1 - distToRing / 20);
             const elapsed = now - ripple.startTime;
             const fade = 1 - elapsed / 800;
-            targetOpacity = Math.max(targetOpacity, 0.20 + rippleBrightness * fade);
+            targetOpacity = Math.max(targetOpacity, 0.30 + rippleBrightness * fade);
           }
         }
 
@@ -255,7 +264,9 @@ export default function LandingPage() {
 
         ctx.beginPath();
         ctx.arc(dot.x, dot.y, 2, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(0, 255, 174, ${dot.opacity})`;
+        ctx.fillStyle = dark
+          ? `rgba(0, 255, 174, ${dot.opacity})`
+          : `rgba(0, 0, 0, ${dot.opacity * 0.7})`;
         ctx.fill();
       }
 
@@ -265,6 +276,7 @@ export default function LandingPage() {
 
     return () => {
       cancelAnimationFrame(animId);
+      themeObs.disconnect();
       window.removeEventListener("resize", resize);
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("touchmove", onTouchMove);
