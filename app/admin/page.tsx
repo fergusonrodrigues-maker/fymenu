@@ -39,6 +39,7 @@ export default async function AdminPage() {
     { data: allEvents },
     { data: financeOrders },
     { data: financePlans },
+    { data: supportStaffData },
   ] = await Promise.all([
     admin.from("restaurants").select("*", { count: "exact", head: true }),
     admin
@@ -107,6 +108,10 @@ export default async function AdminPage() {
     admin
       .from("restaurants")
       .select("plan, status, free_access"),
+    admin
+      .from("support_staff")
+      .select("id, email, name, role, is_active, permissions, created_at, last_login_at")
+      .order("created_at", { ascending: false }),
   ]);
 
   const revenue30d = payments30d?.reduce((s, p) => s + (p.amount ?? 0), 0) ?? 0;
@@ -192,6 +197,7 @@ export default async function AdminPage() {
         orders: financeOrders ?? [],
         plans: financePlans ?? [],
       }}
+      supportStaff={supportStaffData ?? []}
     />
   );
 }

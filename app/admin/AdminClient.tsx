@@ -72,6 +72,7 @@ interface Props {
     orders: Array<{ total: string; created_at: string; unit_id: string; status: string }>;
     plans: Array<{ plan: string; status: string; free_access: boolean }>;
   };
+  supportStaff: Array<{ id: string; email: string; name: string; role: string; is_active: boolean; permissions: Record<string, boolean>; created_at?: string; last_login_at?: string | null }>;
 }
 
 const TABS = ["Visão Geral", "Usuários", "Faturamento", "Analytics", "CRM", "Controle"] as const;
@@ -380,7 +381,7 @@ function ActionBtn({
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function AdminClient({
   stats, restaurants, payments, topProducts,
-  planCounts, statusCounts, cities, unitsByRestaurant, unitFeatures, user, analyticsData, crmData, consumerData, financeData,
+  planCounts, statusCounts, cities, unitsByRestaurant, unitFeatures, user, analyticsData, crmData, consumerData, financeData, supportStaff: initialSupportStaff,
 }: Props) {
   const supabase = createClient();
   const [tab, setTab] = useState<Tab>("Visão Geral");
@@ -402,6 +403,19 @@ export default function AdminClient({
 
   // CRM state
   const [crmSearch, setCrmSearch] = useState("");
+
+  // Support staff state
+  const [supportStaff, setSupportStaff] = useState(initialSupportStaff);
+  const [showAddStaff, setShowAddStaff] = useState(false);
+  const [staffName, setStaffName] = useState("");
+  const [staffEmail, setStaffEmail] = useState("");
+  const [staffRole, setStaffRole] = useState("support");
+  const [staffPermissions, setStaffPermissions] = useState<Record<string, boolean>>({
+    view_orders: true, view_products: true, view_units: true,
+    view_crm: false, view_financial: false, edit_products: false, manage_features: false,
+  });
+  const [addingStaff, setAddingStaff] = useState(false);
+  const [staffError, setStaffError] = useState<string | null>(null);
 
   // Controle tab state
   const [trialRestaurantId, setTrialRestaurantId] = useState("");
@@ -431,6 +445,45 @@ export default function AdminClient({
     setLocalRestaurants((prev) =>
       prev.map((r) => (r.id === id ? { ...r, ...updates } : r))
     );
+  }
+
+  async function handleAddStaff() {
+    if (!staffName || !staffEmail) { setStaffError("Nome e email são obrigatórios."); return; }
+    setAddingStaff(true);
+    setStaffError(null);
+    try {
+      const res = await fetch("/api/admin/support-staff", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "add", name: staffName, email: staffEmail, role: staffRole, permissions: staffPermissions }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error);
+      setSupportStaff((prev) => [...prev, json.staff]);
+      setStaffName(""); setStaffEmail(""); setStaffRole("support");
+      setStaffPermissions({ view_orders: true, view_products: true, view_units: true, view_crm: false, view_financial: false, edit_products: false, manage_features: false });
+      setShowAddStaff(false);
+    } catch (err: any) { setStaffError(err.message); }
+    finally { setAddingStaff(false); }
+  }
+
+  async function handleToggleStaff(id: string, active: boolean) {
+    const res = await fetch("/api/admin/support-staff", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "toggle", id, is_active: active }),
+    });
+    if (res.ok) setSupportStaff((prev) => prev.map((s) => s.id === id ? { ...s, is_active: active } : s));
+  }
+
+  async function handleRemoveStaff(id: string) {
+    if (!confirm("Remover este funcionário de suporte?")) return;
+    const res = await fetch("/api/admin/support-staff", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "remove", id }),
+    });
+    if (res.ok) setSupportStaff((prev) => prev.filter((s) => s.id !== id));
   }
 
   async function handleChangePassword() {
@@ -1658,6 +1711,96 @@ export default function AdminClient({
                 </div>
               </div>
             )}
+
+            {/* Funcionários de Suporte */}
+            <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-gray-200">👨‍💼 Funcionários de Suporte</h3>
+                <button
+                  onClick={() => setShowAddStaff(true)}
+                  className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold transition-colors"
+                >
+                  + Adicionar
+                </button>
+              </div>
+
+              {showAddStaff && (
+                <div className="mb-4 p-4 rounded-xl bg-gray-800/60 border border-gray-700 space-y-3">
+                  <input type="text" placeholder="Nome completo" value={staffName} onChange={(e) => setStaffName(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 text-white text-sm outline-none" />
+                  <input type="email" placeholder="Email do funcionário" value={staffEmail} onChange={(e) => setStaffEmail(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 text-white text-sm outline-none" />
+                  <select value={staffRole} onChange={(e) => setStaffRole(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 text-white text-sm outline-none">
+                    <option value="support">Suporte</option>
+                    <option value="moderator">Moderador</option>
+                    <option value="manager">Gerente</option>
+                  </select>
+
+                  <div className="space-y-2">
+                    <p className="text-gray-500 text-xs uppercase tracking-wider">Permissões:</p>
+                    {[
+                      { key: "view_orders", label: "Ver pedidos dos clientes" },
+                      { key: "view_products", label: "Ver produtos/cardápios" },
+                      { key: "view_units", label: "Ver unidades dos clientes" },
+                      { key: "view_crm", label: "Ver CRM (dados dos donos)" },
+                      { key: "view_financial", label: "Ver financeiro" },
+                      { key: "edit_products", label: "Editar produtos dos clientes" },
+                      { key: "manage_features", label: "Gerenciar feature flags" },
+                    ].map((perm) => (
+                      <label key={perm.key} className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={staffPermissions[perm.key] ?? false}
+                          onChange={(e) => setStaffPermissions((prev) => ({ ...prev, [perm.key]: e.target.checked }))}
+                          className="accent-purple-500"
+                        />
+                        {perm.label}
+                      </label>
+                    ))}
+                  </div>
+
+                  {staffError && <p className="text-red-400 text-xs">{staffError}</p>}
+
+                  <div className="flex gap-2">
+                    <button onClick={() => setShowAddStaff(false)}
+                      className="flex-1 py-2 rounded-lg border border-gray-700 text-gray-400 text-sm">Cancelar</button>
+                    <button onClick={handleAddStaff} disabled={addingStaff}
+                      className="flex-1 py-2 rounded-lg bg-purple-600 text-white text-sm font-semibold disabled:opacity-50">
+                      {addingStaff ? "Salvando..." : "Adicionar"}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {supportStaff.length === 0 ? (
+                <p className="text-gray-600 text-sm">Nenhum funcionário de suporte cadastrado.</p>
+              ) : (
+                <div className="space-y-2">
+                  {supportStaff.map((s) => (
+                    <div key={s.id} className="flex items-center justify-between p-3 rounded-xl bg-gray-800/30 border border-gray-800">
+                      <div>
+                        <div className="text-white text-sm font-semibold">{s.name}</div>
+                        <div className="text-gray-500 text-xs">{s.email} · {s.role}</div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-0.5 rounded text-xs font-semibold ${s.is_active ? "bg-green-900/40 text-green-300" : "bg-red-900/40 text-red-300"}`}>
+                          {s.is_active ? "Ativo" : "Inativo"}
+                        </span>
+                        <button onClick={() => handleToggleStaff(s.id, !s.is_active)}
+                          className="px-2 py-1 rounded text-xs border border-gray-700 text-gray-400 hover:text-white">
+                          {s.is_active ? "Desativar" : "Ativar"}
+                        </button>
+                        <button onClick={() => handleRemoveStaff(s.id)}
+                          className="px-2 py-1 rounded text-xs border border-red-900/50 text-red-400 hover:text-red-300">
+                          Remover
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
