@@ -39,6 +39,7 @@ interface Props {
   cities: { city: string; count: number }[];
   unitsByRestaurant: Record<string, string>;
   unitFeatures: { unit_id: string; feature: string; enabled: boolean }[];
+  user: { email: string; id: string } | null;
 }
 
 const TABS = ["Visão Geral", "Usuários", "Faturamento", "Analytics", "Controle"] as const;
@@ -347,8 +348,9 @@ function ActionBtn({
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function AdminClient({
   stats, restaurants, payments, topProducts,
-  planCounts, statusCounts, cities, unitsByRestaurant, unitFeatures,
+  planCounts, statusCounts, cities, unitsByRestaurant, unitFeatures, user,
 }: Props) {
+  const supabase = createClient();
   const [tab, setTab] = useState<Tab>("Visão Geral");
   const [managingId, setManagingId] = useState<string | null>(null);
   const [localRestaurants, setLocalRestaurants] = useState(restaurants);
@@ -357,6 +359,14 @@ export default function AdminClient({
   const [search, setSearch] = useState("");
   const [filterPlan, setFilterPlan] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
+
+  // Minha Conta state
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
+  const [changingPassword, setChangingPassword] = useState(false);
 
   // Controle tab state
   const [trialRestaurantId, setTrialRestaurantId] = useState("");
@@ -386,6 +396,49 @@ export default function AdminClient({
     setLocalRestaurants((prev) =>
       prev.map((r) => (r.id === id ? { ...r, ...updates } : r))
     );
+  }
+
+  async function handleChangePassword() {
+    setPasswordError(null);
+    setPasswordSuccess(null);
+
+    if (!newPassword || newPassword.length < 6) {
+      setPasswordError("A nova senha deve ter pelo menos 6 caracteres.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError("As senhas não coincidem.");
+      return;
+    }
+
+    setChangingPassword(true);
+    try {
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user?.email ?? "",
+        password: currentPassword,
+      });
+      if (signInError) {
+        setPasswordError("Senha atual incorreta.");
+        return;
+      }
+
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+      if (updateError) {
+        setPasswordError(updateError.message);
+        return;
+      }
+
+      setPasswordSuccess("Senha alterada com sucesso!");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err: any) {
+      setPasswordError(err.message || "Erro ao alterar senha.");
+    } finally {
+      setChangingPassword(false);
+    }
   }
 
   async function addTrialDays() {
@@ -659,6 +712,52 @@ export default function AdminClient({
         {/* CONTROLE */}
         {tab === "Controle" && (
           <div className="space-y-6">
+            {/* Minha Conta */}
+            <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-6 mb-6">
+              <h3 className="font-bold text-gray-200 mb-4">🔐 Minha Conta</h3>
+              <div className="space-y-3">
+                <div>
+                  <label className="text-gray-500 text-xs uppercase tracking-wider">Email do admin</label>
+                  <p className="text-gray-300 text-sm mt-1">{user?.email ?? "—"}</p>
+                </div>
+                <div className="border-t border-gray-800 pt-3">
+                  <label className="text-gray-500 text-xs uppercase tracking-wider block mb-2">Alterar senha</label>
+                  <div className="flex flex-col gap-2">
+                    <input
+                      type="password"
+                      placeholder="Senha atual"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg bg-gray-800/60 border border-gray-700 text-white text-sm outline-none focus:border-purple-500"
+                    />
+                    <input
+                      type="password"
+                      placeholder="Nova senha"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg bg-gray-800/60 border border-gray-700 text-white text-sm outline-none focus:border-purple-500"
+                    />
+                    <input
+                      type="password"
+                      placeholder="Confirmar nova senha"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg bg-gray-800/60 border border-gray-700 text-white text-sm outline-none focus:border-purple-500"
+                    />
+                    {passwordError && <p className="text-red-400 text-xs">{passwordError}</p>}
+                    {passwordSuccess && <p className="text-green-400 text-xs">{passwordSuccess}</p>}
+                    <button
+                      onClick={handleChangePassword}
+                      disabled={changingPassword}
+                      className="w-full py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold disabled:opacity-50 transition-colors"
+                    >
+                      {changingPassword ? "Salvando..." : "Alterar Senha"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Ações rápidas */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {/* Trial */}

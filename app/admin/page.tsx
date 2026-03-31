@@ -117,6 +117,7 @@ export default async function AdminPage() {
       cities={cities}
       unitsByRestaurant={unitsByRestaurant}
       unitFeatures={unitFeatures ?? []}
+      user={{ email: user.email ?? "", id: user.id }}
     />
   );
 }
