@@ -4,21 +4,28 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 export default function AdminLoginClient() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const supabase = createClient();
 
-  async function handleLogin() {
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault();
     setError(null);
     setLoading(true);
-    const { error: authError } = await supabase.auth.signInWithOAuth({
-      provider: "github",
-      options: {
-        redirectTo: window.location.origin + "/admin",
-      },
-    });
-    if (authError) {
-      setError(authError.message);
+    try {
+      const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
+      if (authError) throw authError;
+      const res = await fetch("/api/admin/verify", { method: "POST", headers: { "Content-Type": "application/json" } });
+      if (!res.ok) {
+        await supabase.auth.signOut();
+        throw new Error("Acesso negado. Você não tem permissão de administrador.");
+      }
+      window.location.href = "/admin";
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Erro ao fazer login");
+    } finally {
       setLoading(false);
     }
   }
@@ -58,34 +65,43 @@ export default function AdminLoginClient() {
           </p>
         </div>
 
-        {error && (
-          <div style={{
-            padding: "10px 14px", borderRadius: 10, marginBottom: 14,
-            background: "rgba(248,113,113,0.08)",
-            border: "1px solid rgba(248,113,113,0.2)",
-            color: "#f87171", fontSize: 13,
-          }}>
-            {error}
-          </div>
-        )}
+        <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Email do admin"
+            required
+            style={{ width: "100%", padding: "12px 16px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.10)", background: "rgba(255,255,255,0.05)", color: "#fff", fontSize: 14, outline: "none", boxSizing: "border-box" }}
+          />
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Senha"
+            required
+            style={{ width: "100%", padding: "12px 16px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.10)", background: "rgba(255,255,255,0.05)", color: "#fff", fontSize: 14, outline: "none", boxSizing: "border-box" }}
+          />
 
-        <button
-          onClick={handleLogin}
-          disabled={loading}
-          style={{
-            width: "100%", padding: "14px", borderRadius: 12,
-            border: "none", cursor: loading ? "not-allowed" : "pointer",
-            background: loading
-              ? "rgba(124,58,237,0.3)"
-              : "linear-gradient(135deg, #7c3aed, #4c1d95)",
-            color: "#fff", fontSize: 15, fontWeight: 700,
-            opacity: loading ? 0.6 : 1,
-            transition: "all 0.2s ease",
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-          }}
-        >
-          {loading ? "Redirecionando..." : "Entrar com GitHub"}
-        </button>
+          {error && (
+            <div style={{
+              padding: "10px 14px", borderRadius: 10,
+              background: "rgba(248,113,113,0.08)",
+              border: "1px solid rgba(248,113,113,0.2)",
+              color: "#f87171", fontSize: 13,
+            }}>
+              {error}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            style={{ width: "100%", padding: "14px", borderRadius: 12, border: "none", cursor: loading ? "not-allowed" : "pointer", background: loading ? "rgba(124,58,237,0.3)" : "linear-gradient(135deg, #7c3aed, #4c1d95)", color: "#fff", fontSize: 15, fontWeight: 700, opacity: loading ? 0.6 : 1 }}
+          >
+            {loading ? "Verificando..." : "Entrar como Admin"}
+          </button>
+        </form>
 
         <p style={{
           color: "rgba(255,255,255,0.15)", fontSize: 11,
