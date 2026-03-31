@@ -125,6 +125,53 @@ export default function MenuClient({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [regularCategories.length]);
 
+  // ── Snap suave manual: quando o scroll para, encaixa na categoria mais próxima ──
+  useEffect(() => {
+    let snapTimer: ReturnType<typeof setTimeout> | null = null;
+    let isSnapping = false;
+
+    function onScrollEnd() {
+      if (isScrollingTo.current || isSnapping) return;
+
+      if (snapTimer) clearTimeout(snapTimer);
+      snapTimer = setTimeout(() => {
+        // Encontra a seção mais próxima do topo
+        let closestId: string | null = null;
+        let closestDist = Infinity;
+        const offset = 60; // compensa pills fixos
+
+        for (const cat of regularCategories) {
+          const el = sectionRefs.current[cat.id];
+          if (!el) continue;
+          const rect = el.getBoundingClientRect();
+          const dist = Math.abs(rect.top - offset);
+          if (dist < closestDist) {
+            closestDist = dist;
+            closestId = cat.id;
+          }
+        }
+
+        // Só faz snap se a distância for entre 10px e 150px (não snapa se já está encaixado ou se está muito longe)
+        if (closestId && closestDist > 10 && closestDist < 150) {
+          isSnapping = true;
+          const el = sectionRefs.current[closestId];
+          if (el) {
+            el.scrollIntoView({ behavior: "smooth", block: "start" });
+            setActiveCategoryId(closestId);
+          }
+          setTimeout(() => { isSnapping = false; }, 600);
+        }
+      }, 200); // 200ms de pausa antes de encaixar
+    }
+
+    window.addEventListener("scroll", onScrollEnd, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScrollEnd);
+      if (snapTimer) clearTimeout(snapTimer);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [regularCategories.length]);
+
   // ── Scroll programático ao clicar num pill ───────────────────────────────
   const scrollToCategory = useCallback((id: string) => {
     isScrollingTo.current = true;
@@ -161,13 +208,7 @@ export default function MenuClient({
     <>
       <style>{`
   html.menu-snap {
-    scroll-snap-type: y mandatory;
-    scroll-behavior: smooth;
-    scroll-padding-top: calc(44px + env(safe-area-inset-top, 0px));
     -webkit-overflow-scrolling: touch;
-  }
-  .menu-snap-section {
-    scroll-snap-align: start;
   }
   .menu-bg-themed {
     background-color: #ffffff;
@@ -201,7 +242,7 @@ export default function MenuClient({
           const catProducts = productsByCategory(cat.id);
           if (!catProducts.length) return null;
           return (
-            <div key={cat.id} className="menu-snap-section">
+            <div key={cat.id}>
               <FeaturedCarousel
                 items={catProducts}
                 onOpen={(p) => handleOpenProduct(p)}
@@ -220,7 +261,6 @@ export default function MenuClient({
             <div
               key={cat.id}
               ref={(el) => { sectionRefs.current[cat.id] = el; }}
-              className="menu-snap-section"
               style={{
                 marginBottom: 4,
                 transition: "opacity 0.4s ease",
