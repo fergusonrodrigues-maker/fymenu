@@ -46,7 +46,7 @@ export default function CategoryCarousel({
 
     const vpW = vp.offsetWidth;
     const heroW = active ? HW : IW;
-    const ghostW = Math.round(heroW * 0.55);
+    const ghostW = active ? Math.round(heroW * 0.55) : 105;
 
     let offset = ghostW + GAP;
     for (let i = 0; i < idx; i++) {
@@ -108,7 +108,7 @@ export default function CategoryCarousel({
       style={{
         overflow: "hidden",
         width: "100%",
-        padding: active ? "12px 0 55px" : "8px 0 10px",
+        padding: active ? "12px 0 55px" : "10px 0 20px",
         height: active ? ACTIVE_VP_HEIGHT : "auto",
         transition: "padding 0.35s ease, height 0.35s ease",
         cursor: active ? "grab" : "default",
