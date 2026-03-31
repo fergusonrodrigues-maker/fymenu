@@ -15,7 +15,9 @@
       "Bash(npx vercel:*)",
       "Bash(grep -n \"useTrack\\\\|track\\(\" app/u/[slug]/MenuClient.tsx app/u/[slug]/ProductModal.tsx)",
       "mcp__claude_ai_Vercel__get_deployment_build_logs",
-      "Read(//mnt/user-data/outputs/**)"
+      "Read(//mnt/user-data/outputs/**)",
+      "Bash(cp ~/Downloads/MenuClient.tsx ~/Documents/fymenu/app/delivery/[slug]/MenuClient.tsx)",
+      "Bash(cp ~/Downloads/CategoryCarousel.tsx ~/Documents/fymenu/app/delivery/[slug]/CategoryCarousel.tsx)"
     ],
     "additionalDirectories": [
       "C:\\Users\\Ferguson\\Documents\\fymenu\\app\\u\\[slug]\\hub-central",

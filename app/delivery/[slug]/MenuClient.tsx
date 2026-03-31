@@ -87,17 +87,15 @@ export default function MenuClient({
   const featuredCategories = categories.filter((c) => c.is_featured);
   const regularCategories  = categories.filter((c) => !c.is_featured);
 
-  // ── Velocity-aware category activation ─────────────────────────────────
-  // Scroll rápido → nada muda (exploração)
-  // Scroll lento/parou → ativa hero suavemente
+  // ── Snap suave vertical (proximity = só encaixa quando perto, não força) ──
+  useEffect(() => {
+    document.documentElement.classList.add("menu-snap");
+    return () => document.documentElement.classList.remove("menu-snap");
+  }, []);
+
+  // ── IntersectionObserver: scroll → pill ativo ───────────────────────────
   useEffect(() => {
     if (regularCategories.length === 0) return;
-
-    let lastScrollY = window.scrollY;
-    let lastTime = Date.now();
-    let velocity = 0;
-    let activateTimer: ReturnType<typeof setTimeout> | null = null;
-    let pendingCategoryId: string | null = null;
 
     const observers: IntersectionObserver[] = [];
 
@@ -109,7 +107,7 @@ export default function MenuClient({
         (entries) => {
           entries.forEach((entry) => {
             if (entry.isIntersecting && !isScrollingTo.current) {
-              pendingCategoryId = cat.id;
+              setActiveCategoryId(cat.id);
             }
           });
         },
@@ -123,44 +121,9 @@ export default function MenuClient({
       observers.push(obs);
     });
 
-    function onScroll() {
-      const now = Date.now();
-      const dt = now - lastTime;
-      if (dt > 0) {
-        velocity = Math.abs(window.scrollY - lastScrollY) / dt;
-      }
-      lastScrollY = window.scrollY;
-      lastTime = now;
-
-      // Scroll rápido (>1.5 px/ms): cancela ativação pendente
-      if (velocity > 1.5) {
-        if (activateTimer) {
-          clearTimeout(activateTimer);
-          activateTimer = null;
-        }
-        return;
-      }
-
-      // Scroll lento: agenda ativação com delay
-      if (pendingCategoryId && pendingCategoryId !== activeCategoryId) {
-        if (activateTimer) clearTimeout(activateTimer);
-        activateTimer = setTimeout(() => {
-          if (pendingCategoryId) {
-            setActiveCategoryId(pendingCategoryId);
-          }
-        }, 120);
-      }
-    }
-
-    window.addEventListener("scroll", onScroll, { passive: true });
-
-    return () => {
-      observers.forEach((o) => o.disconnect());
-      window.removeEventListener("scroll", onScroll);
-      if (activateTimer) clearTimeout(activateTimer);
-    };
+    return () => observers.forEach((o) => o.disconnect());
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [regularCategories.length, activeCategoryId]);
+  }, [regularCategories.length]);
 
   // ── Scroll programático ao clicar num pill ───────────────────────────────
   const scrollToCategory = useCallback((id: string) => {
@@ -197,6 +160,14 @@ export default function MenuClient({
   return (
     <>
       <style>{`
+  html.menu-snap {
+    scroll-snap-type: y proximity;
+    scroll-padding-top: calc(58px + env(safe-area-inset-top, 0px));
+    -webkit-overflow-scrolling: touch;
+  }
+  .menu-snap-section {
+    scroll-snap-align: start;
+  }
   .menu-bg-themed {
     background-color: #ffffff;
     background-image: radial-gradient(rgba(0,0,0,0.06) 1px, transparent 1px);
@@ -229,11 +200,12 @@ export default function MenuClient({
           const catProducts = productsByCategory(cat.id);
           if (!catProducts.length) return null;
           return (
-            <FeaturedCarousel
-              key={cat.id}
-              items={catProducts}
-              onOpen={(p) => handleOpenProduct(p)}
-            />
+            <div key={cat.id} className="menu-snap-section">
+              <FeaturedCarousel
+                items={catProducts}
+                onOpen={(p) => handleOpenProduct(p)}
+              />
+            </div>
           );
         })}
 
@@ -247,6 +219,7 @@ export default function MenuClient({
             <div
               key={cat.id}
               ref={(el) => { sectionRefs.current[cat.id] = el; }}
+              className="menu-snap-section"
               style={{
                 marginBottom: 4,
                 transition: "opacity 0.4s ease",
