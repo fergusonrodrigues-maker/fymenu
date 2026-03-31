@@ -131,7 +131,7 @@ export default function PDVClient({
       status: "confirmed",
     });
 
-    playChime();
+    playAlert();
     setLastReceipt({ order: selected, method, cash: cashPaid, change });
     setOrders((prev) => prev.filter((o) => o.id !== selected.id));
     setScreen("receipt");
