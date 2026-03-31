@@ -13,7 +13,8 @@
       "Bash(ls app/u/[slug]/)",
       "Bash(git merge:*)",
       "Bash(npx vercel:*)",
-      "Bash(grep -n \"useTrack\\\\|track\\(\" app/u/[slug]/MenuClient.tsx app/u/[slug]/ProductModal.tsx)"
+      "Bash(grep -n \"useTrack\\\\|track\\(\" app/u/[slug]/MenuClient.tsx app/u/[slug]/ProductModal.tsx)",
+      "mcp__claude_ai_Vercel__get_deployment_build_logs"
     ],
     "additionalDirectories": [
       "C:\\Users\\Ferguson\\Documents\\fymenu\\app\\u\\[slug]\\hub-central",
