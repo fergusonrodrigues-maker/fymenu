@@ -908,8 +908,22 @@ export default function AdminClient({
             business: "bg-purple-500",
           };
 
+          // PDV stats
+          const pdvTotal = payments.reduce((s, p) => s + (p.amount ?? 0), 0);
+          const pdvCount = payments.length;
+          const pdvTicket = pdvCount > 0 ? Math.round(pdvTotal / pdvCount) : 0;
+          const pdvPix = payments.filter((p) => p.method === "pix").length;
+          const pdvCard = payments.filter((p) => p.method === "card").length;
+          const pdvCash = payments.filter((p) => p.method === "cash").length;
+
           return (
             <div className="space-y-6">
+              {/* ── SEÇÃO 1: FyMenu Assinaturas ─────────────────── */}
+              <div>
+                <h2 className="text-lg font-bold text-gray-200 mb-1">💎 Faturamento FyMenu (Assinaturas)</h2>
+                <p className="text-gray-500 text-sm mb-4">Receita recorrente gerada pelos planos contratados pelos restaurantes.</p>
+              </div>
+
               {/* A. Resumo */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
@@ -926,6 +940,9 @@ export default function AdminClient({
                   </div>
                 ))}
               </div>
+              <p className="text-gray-600 text-xs -mt-4">
+                ⚠️ MRR estimado baseado nos planos ativos. Faturamento real será calculado após integração com gateway de pagamento.
+              </p>
 
               {/* B. Gráfico mensal */}
               <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
@@ -1011,14 +1028,52 @@ export default function AdminClient({
                 )}
               </div>
 
-              {/* F. Pagamentos */}
+              {/* ── SEPARADOR: Vendas dos Restaurantes ───────────── */}
+              <div className="border-t border-gray-800 pt-6 mt-6">
+                <h2 className="text-lg font-bold text-gray-200 mb-1">💰 Vendas dos Restaurantes (PDV)</h2>
+                <p className="text-gray-500 text-sm mb-4">Pagamentos registrados pelos restaurantes aos seus clientes finais via PDV.</p>
+              </div>
+
+              {/* PDV metric cards */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-5">
+                  <div className="text-2xl mb-2">🧾</div>
+                  <p className="text-gray-500 text-xs uppercase tracking-wider">Total de Vendas</p>
+                  <p className="text-2xl font-black mt-1 text-green-400">{fmt(pdvTotal)}</p>
+                  <p className="text-gray-600 text-xs mt-0.5">{pdvCount} registros</p>
+                </div>
+                <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-5">
+                  <div className="text-2xl mb-2">🎯</div>
+                  <p className="text-gray-500 text-xs uppercase tracking-wider">Ticket Médio</p>
+                  <p className="text-2xl font-black mt-1 text-yellow-400">{fmt(pdvTicket)}</p>
+                  <p className="text-gray-600 text-xs mt-0.5">por venda</p>
+                </div>
+                <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-5">
+                  <div className="text-2xl mb-2">💳</div>
+                  <p className="text-gray-500 text-xs uppercase tracking-wider">Métodos</p>
+                  <div className="flex gap-2 mt-2 flex-wrap">
+                    {pdvCount > 0 && [
+                      { label: "📲 PIX", count: pdvPix, color: "bg-blue-900/40 text-blue-300" },
+                      { label: "💳 Cartão", count: pdvCard, color: "bg-purple-900/40 text-purple-300" },
+                      { label: "💵 Dinheiro", count: pdvCash, color: "bg-green-900/40 text-green-300" },
+                    ].filter((m) => m.count > 0).map((m) => (
+                      <span key={m.label} className={`px-2 py-0.5 rounded text-xs font-semibold ${m.color}`}>
+                        {m.label} {Math.round((m.count / pdvCount) * 100)}%
+                      </span>
+                    ))}
+                    {pdvCount === 0 && <span className="text-gray-600 text-xs">Sem dados</span>}
+                  </div>
+                </div>
+              </div>
+
+              {/* F. Tabela de vendas */}
               <div className="bg-gray-900/60 rounded-2xl border border-gray-800 overflow-hidden">
                 <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
-                  <h3 className="font-bold text-gray-200">Pagamentos Registrados</h3>
+                  <h3 className="font-bold text-gray-200">Vendas Registradas no PDV</h3>
                   <span className="text-gray-500 text-sm">{payments.length} registros</span>
                 </div>
                 {payments.length === 0 ? (
-                  <p className="text-gray-600 text-sm p-6">Nenhum pagamento registrado ainda.</p>
+                  <p className="text-gray-600 text-sm p-6">Nenhuma venda registrada ainda.</p>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
