@@ -79,16 +79,44 @@ interface Props {
     sessions: Array<{
       id: string; restaurant_id: string; unit_id: string | null; package_id: string; city_id: string;
       status: string; scheduled_at: string | null; completed_at: string | null;
-      photographer_name: string | null; price_charged: number; payment_status: string;
+      photographer_name: string | null; partner_id: string | null; price_charged: number; payment_status: string;
       payment_method: string | null; notes: string | null; photos_delivered: number;
       created_at: string;
       photo_session_packages: { name: string } | null;
       photo_session_cities: { city: string; state: string } | null;
+      partners: { name: string } | null;
+    }>;
+  };
+  partnerData: {
+    partners: Array<{
+      id: string; name: string; email: string; phone: string | null;
+      document: string | null; commission_percent: number; is_photographer: boolean;
+      is_active: boolean; total_earned: number; total_paid: number;
+      notes: string | null; created_at: string;
+    }>;
+    coupons: Array<{
+      id: string; partner_id: string; code: string; discount_percent: number;
+      discount_type: string; discount_value: number; trial_extra_days: number;
+      max_uses: number | null; current_uses: number; is_active: boolean;
+      expires_at: string | null; created_at: string;
+      partners: { name: string } | null;
+    }>;
+    referrals: Array<{
+      id: string; partner_id: string; restaurant_id: string; coupon_id: string | null;
+      coupon_code: string | null; commission_percent: number; status: string; created_at: string;
+      partners: { name: string } | null;
+      restaurants: { name: string; plan: string; status: string } | null;
+    }>;
+    payouts: Array<{
+      id: string; partner_id: string; amount: number; period_start: string;
+      period_end: string; status: string; payment_method: string | null;
+      paid_at: string | null; notes: string | null; created_at: string;
+      partners: { name: string } | null;
     }>;
   };
 }
 
-const TABS = ["Visão Geral", "Usuários", "Faturamento", "Analytics", "CRM", "Fotos", "Controle"] as const;
+const TABS = ["Visão Geral", "Usuários", "Faturamento", "Analytics", "CRM", "Parceiros", "Fotos", "Controle"] as const;
 type Tab = (typeof TABS)[number];
 
 const PLAN_PRICES: Record<string, number> = {
@@ -115,6 +143,10 @@ function fmt(cents: number) {
 function fmtDate(d: string | null) {
   if (!d) return "—";
   return new Date(d).toLocaleDateString("pt-BR");
+}
+
+function fmtBRL(value: number) {
+  return `R$ ${value.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
 }
 
 const PLAN_BADGE: Record<string, string> = {
@@ -394,7 +426,7 @@ function ActionBtn({
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function AdminClient({
   stats, restaurants, payments, topProducts,
-  planCounts, statusCounts, cities, unitsByRestaurant, unitFeatures, user, analyticsData, crmData, consumerData, financeData, supportStaff: initialSupportStaff, photoData,
+  planCounts, statusCounts, cities, unitsByRestaurant, unitFeatures, user, analyticsData, crmData, consumerData, financeData, supportStaff: initialSupportStaff, photoData, partnerData,
 }: Props) {
   const supabase = createClient();
   const [tab, setTab] = useState<Tab>("Visão Geral");
@@ -446,6 +478,7 @@ export default function AdminClient({
   const [pkgPrice, setPkgPrice] = useState("");
   const [pkgDuration, setPkgDuration] = useState(60);
   const [showAddSession, setShowAddSession] = useState(false);
+  const [sessPartnerId, setSessPartnerId] = useState("");
   const [sessRestaurantId, setSessRestaurantId] = useState("");
   const [sessPackageId, setSessPackageId] = useState("");
   const [sessCityId, setSessCityId] = useState("");
@@ -453,6 +486,45 @@ export default function AdminClient({
   const [sessPhotographer, setSessPhotographer] = useState("");
   const [sessNotes, setSessNotes] = useState("");
   const [photoError, setPhotoError] = useState<string | null>(null);
+
+  // Partners state
+  const [partnerTab, setPartnerTab] = useState<"parceiros" | "cupons" | "indicacoes" | "comissoes">("parceiros");
+  const [partnersState, setPartnersState] = useState(partnerData.partners);
+  const [couponsState, setCouponsState] = useState(partnerData.coupons);
+  const [referralsState] = useState(partnerData.referrals);
+  const [payoutsState, setPayoutsState] = useState(partnerData.payouts);
+  // Add partner form
+  const [showAddPartner, setShowAddPartner] = useState(false);
+  const [editingPartnerId, setEditingPartnerId] = useState<string | null>(null);
+  const [partnerName, setPartnerName] = useState("");
+  const [partnerEmail, setPartnerEmail] = useState("");
+  const [partnerPhone, setPartnerPhone] = useState("");
+  const [partnerDocument, setPartnerDocument] = useState("");
+  const [partnerCommission, setPartnerCommission] = useState(10);
+  const [partnerIsPhotographer, setPartnerIsPhotographer] = useState(false);
+  const [partnerNotes, setPartnerNotes] = useState("");
+  const [partnerError, setPartnerError] = useState<string | null>(null);
+  // Add coupon form
+  const [showAddCoupon, setShowAddCoupon] = useState(false);
+  const [couponPartnerId, setCouponPartnerId] = useState("");
+  const [couponCode, setCouponCode] = useState("");
+  const [couponDiscountType, setCouponDiscountType] = useState("percent");
+  const [couponValue, setCouponValue] = useState("");
+  const [couponTrialDays, setCouponTrialDays] = useState(0);
+  const [couponMaxUses, setCouponMaxUses] = useState("");
+  const [couponExpiresAt, setCouponExpiresAt] = useState("");
+  const [couponError, setCouponError] = useState<string | null>(null);
+  // Add payout form
+  const [showAddPayout, setShowAddPayout] = useState(false);
+  const [payoutPartnerId, setPayoutPartnerId] = useState("");
+  const [payoutAmount, setPayoutAmount] = useState("");
+  const [payoutStart, setPayoutStart] = useState("");
+  const [payoutEnd, setPayoutEnd] = useState("");
+  const [payoutMethod, setPayoutMethod] = useState("");
+  const [payoutNotes, setPayoutNotes] = useState("");
+  const [payoutError, setPayoutError] = useState<string | null>(null);
+  // Referrals filter
+  const [referralFilterPartner, setReferralFilterPartner] = useState("all");
 
   // Controle tab state
   const [trialRestaurantId, setTrialRestaurantId] = useState("");
@@ -498,11 +570,11 @@ export default function AdminClient({
       setPhotoError("Restaurante, pacote e cidade são obrigatórios."); return;
     }
     setPhotoError(null);
-    const res = await photoApi({ action: "add_session", restaurant_id: sessRestaurantId, package_id: sessPackageId, city_id: sessCityId, scheduled_at: sessDate || null, photographer_name: sessPhotographer || null, notes: sessNotes || null });
+    const res = await photoApi({ action: "add_session", restaurant_id: sessRestaurantId, package_id: sessPackageId, city_id: sessCityId, scheduled_at: sessDate || null, photographer_name: sessPhotographer || null, partner_id: sessPartnerId || null, notes: sessNotes || null });
     const json = await res.json();
     if (!res.ok) { setPhotoError(json.error); return; }
     setPhotoSessionsState((prev) => [json.session, ...prev]);
-    setSessRestaurantId(""); setSessPackageId(""); setSessCityId(""); setSessDate(""); setSessPhotographer(""); setSessNotes("");
+    setSessRestaurantId(""); setSessPackageId(""); setSessCityId(""); setSessDate(""); setSessPhotographer(""); setSessPartnerId(""); setSessNotes("");
     setShowAddSession(false);
   }
 
@@ -654,6 +726,90 @@ export default function AdminClient({
     });
     const data = await res.json();
     setTrialMsg(data.success ? `+${days} dias adicionados!` : data.error ?? "Erro");
+  }
+
+  // Partner computed values
+  const activePartners = partnersState.filter((p) => p.is_active).length;
+  const activeCoupons = couponsState.filter((c) => c.is_active).length;
+  const totalReferrals = referralsState.length;
+  const pendingCommissions = payoutsState
+    .filter((p) => p.status === "pending")
+    .reduce((sum, p) => sum + p.amount, 0);
+
+  async function partnerApi(body: Record<string, unknown>) {
+    const res = await fetch("/api/admin/partners", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    return res;
+  }
+
+  async function handleAddPartner() {
+    if (!partnerName || !partnerEmail) { setPartnerError("Nome e email são obrigatórios."); return; }
+    setPartnerError(null);
+    const res = await partnerApi({ action: "add_partner", name: partnerName, email: partnerEmail, phone: partnerPhone || null, document: partnerDocument || null, commission_percent: partnerCommission, is_photographer: partnerIsPhotographer, notes: partnerNotes || null });
+    const json = await res.json();
+    if (!res.ok) { setPartnerError(json.error); return; }
+    setPartnersState((prev) => [json.partner, ...prev]);
+    setPartnerName(""); setPartnerEmail(""); setPartnerPhone(""); setPartnerDocument(""); setPartnerCommission(10); setPartnerIsPhotographer(false); setPartnerNotes("");
+    setShowAddPartner(false);
+  }
+
+  async function handleTogglePartner(id: string, active: boolean) {
+    await partnerApi({ action: "update_partner", id, is_active: active });
+    setPartnersState((prev) => prev.map((p) => p.id === id ? { ...p, is_active: active } : p));
+  }
+
+  async function handleDeletePartner(id: string) {
+    if (!confirm("Remover este parceiro?")) return;
+    const res = await partnerApi({ action: "delete_partner", id });
+    if (res.ok) setPartnersState((prev) => prev.filter((p) => p.id !== id));
+  }
+
+  async function handleAddCoupon() {
+    if (!couponPartnerId || !couponCode) { setCouponError("Parceiro e código são obrigatórios."); return; }
+    const code = couponCode.toUpperCase().replace(/\s/g, "");
+    setCouponError(null);
+    const res = await partnerApi({ action: "add_coupon", partner_id: couponPartnerId, code, discount_type: couponDiscountType, discount_value: parseFloat(couponValue) || 0, trial_extra_days: couponTrialDays, max_uses: couponMaxUses ? parseInt(couponMaxUses) : null, expires_at: couponExpiresAt || null });
+    const json = await res.json();
+    if (!res.ok) { setCouponError(json.error); return; }
+    setCouponsState((prev) => [json.coupon, ...prev]);
+    setCouponPartnerId(""); setCouponCode(""); setCouponDiscountType("percent"); setCouponValue(""); setCouponTrialDays(0); setCouponMaxUses(""); setCouponExpiresAt("");
+    setShowAddCoupon(false);
+  }
+
+  async function handleToggleCoupon(id: string, active: boolean) {
+    await partnerApi({ action: "update_coupon", id, is_active: active });
+    setCouponsState((prev) => prev.map((c) => c.id === id ? { ...c, is_active: active } : c));
+  }
+
+  async function handleDeleteCoupon(id: string) {
+    if (!confirm("Remover este cupom?")) return;
+    const res = await partnerApi({ action: "delete_coupon", id });
+    if (res.ok) setCouponsState((prev) => prev.filter((c) => c.id !== id));
+  }
+
+  async function handleAddPayout() {
+    if (!payoutPartnerId || !payoutAmount || !payoutStart || !payoutEnd) { setPayoutError("Preencha todos os campos obrigatórios."); return; }
+    setPayoutError(null);
+    const res = await partnerApi({ action: "add_payout", partner_id: payoutPartnerId, amount: parseFloat(payoutAmount), period_start: payoutStart, period_end: payoutEnd, payment_method: payoutMethod || null, notes: payoutNotes || null });
+    const json = await res.json();
+    if (!res.ok) { setPayoutError(json.error); return; }
+    setPayoutsState((prev) => [json.payout, ...prev]);
+    setPayoutPartnerId(""); setPayoutAmount(""); setPayoutStart(""); setPayoutEnd(""); setPayoutMethod(""); setPayoutNotes("");
+    setShowAddPayout(false);
+  }
+
+  async function handleMarkPaid(id: string) {
+    await partnerApi({ action: "mark_paid", id });
+    setPayoutsState((prev) => prev.map((p) => p.id === id ? { ...p, status: "paid", paid_at: new Date().toISOString() } : p));
+  }
+
+  async function handleDeletePayout(id: string) {
+    if (!confirm("Remover este pagamento?")) return;
+    const res = await partnerApi({ action: "delete_payout", id });
+    if (res.ok) setPayoutsState((prev) => prev.filter((p) => p.id !== id));
   }
 
   const mrr = Object.entries(planCounts).reduce((sum, [plan, count]) => {
@@ -1725,6 +1881,355 @@ export default function AdminClient({
           );
         })()}
 
+        {/* PARCEIROS */}
+        {tab === "Parceiros" && (
+          <div className="space-y-6">
+            {/* Resumo */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <StatCard icon="🤝" label="Parceiros Ativos" value={String(activePartners)} sub="total" color="text-purple-400" />
+              <StatCard icon="🎟️" label="Cupons Ativos" value={String(activeCoupons)} sub="em circulação" color="text-blue-400" />
+              <StatCard icon="👥" label="Clientes Indicados" value={String(totalReferrals)} sub="restaurantes" color="text-green-400" />
+              <StatCard icon="💰" label="Comissões Pendentes" value={fmtBRL(pendingCommissions)} sub="a pagar" color="text-yellow-400" />
+            </div>
+
+            {/* Sub-tabs */}
+            <div className="flex gap-1 border-b border-gray-800 pb-1">
+              {(["parceiros", "cupons", "indicacoes", "comissoes"] as const).map((t) => {
+                const labels = { parceiros: "Parceiros", cupons: "Cupons", indicacoes: "Indicações", comissoes: "Comissões" };
+                return (
+                  <button key={t} onClick={() => setPartnerTab(t)}
+                    className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors ${partnerTab === t ? "border-purple-500 text-white" : "border-transparent text-gray-400 hover:text-gray-200"}`}>
+                    {labels[t]}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Sub-tab: Parceiros */}
+            {partnerTab === "parceiros" && (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="font-bold text-gray-200">Parceiros</h3>
+                  <button onClick={() => setShowAddPartner(true)} className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold transition-colors">+ Novo Parceiro</button>
+                </div>
+
+                {showAddPartner && (
+                  <div className="p-4 rounded-xl bg-gray-800/60 border border-gray-700 space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <input type="text" placeholder="Nome *" value={partnerName} onChange={(e) => setPartnerName(e.target.value)} className="px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 text-white text-sm outline-none" />
+                      <input type="email" placeholder="Email *" value={partnerEmail} onChange={(e) => setPartnerEmail(e.target.value)} className="px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 text-white text-sm outline-none" />
+                      <input type="text" placeholder="Telefone" value={partnerPhone} onChange={(e) => setPartnerPhone(e.target.value)} className="px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 text-white text-sm outline-none" />
+                      <input type="text" placeholder="CPF/CNPJ" value={partnerDocument} onChange={(e) => setPartnerDocument(e.target.value)} className="px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 text-white text-sm outline-none" />
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2">
+                        <label className="text-gray-400 text-xs">Comissão %</label>
+                        <input type="number" min={0} max={100} value={partnerCommission} onChange={(e) => setPartnerCommission(Number(e.target.value))} className="w-20 px-2 py-1.5 rounded-lg bg-gray-900/60 border border-gray-700 text-white text-sm outline-none" />
+                      </div>
+                      <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+                        <input type="checkbox" checked={partnerIsPhotographer} onChange={(e) => setPartnerIsPhotographer(e.target.checked)} className="accent-purple-500" />
+                        É fotógrafo
+                      </label>
+                    </div>
+                    <textarea placeholder="Notas (opcional)" value={partnerNotes} onChange={(e) => setPartnerNotes(e.target.value)} rows={2} className="w-full px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 text-white text-sm outline-none resize-none" />
+                    {partnerError && <p className="text-red-400 text-xs">{partnerError}</p>}
+                    <div className="flex gap-2">
+                      <button onClick={() => { setShowAddPartner(false); setPartnerError(null); }} className="flex-1 py-2 rounded-lg border border-gray-700 text-gray-400 text-sm">Cancelar</button>
+                      <button onClick={handleAddPartner} className="flex-1 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold">Adicionar</button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="bg-gray-900/60 rounded-2xl border border-gray-800 overflow-hidden">
+                  {partnersState.length === 0 ? (
+                    <p className="text-gray-600 text-sm p-6">Nenhum parceiro cadastrado.</p>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-gray-800 text-gray-500 text-xs uppercase tracking-wider">
+                            <th className="px-4 py-3 text-left">Nome</th>
+                            <th className="px-4 py-3 text-left">Email</th>
+                            <th className="px-4 py-3 text-left">Comissão</th>
+                            <th className="px-4 py-3 text-right">Indicações</th>
+                            <th className="px-4 py-3 text-right">Faturado</th>
+                            <th className="px-4 py-3 text-left">Tipo</th>
+                            <th className="px-4 py-3 text-left">Status</th>
+                            <th className="px-4 py-3 text-left">Ações</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {partnersState.map((p) => {
+                            const partnerReferralCount = referralsState.filter((r) => r.partner_id === p.id).length;
+                            return (
+                              <tr key={p.id} className="border-b border-gray-800/50 hover:bg-gray-800/30">
+                                <td className="px-4 py-3 text-white font-medium">{p.name}</td>
+                                <td className="px-4 py-3 text-gray-400 text-xs">{p.email}</td>
+                                <td className="px-4 py-3 text-gray-300">{p.commission_percent}%</td>
+                                <td className="px-4 py-3 text-right text-gray-300">{partnerReferralCount}</td>
+                                <td className="px-4 py-3 text-right text-green-400 font-semibold">{fmtBRL(p.total_earned)}</td>
+                                <td className="px-4 py-3">
+                                  {p.is_photographer && <span className="px-2 py-0.5 rounded text-xs bg-blue-900/40 text-blue-300 border border-blue-700/50">📸 Fotógrafo</span>}
+                                </td>
+                                <td className="px-4 py-3">
+                                  <button onClick={() => handleTogglePartner(p.id, !p.is_active)}
+                                    className={`px-2 py-0.5 rounded text-xs font-semibold ${p.is_active ? "bg-green-900/40 text-green-300" : "bg-red-900/40 text-red-300"}`}>
+                                    {p.is_active ? "Ativo" : "Inativo"}
+                                  </button>
+                                </td>
+                                <td className="px-4 py-3">
+                                  <button onClick={() => handleDeletePartner(p.id)} className="text-red-400 text-xs hover:text-red-300">Remover</button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Sub-tab: Cupons */}
+            {partnerTab === "cupons" && (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="font-bold text-gray-200">Cupons de Indicação</h3>
+                  <button onClick={() => setShowAddCoupon(true)} className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold transition-colors">+ Novo Cupom</button>
+                </div>
+
+                {showAddCoupon && (
+                  <div className="p-4 rounded-xl bg-gray-800/60 border border-gray-700 space-y-3">
+                    <select value={couponPartnerId} onChange={(e) => setCouponPartnerId(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 text-white text-sm outline-none">
+                      <option value="">Selecionar parceiro *</option>
+                      {partnersState.filter((p) => p.is_active).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                    </select>
+                    <input type="text" placeholder="CÓDIGO DO CUPOM *" value={couponCode} onChange={(e) => setCouponCode(e.target.value.toUpperCase().replace(/\s/g, ""))} className="w-full px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 text-white text-sm outline-none font-mono tracking-wider" />
+                    <select value={couponDiscountType} onChange={(e) => setCouponDiscountType(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 text-white text-sm outline-none">
+                      <option value="percent">% de desconto</option>
+                      <option value="fixed">Desconto fixo (R$)</option>
+                      <option value="trial_days">Dias extras de trial</option>
+                    </select>
+                    {couponDiscountType === "trial_days" ? (
+                      <div>
+                        <label className="text-gray-400 text-xs block mb-1">Dias extras de trial</label>
+                        <input type="number" min={1} value={couponTrialDays} onChange={(e) => setCouponTrialDays(Number(e.target.value))} className="w-full px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 text-white text-sm outline-none" />
+                      </div>
+                    ) : (
+                      <div>
+                        <label className="text-gray-400 text-xs block mb-1">{couponDiscountType === "percent" ? "Desconto (%)" : "Desconto (R$)"}</label>
+                        <input type="number" min={0} value={couponValue} onChange={(e) => setCouponValue(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 text-white text-sm outline-none" />
+                      </div>
+                    )}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-gray-400 text-xs block mb-1">Máximo de usos</label>
+                        <input type="number" min={1} placeholder="Ilimitado" value={couponMaxUses} onChange={(e) => setCouponMaxUses(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 text-white text-sm outline-none" />
+                      </div>
+                      <div>
+                        <label className="text-gray-400 text-xs block mb-1">Expira em</label>
+                        <input type="date" value={couponExpiresAt} onChange={(e) => setCouponExpiresAt(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 text-white text-sm outline-none" />
+                      </div>
+                    </div>
+                    {couponError && <p className="text-red-400 text-xs">{couponError}</p>}
+                    <div className="flex gap-2">
+                      <button onClick={() => { setShowAddCoupon(false); setCouponError(null); }} className="flex-1 py-2 rounded-lg border border-gray-700 text-gray-400 text-sm">Cancelar</button>
+                      <button onClick={handleAddCoupon} className="flex-1 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold">Criar Cupom</button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="bg-gray-900/60 rounded-2xl border border-gray-800 overflow-hidden">
+                  {couponsState.length === 0 ? (
+                    <p className="text-gray-600 text-sm p-6">Nenhum cupom cadastrado.</p>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-gray-800 text-gray-500 text-xs uppercase tracking-wider">
+                            <th className="px-4 py-3 text-left">Código</th>
+                            <th className="px-4 py-3 text-left">Parceiro</th>
+                            <th className="px-4 py-3 text-left">Tipo</th>
+                            <th className="px-4 py-3 text-left">Valor</th>
+                            <th className="px-4 py-3 text-left">Usos</th>
+                            <th className="px-4 py-3 text-left">Expira</th>
+                            <th className="px-4 py-3 text-left">Status</th>
+                            <th className="px-4 py-3 text-left">Ações</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {couponsState.map((c) => (
+                            <tr key={c.id} className="border-b border-gray-800/50 hover:bg-gray-800/30">
+                              <td className="px-4 py-3 text-white font-mono font-bold tracking-wider">{c.code}</td>
+                              <td className="px-4 py-3 text-gray-300">{c.partners?.name ?? "—"}</td>
+                              <td className="px-4 py-3 text-gray-400 text-xs capitalize">{c.discount_type}</td>
+                              <td className="px-4 py-3 text-gray-300">
+                                {c.discount_type === "trial_days" ? `+${c.trial_extra_days}d` : c.discount_type === "percent" ? `${c.discount_value}%` : fmtBRL(c.discount_value)}
+                              </td>
+                              <td className="px-4 py-3 text-gray-400">{c.current_uses}{c.max_uses ? `/${c.max_uses}` : ""}</td>
+                              <td className="px-4 py-3 text-gray-400 text-xs">{fmtDate(c.expires_at)}</td>
+                              <td className="px-4 py-3">
+                                <button onClick={() => handleToggleCoupon(c.id, !c.is_active)}
+                                  className={`px-2 py-0.5 rounded text-xs font-semibold ${c.is_active ? "bg-green-900/40 text-green-300" : "bg-red-900/40 text-red-300"}`}>
+                                  {c.is_active ? "Ativo" : "Inativo"}
+                                </button>
+                              </td>
+                              <td className="px-4 py-3">
+                                <button onClick={() => handleDeleteCoupon(c.id)} className="text-red-400 text-xs hover:text-red-300">Remover</button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Sub-tab: Indicações */}
+            {partnerTab === "indicacoes" && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <h3 className="font-bold text-gray-200">Indicações</h3>
+                  <select value={referralFilterPartner} onChange={(e) => setReferralFilterPartner(e.target.value)} className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-white outline-none">
+                    <option value="all">Todos os parceiros</option>
+                    {partnersState.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  </select>
+                </div>
+
+                <div className="bg-gray-900/60 rounded-2xl border border-gray-800 overflow-hidden">
+                  {referralsState.length === 0 ? (
+                    <p className="text-gray-600 text-sm p-6">Nenhuma indicação registrada.</p>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-gray-800 text-gray-500 text-xs uppercase tracking-wider">
+                            <th className="px-4 py-3 text-left">Parceiro</th>
+                            <th className="px-4 py-3 text-left">Restaurante</th>
+                            <th className="px-4 py-3 text-left">Plano</th>
+                            <th className="px-4 py-3 text-left">Conta</th>
+                            <th className="px-4 py-3 text-left">Cupom</th>
+                            <th className="px-4 py-3 text-left">Comissão</th>
+                            <th className="px-4 py-3 text-left">Data</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {referralsState
+                            .filter((r) => referralFilterPartner === "all" || r.partner_id === referralFilterPartner)
+                            .map((r) => (
+                              <tr key={r.id} className="border-b border-gray-800/50 hover:bg-gray-800/30">
+                                <td className="px-4 py-3 text-gray-300">{r.partners?.name ?? "—"}</td>
+                                <td className="px-4 py-3 text-white max-w-[160px] truncate">{r.restaurants?.name ?? "—"}</td>
+                                <td className="px-4 py-3">
+                                  <span className={`text-xs px-2 py-0.5 rounded font-medium ${PLAN_BADGE[r.restaurants?.plan ?? ""] ?? "bg-gray-700 text-gray-300"}`}>{r.restaurants?.plan ?? "—"}</span>
+                                </td>
+                                <td className="px-4 py-3">
+                                  <span className={`text-xs px-2 py-0.5 rounded font-semibold ${STATUS_BADGE[r.restaurants?.status ?? ""] ?? "bg-gray-700 text-gray-400"}`}>{r.restaurants?.status ?? "—"}</span>
+                                </td>
+                                <td className="px-4 py-3 text-gray-400 font-mono text-xs">{r.coupon_code ?? "—"}</td>
+                                <td className="px-4 py-3 text-gray-300">{r.commission_percent}%</td>
+                                <td className="px-4 py-3 text-gray-500 text-xs">{fmtDate(r.created_at)}</td>
+                              </tr>
+                            ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Sub-tab: Comissões */}
+            {partnerTab === "comissoes" && (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="font-bold text-gray-200">Comissões e Pagamentos</h3>
+                  <button onClick={() => setShowAddPayout(true)} className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold transition-colors">+ Registrar Pagamento</button>
+                </div>
+
+                {showAddPayout && (
+                  <div className="p-4 rounded-xl bg-gray-800/60 border border-gray-700 space-y-3">
+                    <select value={payoutPartnerId} onChange={(e) => setPayoutPartnerId(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 text-white text-sm outline-none">
+                      <option value="">Selecionar parceiro *</option>
+                      {partnersState.filter((p) => p.is_active).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                    </select>
+                    <div>
+                      <label className="text-gray-400 text-xs block mb-1">Valor (R$) *</label>
+                      <input type="number" min={0} step="0.01" placeholder="0.00" value={payoutAmount} onChange={(e) => setPayoutAmount(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 text-white text-sm outline-none" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-gray-400 text-xs block mb-1">Período início *</label>
+                        <input type="date" value={payoutStart} onChange={(e) => setPayoutStart(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 text-white text-sm outline-none" />
+                      </div>
+                      <div>
+                        <label className="text-gray-400 text-xs block mb-1">Período fim *</label>
+                        <input type="date" value={payoutEnd} onChange={(e) => setPayoutEnd(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 text-white text-sm outline-none" />
+                      </div>
+                    </div>
+                    <input type="text" placeholder="Método de pagamento (ex: PIX, Transferência)" value={payoutMethod} onChange={(e) => setPayoutMethod(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 text-white text-sm outline-none" />
+                    <textarea placeholder="Notas" value={payoutNotes} onChange={(e) => setPayoutNotes(e.target.value)} rows={2} className="w-full px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 text-white text-sm outline-none resize-none" />
+                    {payoutError && <p className="text-red-400 text-xs">{payoutError}</p>}
+                    <div className="flex gap-2">
+                      <button onClick={() => { setShowAddPayout(false); setPayoutError(null); }} className="flex-1 py-2 rounded-lg border border-gray-700 text-gray-400 text-sm">Cancelar</button>
+                      <button onClick={handleAddPayout} className="flex-1 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold">Registrar</button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="bg-gray-900/60 rounded-2xl border border-gray-800 overflow-hidden">
+                  {payoutsState.length === 0 ? (
+                    <p className="text-gray-600 text-sm p-6">Nenhum pagamento registrado.</p>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-gray-800 text-gray-500 text-xs uppercase tracking-wider">
+                            <th className="px-4 py-3 text-left">Parceiro</th>
+                            <th className="px-4 py-3 text-right">Valor</th>
+                            <th className="px-4 py-3 text-left">Período</th>
+                            <th className="px-4 py-3 text-left">Status</th>
+                            <th className="px-4 py-3 text-left">Método</th>
+                            <th className="px-4 py-3 text-left">Pago em</th>
+                            <th className="px-4 py-3 text-left">Ações</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {payoutsState.map((p) => (
+                            <tr key={p.id} className="border-b border-gray-800/50 hover:bg-gray-800/30">
+                              <td className="px-4 py-3 text-gray-300">{p.partners?.name ?? "—"}</td>
+                              <td className="px-4 py-3 text-right text-green-400 font-semibold">{fmtBRL(p.amount)}</td>
+                              <td className="px-4 py-3 text-gray-400 text-xs">{fmtDate(p.period_start)} → {fmtDate(p.period_end)}</td>
+                              <td className="px-4 py-3">
+                                <span className={`px-2 py-0.5 rounded text-xs font-semibold ${p.status === "paid" ? "bg-green-900/40 text-green-300" : "bg-yellow-900/40 text-yellow-300"}`}>
+                                  {p.status === "paid" ? "Pago" : "Pendente"}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-gray-400 text-xs">{p.payment_method ?? "—"}</td>
+                              <td className="px-4 py-3 text-gray-400 text-xs">{fmtDate(p.paid_at)}</td>
+                              <td className="px-4 py-3">
+                                <div className="flex gap-2">
+                                  {p.status === "pending" && (
+                                    <button onClick={() => handleMarkPaid(p.id)} className="text-green-400 text-xs hover:text-green-300">Marcar pago</button>
+                                  )}
+                                  <button onClick={() => handleDeletePayout(p.id)} className="text-red-400 text-xs hover:text-red-300">Remover</button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* FOTOS */}
         {tab === "Fotos" && (
           <div className="space-y-6">
@@ -1773,6 +2278,10 @@ export default function AdminClient({
                     </select>
                     <input type="datetime-local" value={sessDate} onChange={(e) => setSessDate(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 text-white text-sm outline-none" />
                     <input type="text" placeholder="Nome do fotógrafo" value={sessPhotographer} onChange={(e) => setSessPhotographer(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 text-white text-sm outline-none" />
+                    <select value={sessPartnerId} onChange={(e) => setSessPartnerId(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 text-white text-sm outline-none">
+                      <option value="">Fotógrafo parceiro (opcional)</option>
+                      {partnerData.partners.filter((p) => p.is_photographer && p.is_active).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                    </select>
                     <textarea placeholder="Observações" value={sessNotes} onChange={(e) => setSessNotes(e.target.value)} rows={2} className="w-full px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 text-white text-sm outline-none resize-none" />
                     {photoError && <p className="text-red-400 text-xs">{photoError}</p>}
                     <div className="flex gap-2">
@@ -1793,6 +2302,7 @@ export default function AdminClient({
                             <th className="px-4 py-3 text-left">Restaurante</th>
                             <th className="px-4 py-3 text-left">Pacote</th>
                             <th className="px-4 py-3 text-left">Cidade</th>
+                            <th className="px-4 py-3 text-left">Fotógrafo</th>
                             <th className="px-4 py-3 text-left">Data</th>
                             <th className="px-4 py-3 text-left">Status</th>
                             <th className="px-4 py-3 text-left">Pagamento</th>
@@ -1808,6 +2318,7 @@ export default function AdminClient({
                                 <td className="px-4 py-3 text-white max-w-[140px] truncate">{rest?.name ?? "—"}</td>
                                 <td className="px-4 py-3 text-gray-300">{s.photo_session_packages?.name ?? "—"}</td>
                                 <td className="px-4 py-3 text-gray-300">{s.photo_session_cities ? `${s.photo_session_cities.city}/${s.photo_session_cities.state}` : "—"}</td>
+                                <td className="px-4 py-3 text-gray-300 text-xs">{s.partners?.name ?? s.photographer_name ?? "—"}</td>
                                 <td className="px-4 py-3 text-gray-400">{s.scheduled_at ? new Date(s.scheduled_at).toLocaleDateString("pt-BR") : "—"}</td>
                                 <td className="px-4 py-3">
                                   <select value={s.status} onChange={(e) => handleUpdateSession(s.id, { status: e.target.value })}

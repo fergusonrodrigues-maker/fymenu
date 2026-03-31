@@ -1,64 +1,88 @@
-import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
+"use client";
 
-type SP = { err?: string; ok?: string };
+import { useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { useRouter } from "next/navigation";
 
-export default async function SignupPage({
-  searchParams,
-}: {
-  searchParams?: Promise<SP>;
-}) {
-  const sp = (await searchParams) ?? {};
+export default function SignupPage() {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [couponCode, setCouponCode] = useState("");
+  const [couponStatus, setCouponStatus] = useState<null | { valid: boolean; message: string }>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [validatingCoupon, setValidatingCoupon] = useState(false);
 
-  async function signupAction(formData: FormData): Promise<void> {
-    "use server";
+  async function validateCoupon(code: string) {
+    const trimmed = code.trim();
+    if (!trimmed) { setCouponStatus(null); return; }
+    setValidatingCoupon(true);
+    try {
+      const res = await fetch("/api/coupon/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: trimmed }),
+      });
+      const data = await res.json();
+      if (data.valid) {
+        let msg = "Cupom válido!";
+        if (data.discount_type === "trial_days") msg = `Cupom válido! +${data.trial_extra_days} dias de trial`;
+        else if (data.discount_type === "percent") msg = `Cupom válido! Desconto de ${data.discount_value}%`;
+        else if (data.discount_type === "fixed") msg = `Cupom válido! Desconto de R$${data.discount_value}`;
+        setCouponStatus({ valid: true, message: msg });
+      } else {
+        setCouponStatus({ valid: false, message: "Cupom inválido ou expirado" });
+      }
+    } finally {
+      setValidatingCoupon(false);
+    }
+  }
 
-    const email = String(formData.get("email") || "").trim();
-    const password = String(formData.get("password") || "").trim();
-    const confirmPassword = String(formData.get("confirmPassword") || "").trim();
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
 
     if (!email || !password || !confirmPassword) {
-      redirect("/cadastro?err=" + encodeURIComponent("Preencha todos os campos."));
+      setError("Preencha todos os campos."); return;
     }
-
     if (password !== confirmPassword) {
-      redirect("/cadastro?err=" + encodeURIComponent("As senhas não correspondem."));
+      setError("As senhas não correspondem."); return;
     }
-
     if (password.length < 6) {
-      redirect("/cadastro?err=" + encodeURIComponent("Senha deve ter pelo menos 6 caracteres."));
+      setError("Senha deve ter pelo menos 6 caracteres."); return;
     }
 
-    const supabase = await createClient();
+    setLoading(true);
+    try {
+      const supabase = createClient();
+      const { error: signupError, data: authData } = await supabase.auth.signUp({ email, password });
+      if (signupError) { setError(signupError.message); return; }
 
-    // 1. Criar usuário no Auth
-    const { error: signupError, data: authData } = await supabase.auth.signUp({
-      email,
-      password,
-    });
+      if (authData.user?.id) {
+        const restaurantName = email.split("@")[0];
+        const { data: restaurant } = await supabase
+          .from("restaurants")
+          .insert({ owner_id: authData.user.id, name: restaurantName, onboarding_completed: false })
+          .select("id")
+          .single();
 
-    if (signupError) {
-      redirect("/cadastro?err=" + encodeURIComponent(signupError.message));
-    }
-
-    // 2. Criar restaurant automaticamente
-    if (authData.user?.id) {
-      const restaurantName = email.split("@")[0];
-
-      const { error: restaurantError } = await supabase
-        .from("restaurants")
-        .insert({
-          owner_id: authData.user.id,
-          name: restaurantName,
-          onboarding_completed: false,
-        });
-
-      if (restaurantError) {
-        console.error("Erro ao criar restaurant:", restaurantError);
+        if (couponCode.trim() && couponStatus?.valid && restaurant?.id) {
+          await fetch("/api/coupon/apply", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ code: couponCode.trim(), restaurant_id: restaurant.id }),
+          });
+        }
       }
-    }
 
-    redirect("/entrar?ok=Conta criada com sucesso. Faça login agora.");
+      router.push("/entrar?ok=" + encodeURIComponent("Conta criada com sucesso. Faça login agora."));
+    } catch (err: any) {
+      setError(err.message || "Erro ao criar conta.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -215,6 +239,12 @@ export default async function SignupPage({
           box-shadow: 0 2px 8px rgba(0,255,174,0.15), inset 0 2px 4px rgba(0,0,0,0.12);
         }
 
+        .submit-btn:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+          transform: none;
+        }
+
         .divider {
           display: flex;
           align-items: center;
@@ -316,6 +346,28 @@ export default async function SignupPage({
           60% { background-position: 180px; }
           100% { background-position: 180px; }
         }
+
+        .coupon-badge-valid {
+          background: rgba(0,255,174,0.08);
+          border: 1px solid rgba(0,255,174,0.25);
+          color: #00ffae;
+          padding: 8px 12px;
+          border-radius: 10px;
+          font-size: 12px;
+          margin-top: 8px;
+          font-weight: 600;
+        }
+
+        .coupon-badge-invalid {
+          background: rgba(248,66,51,0.08);
+          border: 1px solid rgba(248,66,51,0.2);
+          color: #ff9999;
+          padding: 8px 12px;
+          border-radius: 10px;
+          font-size: 12px;
+          margin-top: 8px;
+          font-weight: 600;
+        }
       `}</style>
 
       {/* Dot background + glow */}
@@ -331,19 +383,19 @@ export default async function SignupPage({
         <h1 className="title">Criar Conta</h1>
         <p className="subtitle text-shine">Cardápio digital em minutos</p>
 
-        {sp.err && <div className="error-message">{decodeURIComponent(sp.err)}</div>}
-        {sp.ok && <div className="success-message">{decodeURIComponent(sp.ok)}</div>}
+        {error && <div className="error-message">{error}</div>}
 
-        <form action={signupAction} style={{ display: "grid", gap: 0 }}>
+        <form onSubmit={handleSubmit} style={{ display: "grid", gap: 0 }}>
           <div className="form-group">
             <label>Email</label>
             <div className="input-wrapper">
               <input
-                name="email"
                 type="email"
                 placeholder="seu@email.com"
                 autoComplete="email"
                 required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
             </div>
           </div>
@@ -352,11 +404,12 @@ export default async function SignupPage({
             <label>Senha</label>
             <div className="input-wrapper">
               <input
-                name="password"
                 type="password"
                 placeholder="Mínimo 6 caracteres"
                 autoComplete="new-password"
                 required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
               />
             </div>
           </div>
@@ -365,16 +418,39 @@ export default async function SignupPage({
             <label>Confirmar Senha</label>
             <div className="input-wrapper">
               <input
-                name="confirmPassword"
                 type="password"
                 placeholder="Confirme sua senha"
                 autoComplete="new-password"
                 required
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
               />
             </div>
           </div>
 
-          <button type="submit" className="submit-btn">Criar Conta</button>
+          <div className="form-group">
+            <label>Cupom de indicação (opcional)</label>
+            <div className="input-wrapper">
+              <input
+                type="text"
+                placeholder="Ex: PARCEIRO2025"
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                onBlur={(e) => validateCoupon(e.target.value)}
+                style={{ fontFamily: "monospace", letterSpacing: "0.1em" }}
+              />
+            </div>
+            {validatingCoupon && <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, marginTop: 6 }}>Validando...</p>}
+            {couponStatus && !validatingCoupon && (
+              <div className={couponStatus.valid ? "coupon-badge-valid" : "coupon-badge-invalid"}>
+                {couponStatus.valid ? "✓" : "✗"} {couponStatus.message}
+              </div>
+            )}
+          </div>
+
+          <button type="submit" className="submit-btn" disabled={loading}>
+            {loading ? "Criando conta..." : "Criar Conta"}
+          </button>
         </form>
 
         <div className="divider">

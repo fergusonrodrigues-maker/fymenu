@@ -43,6 +43,10 @@ export default async function AdminPage() {
     { data: photoCitiesData },
     { data: photoPackagesData },
     { data: photoSessionsData },
+    { data: partnersData },
+    { data: partnerCoupons },
+    { data: partnerReferrals },
+    { data: partnerPayouts },
   ] = await Promise.all([
     admin.from("restaurants").select("*", { count: "exact", head: true }),
     admin
@@ -119,8 +123,12 @@ export default async function AdminPage() {
     admin.from("photo_session_packages").select("*").order("price"),
     admin
       .from("photo_sessions")
-      .select("*, photo_session_packages(name), photo_session_cities(city, state)")
+      .select("*, photo_session_packages(name), photo_session_cities(city, state), partners(name)")
       .order("created_at", { ascending: false }),
+    admin.from("partners").select("*").order("created_at", { ascending: false }),
+    admin.from("partner_coupons").select("*, partners(name)").order("created_at", { ascending: false }),
+    admin.from("partner_referrals").select("*, partners(name), restaurants(name, plan, status)").order("created_at", { ascending: false }),
+    admin.from("partner_payouts").select("*, partners(name)").order("created_at", { ascending: false }),
   ]);
 
   const revenue30d = payments30d?.reduce((s, p) => s + (p.amount ?? 0), 0) ?? 0;
@@ -211,6 +219,12 @@ export default async function AdminPage() {
         cities: photoCitiesData ?? [],
         packages: photoPackagesData ?? [],
         sessions: photoSessionsData ?? [],
+      }}
+      partnerData={{
+        partners: partnersData ?? [],
+        coupons: partnerCoupons ?? [],
+        referrals: partnerReferrals ?? [],
+        payouts: partnerPayouts ?? [],
       }}
     />
   );
