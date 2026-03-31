@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import ThemeToggle from "@/components/ThemeToggle";
 import dynamic from "next/dynamic";
@@ -22,6 +22,11 @@ const ConfigModal = dynamic(() => import("./modals/ConfigModal"), { ssr: false, 
 
 // ─── Modal backdrop ─────────────────────────────────────────────────────────
 function Modal({ open, onClose, children, title }: { open: boolean; onClose: () => void; children: React.ReactNode; title: string }) {
+  const [dragY, setDragY] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const startY = useRef(0);
+  const contentRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (open) {
       document.body.style.overflow = "hidden";
@@ -29,6 +34,7 @@ function Modal({ open, onClose, children, title }: { open: boolean; onClose: () 
       document.body.style.position = "fixed";
       document.body.style.width = "100%";
       document.body.style.top = `-${window.scrollY}px`;
+      setDragY(0);
     } else {
       const scrollY = document.body.style.top;
       document.body.style.overflow = "";
@@ -49,48 +55,93 @@ function Modal({ open, onClose, children, title }: { open: boolean; onClose: () 
     };
   }, [open]);
 
+  function onTouchStart(e: React.TouchEvent) {
+    const content = contentRef.current;
+    if (content && content.scrollTop > 0) return;
+    startY.current = e.touches[0].clientY;
+    setDragging(true);
+  }
+
+  function onTouchMove(e: React.TouchEvent) {
+    if (!dragging) return;
+    const dy = e.touches[0].clientY - startY.current;
+    if (dy > 0) {
+      setDragY(dy);
+    }
+  }
+
+  function onTouchEnd() {
+    if (!dragging) return;
+    setDragging(false);
+    if (dragY > 100) {
+      onClose();
+    }
+    setDragY(0);
+  }
+
   if (!open) return null;
+
+  const opacity = Math.max(0, 1 - dragY / 300);
+
   return (
-    <div className="modal-backdrop" style={{
-      position: "fixed", inset: 0, zIndex: 100,
-      backdropFilter: "blur(28px) saturate(1.3)", WebkitBackdropFilter: "blur(28px) saturate(1.3)",
-      display: "flex", alignItems: "flex-end",
-      animation: "fadeIn 0.2s ease",
-    }}
-      onClick={onClose}
+    <div
+      style={{
+        position: "fixed", inset: 0, zIndex: 9999,
+        background: `rgba(0,0,0,${0.7 * opacity})`,
+        display: "flex", alignItems: "flex-end", justifyContent: "center",
+        transition: dragging ? "none" : "background 0.3s ease",
+      }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <style>{`
-        @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
-        @keyframes modalScale { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
-        @media (min-width: 640px) {
-          .modal-sheet { border-radius: 24px !important; max-width: 560px !important; margin: auto !important; align-self: center !important; max-height: 85vh !important; transform-origin: center center !important; }
-        }
-      `}</style>
       <div
-        className="modal-sheet"
+        ref={contentRef}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
         style={{
-          width: "100%", maxHeight: "92vh",
-          backdropFilter: "blur(60px) saturate(1.8)",
-          WebkitBackdropFilter: "blur(60px) saturate(1.8)",
+          background: "#1a1a1a",
           borderRadius: "24px 24px 0 0",
-          border: "1px solid var(--dash-modal-border)",
-          overflow: "hidden", display: "flex", flexDirection: "column",
-          animation: "modalScale 0.3s cubic-bezier(0.34,1.56,0.64,1)",
-          transformOrigin: "center bottom",
+          width: "100%",
+          maxWidth: 480,
+          maxHeight: "92vh",
+          overflowY: "auto",
+          WebkitOverflowScrolling: "touch",
+          position: "relative",
+          transform: `translateY(${dragY}px)`,
+          transition: dragging ? "none" : "transform 0.3s cubic-bezier(0.22, 1, 0.36, 1)",
+          opacity,
         }}
-        onClick={(e) => e.stopPropagation()}
       >
-        {/* Handle */}
-        <div style={{ display: "flex", justifyContent: "center", padding: "12px 0 0" }}>
-          <div style={{ width: 36, height: 4, borderRadius: 2, background: "var(--dash-handle)", boxShadow: "0 0 8px var(--dash-handle)" }} />
+        {/* Handle bar visual */}
+        <div style={{
+          position: "sticky", top: 0, zIndex: 10,
+          background: "#1a1a1a",
+          borderRadius: "24px 24px 0 0",
+          padding: "12px 0 8px",
+        }}>
+          <div style={{
+            width: 36, height: 4, borderRadius: 2,
+            background: "rgba(255,255,255,0.2)",
+            margin: "0 auto 8px",
+          }} />
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "0 20px 8px",
+            borderBottom: "1px solid rgba(255,255,255,0.06)",
+          }}>
+            <h2 style={{ color: "#fff", fontSize: 18, fontWeight: 800, margin: 0 }}>{title}</h2>
+            <button
+              onClick={onClose}
+              style={{
+                background: "rgba(255,255,255,0.08)", border: "none",
+                borderRadius: 10, width: 32, height: 32,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                cursor: "pointer", color: "#fff", fontSize: 16,
+              }}
+            >✕</button>
+          </div>
         </div>
-        {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 24px 12px" }}>
-          <h2 className="dash-gradient-text" style={{ margin: 0, fontSize: 20, fontWeight: 800, letterSpacing: "-0.5px" }}>{title}</h2>
-          <button onClick={onClose} style={{ background: "var(--dash-close-btn)", border: "1px solid var(--dash-modal-border)", borderRadius: "50%", width: 32, height: 32, color: "var(--dash-close-color)", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s" }}>✕</button>
-        </div>
-        {/* Content */}
-        <div style={{ overflowY: "auto", padding: "0 24px 32px", flex: 1, WebkitOverflowScrolling: "touch" }}>
+        <div style={{ padding: "16px 20px 32px" }}>
           {children}
         </div>
       </div>

@@ -17,7 +17,8 @@
       "mcp__claude_ai_Vercel__get_deployment_build_logs",
       "Read(//mnt/user-data/outputs/**)",
       "Bash(cp ~/Downloads/MenuClient.tsx ~/Documents/fymenu/app/delivery/[slug]/MenuClient.tsx)",
-      "Bash(cp ~/Downloads/CategoryCarousel.tsx ~/Documents/fymenu/app/delivery/[slug]/CategoryCarousel.tsx)"
+      "Bash(cp ~/Downloads/CategoryCarousel.tsx ~/Documents/fymenu/app/delivery/[slug]/CategoryCarousel.tsx)",
+      "Bash(node -e \":*)"
     ],
     "additionalDirectories": [
       "C:\\Users\\Ferguson\\Documents\\fymenu\\app\\u\\[slug]\\hub-central",
