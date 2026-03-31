@@ -3,12 +3,13 @@
 import { useState, useRef, useTransition, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { updateProduct, deleteProduct, updateProductStock, updateProductNutrition, updateProductVariations } from "./actions";
-import { DescribeAIButton } from "./ia/DescribeAIButton";
+import { useGenerateProductDescription } from "@/lib/hooks/useGenerateProductDescription";
 
 type Product = {
   id: string;
   name: string;
   description?: string | null;
+  description_source?: "MANUAL" | "AI_GENERATED" | "HYBRID" | null;
   base_price?: number | null;
   price_type?: string | null;
   thumbnail_url?: string | null;
@@ -53,7 +54,16 @@ export default function ProductRow({
   const [variations, setVariations] = useState<{ id?: string; name: string; price: number }[]>([]);
   const [variationsLoaded, setVariationsLoaded] = useState(false);
   const [description, setDescription] = useState(product.description ?? "");
+  const [descriptionSource, setDescriptionSource] = useState<"MANUAL" | "AI_GENERATED" | "HYBRID">(product.description_source ?? "MANUAL");
   const [productName, setProductName] = useState(product.name);
+
+  const { generate: generateDescription, loading: loadingAI } = useGenerateProductDescription({
+    onSuccess: (desc, source) => {
+      setDescription(desc);
+      setDescriptionSource(source);
+    },
+    onError: (err) => console.error("Error generating description:", err),
+  });
   const [isActive, setIsActive] = useState(product.is_active !== false);
   const [uploading, setUploading] = useState<"thumb" | "video" | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -171,29 +181,50 @@ export default function ProductRow({
             >
               <input type="hidden" name="id" value={product.id} />
               <input name="name" value={productName} onChange={(e) => setProductName(e.target.value)} placeholder="Nome do produto" style={inputStyle} />
-              <div style={{ position: "relative" }}>
-                <textarea name="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Descrição (opcional)" rows={3} style={{ ...inputStyle, resize: "vertical", paddingBottom: 44 }} />
-                <div style={{ position: "absolute", bottom: 12, right: 12, zIndex: 2 }}>
-                  <DescribeAIButton
-                    productName={productName}
-                    currentDescription={description}
-                    onGenerated={(d) => setDescription(d)}
-                    renderButton={(onClick, loading) => (
-                      <button
-                        type="button"
-                        className="btn-ai-sparkle"
-                        onClick={onClick}
-                        disabled={loading}
-                        title="Gerar descrição com IA"
-                      >
-                        <svg className="sparkle-svg" stroke="none" viewBox="0 0 24 24" fill="currentColor">
-                          <path fillRule="evenodd" clipRule="evenodd" d="M9 4.5a.75.75 0 01.721.544l.813 2.846a3.75 3.75 0 002.576 2.576l2.846.813a.75.75 0 010 1.442l-2.846.813a3.75 3.75 0 00-2.576 2.576l-.813 2.846a.75.75 0 01-1.442 0l-.813-2.846a3.75 3.75 0 00-2.576-2.576l-2.846-.813a.75.75 0 010-1.442l2.846-.813A3.75 3.75 0 007.466 7.89l.813-2.846A.75.75 0 019 4.5zM18 1.5a.75.75 0 01.728.568l.258 1.036c.236.94.97 1.674 1.91 1.91l1.036.258a.75.75 0 010 1.456l-1.036.258c-.94.236-1.674.97-1.91 1.91l-.258 1.036a.75.75 0 01-1.456 0l-.258-1.036a2.625 2.625 0 00-1.91-1.91l-1.036-.258a.75.75 0 010-1.456l1.036-.258a2.625 2.625 0 001.91-1.91l.258-1.036A.75.75 0 0118 1.5zM16.5 15a.75.75 0 01.712.513l.394 1.183c.15.447.5.799.948.948l1.183.395a.75.75 0 010 1.422l-1.183.395c-.447.15-.799.5-.948.948l-.395 1.183a.75.75 0 01-1.422 0l-.395-1.183a1.5 1.5 0 00-.948-.948l-1.183-.395a.75.75 0 010-1.422l1.183-.395c.447-.15.799-.5.948-.948l.395-1.183A.75.75 0 0116.5 15z" />
-                        </svg>
-                        <span className="ai-label">AI</span>
-                      </button>
+              <input type="hidden" name="description_source" value={descriptionSource} />
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <textarea
+                  name="description"
+                  value={description}
+                  onChange={(e) => {
+                    setDescription(e.target.value);
+                    setDescriptionSource("MANUAL");
+                  }}
+                  placeholder="Descrição (opcional)"
+                  rows={3}
+                  maxLength={150}
+                  style={{ ...inputStyle, resize: "vertical" }}
+                />
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    {descriptionSource && (
+                      <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 6, background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.45)" }}>
+                        {descriptionSource === "AI_GENERATED" ? "✨ IA" : descriptionSource === "HYBRID" ? "🔄 Híbrida" : "✏️ Manual"}
+                      </span>
                     )}
-                  />
+                  </div>
+                  <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>{description.length}/150</span>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => generateDescription(thumbnailUrl, productName, "Geral", descriptionSource === "MANUAL" ? description : undefined)}
+                  disabled={loadingAI || !thumbnailUrl}
+                  style={{
+                    padding: "8px 0",
+                    background: loadingAI || !thumbnailUrl ? "rgba(255,255,255,0.04)" : "rgba(139,92,246,0.15)",
+                    color: loadingAI || !thumbnailUrl ? "rgba(255,255,255,0.25)" : "#a78bfa",
+                    border: `1px solid ${loadingAI || !thumbnailUrl ? "rgba(255,255,255,0.08)" : "rgba(139,92,246,0.3)"}`,
+                    borderRadius: 8,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: loadingAI || !thumbnailUrl ? "not-allowed" : "pointer",
+                  }}
+                >
+                  {loadingAI ? "Gerando..." : "✨ Gerar descrição com IA"}
+                </button>
+                {!thumbnailUrl && (
+                  <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", margin: 0 }}>Adicione uma foto para gerar descrição com IA</p>
+                )}
               </div>
               <div style={{ display: "flex", gap: 8 }}>
                 <select

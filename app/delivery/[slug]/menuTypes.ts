@@ -32,6 +32,7 @@ export type Product = {
   category_id: string;
   name: string;
   description: string | null;
+  description_source?: "MANUAL" | "AI_GENERATED" | "HYBRID" | null;
   price_type: "fixed" | "variable";
   base_price: number | null;
   thumbnail_url: string | null;

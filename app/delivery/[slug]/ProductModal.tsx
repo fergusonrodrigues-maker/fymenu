@@ -378,11 +378,16 @@ export default function ProductModal({
           </p>
 
           {currentProduct.description && (
-            <div className="fy-desc-scroll" style={{ maxHeight: 32, overflowY: "auto", marginBottom: 8 }}>
+            <div className="fy-desc-scroll" style={{ maxHeight: 32, overflowY: "auto", marginBottom: 4 }}>
               <p style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", lineHeight: 1.45, margin: 0, textAlign: "center" }}>
                 {currentProduct.description}
               </p>
             </div>
+          )}
+          {currentProduct.description_source === "AI_GENERATED" && (
+            <p style={{ fontSize: 10, color: "rgba(139,92,246,0.8)", textAlign: "center", margin: "0 0 6px" }}>
+              ✨ Descrição gerada por IA
+            </p>
           )}
 
           {!hasVariations && productBasePrice && (

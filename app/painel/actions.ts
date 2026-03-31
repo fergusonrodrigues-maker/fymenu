@@ -298,6 +298,7 @@ export async function updateProduct(formData: FormData): Promise<void> {
   const id = String(formData.get("id") ?? "");
   const name = normalizeName(String(formData.get("name") ?? ""));
   const description = normalizeText(String(formData.get("description") ?? ""));
+  const descriptionSource = String(formData.get("description_source") ?? "MANUAL") as "MANUAL" | "AI_GENERATED" | "HYBRID";
   const priceType =
     String(formData.get("price_type") ?? "fixed") === "variable" ? "variable" : "fixed";
   const basePriceInput = String(formData.get("base_price") ?? "");
@@ -315,6 +316,7 @@ export async function updateProduct(formData: FormData): Promise<void> {
     .update({
       name,
       description: description || null,
+      description_source: descriptionSource,
       price_type: priceType,
       base_price,
       thumbnail_url: thumbnailUrl || null,

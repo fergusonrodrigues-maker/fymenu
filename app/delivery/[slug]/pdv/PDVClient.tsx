@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { useKitchenAlertContext } from "@/lib/context/KitchenAlertContext";
 
 type PDVOrder = {
   id: string;
@@ -70,24 +71,7 @@ export default function PDVClient({
   } | null>(null);
 
   const supabase = createClient();
-  const audioCtxRef = useRef<AudioContext | null>(null);
-
-  const playChime = () => {
-    try {
-      if (!audioCtxRef.current) audioCtxRef.current = new AudioContext();
-      const ctx = audioCtxRef.current;
-      [523, 659, 784, 1047].forEach((f, i) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain); gain.connect(ctx.destination);
-        osc.frequency.value = f; osc.type = "sine";
-        gain.gain.setValueAtTime(0.25, ctx.currentTime + i * 0.1);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.1 + 0.4);
-        osc.start(ctx.currentTime + i * 0.1);
-        osc.stop(ctx.currentTime + i * 0.1 + 0.4);
-      });
-    } catch {}
-  };
+  const { playAlert } = useKitchenAlertContext();
 
   // Realtime — atualiza lista quando novos pedidos chegam ou são pagos
   useEffect(() => {
@@ -100,6 +84,7 @@ export default function PDVClient({
           if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
             const o = payload.new as PDVOrder;
             if (o.status === "confirmed" && !o.paid_at) {
+              if (payload.eventType === "INSERT") playAlert();
               setOrders((prev) => {
                 const exists = prev.find((x) => x.id === o.id);
                 if (exists) return prev.map((x) => x.id === o.id ? { ...x, ...o } : x);
