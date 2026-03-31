@@ -162,7 +162,7 @@ export default function MenuClient({
       <style>{`
   html.menu-snap {
     scroll-snap-type: y proximity;
-    scroll-padding-top: calc(58px + env(safe-area-inset-top, 0px));
+    scroll-padding-top: calc(44px + env(safe-area-inset-top, 0px));
     -webkit-overflow-scrolling: touch;
   }
   .menu-snap-section {
@@ -191,8 +191,8 @@ export default function MenuClient({
       <div
         className="min-h-dvh menu-bg-themed"
         style={{
-          paddingTop: "calc(58px + env(safe-area-inset-top, 0px))",
-          paddingBottom: "calc(340px + env(safe-area-inset-bottom, 0px))",
+          paddingTop: "calc(44px + env(safe-area-inset-top, 0px))",
+          paddingBottom: "calc(120px + env(safe-area-inset-bottom, 0px))",
         }}
       >
         {/* Categorias em destaque */}
@@ -224,7 +224,7 @@ export default function MenuClient({
                 marginBottom: 4,
                 transition: "opacity 0.4s ease",
                 opacity: isActive ? 1 : 1,
-                scrollMarginTop: 56,
+                scrollMarginTop: 42,
               }}
             >
               <CategoryCarousel
