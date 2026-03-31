@@ -25,38 +25,6 @@ function PageLoader({ visible }: { visible: boolean }) {
   );
 }
 
-// ── Dot Reveal Background ─────────────────────────────────────────────────────
-function DotRevealBG({ isDark }: { isDark: boolean }) {
-  return (
-    <div
-      style={{
-        position: "absolute",
-        inset: 0,
-        overflow: "hidden",
-        zIndex: 0,
-      }}
-    >
-      <div
-        className={isDark ? "dot-grid-dark" : "dot-grid-light"}
-        style={{
-          maskImage: "linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0.75) 50%, rgba(0,0,0,0.75) 100%)",
-          WebkitMaskImage: "linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0.75) 50%, rgba(0,0,0,0.75) 100%)",
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          background: isDark
-            ? "linear-gradient(to bottom, transparent 0%, transparent 75%, rgba(0,0,0,0.8) 100%)"
-            : "linear-gradient(to bottom, transparent 0%, transparent 75%, rgba(250,250,250,0.8) 100%)",
-          zIndex: 1,
-        }}
-      />
-    </div>
-  );
-}
-
 // ── Animated Counter ──────────────────────────────────────────────────────────
 function AnimatedCounter({ target, suffix = "" }: { target: number; suffix?: string }) {
   const [count, setCount] = useState(0);
@@ -201,12 +169,108 @@ export default function LandingPage() {
   const [loading, setLoading] = useState(true);
   const [heroVisible, setHeroVisible] = useState(false);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
   useEffect(() => {
     const t = setTimeout(() => {
       setLoading(false);
       setTimeout(() => setHeroVisible(true), 100);
     }, 2200);
     return () => clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let mouseX = -1000, mouseY = -1000;
+    let ripples: Array<{ x: number; y: number; radius: number; startTime: number }> = [];
+    let dots: Array<{ x: number; y: number; opacity: number }> = [];
+
+    function resize() {
+      if (!canvas) return;
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      dots = [];
+      for (let x = 12; x < canvas.width; x += 24) {
+        for (let y = 12; y < canvas.height; y += 24) {
+          dots.push({ x, y, opacity: 0.20 });
+        }
+      }
+    }
+    resize();
+    window.addEventListener("resize", resize);
+
+    function onMouseMove(e: MouseEvent) { mouseX = e.clientX; mouseY = e.clientY; }
+    function onTouchMove(e: TouchEvent) { mouseX = e.touches[0].clientX; mouseY = e.touches[0].clientY; }
+    function onClick(e: MouseEvent) {
+      ripples.push({ x: e.clientX, y: e.clientY, radius: 0, startTime: performance.now() });
+    }
+    function onTouchStart(e: TouchEvent) {
+      ripples.push({ x: e.touches[0].clientX, y: e.touches[0].clientY, radius: 0, startTime: performance.now() });
+    }
+
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("touchmove", onTouchMove, { passive: true });
+    window.addEventListener("click", onClick);
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+
+    let animId: number;
+    function draw() {
+      if (!canvas || !ctx) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const now = performance.now();
+
+      ripples = ripples.filter((r) => {
+        const elapsed = now - r.startTime;
+        if (elapsed > 800) return false;
+        const progress = elapsed / 800;
+        r.radius = 300 * (1 - Math.pow(1 - progress, 3));
+        return true;
+      });
+
+      for (const dot of dots) {
+        let targetOpacity = 0.20;
+
+        const distToMouse = Math.hypot(dot.x - mouseX, dot.y - mouseY);
+        if (distToMouse < 120) {
+          const mouseBrightness = 0.30 * (1 - distToMouse / 120);
+          targetOpacity = Math.max(targetOpacity, 0.20 + mouseBrightness);
+        }
+
+        for (const ripple of ripples) {
+          const distToCenter = Math.hypot(dot.x - ripple.x, dot.y - ripple.y);
+          const distToRing = Math.abs(distToCenter - ripple.radius);
+          if (distToRing < 20) {
+            const rippleBrightness = 0.60 * (1 - distToRing / 20);
+            const elapsed = now - ripple.startTime;
+            const fade = 1 - elapsed / 800;
+            targetOpacity = Math.max(targetOpacity, 0.20 + rippleBrightness * fade);
+          }
+        }
+
+        dot.opacity += (targetOpacity - dot.opacity) * 0.08;
+
+        ctx.beginPath();
+        ctx.arc(dot.x, dot.y, 2, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(0, 255, 174, ${dot.opacity})`;
+        ctx.fill();
+      }
+
+      animId = requestAnimationFrame(draw);
+    }
+    draw();
+
+    return () => {
+      cancelAnimationFrame(animId);
+      window.removeEventListener("resize", resize);
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("click", onClick);
+      window.removeEventListener("touchstart", onTouchStart);
+    };
   }, []);
 
   return (
@@ -251,26 +315,6 @@ export default function LandingPage() {
         @keyframes pulsOut {
           0%, 50% { box-shadow: 0 0 0 0 #00ffae; opacity: 0; }
           100% { box-shadow: 0 0 0 1rem #00ffae; opacity: 1; }
-        }
-
-        /* ── Dot Grid Background ── */
-        .dot-grid-dark {
-          position: fixed;
-          inset: 0;
-          background-image: radial-gradient(rgba(0,255,174,0.4) 1.5px, transparent 1.5px);
-          background-size: 22px 22px;
-          filter: drop-shadow(0 0 6px rgba(0,255,174,0.45));
-        }
-        .dot-grid-light {
-          position: fixed;
-          inset: 0;
-          background-image: radial-gradient(rgba(213,22,89,0.22) 1.5px, transparent 1.5px);
-          background-size: 22px 22px;
-          filter: drop-shadow(0 0 5px rgba(213,22,89,0.25));
-        }
-        @keyframes dotFadeIn {
-          0% { opacity: 0; }
-          100% { opacity: 1; }
         }
 
         /* ── Light Theme Overrides ── */
@@ -587,7 +631,7 @@ export default function LandingPage() {
       <PageLoader visible={loading} />
 
       <div className={theme === "light" ? "landing-light" : ""} style={{ minHeight: "100vh", position: "relative", background: theme === "light" ? "#fafafa" : "#000", transition: "background 0.5s ease" }}>
-        <DotRevealBG isDark={theme === "dark"} />
+        <canvas ref={canvasRef} style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none" }} />
 
         {/* ── NAVBAR ── */}
         <nav className="fy-nav">
