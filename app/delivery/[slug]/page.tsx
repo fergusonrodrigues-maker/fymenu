@@ -225,7 +225,6 @@ export default async function Page({
     <>
       <MenuCarousel
         categories={categoriesWithProducts}
-        onCategoryChange={(id) => console.log("Category changed:", id)}
       />
       {showWhatsApp && unit.whatsapp && (
         <FloatingWhatsAppButton restaurantPhone={unit.whatsapp} />
