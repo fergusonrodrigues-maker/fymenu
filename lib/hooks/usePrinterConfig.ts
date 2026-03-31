@@ -117,7 +117,7 @@ export function usePrinterConfig(unitId?: string) {
       try {
         const { data, error: err } = await supabase
           .from("printer_category_mappings")
-          .select("category_id, categories(name)")
+          .select("id, category_id, categories(name)")
           .eq("printer_config_id", printerId);
 
         if (err) throw err;

@@ -19,6 +19,7 @@ const TVModal = dynamic(() => import("./modals/TVModal"), { ssr: false, loading:
 const PlanoModal = dynamic(() => import("./modals/PlanoModal"), { ssr: false, loading: () => loadingFallback });
 const EstoqueModal = dynamic(() => import("./modals/EstoqueModal"), { ssr: false, loading: () => loadingFallback });
 const ConfigModal = dynamic(() => import("./modals/ConfigModal"), { ssr: false, loading: () => loadingFallback });
+const PrinterModal = dynamic(() => import("./modals/PrinterModal"), { ssr: false, loading: () => loadingFallback });
 
 // ─── Modal backdrop ─────────────────────────────────────────────────────────
 function Modal({ open, onClose, children, title }: { open: boolean; onClose: () => void; children: React.ReactNode; title: string }) {
@@ -169,7 +170,7 @@ export default function DashboardClient({
   reportData: ReportData;
 }) {
   const router = useRouter();
-  const [modal, setModal] = useState<"analytics" | "cardapio" | "pedidos" | "financeiro" | "unidade" | "plano" | "config" | "tv" | "estoque" | "operacoes" | "equipe" | null>(null);
+  const [modal, setModal] = useState<"analytics" | "cardapio" | "pedidos" | "financeiro" | "unidade" | "plano" | "config" | "tv" | "estoque" | "operacoes" | "equipe" | "impressoras" | null>(null);
   const open = (m: typeof modal) => setModal(m);
   const close = () => setModal(null);
 
@@ -987,6 +988,21 @@ export default function DashboardClient({
             </div>
           </div>
 
+          {/* Impressoras */}
+          <div className="card modal-neon-card" onClick={() => open("impressoras")} style={{
+            gridColumn: "span 2",
+            borderRadius: 20, padding: "20px 18px",
+            background: "var(--dash-card)",
+            cursor: "pointer", minHeight: 100,
+            display: "flex", alignItems: "center", gap: 16,
+          }}>
+            <div style={{ fontSize: 28 }}>🖨️</div>
+            <div style={{ flex: 1 }}>
+              <div className="dash-gradient-text" style={{ fontSize: 15, fontWeight: 800, marginBottom: 2 }}>Impressoras</div>
+              <div style={{ color: "var(--dash-text-muted)", fontSize: 12 }}>Roteamento por categoria</div>
+            </div>
+          </div>
+
           {/* Equipe */}
           <div className="card modal-neon-card" onClick={() => open("equipe")} style={{
             gridColumn: "span 2",
@@ -1034,6 +1050,9 @@ export default function DashboardClient({
       </Modal>
       <Modal open={modal === "operacoes"} onClose={close} title="Operações">
         {unit && <RestaurantOperationsModal unitId={unit.id} />}
+      </Modal>
+      <Modal open={modal === "impressoras"} onClose={close} title="Impressoras">
+        {unit && <PrinterModal unitId={unit.id} categories={categories} />}
       </Modal>
       <Modal open={modal === "equipe"} onClose={close} title="Equipe">
         {unit && <StaffAnalyticsModal unitId={unit.id} />}
