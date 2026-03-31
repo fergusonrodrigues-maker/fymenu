@@ -476,7 +476,43 @@ export default function ImportClient({ unitId, unitName, embedded = false }: { u
                             <input value={prod.name} onChange={(e) => updateProduct(ci, pi, { name: e.target.value })} style={{ flex: 1, background: "transparent", border: "none", borderBottom: "1px solid rgba(255,255,255,0.08)", color: "#fff", fontSize: 14, fontWeight: 600, padding: "2px 0", outline: "none", fontFamily: "inherit" }} />
                             <ConfidenceBadge conf={prod.import_confidence} />
                           </div>
-                          <input value={prod.description ?? ""} onChange={(e) => updateProduct(ci, pi, { description: e.target.value || null })} placeholder="Descrição (opcional)" style={{ width: "100%", background: "transparent", border: "none", borderBottom: "1px solid rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.4)", fontSize: 12, padding: "2px 0", outline: "none", fontFamily: "inherit", marginBottom: 6 }} />
+                          <input value={prod.description ?? ""} onChange={(e) => updateProduct(ci, pi, { description: e.target.value || null })} placeholder="Descrição (opcional)" style={{ width: "100%", background: "transparent", border: "none", borderBottom: "1px solid rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.4)", fontSize: 12, padding: "2px 0", outline: "none", fontFamily: "inherit", marginBottom: 4 }} />
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              try {
+                                const res = await fetch("/api/ia/describe", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({
+                                    name: prod.name,
+                                    category: cat.name,
+                                    price: prod.base_price,
+                                    existing_description: prod.description,
+                                  }),
+                                });
+                                const json = await res.json();
+                                if (json.description) {
+                                  updateProduct(ci, pi, { description: json.description });
+                                }
+                              } catch {}
+                            }}
+                            style={{
+                              background: "none",
+                              border: "1px solid rgba(99,102,241,0.3)",
+                              borderRadius: 8,
+                              padding: "3px 10px",
+                              color: "#a5b4fc",
+                              fontSize: 11,
+                              cursor: "pointer",
+                              marginBottom: 6,
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 4,
+                            }}
+                          >
+                            ✨ {prod.description ? "Reescrever com IA" : "Gerar descrição"}
+                          </button>
                           {prod.price_type === "fixed" ? (
                             <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                               <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 12 }}>R$</span>

@@ -178,6 +178,8 @@ export async function createCategory(formData: FormData): Promise<void> {
 
   const categoryType = normalizeText(String(formData.get("category_type") ?? "food"));
   const isAlcoholic = formData.get("is_alcoholic") === "true";
+  const sectionRaw = normalizeText(String(formData.get("section") ?? "pratos"));
+  const section = (["pratos", "drinks", "bebidas"].includes(sectionRaw) ? sectionRaw : "pratos") as "pratos" | "drinks" | "bebidas";
 
   const { error } = await supabase.from("categories").insert({
     unit_id: unitId,
@@ -185,6 +187,7 @@ export async function createCategory(formData: FormData): Promise<void> {
     order_index: nextOrder,
     category_type: categoryType || "food",
     is_alcoholic: isAlcoholic,
+    section,
   });
 
   if (error) throw new Error(error.message);
@@ -202,7 +205,13 @@ export async function updateCategory(formData: FormData): Promise<void> {
   if (!id) throw new Error("ID inválido.");
   if (!name) throw new Error("Nome é obrigatório.");
 
-  const { error } = await supabase.from("categories").update({ name }).eq("id", id);
+  const updatePayload: Record<string, unknown> = { name };
+  const sectionRaw = normalizeText(String(formData.get("section") ?? ""));
+  if (sectionRaw && ["pratos", "drinks", "bebidas"].includes(sectionRaw)) {
+    updatePayload.section = sectionRaw;
+  }
+
+  const { error } = await supabase.from("categories").update(updatePayload).eq("id", id);
   if (error) throw new Error(error.message);
 
   revalidatePath("/painel");
@@ -305,6 +314,7 @@ export async function updateProduct(formData: FormData): Promise<void> {
   const thumbnailUrl = normalizeText(String(formData.get("thumbnail_url") ?? ""));
   const videoUrl = normalizeText(String(formData.get("video_url") ?? ""));
   const isAgeRestricted = formData.get("is_age_restricted") === "on";
+  const isAlcoholic = formData.get("is_alcoholic") === "on";
 
   if (!id) throw new Error("ID inválido.");
   if (!name) throw new Error("Nome do produto é obrigatório.");
@@ -322,6 +332,7 @@ export async function updateProduct(formData: FormData): Promise<void> {
       thumbnail_url: thumbnailUrl || null,
       video_url: videoUrl || null,
       is_age_restricted: isAgeRestricted,
+      is_alcoholic: isAlcoholic,
     })
     .eq("id", id);
 

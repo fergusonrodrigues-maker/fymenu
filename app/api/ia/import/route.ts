@@ -11,7 +11,7 @@ Regras:
 - Não invente preços. Se o preço não estiver claro, use null e raw_price_text com o texto original.
 - price_type = "variable" se houver tamanhos/opções com preços diferentes.
 - has_pending_media = true em todos os produtos.
-- description = null quando não houver descrição clara no cardápio.
+- description: extraia a descrição ou ingredientes do produto se estiverem presentes no cardápio. Se não houver descrição visível, use null.
 - import_confidence: 0.0 a 1.0, indique sua certeza sobre cada produto.
 - Retorne exclusivamente JSON válido, sem texto adicional, sem markdown, sem backticks.
 
