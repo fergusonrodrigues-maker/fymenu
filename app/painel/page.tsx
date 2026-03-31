@@ -87,13 +87,13 @@ export default async function DashboardPage() {
 
   const { data: categories } = await supabase
     .from("categories")
-    .select("id, name, order_index, is_active")
+    .select("id, name, order_index, is_active, section")
     .eq("unit_id", unit?.id)
     .order("order_index");
 
   const { data: products } = await supabase
     .from("products")
-    .select("id, category_id, name, description, price_type, base_price, thumbnail_url, video_url, order_index, is_active, stock, stock_minimum, unlimited, sku, allergens, nutrition, preparation_time, is_age_restricted")
+    .select("id, category_id, name, description, price_type, base_price, thumbnail_url, video_url, order_index, is_active, stock, stock_minimum, unlimited, sku, allergens, nutrition, preparation_time, is_age_restricted, is_alcoholic")
     .in("category_id", (categories ?? []).map((c) => c.id));
 
   const upsellGroupIds = (categories ?? []).length > 0

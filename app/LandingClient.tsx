@@ -576,7 +576,7 @@ export default function LandingPage() {
         .fy-nav a {
           color: rgba(255,255,255,0.8);
           text-decoration: none;
-          font-size: 13px;
+          font-size: 15px;
           font-weight: 600;
           transition: color 0.2s;
         }
@@ -619,7 +619,7 @@ export default function LandingPage() {
         /* ── Responsive ── */
         @media (max-width: 768px) {
           .fy-nav { gap: 16px; padding: 10px 20px; }
-          .fy-nav a { font-size: 12px; }
+          .fy-nav a { font-size: 14px; }
           .hero-title { font-size: 36px !important; }
           .hero-sub { font-size: 16px !important; }
           .features-grid { grid-template-columns: 1fr !important; }
@@ -769,7 +769,7 @@ export default function LandingPage() {
             ].map((s) => (
               <div key={s.label}>
                 <AnimatedCounter target={s.value} suffix={s.suffix} />
-                <div className={theme === "dark" ? "text-shine-dark" : "text-shine-light"} style={{ fontSize: 13, marginTop: 8, fontWeight: 600 }}>
+                <div className={theme === "dark" ? "text-shine-dark" : "text-shine-light"} style={{ fontSize: 15, marginTop: 8, fontWeight: 600 }}>
                   {s.label}
                 </div>
               </div>
@@ -923,11 +923,11 @@ export default function LandingPage() {
         >
           <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 24, flexWrap: "wrap" }}>
             <span className={theme === "dark" ? "gradient-text-dark" : "gradient-text-light"} style={{ fontWeight: 900, fontSize: 18 }}>FyMenu</span>
-            <a href="#features" style={{ color: theme === "dark" ? "rgba(255,255,255,0.7)" : "rgba(34,34,34,0.65)", textDecoration: "none", fontSize: 13 }}>Recursos</a>
-            <a href="#pricing" style={{ color: theme === "dark" ? "rgba(255,255,255,0.7)" : "rgba(34,34,34,0.65)", textDecoration: "none", fontSize: 13 }}>Planos</a>
-            <a href="/entrar" style={{ color: theme === "dark" ? "rgba(255,255,255,0.7)" : "rgba(34,34,34,0.65)", textDecoration: "none", fontSize: 13 }}>Entrar</a>
+            <a href="#features" style={{ color: theme === "dark" ? "rgba(255,255,255,0.7)" : "rgba(34,34,34,0.65)", textDecoration: "none", fontSize: 15 }}>Recursos</a>
+            <a href="#pricing" style={{ color: theme === "dark" ? "rgba(255,255,255,0.7)" : "rgba(34,34,34,0.65)", textDecoration: "none", fontSize: 15 }}>Planos</a>
+            <a href="/entrar" style={{ color: theme === "dark" ? "rgba(255,255,255,0.7)" : "rgba(34,34,34,0.65)", textDecoration: "none", fontSize: 15 }}>Entrar</a>
           </div>
-          <div style={{ marginTop: 20, fontSize: 12, color: theme === "dark" ? "rgba(255,255,255,0.2)" : "rgba(34,34,34,0.2)" }}>
+          <div style={{ marginTop: 20, fontSize: 14, color: theme === "dark" ? "rgba(255,255,255,0.2)" : "rgba(34,34,34,0.2)" }}>
             © {new Date().getFullYear()} FyMenu — Todos os direitos reservados.
           </div>
         </footer>

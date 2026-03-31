@@ -17,9 +17,13 @@ const inp: React.CSSProperties = {
   outline: "none",
 };
 
-function NewProductFormInline({ categoryId, anyProductExpanded, onOpen }: { categoryId: string; anyProductExpanded: boolean; onOpen: () => void }) {
+function NewProductFormInline({ categoryId, section, anyProductExpanded, onOpen }: { categoryId: string; section: 'pratos' | 'drinks' | 'bebidas'; anyProductExpanded: boolean; onOpen: () => void }) {
   const [open, setOpen] = useState(false);
   const [priceType, setPriceType] = useState("fixed");
+  const [isAlcoholic, setIsAlcoholic] = useState(false);
+
+  const showVideo = section !== 'bebidas';
+  const showAlcoholic = section === 'drinks' || section === 'bebidas';
 
   useEffect(() => {
     if (anyProductExpanded) setOpen(false);
@@ -34,6 +38,7 @@ function NewProductFormInline({ categoryId, anyProductExpanded, onOpen }: { cate
   function handleClose() {
     setOpen(false);
     setPriceType("fixed");
+    setIsAlcoholic(false);
   }
 
   if (!open) return (
@@ -66,6 +71,19 @@ function NewProductFormInline({ categoryId, anyProductExpanded, onOpen }: { cate
           💡 Adicione as variações de preço após criar o produto (clique no produto para editar).
         </p>
       )}
+      {showAlcoholic && (
+        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", borderRadius: 8, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <button
+            type="button"
+            onClick={() => setIsAlcoholic(!isAlcoholic)}
+            style={{ width: 44, height: 26, borderRadius: 13, background: isAlcoholic ? "#00ffae" : "rgba(255,255,255,0.15)", border: "none", cursor: "pointer", position: "relative", transition: "background 0.2s", flexShrink: 0 }}
+          >
+            <span style={{ display: "block", width: 20, height: 20, borderRadius: "50%", background: "#fff", position: "absolute", top: 3, left: 3, transition: "transform 0.2s", transform: isAlcoholic ? "translateX(18px)" : "translateX(0)" }} />
+          </button>
+          <input type="hidden" name="is_alcoholic" value={isAlcoholic ? "on" : "off"} />
+          <span style={{ fontSize: 13, color: "rgba(255,255,255,0.7)" }}>{section === 'drinks' ? "Drink alcoólico" : "Bebida alcoólica"}</span>
+        </div>
+      )}
       <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
         <button type="button" onClick={handleClose} style={{ padding: "9px 14px", borderRadius: 10, border: "1px solid var(--dash-btn-border)", background: "transparent", color: "var(--dash-text-dim)", fontSize: 12, cursor: "pointer" }}>Cancelar</button>
         <button type="submit" style={{ padding: "9px 16px", borderRadius: 10, border: "none", background: "rgba(0,255,174,0.15)", color: "#00ffae", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Criar</button>
@@ -87,6 +105,8 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
     return cat.is_active !== false;
   }
   const [newCatType, setNewCatType] = useState<"food" | "drink">("food");
+  const [newCatSection, setNewCatSection] = useState<'pratos' | 'drinks' | 'bebidas'>('pratos');
+  const [editCatSection, setEditCatSection] = useState<Record<string, 'pratos' | 'drinks' | 'bebidas'>>({});
   const [showImport, setShowImport] = useState(false);
   const [orderedCats, setOrderedCats] = useState(categories);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
@@ -209,26 +229,32 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
           <input type="hidden" name="unit_id" value={unit.id} />
           <input type="hidden" name="category_type" value={newCatType} />
           <input type="hidden" name="is_alcoholic" value="false" />
+          <input type="hidden" name="section" value={newCatSection} />
           <div style={{ display: "flex", gap: 8 }}>
             <input name="name" placeholder="Nome da categoria" required style={{ ...inp, flex: 1, height: 38, padding: "0 12px" }} />
             <button type="submit" className="btn-gradient" style={{ padding: "0 14px", whiteSpace: "nowrap", minWidth: 60, height: 30, borderRadius: 8 }}>
               Criar
             </button>
           </div>
-          {/* Tipo */}
-          <div className="type-toggle-container">
-            <div className="type-toggle-slider" data-type={newCatType} />
-            {(["food", "drink"] as const).map((t) => (
-              <button
-                key={t}
-                type="button"
-                className="type-toggle-btn"
-                data-active={newCatType === t ? "true" : "false"}
-                onClick={() => setNewCatType(t)}
-              >
-                {t === "food" ? "🍽️ Pratos" : "🥤 Bebidas"}
-              </button>
-            ))}
+          {/* Sessão */}
+          <div style={{ marginBottom: 4 }}>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 8 }}>Sessão</div>
+            <div style={{ display: "flex", gap: 8 }}>
+              {([['pratos','🍽️','Pratos'],['drinks','🍸','Drinks'],['bebidas','🥤','Bebidas']] as const).map(([val, icon, label]) => (
+                <button
+                  key={val}
+                  type="button"
+                  onClick={() => setNewCatSection(val)}
+                  style={{
+                    flex: 1, padding: "8px 4px", borderRadius: 10, border: "1px solid",
+                    borderColor: newCatSection === val ? "#00ffae" : "rgba(255,255,255,0.12)",
+                    background: newCatSection === val ? "rgba(0,255,174,0.12)" : "rgba(255,255,255,0.04)",
+                    color: newCatSection === val ? "#00ffae" : "rgba(255,255,255,0.5)",
+                    fontSize: 12, fontWeight: 700, cursor: "pointer",
+                  }}
+                >{icon} {label}</button>
+              ))}
+            </div>
           </div>
         </form>
       )}
@@ -273,12 +299,38 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                 title="Segurar e arrastar para reordenar"
               >⠿</span>
               <span className="cat-header-arrow" data-open={isOpen ? "true" : "false"} style={{ color: "var(--dash-text-muted)", fontSize: 11, flexShrink: 0, width: 14, textAlign: "center", lineHeight: 1 }}>▼</span>
-              <form action={updateCategory} onClick={(e) => e.stopPropagation()} style={{ flex: 1, display: "flex", gap: 6, alignItems: "center" }}>
+              {cat.section === 'drinks' && <span style={{ fontSize: 14, flexShrink: 0 }} title="Drinks">🍸</span>}
+              {cat.section === 'bebidas' && <span style={{ fontSize: 14, flexShrink: 0 }} title="Bebidas">🥤</span>}
+              <form action={updateCategory} onClick={(e) => e.stopPropagation()} style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
                 <input type="hidden" name="id" value={cat.id} />
-                <input name="name" defaultValue={cat.name} style={{ ...inp, flex: 1, fontSize: 14, fontWeight: 800, height: 38, padding: "0 12px" }} />
-                <button type="submit" className="btn-gradient" style={{ padding: "0 10px", height: 30, fontSize: 11, minWidth: 50, borderRadius: 7, flexShrink: 0 }}>
-                  Salvar
-                </button>
+                <input type="hidden" name="section" value={editCatSection[cat.id] ?? cat.section ?? 'pratos'} />
+                <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                  <input name="name" defaultValue={cat.name} style={{ ...inp, flex: 1, fontSize: 14, fontWeight: 800, height: 38, padding: "0 12px" }} />
+                  <button type="submit" className="btn-gradient" style={{ padding: "0 10px", height: 30, fontSize: 11, minWidth: 50, borderRadius: 7, flexShrink: 0 }}>
+                    Salvar
+                  </button>
+                </div>
+                {isOpen && (
+                  <div style={{ display: "flex", gap: 6 }}>
+                    {([['pratos','🍽️','Pratos'],['drinks','🍸','Drinks'],['bebidas','🥤','Bebidas']] as const).map(([val, icon, label]) => {
+                      const current = editCatSection[cat.id] ?? cat.section ?? 'pratos';
+                      return (
+                        <button
+                          key={val}
+                          type="button"
+                          onClick={() => setEditCatSection(prev => ({ ...prev, [cat.id]: val }))}
+                          style={{
+                            flex: 1, padding: "5px 2px", borderRadius: 8, border: "1px solid",
+                            borderColor: current === val ? "#00ffae" : "rgba(255,255,255,0.12)",
+                            background: current === val ? "rgba(0,255,174,0.12)" : "rgba(255,255,255,0.04)",
+                            color: current === val ? "#00ffae" : "rgba(255,255,255,0.5)",
+                            fontSize: 11, fontWeight: 700, cursor: "pointer",
+                          }}
+                        >{icon} {label}</button>
+                      );
+                    })}
+                  </div>
+                )}
               </form>
               <form action={deleteCategory} onClick={(e) => e.stopPropagation()} onSubmit={(e) => { if (!confirm("Excluir categoria e todos os produtos?")) e.preventDefault(); }}>
                 <input type="hidden" name="id" value={cat.id} />
@@ -354,6 +406,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                       )}
                       <NewProductFormInline
                         categoryId={cat.id}
+                        section={editCatSection[cat.id] ?? cat.section ?? 'pratos'}
                         anyProductExpanded={expandedProductId !== null}
                         onOpen={() => setExpandedProductId(null)}
                       />
