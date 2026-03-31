@@ -84,6 +84,23 @@ export default function MenuClient({
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const isScrollingTo = useRef(false);
 
+  useEffect(() => {
+    function updateThemeColor() {
+      const isDark = document.documentElement.classList.contains('dark');
+      let meta = document.querySelector('meta[name="theme-color"]');
+      if (!meta) {
+        meta = document.createElement('meta');
+        meta.setAttribute('name', 'theme-color');
+        document.head.appendChild(meta);
+      }
+      meta.setAttribute('content', isDark ? '#000000' : '#ffffff');
+    }
+    updateThemeColor();
+    const obs = new MutationObserver(updateThemeColor);
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => obs.disconnect();
+  }, []);
+
   const featuredCategories = categories.filter((c) => c.is_featured);
   const regularCategories  = categories.filter((c) => !c.is_featured);
 

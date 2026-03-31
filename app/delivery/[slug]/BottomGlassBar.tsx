@@ -36,6 +36,14 @@ function mapsUrl(unit: Unit): string | null {
 export default function BottomGlassBar({ unit }: { unit: Unit }) {
   const [isMaximized, setIsMaximized] = useState(false);
   const [hidden, setHidden] = useState(false);
+  const [isDark, setIsDark] = useState(true);
+  useEffect(() => {
+    const check = () => setIsDark(document.documentElement.classList.contains('dark'));
+    check();
+    const obs = new MutationObserver(check);
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => obs.disconnect();
+  }, []);
   const lastScrollY = useRef(0);
   const scrollAccumulator = useRef(0);
 
@@ -80,7 +88,7 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
         width: isMaximized ? "100%" : "min(96vw, 520px)",
         height: isMaximized ? "min(50vh, 340px)" : 86,
         borderRadius: isMaximized ? "28px 28px 0 0" : 24,
-        background: "rgba(40,40,40,0.45)",
+        background: isDark ? "rgba(40,40,40,0.45)" : "linear-gradient(135deg, rgba(213,22,89,0.85), rgba(254,74,44,0.85))",
         backdropFilter: "blur(40px) saturate(1.8)",
         WebkitBackdropFilter: "blur(40px) saturate(1.8)",
         border: "1px solid rgba(255,255,255,0.18)",

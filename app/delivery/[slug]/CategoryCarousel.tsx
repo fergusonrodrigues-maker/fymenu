@@ -1,7 +1,7 @@
 // FILE: /app/delivery/[slug]/CategoryCarousel.tsx
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import type { Product } from "./menuTypes";
 
 interface CategoryCarouselProps {
@@ -35,6 +35,15 @@ export default function CategoryCarousel({
   const heroIdxRef = useRef(0);
   const dragStartX = useRef(0);
   const dragStartY = useRef(0);
+
+  const [isDark, setIsDark] = useState(true);
+  useEffect(() => {
+    const check = () => setIsDark(document.documentElement.classList.contains('dark'));
+    check();
+    const obs = new MutationObserver(check);
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => obs.disconnect();
+  }, []);
 
   const list = (items ?? []).filter((p: any) => p.is_active !== false);
 
@@ -177,7 +186,7 @@ export default function CategoryCarousel({
                 cursor: "pointer",
                 transition: "all 0.5s cubic-bezier(0.22, 1, 0.36, 1)",
                 opacity: active ? (isHero ? 1 : 0.85) : 1,
-                border: "1px solid rgba(128,128,128,0.08)",
+                border: isDark ? "1px solid rgba(128,128,128,0.08)" : "1px solid rgba(0,0,0,0.06)",
                 marginTop: mt,
               }}
             >
@@ -185,7 +194,7 @@ export default function CategoryCarousel({
                 style={{
                   aspectRatio: "9 / 16",
                   position: "relative",
-                  background: "#f0f0f0",
+                  background: isDark ? "#111" : "#f0f0f0",
                 }}
               >
                 {thumbUrl && (

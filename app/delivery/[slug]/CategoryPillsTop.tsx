@@ -1,7 +1,7 @@
 // FILE: /app/u/[slug]/CategoryPillsTop.tsx
 "use client";
 
-import React, { useEffect, useRef, useMemo } from "react";
+import React, { useEffect, useRef, useMemo, useState } from "react";
 import type { Category } from "./menuTypes";
 
 export default function CategoryPillsTop({
@@ -13,6 +13,15 @@ export default function CategoryPillsTop({
   activeCategoryId: string | null;
   onSelect: (id: string) => void;
 }) {
+  const [isDark, setIsDark] = useState(true);
+  useEffect(() => {
+    const check = () => setIsDark(document.documentElement.classList.contains('dark'));
+    check();
+    const obs = new MutationObserver(check);
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => obs.disconnect();
+  }, []);
+
   const heroTextRef = useRef<HTMLSpanElement | null>(null);
   const prevIdxRef  = useRef<number>(-1);
 
@@ -189,9 +198,9 @@ export default function CategoryPillsTop({
           width: sideWidth,
           height: 36,
           borderRadius: 999,
-          border: "0.5px solid rgba(0,0,0,0.10)",
-          background: "rgba(0,0,0,0.04)",
-          color: "rgba(0,0,0,0.7)",
+          border: isDark ? "0.5px solid rgba(255,255,255,0.10)" : "0.5px solid rgba(0,0,0,0.10)",
+          background: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
+          color: isDark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.5)",
           fontWeight: 500,
           fontSize: 11,
           whiteSpace: "nowrap",
@@ -211,9 +220,9 @@ export default function CategoryPillsTop({
           width: sideWidth,
           height: 38,
           borderRadius: 999,
-          border: "0.5px solid rgba(0,0,0,0.12)",
-          background: "rgba(0,0,0,0.05)",
-          color: "rgba(0,0,0,0.7)",
+          border: isDark ? "0.5px solid rgba(255,255,255,0.12)" : "0.5px solid rgba(0,0,0,0.12)",
+          background: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
+          color: isDark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.5)",
           fontWeight: 500,
           fontSize: 12,
           whiteSpace: "nowrap",
@@ -225,13 +234,13 @@ export default function CategoryPillsTop({
           flexShrink: 0,
         }} />
 
-        {/* HERO — laranja, responsivo ao texto */}
+        {/* HERO — acento por tema */}
         <div style={{
           width: heroWidth,
           height: 44,
           borderRadius: 999,
-          background: "#FF6B00",
-          boxShadow: "0 2px 16px rgba(255,107,0,0.35)",
+          background: isDark ? "#FF6B00" : "linear-gradient(135deg, #d51659, #fe4a2c)",
+          boxShadow: isDark ? "0 2px 16px rgba(255,107,0,0.35)" : "0 2px 16px rgba(213,22,89,0.35)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -258,9 +267,9 @@ export default function CategoryPillsTop({
           width: sideWidth,
           height: 38,
           borderRadius: 999,
-          border: "0.5px solid rgba(0,0,0,0.12)",
-          background: "rgba(0,0,0,0.05)",
-          color: "rgba(0,0,0,0.7)",
+          border: isDark ? "0.5px solid rgba(255,255,255,0.12)" : "0.5px solid rgba(0,0,0,0.12)",
+          background: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
+          color: isDark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.5)",
           fontWeight: 500,
           fontSize: 12,
           whiteSpace: "nowrap",
@@ -280,9 +289,9 @@ export default function CategoryPillsTop({
           width: sideWidth,
           height: 36,
           borderRadius: 999,
-          border: "0.5px solid rgba(0,0,0,0.10)",
-          background: "rgba(0,0,0,0.04)",
-          color: "rgba(0,0,0,0.7)",
+          border: isDark ? "0.5px solid rgba(255,255,255,0.10)" : "0.5px solid rgba(0,0,0,0.10)",
+          background: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
+          color: isDark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.5)",
           fontWeight: 500,
           fontSize: 11,
           whiteSpace: "nowrap",
