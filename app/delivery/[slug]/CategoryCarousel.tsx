@@ -156,7 +156,7 @@ export default function CategoryCarousel({
                 cursor: "pointer",
                 transition: "all 0.5s cubic-bezier(0.22, 1, 0.36, 1)",
                 opacity: active ? (isHero ? 1 : 0.85) : 1,
-                border: "1px solid rgba(0,0,0,0.06)",
+                border: "1px solid rgba(128,128,128,0.08)",
                 marginTop: mt,
               }}
             >
@@ -246,7 +246,7 @@ function GhostCard({ width, marginTop }: { width: number; marginTop: number }) {
         width,
         aspectRatio: "9 / 16",
         borderRadius: 10,
-        border: "1px solid rgba(0,0,0,0.05)",
+        border: "1px solid rgba(128,128,128,0.08)",
         background: "rgba(0,0,0,0.02)",
         display: "flex",
         alignItems: "center",
