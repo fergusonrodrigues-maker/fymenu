@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 type KOrder = {
   id: string;
   table_number: number | null;
-  items: Array<{ product_id: string; qty: number; unit_price: number; total: number; code_name?: string; notes?: string }>;
+  items: Array<{ product_id: string; qty: number; unit_price: number; total: number; code_name?: string; notes?: string; addons?: Array<{ id: string; name: string; price: number }> }>;
   total: number;
   status: string;
   waiter_status: string | null;
