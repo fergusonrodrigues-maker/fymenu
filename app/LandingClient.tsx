@@ -240,6 +240,49 @@ export default function LandingPage() {
 
       const dark = isDarkMode();
 
+      // Glow effect — "fumaça" luminosa ao redor do cursor
+      if (mouseX > 0 && mouseY > 0) {
+        const glowRadius = 180;
+        const gradient = ctx.createRadialGradient(mouseX, mouseY, 0, mouseX, mouseY, glowRadius);
+        if (dark) {
+          gradient.addColorStop(0, 'rgba(0, 255, 174, 0.15)');
+          gradient.addColorStop(0.4, 'rgba(0, 255, 174, 0.06)');
+          gradient.addColorStop(1, 'rgba(0, 255, 174, 0)');
+        } else {
+          gradient.addColorStop(0, 'rgba(0, 0, 0, 0.10)');
+          gradient.addColorStop(0.4, 'rgba(0, 0, 0, 0.04)');
+          gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        }
+        ctx.fillStyle = gradient;
+        ctx.fillRect(mouseX - glowRadius, mouseY - glowRadius, glowRadius * 2, glowRadius * 2);
+      }
+
+      // Glow dos ripples — anel de fumaça nas ondas
+      for (const ripple of ripples) {
+        const elapsed = now - ripple.startTime;
+        const fade = Math.max(0, 1 - elapsed / 800);
+        if (fade <= 0) continue;
+
+        const ringGradient = ctx.createRadialGradient(
+          ripple.x, ripple.y, Math.max(0, ripple.radius - 30),
+          ripple.x, ripple.y, ripple.radius + 30
+        );
+        if (dark) {
+          ringGradient.addColorStop(0, 'rgba(0, 255, 174, 0)');
+          ringGradient.addColorStop(0.4, `rgba(0, 255, 174, ${0.12 * fade})`);
+          ringGradient.addColorStop(0.6, `rgba(0, 255, 174, ${0.12 * fade})`);
+          ringGradient.addColorStop(1, 'rgba(0, 255, 174, 0)');
+        } else {
+          ringGradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
+          ringGradient.addColorStop(0.4, `rgba(0, 0, 0, ${0.08 * fade})`);
+          ringGradient.addColorStop(0.6, `rgba(0, 0, 0, ${0.08 * fade})`);
+          ringGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        }
+        ctx.fillStyle = ringGradient;
+        const size = ripple.radius + 40;
+        ctx.fillRect(ripple.x - size, ripple.y - size, size * 2, size * 2);
+      }
+
       for (const dot of dots) {
         let targetOpacity = 0.30;
 
