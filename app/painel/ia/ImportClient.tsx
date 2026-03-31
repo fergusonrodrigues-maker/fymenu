@@ -30,6 +30,7 @@ interface ImportProduct {
 interface ImportCategory {
   name: string;
   type: string;
+  section?: 'pratos' | 'drinks' | 'bebidas';
   position: number;
   products: ImportProduct[];
 }
@@ -156,7 +157,9 @@ export default function ImportClient({ unitId, unitName, embedded = false }: { u
         if (existingCat) {
           categoryId = existingCat.id;
         } else {
-          const { data: newCat, error: catErr } = await supabase.from("categories").insert({ unit_id: unitId, name: cat.name, order_index: cat.position }).select("id").single();
+          const validSections = ['pratos', 'drinks', 'bebidas'];
+          const catSection = cat.section && validSections.includes(cat.section) ? cat.section : 'pratos';
+          const { data: newCat, error: catErr } = await supabase.from("categories").insert({ unit_id: unitId, name: cat.name, order_index: cat.position, section: catSection }).select("id").single();
           if (catErr) throw catErr;
           categoryId = newCat.id;
         }

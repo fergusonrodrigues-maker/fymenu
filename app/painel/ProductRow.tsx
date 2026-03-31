@@ -22,6 +22,7 @@ type Product = {
   nutrition?: { calories: number | null; protein: number | null; fat: number | null; carbs: number | null } | null;
   preparation_time?: number | null;
   is_age_restricted?: boolean | null;
+  is_alcoholic?: boolean | null;
   is_active?: boolean | null;
 };
 
@@ -325,19 +326,6 @@ export default function ProductRow({
               </div>
 
               {uploadError && <p style={{ color: "#f87171", fontSize: 12, margin: 0 }}>{uploadError}</p>}
-
-              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", borderRadius: 8, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                <label className="ios-checkbox">
-                  <input type="checkbox" name="is_age_restricted" defaultChecked={product.is_age_restricted ?? false} />
-                  <div className="cb-wrap">
-                    <div className="cb-bg" />
-                    <svg className="cb-icon" viewBox="0 0 24 24" fill="none">
-                      <path className="check-path" d="M6 12.5L10 16.5L18 8.5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </div>
-                </label>
-                <span style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", cursor: "pointer" }}>🔞 Produto restrito para maiores de 18 anos</span>
-              </div>
 
               <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
                 <button type="submit" disabled={isPending || uploading !== null} style={{ flex: 1, padding: "10px 0", background: "#10b981", color: "#fff", border: "none", borderRadius: 8, fontWeight: 600, fontSize: 14, cursor: isPending ? "not-allowed" : "pointer", opacity: isPending ? 0.6 : 1 }}>

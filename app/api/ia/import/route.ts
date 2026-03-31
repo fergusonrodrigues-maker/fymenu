@@ -13,6 +13,7 @@ Regras:
 - has_pending_media = true em todos os produtos.
 - description: extraia a descrição ou ingredientes do produto se estiverem presentes no cardápio. Se não houver descrição visível, use null.
 - import_confidence: 0.0 a 1.0, indique sua certeza sobre cada produto.
+- Para cada categoria, determine seu "section": "pratos" para alimentos (Lanches, Porções, Sobremesas, Pratos, Entradas), "drinks" para coquetéis/bebidas preparadas (Drinks, Coquetéis, Cocktails), "bebidas" para bebidas prontas (Refrigerantes, Sucos, Cervejas, Vinhos, Água). Padrão: "pratos".
 - Retorne exclusivamente JSON válido, sem texto adicional, sem markdown, sem backticks.
 
 Schema de retorno:
@@ -25,6 +26,7 @@ Schema de retorno:
     {
       "name": "string",
       "type": "food|drink|beverage|dessert|custom",
+      "section": "pratos|drinks|bebidas",
       "position": 0,
       "products": [
         {
