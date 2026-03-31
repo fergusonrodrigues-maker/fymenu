@@ -41,7 +41,7 @@ interface Props {
   unitFeatures: { unit_id: string; feature: string; enabled: boolean }[];
 }
 
-const TABS = ["Overview", "Usuários", "Billing", "Analytics", "Controle"] as const;
+const TABS = ["Visão Geral", "Usuários", "Faturamento", "Analytics", "Controle"] as const;
 type Tab = (typeof TABS)[number];
 
 const PLAN_PRICES: Record<string, number> = {
@@ -349,7 +349,7 @@ export default function AdminClient({
   stats, restaurants, payments, topProducts,
   planCounts, statusCounts, cities, unitsByRestaurant, unitFeatures,
 }: Props) {
-  const [tab, setTab] = useState<Tab>("Overview");
+  const [tab, setTab] = useState<Tab>("Visão Geral");
   const [managingId, setManagingId] = useState<string | null>(null);
   const [localRestaurants, setLocalRestaurants] = useState(restaurants);
 
@@ -414,8 +414,8 @@ export default function AdminClient({
       {/* Header */}
       <header className="bg-gray-900 border-b border-gray-800 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
         <div>
-          <h1 className="text-2xl font-black tracking-tight">📊 Admin Dashboard</h1>
-          <p className="text-gray-400 text-sm">Plataforma FyMenu — visão geral</p>
+          <h1 className="text-2xl font-black tracking-tight">📊 Painel Admin</h1>
+          <p className="text-gray-400 text-sm">Plataforma FyMenu — painel administrativo</p>
         </div>
         <div className="flex items-center gap-3">
           <span className="px-3 py-1.5 rounded-full bg-purple-900/40 text-purple-300 border border-purple-700/50 text-xs font-bold uppercase tracking-widest">
@@ -453,7 +453,7 @@ export default function AdminClient({
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* OVERVIEW */}
-        {tab === "Overview" && (
+        {tab === "Visão Geral" && (
           <div className="space-y-6">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <StatCard icon="👥" label="Total de Restaurantes" value={stats.totalRestaurants.toLocaleString("pt-BR")} sub="na plataforma" color="text-blue-400" />
@@ -505,7 +505,7 @@ export default function AdminClient({
                 onChange={(e) => setFilterPlan(e.target.value)}
                 className="bg-gray-900 border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-white"
               >
-                <option value="all">Todos os planos</option>
+                <option value="all">Todos os Planos</option>
                 {uniquePlans.map((p) => (
                   <option key={p} value={p}>{p}</option>
                 ))}
@@ -515,7 +515,7 @@ export default function AdminClient({
                 onChange={(e) => setFilterStatus(e.target.value)}
                 className="bg-gray-900 border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-white"
               >
-                <option value="all">Todos os status</option>
+                <option value="all">Todos os Status</option>
                 {uniqueStatuses.map((s) => (
                   <option key={s} value={s}>{s}</option>
                 ))}
@@ -528,7 +528,7 @@ export default function AdminClient({
             <div className="bg-gray-900/60 rounded-2xl border border-gray-800 overflow-hidden">
               {localRestaurants.length === 0 ? (
                 <p className="text-gray-600 text-sm p-6">
-                  Sem dados — adicione SUPABASE_SERVICE_ROLE_KEY ao .env.local para ver todos os restaurantes.
+                  Nenhum restaurante encontrado.
                 </p>
               ) : (
                 <div className="overflow-x-auto">
@@ -581,7 +581,7 @@ export default function AdminClient({
         )}
 
         {/* BILLING */}
-        {tab === "Billing" && (
+        {tab === "Faturamento" && (
           <div className="bg-gray-900/60 rounded-2xl border border-gray-800 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
               <h3 className="font-bold text-gray-200">Pagamentos Registrados</h3>
