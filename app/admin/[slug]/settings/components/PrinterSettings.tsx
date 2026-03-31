@@ -26,9 +26,7 @@ export function PrinterSettings({
   const [expandedPrinterId, setExpandedPrinterId] = useState<string | null>(
     null
   );
-  const [printerCategoryMap, setPrinterCategoryMap] = useState
-    Map<string, any[]>
-  >(new Map());
+  const [printerCategoryMap, setPrinterCategoryMap] = useState<Map<string, any[]>>(new Map());
 
   useEffect(() => {
     fetchPrinters(unitId);
