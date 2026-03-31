@@ -250,12 +250,20 @@ export default function PedidosModal({ unitId }: { unitId: string }) {
                     <div style={{ marginBottom: 10 }}>
                       {order.items?.map((item, i) => (
                         <div key={i} style={{
-                          display: "flex", justifyContent: "space-between",
                           fontSize: 13, color: "var(--dash-text-dim)", padding: "3px 0",
                           borderBottom: i < order.items.length - 1 ? "1px solid var(--dash-card-border)" : "none",
                         }}>
-                          <span>{item.qty}× {item.code_name ?? "Item"}</span>
-                          <span>R$ {Number(item.total).toFixed(2)}</span>
+                          <div style={{ display: "flex", justifyContent: "space-between" }}>
+                            <span>{item.qty}× {item.code_name ?? "Item"}</span>
+                            <span>R$ {Number(item.total).toFixed(2)}</span>
+                          </div>
+                          {item.addons && item.addons.length > 0 && (
+                            <div style={{ paddingLeft: 12, marginTop: 2, display: "flex", flexDirection: "column", gap: 1 }}>
+                              {item.addons.map((a: { id: string; name: string; price: number }) => (
+                                <span key={a.id} style={{ fontSize: 11, color: "var(--dash-text-muted)" }}>+ {a.name}</span>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>

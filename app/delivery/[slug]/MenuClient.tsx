@@ -56,7 +56,7 @@ export default function MenuClient({
           i.product_id === productId ? { ...i, qty: i.qty + 1 } : i
         );
       }
-      return [...prev, { product_id: productId, name, qty: 1, unit_price: payload.total }];
+      return [...prev, { product_id: productId, name, qty: 1, unit_price: payload.total, addons: payload.upsells.length > 0 ? payload.upsells : undefined }];
     });
   }
 
@@ -266,6 +266,7 @@ export default function MenuClient({
         onOrder={handleProductOrder}
         allProducts={products}
         mode={mode}
+        unitId={unit.id}
       />
 
       {/* Upsell modal (delivery) */}

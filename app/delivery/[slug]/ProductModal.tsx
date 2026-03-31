@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Product, ProductVariation } from "./menuTypes";
-import { OrderPayload } from "./orderBuilder";
+import { OrderPayload, UpsellItem } from "./orderBuilder";
 import { useSwipeGesture } from "./useSwipeGesture";
+import { useProductAddons } from "@/lib/hooks/useProductAddons";
 
 interface ProductModalProps {
   product: Product | null;
@@ -12,6 +13,7 @@ interface ProductModalProps {
   onOrder: (payload: OrderPayload) => void;
   allProducts?: Product[];
   mode?: "delivery" | "presencial";
+  unitId?: string;
 }
 
 function moneyBR(value: number | null | undefined) {
@@ -26,6 +28,7 @@ export default function ProductModal({
   onOrder,
   allProducts = [],
   mode = "delivery",
+  unitId,
 }: ProductModalProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedVariation, setSelectedVariation] =
@@ -35,6 +38,9 @@ export default function ProductModal({
   const [slideDir, setSlideDir] = useState<"left" | "right" | null>(null);
   const [ageConfirmed, setAgeConfirmed] = useState(false);
   const [starred, setStarred] = useState(false);
+  const [selectedAddons, setSelectedAddons] = useState<UpsellItem[]>([]);
+
+  const { addons, fetchAddons } = useProductAddons({ unitId });
 
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -55,8 +61,10 @@ export default function ProductModal({
       setSelectedVariation(null);
       setThumbVisible(true);
       setStarred(false);
+      setSelectedAddons([]);
+      fetchAddons(currentProduct.id);
     }
-  }, [currentProduct?.id]);
+  }, [currentProduct?.id, fetchAddons]);
 
   const total = allProducts.length;
 
@@ -114,17 +122,19 @@ export default function ProductModal({
   const videoUrl: string | null = currentProduct.video_url ?? null;
   const hasMedia = !!(thumbUrl || videoUrl);
 
+  const addonsTotal = selectedAddons.reduce((sum, a) => sum + a.price, 0);
+
   function handleOrder() {
     if (!canOrder || activePrice == null || !currentProduct) return;
     onOrder({
       product: currentProduct,
       variation: selectedVariation ?? undefined,
-      upsells: [],
-      total: activePrice,
+      upsells: selectedAddons,
+      total: activePrice + addonsTotal,
     });
   }
 
-  const displayPrice = activePrice != null ? moneyBR(activePrice) : null;
+  const displayPrice = activePrice != null ? moneyBR(activePrice + addonsTotal) : null;
   const productBasePrice =
     !hasVariations && fixedPrice != null ? moneyBR(fixedPrice) : null;
 
@@ -409,6 +419,50 @@ export default function ProductModal({
                         {variation.name}
                       </span>
                     </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {addons.length > 0 && (
+            <div style={{ marginBottom: 10 }}>
+              <p style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", fontWeight: 600, margin: "0 0 6px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                Adicionais
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 4, maxHeight: 100, overflowY: "auto" }} className="fy-desc-scroll">
+                {addons.filter((a) => a.enabled).map((addon) => {
+                  const checked = selectedAddons.some((a) => a.id === addon.id);
+                  return (
+                    <label
+                      key={addon.id}
+                      style={{
+                        display: "flex", alignItems: "center", gap: 8,
+                        padding: "5px 8px", borderRadius: 8, cursor: "pointer",
+                        background: checked ? "rgba(255,107,0,0.1)" : "rgba(255,255,255,0.05)",
+                        border: checked ? "1px solid rgba(255,107,0,0.35)" : "1px solid rgba(255,255,255,0.08)",
+                        transition: "all 0.15s",
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedAddons((prev) => [...prev, { id: addon.id, name: addon.name, price: addon.price }]);
+                          } else {
+                            setSelectedAddons((prev) => prev.filter((a) => a.id !== addon.id));
+                          }
+                        }}
+                        style={{ width: 14, height: 14, accentColor: "#FF6B00", cursor: "pointer", flexShrink: 0 }}
+                      />
+                      <span style={{ flex: 1, fontSize: 12, color: checked ? "#fff" : "rgba(255,255,255,0.65)" }}>
+                        {addon.name}
+                      </span>
+                      <span style={{ fontSize: 11, color: "#FF6B00", fontWeight: 600, flexShrink: 0 }}>
+                        +{moneyBR(addon.price)}
+                      </span>
+                    </label>
                   );
                 })}
               </div>

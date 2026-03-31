@@ -394,16 +394,25 @@ function QueueCard({
       {/* Items */}
       <ul className="space-y-1 mb-3">
         {order.items?.map((item, i) => (
-          <li key={i} className="text-slate-200 text-sm flex justify-between">
-            <span>
-              {item.qty}× {item.code_name ?? `Item ${i + 1}`}
-              {item.notes && (
-                <span className="text-slate-500 text-xs ml-1">({item.notes})</span>
-              )}
-            </span>
-            <span className="text-slate-400 text-xs">
-              R$ {((item.qty * item.unit_price) / 100).toFixed(2)}
-            </span>
+          <li key={i} className="text-slate-200 text-sm">
+            <div className="flex justify-between">
+              <span>
+                {item.qty}× {item.code_name ?? `Item ${i + 1}`}
+                {item.notes && (
+                  <span className="text-slate-500 text-xs ml-1">({item.notes})</span>
+                )}
+              </span>
+              <span className="text-slate-400 text-xs">
+                R$ {((item.qty * item.unit_price) / 100).toFixed(2)}
+              </span>
+            </div>
+            {item.addons && item.addons.length > 0 && (
+              <ul className="ml-4 mt-0.5 space-y-0.5">
+                {item.addons.map((a: { id: string; name: string; price: number }) => (
+                  <li key={a.id} className="text-slate-400 text-xs">+ {a.name}</li>
+                ))}
+              </ul>
+            )}
           </li>
         )) ?? <li className="text-slate-400 text-sm">{itemCount} item(ns)</li>}
       </ul>

@@ -229,10 +229,19 @@ function KitchenCard({ order, tick, children }: { order: KOrder; tick: number; c
       </div>
       <ul className="space-y-1 text-sm">
         {order.items?.map((item, i) => (
-          <li key={i} className="flex gap-1">
-            <span className="text-white font-bold">{item.qty}×</span>
-            <span className="text-gray-200">{item.code_name ?? `Item ${i + 1}`}</span>
-            {item.notes && <span className="text-gray-500 text-xs">({item.notes})</span>}
+          <li key={i} className="flex flex-col gap-0.5">
+            <div className="flex gap-1">
+              <span className="text-white font-bold">{item.qty}×</span>
+              <span className="text-gray-200">{item.code_name ?? `Item ${i + 1}`}</span>
+              {item.notes && <span className="text-gray-500 text-xs">({item.notes})</span>}
+            </div>
+            {item.addons && item.addons.length > 0 && (
+              <ul className="ml-4 space-y-0.5">
+                {item.addons.map((a: { id: string; name: string; price: number }) => (
+                  <li key={a.id} className="text-yellow-400 text-xs">+ {a.name}</li>
+                ))}
+              </ul>
+            )}
           </li>
         ))}
       </ul>
