@@ -32,6 +32,9 @@ export default async function AdminPage() {
     { data: allUnitsDetailed },
     { data: allOrdersCount },
     { data: allMenuEvents },
+    { data: ownersData },
+    { data: ordersByUnit },
+    { data: unitMapping },
   ] = await Promise.all([
     admin.from("restaurants").select("*", { count: "exact", head: true }),
     admin
@@ -71,6 +74,17 @@ export default async function AdminPage() {
       .from("menu_events")
       .select("id, unit_id, event, created_at")
       .gte("created_at", thirtyDaysAgo),
+    admin
+      .from("restaurants")
+      .select("id, name, plan, status, created_at, trial_ends_at, free_access, owner_id, owner_first_name, owner_last_name, owner_phone, owner_document, owner_address, whatsapp, instagram")
+      .order("created_at", { ascending: false }),
+    admin
+      .from("order_intents")
+      .select("unit_id, total, status")
+      .eq("status", "confirmed"),
+    admin
+      .from("units")
+      .select("id, restaurant_id, city, slug"),
   ]);
 
   const revenue30d = payments30d?.reduce((s, p) => s + (p.amount ?? 0), 0) ?? 0;
@@ -142,6 +156,11 @@ export default async function AdminPage() {
         units: allUnitsDetailed ?? [],
         orders: allOrdersCount ?? [],
         events: allMenuEvents ?? [],
+      }}
+      crmData={{
+        owners: ownersData ?? [],
+        ordersByUnit: ordersByUnit ?? [],
+        unitMapping: unitMapping ?? [],
       }}
     />
   );

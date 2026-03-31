@@ -46,9 +46,20 @@ interface Props {
     orders: Array<{ id: string; unit_id: string; created_at: string; status: string; total: number }>;
     events: Array<{ id: string; unit_id: string; event: string; created_at: string }>;
   };
+  crmData: {
+    owners: Array<{
+      id: string; name: string; plan: string; status: string;
+      created_at: string; trial_ends_at: string | null; free_access: boolean;
+      owner_id: string | null; owner_first_name: string | null; owner_last_name: string | null;
+      owner_phone: string | null; owner_document: string | null; owner_address: string | null;
+      whatsapp: string | null; instagram: string | null;
+    }>;
+    ordersByUnit: Array<{ unit_id: string; total: number; status: string }>;
+    unitMapping: Array<{ id: string; restaurant_id: string; city: string | null; slug: string }>;
+  };
 }
 
-const TABS = ["Visão Geral", "Usuários", "Faturamento", "Analytics", "Controle"] as const;
+const TABS = ["Visão Geral", "Usuários", "Faturamento", "Analytics", "CRM", "Controle"] as const;
 type Tab = (typeof TABS)[number];
 
 const PLAN_PRICES: Record<string, number> = {
@@ -354,7 +365,7 @@ function ActionBtn({
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function AdminClient({
   stats, restaurants, payments, topProducts,
-  planCounts, statusCounts, cities, unitsByRestaurant, unitFeatures, user, analyticsData,
+  planCounts, statusCounts, cities, unitsByRestaurant, unitFeatures, user, analyticsData, crmData,
 }: Props) {
   const supabase = createClient();
   const [tab, setTab] = useState<Tab>("Visão Geral");
@@ -373,6 +384,9 @@ export default function AdminClient({
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
   const [changingPassword, setChangingPassword] = useState(false);
+
+  // CRM state
+  const [crmSearch, setCrmSearch] = useState("");
 
   // Controle tab state
   const [trialRestaurantId, setTrialRestaurantId] = useState("");
@@ -878,6 +892,155 @@ export default function AdminClient({
               {/* Top Produtos */}
               <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
                 <h3 className="font-bold text-gray-200 mb-4">🏆 Produtos Mais Pedidos</h3>
+                {topProducts.length === 0 ? (
+                  <p className="text-gray-600 text-sm">Nenhum pedido registrado ainda.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {topProducts.map((p, i) => {
+                      const maxCount = topProducts[0]?.count ?? 1;
+                      const pct = Math.round((p.count / maxCount) * 100);
+                      return (
+                        <div key={p.name}>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="text-gray-300"><span className="text-gray-500 mr-2">#{i + 1}</span>{p.name}</span>
+                            <span className="text-gray-400 font-medium">{p.count} pedidos</span>
+                          </div>
+                          <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                            <div className="h-full bg-purple-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* CRM */}
+        {tab === "CRM" && (() => {
+          const unitToRestaurant: Record<string, string> = {};
+          for (const u of crmData.unitMapping) unitToRestaurant[u.id] = u.restaurant_id;
+
+          const revenueByRestaurant: Record<string, number> = {};
+          const orderCountByRestaurant: Record<string, number> = {};
+          for (const order of crmData.ordersByUnit) {
+            const restId = unitToRestaurant[order.unit_id];
+            if (restId) {
+              revenueByRestaurant[restId] = (revenueByRestaurant[restId] ?? 0) + order.total;
+              orderCountByRestaurant[restId] = (orderCountByRestaurant[restId] ?? 0) + 1;
+            }
+          }
+
+          const cityByRestaurant: Record<string, string> = {};
+          for (const u of crmData.unitMapping) {
+            if (u.city) cityByRestaurant[u.restaurant_id] = u.city;
+          }
+
+          const filteredOwners = crmData.owners.filter((o) => {
+            if (!crmSearch) return true;
+            const s = crmSearch.toLowerCase();
+            const ownerName = [o.owner_first_name, o.owner_last_name].filter(Boolean).join(" ").toLowerCase();
+            const city = (cityByRestaurant[o.id] ?? "").toLowerCase();
+            return (
+              ownerName.includes(s) ||
+              o.name.toLowerCase().includes(s) ||
+              city.includes(s) ||
+              (o.owner_phone ?? "").includes(s) ||
+              (o.whatsapp ?? "").includes(s)
+            );
+          });
+
+          const totalOwners = crmData.owners.filter((o) => o.owner_id).length;
+          const withPhone = crmData.owners.filter((o) => o.owner_phone || o.whatsapp).length;
+          const uniqueCities = new Set(Object.values(cityByRestaurant).filter(Boolean)).size;
+          const totalRevenue = Object.values(revenueByRestaurant).reduce((s, v) => s + v, 0);
+
+          return (
+            <div className="space-y-6">
+              {/* Resumo rápido */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                {[
+                  { icon: "👤", label: "Total de Donos", value: String(totalOwners), sub: "com cadastro", color: "text-purple-400" },
+                  { icon: "📞", label: "Com Telefone", value: String(withPhone), sub: "contato disponível", color: "text-green-400" },
+                  { icon: "🏙️", label: "Cidades", value: String(uniqueCities), sub: "cobertura", color: "text-blue-400" },
+                  { icon: "💵", label: "Faturamento Total", value: fmt(totalRevenue), sub: "pedidos confirmados", color: "text-yellow-400" },
+                ].map(({ icon, label, value, sub, color }) => (
+                  <div key={label} className="bg-gray-900/60 rounded-2xl border border-gray-800 p-5">
+                    <div className="text-2xl mb-2">{icon}</div>
+                    <p className="text-gray-500 text-xs uppercase tracking-wider">{label}</p>
+                    <p className={`text-2xl font-black mt-1 ${color}`}>{value}</p>
+                    <p className="text-gray-600 text-xs mt-0.5">{sub}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Busca */}
+              <input
+                type="text"
+                placeholder="Buscar por nome, telefone ou cidade..."
+                value={crmSearch}
+                onChange={(e) => setCrmSearch(e.target.value)}
+                className="w-full px-4 py-2 rounded-xl bg-gray-800/60 border border-gray-700 text-white text-sm outline-none focus:border-purple-500"
+              />
+
+              {/* Tabela */}
+              <div className="bg-gray-900/60 rounded-2xl border border-gray-800 overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-800 flex justify-between items-center">
+                  <h3 className="font-bold text-gray-200">Clientes FyMenu</h3>
+                  <span className="text-gray-500 text-xs">{filteredOwners.length} registros</span>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-800 text-gray-500 text-xs uppercase tracking-wider">
+                        <th className="px-4 py-3 text-left">Dono</th>
+                        <th className="px-4 py-3 text-left">Restaurante</th>
+                        <th className="px-4 py-3 text-left">Cidade</th>
+                        <th className="px-4 py-3 text-left">Plano</th>
+                        <th className="px-4 py-3 text-left">Telefone</th>
+                        <th className="px-4 py-3 text-right">Faturamento</th>
+                        <th className="px-4 py-3 text-right">Pedidos</th>
+                        <th className="px-4 py-3 text-left">Desde</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredOwners.map((o) => {
+                        const ownerName = [o.owner_first_name, o.owner_last_name].filter(Boolean).join(" ") || "—";
+                        const city = cityByRestaurant[o.id] ?? "—";
+                        const phone = o.owner_phone || o.whatsapp;
+                        const revenue = revenueByRestaurant[o.id] ?? 0;
+                        const orders = orderCountByRestaurant[o.id] ?? 0;
+                        return (
+                          <tr key={o.id} className="border-b border-gray-800/50 hover:bg-gray-800/30">
+                            <td className="px-4 py-2.5 text-gray-300">{ownerName}</td>
+                            <td className="px-4 py-2.5 text-gray-300 max-w-[160px] truncate">{o.name}</td>
+                            <td className="px-4 py-2.5 text-gray-400">{city}</td>
+                            <td className="px-4 py-2.5">
+                              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${PLAN_BADGE[o.plan] ?? "bg-gray-700 text-gray-300"}`}>{o.plan ?? "basic"}</span>
+                            </td>
+                            <td className="px-4 py-2.5">
+                              {phone ? (
+                                <a href={`tel:${phone}`} className="text-green-400 hover:text-green-300 text-xs">{phone}</a>
+                              ) : (
+                                <span className="text-gray-600 text-xs">—</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-2.5 text-right text-gray-300 font-medium">{fmt(revenue)}</td>
+                            <td className="px-4 py-2.5 text-right text-gray-400">{orders}</td>
+                            <td className="px-4 py-2.5 text-gray-500 text-xs">{fmtDate(o.created_at)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Top Produtos */}
+              <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
+                <h3 className="font-bold text-gray-200 mb-4">🏆 Top 20 Produtos (geral)</h3>
                 {topProducts.length === 0 ? (
                   <p className="text-gray-600 text-sm">Nenhum pedido registrado ainda.</p>
                 ) : (
