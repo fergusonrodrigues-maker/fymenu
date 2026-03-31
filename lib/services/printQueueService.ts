@@ -41,7 +41,8 @@ export async function routeOrderToPrinters(
       );
 
       if (printerMapping) {
-        const printerId = printerMapping.printer_configs.id;
+        const pc = printerMapping.printer_configs as { id: string; name: string; num_copies: number } | Array<{ id: string; name: string; num_copies: number }>;
+        const printerId = Array.isArray(pc) ? pc[0]?.id : pc.id;
         if (!printerQueues.has(printerId)) {
           printerQueues.set(printerId, []);
         }
