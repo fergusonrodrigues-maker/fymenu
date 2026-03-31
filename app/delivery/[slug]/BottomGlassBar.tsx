@@ -1,7 +1,7 @@
 // FILE: /app/u/[slug]/BottomGlassBar.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Unit } from "./menuTypes";
 
 const ICONS = {
@@ -35,16 +35,20 @@ function mapsUrl(unit: Unit): string | null {
 
 export default function BottomGlassBar({ unit }: { unit: Unit }) {
   const [isMaximized, setIsMaximized] = useState(false);
+  const [hidden, setHidden] = useState(false);
+  const lastScrollY = useRef(0);
 
-  // Maximiza quando faltam ~12% para o fim da página
   useEffect(() => {
     function onScroll() {
       const scrolled = window.scrollY + window.innerHeight;
       const total = document.documentElement.scrollHeight;
       setIsMaximized(scrolled >= total * 0.88);
+      if (window.scrollY > lastScrollY.current + 5) setHidden(true);
+      else if (window.scrollY < lastScrollY.current - 5) setHidden(false);
+      lastScrollY.current = window.scrollY;
     }
     window.addEventListener("scroll", onScroll, { passive: true });
-    onScroll(); // checa no mount
+    onScroll();
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
@@ -59,7 +63,7 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
 
   return (
     <div style={{
-      position: "fixed", bottom: isMaximized ? 0 : "calc(16px + env(safe-area-inset-bottom, 0px))", left: 0, right: 0,
+      position: "fixed", bottom: hidden ? "-120px" : isMaximized ? 0 : "calc(16px + env(safe-area-inset-bottom, 0px))", left: 0, right: 0,
       display: "flex", justifyContent: "center",
       zIndex: 50, padding: isMaximized ? "0" : "0 12px",
       pointerEvents: "none",
