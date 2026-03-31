@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+html {
+  background-color: #000000;
+}
+
+body {
+  background-color: #000000;
+}
+
 /* Prevent iOS Safari auto-zoom on focused inputs */
 input, textarea, select {
   font-size: 16px;
