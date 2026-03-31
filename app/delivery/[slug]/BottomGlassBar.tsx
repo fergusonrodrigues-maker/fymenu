@@ -43,7 +43,7 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
     function onScroll() {
       const scrolled = window.scrollY + window.innerHeight;
       const total = document.documentElement.scrollHeight;
-      setIsMaximized(scrolled >= total * 0.88);
+      setIsMaximized(scrolled >= total * 0.97);
       if (window.scrollY > lastScrollY.current) {
         scrollAccumulator.current += window.scrollY - lastScrollY.current;
         if (scrollAccumulator.current > 300) setHidden(true);
