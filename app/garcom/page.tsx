@@ -21,7 +21,7 @@ export default async function WaiterPage() {
 
   const { data: unit } = await supabase
     .from("units")
-    .select("id, name, slug")
+    .select("id, name, slug, comanda_close_permission")
     .eq("restaurant_id", restaurant.id)
     .single();
 
@@ -40,6 +40,7 @@ export default async function WaiterPage() {
       unitName={unit.name}
       unitSlug={unit.slug}
       restaurantName={restaurant.name}
+      canCloseComanda={(unit.comanda_close_permission ?? "somente_caixa") === "garcom_e_caixa"}
       initialOrders={orders ?? []}
     />
   );

@@ -6,6 +6,7 @@ import { QRCodeSVG } from "qrcode.react";
 import TableCard from "./components/TableCard";
 import EditOrderModal from "./components/EditOrderModal";
 import PDVModal from "./components/PDVModal";
+import { logComandaAction } from "@/app/hooks/useComandaAudit";
 
 export type WaiterOrder = {
   id: string;
@@ -33,6 +34,7 @@ interface WaiterClientProps {
   unitName: string;
   unitSlug: string;
   restaurantName: string;
+  canCloseComanda: boolean;
   initialOrders: WaiterOrder[];
 }
 
@@ -43,6 +45,7 @@ export default function WaiterClient({
   unitName,
   unitSlug,
   restaurantName,
+  canCloseComanda,
   initialOrders,
 }: WaiterClientProps) {
   const [orders, setOrders] = useState<WaiterOrder[]>(initialOrders);
@@ -123,6 +126,15 @@ export default function WaiterClient({
       waiter_confirmed_at: new Date().toISOString(),
       kitchen_status: "waiting",
     } as any);
+    await logComandaAction({
+      comanda_id: order.id,
+      order_id: order.id,
+      unit_id: unitId,
+      action: "comanda_opened",
+      new_value: { table_number: order.table_number },
+      performed_by_role: "garcom",
+      performed_by_name: unitName,
+    });
   };
 
   // Tabs
@@ -240,11 +252,26 @@ export default function WaiterClient({
                       key={key}
                       tableKey={key}
                       orders={tableOrders}
-                      onStatusChange={(id, status) => {
-                        if (status === "delivered") {
+                      canCloseComanda={canCloseComanda}
+                      onStatusChange={async (id, status) => {
+                        if (status === "delivered" && canCloseComanda) {
                           setPdvOrder(tableOrders.find((o) => o.id === id) ?? null);
+                        } else if (status === "pending_payment") {
+                          await updateOrder(id, { waiter_status: "pending_payment" } as any);
+                          const order = tableOrders.find((o) => o.id === id);
+                          if (order) {
+                            await logComandaAction({
+                              comanda_id: id,
+                              order_id: id,
+                              unit_id: unitId,
+                              action: "sent_to_cashier",
+                              new_value: { table_number: order.table_number },
+                              performed_by_role: "garcom",
+                              performed_by_name: unitName,
+                            });
+                          }
                         } else {
-                          updateOrder(id, { waiter_status: status } as any);
+                          await updateOrder(id, { waiter_status: status } as any);
                         }
                       }}
                     />
@@ -259,8 +286,11 @@ export default function WaiterClient({
       {editOrder && (
         <EditOrderModal
           order={editOrder}
+          unitId={unitId}
+          operatorName={unitName}
           onClose={() => setEditOrder(null)}
           onSave={async (updatedOrder) => {
+            const originalItems = editOrder.items;
             await supabase
               .from("order_intents")
               .update({ items: updatedOrder.items, total: updatedOrder.total, notes: updatedOrder.notes })
@@ -269,6 +299,23 @@ export default function WaiterClient({
               prev.map((o) => (o.id === updatedOrder.id ? { ...o, ...updatedOrder } : o))
             );
             setEditOrder(null);
+            // Log qty changes for remaining items
+            for (const updated of updatedOrder.items) {
+              const original = originalItems.find((i) => i.product_id === updated.product_id);
+              if (original && original.qty !== updated.qty) {
+                await logComandaAction({
+                  comanda_id: updatedOrder.id,
+                  order_id: updatedOrder.id,
+                  unit_id: unitId,
+                  action: "item_qty_changed",
+                  item_name: updated.code_name,
+                  old_value: { qty: original.qty },
+                  new_value: { qty: updated.qty },
+                  performed_by_role: "garcom",
+                  performed_by_name: unitName,
+                });
+              }
+            }
           }}
         />
       )}
@@ -298,6 +345,24 @@ export default function WaiterClient({
               amount: pdvOrder.total,
               method,
               status: "confirmed",
+            });
+            await logComandaAction({
+              comanda_id: pdvOrder.id,
+              order_id: pdvOrder.id,
+              unit_id: unitId,
+              action: "payment_received",
+              new_value: { amount: pdvOrder.total, method, received_by: unitName },
+              performed_by_role: "garcom",
+              performed_by_name: unitName,
+            });
+            await logComandaAction({
+              comanda_id: pdvOrder.id,
+              order_id: pdvOrder.id,
+              unit_id: unitId,
+              action: "comanda_closed",
+              new_value: { total: pdvOrder.total, payment_method: method, closed_by: unitName },
+              performed_by_role: "garcom",
+              performed_by_name: unitName,
             });
             setOrders((prev) => prev.filter((o) => o.id !== pdvOrder.id));
             setPdvOrder(null);

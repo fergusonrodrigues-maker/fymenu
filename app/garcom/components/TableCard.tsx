@@ -12,6 +12,7 @@ type Order = {
 interface TableCardProps {
   tableKey: string;
   orders: Order[];
+  canCloseComanda: boolean;
   onStatusChange: (orderId: string, waiterStatus: string) => void;
 }
 
@@ -20,15 +21,17 @@ const STATUS_LABEL: Record<string, string> = {
   preparing: "Preparando",
   ready: "Pronto",
   delivered: "Entregue",
+  pending_payment: "Aguard. Caixa",
 };
 
 const STATUS_COLOR: Record<string, string> = {
   pending: "bg-orange-500/20 border-orange-500/40 text-orange-300",
   preparing: "bg-blue-500/20 border-blue-500/40 text-blue-300",
   ready: "bg-green-500/20 border-green-500/40 text-green-300",
+  pending_payment: "bg-purple-500/20 border-purple-500/40 text-purple-300",
 };
 
-export default function TableCard({ tableKey, orders, onStatusChange }: TableCardProps) {
+export default function TableCard({ tableKey, orders, canCloseComanda, onStatusChange }: TableCardProps) {
   const hasReady = orders.some((o) => o.waiter_status === "ready");
   const hasPending = orders.some((o) => !o.waiter_status || o.waiter_status === "pending");
 
@@ -109,12 +112,20 @@ export default function TableCard({ tableKey, orders, onStatusChange }: TableCar
                     ✅ Pronto
                   </button>
                 )}
-                {ws === "ready" && (
+                {ws === "ready" && canCloseComanda && (
                   <button
                     onClick={() => onStatusChange(order.id, "delivered")}
                     className="flex-1 py-1.5 rounded-md bg-slate-600 hover:bg-slate-500 text-white text-xs font-medium transition-colors"
                   >
                     🚀 Entregar
+                  </button>
+                )}
+                {ws === "ready" && !canCloseComanda && (
+                  <button
+                    onClick={() => onStatusChange(order.id, "pending_payment")}
+                    className="flex-1 py-1.5 rounded-md bg-purple-600 hover:bg-purple-500 text-white text-xs font-medium transition-colors"
+                  >
+                    💳 Enviar para Caixa
                   </button>
                 )}
               </div>

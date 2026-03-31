@@ -1049,7 +1049,7 @@ export default function DashboardClient({
         <EstoqueModal unit={unit} stockStats={stockStats} />
       </Modal>
       <Modal open={modal === "operacoes"} onClose={close} title="Operações">
-        {unit && <RestaurantOperationsModal unitId={unit.id} />}
+        {unit && <RestaurantOperationsModal unitId={unit.id} comandaClosePermission={unit.comanda_close_permission ?? "somente_caixa"} />}
       </Modal>
       <Modal open={modal === "impressoras"} onClose={close} title="Impressoras">
         {unit && <PrinterModal unitId={unit.id} categories={categories} />}
