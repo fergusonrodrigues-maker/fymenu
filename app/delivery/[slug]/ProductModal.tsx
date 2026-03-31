@@ -39,6 +39,7 @@ export default function ProductModal({
   const [ageConfirmed, setAgeConfirmed] = useState(false);
   const [starred, setStarred] = useState(false);
   const [selectedAddons, setSelectedAddons] = useState<UpsellItem[]>([]);
+  const [pressing, setPressing] = useState(false);
 
   const { addons, fetchAddons } = useProductAddons({ unitId });
 
@@ -497,24 +498,29 @@ export default function ProductModal({
             <button
               onClick={handleOrder}
               disabled={!canOrder}
-              className="active:scale-[0.98]"
+              onPointerDown={() => setPressing(true)}
+              onPointerUp={() => setPressing(false)}
+              onPointerLeave={() => setPressing(false)}
               style={{
                 position: "relative", width: "100%",
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
-                padding: "13px", borderRadius: 999,
-                border: canOrder ? "1px solid rgba(255,255,255,0.22)" : "1px solid rgba(255,255,255,0.08)",
-                background: canOrder ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.05)",
+                padding: "13px", borderRadius: 14,
+                border: "none",
+                background: canOrder ? "linear-gradient(135deg, #00ffae, #00d9ff)" : "rgba(255,255,255,0.05)",
                 color: canOrder ? "#fff" : "rgba(255,255,255,0.28)",
-                fontSize: 14, fontWeight: 500,
+                fontSize: 14, fontWeight: canOrder ? 900 : 500,
+                textTransform: canOrder ? "uppercase" : "none",
+                letterSpacing: canOrder ? "0.05em" : "normal",
                 cursor: canOrder ? "pointer" : "not-allowed",
-                overflow: "hidden", transition: "all 0.2s",
+                overflow: "hidden", transition: "all 0.15s ease",
+                transform: canOrder && pressing ? "scale(0.96) translateY(2px)" : "scale(1) translateY(0)",
+                boxShadow: canOrder
+                  ? pressing
+                    ? "0 1px 4px rgba(0, 255, 174, 0.2), inset 0 2px 4px rgba(0,0,0,0.2)"
+                    : "0 4px 15px rgba(0, 255, 174, 0.3), inset 0 1px 0 rgba(255,255,255,0.25)"
+                  : "none",
               }}
             >
-              <span style={{
-                position: "absolute", top: 0, left: 0, right: 0, height: "50%",
-                background: "rgba(255,255,255,0.07)",
-                borderRadius: "999px 999px 0 0", pointerEvents: "none",
-              }} />
               <span style={{ position: "relative", zIndex: 1 }}>
                 {canOrder
                   ? mode === "presencial"
