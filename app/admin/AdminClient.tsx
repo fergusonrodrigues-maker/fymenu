@@ -57,6 +57,17 @@ interface Props {
     ordersByUnit: Array<{ unit_id: string; total: number; status: string }>;
     unitMapping: Array<{ id: string; restaurant_id: string; city: string | null; slug: string }>;
   };
+  consumerData: {
+    orders: Array<{
+      id: string; unit_id: string; items: any; table_number: number | null;
+      total: string; payment_method: string | null; status: string;
+      notes: string | null; created_at: string;
+    }>;
+    events: Array<{
+      id: string; unit_id: string; event: string;
+      product_id: string | null; created_at: string;
+    }>;
+  };
 }
 
 const TABS = ["Visão Geral", "Usuários", "Faturamento", "Analytics", "CRM", "Controle"] as const;
@@ -365,7 +376,7 @@ function ActionBtn({
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function AdminClient({
   stats, restaurants, payments, topProducts,
-  planCounts, statusCounts, cities, unitsByRestaurant, unitFeatures, user, analyticsData, crmData,
+  planCounts, statusCounts, cities, unitsByRestaurant, unitFeatures, user, analyticsData, crmData, consumerData,
 }: Props) {
   const supabase = createClient();
   const [tab, setTab] = useState<Tab>("Visão Geral");
@@ -1063,6 +1074,250 @@ export default function AdminClient({
                   </div>
                 )}
               </div>
+
+              {/* ── DADOS DE CONSUMO ─────────────────────────────────── */}
+              {(() => {
+                const orders = consumerData.orders;
+                const events = consumerData.events;
+
+                // A. Resumo
+                const totalPedidos = orders.length;
+                const totalFat = orders.reduce((s, o) => s + (parseFloat(String(o.total)) || 0), 0);
+                const ticketMedioConsumer = totalPedidos > 0 ? totalFat / totalPedidos : 0;
+                const pedidosMesa = orders.filter((o) => o.table_number && o.table_number > 0).length;
+                const pedidosDelivery = totalPedidos - pedidosMesa;
+
+                // B. Horários de pico
+                const hourCount = new Array(24).fill(0);
+                for (const o of orders) hourCount[new Date(o.created_at).getHours()]++;
+                const maxHour = Math.max(...hourCount, 1);
+                const peakHour = hourCount.indexOf(Math.max(...hourCount));
+
+                // C. Dias da semana
+                const dayNames = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+                const dayCount = new Array(7).fill(0);
+                for (const o of orders) dayCount[new Date(o.created_at).getDay()]++;
+                const maxDay = Math.max(...dayCount, 1);
+                const peakDay = dayCount.indexOf(Math.max(...dayCount));
+
+                // D. Top 20 produtos
+                const productCount: Record<string, number> = {};
+                for (const o of orders) {
+                  const items = Array.isArray(o.items) ? o.items : [];
+                  for (const item of items) {
+                    const name: string = item.name ?? item.code_name ?? "Sem nome";
+                    productCount[name] = (productCount[name] ?? 0) + (item.qty ?? 1);
+                  }
+                }
+                const topConsumerProducts = Object.entries(productCount)
+                  .map(([name, count]) => ({ name, count }))
+                  .sort((a, b) => b.count - a.count)
+                  .slice(0, 20);
+                const maxProd = topConsumerProducts[0]?.count ?? 1;
+
+                // E. Métodos de pagamento
+                const payMap: Record<string, number> = {};
+                for (const o of orders) {
+                  const m = o.payment_method ?? "Não informado";
+                  payMap[m] = (payMap[m] ?? 0) + 1;
+                }
+                const payEntries = Object.entries(payMap).sort((a, b) => b[1] - a[1]);
+                const maxPay = payEntries[0]?.[1] ?? 1;
+
+                // F. Comportamento no cardápio
+                const menuViews = events.filter((e) => e.event === "menu_view").length;
+                const productClicks = events.filter((e) => e.event === "product_click").length;
+                const waClicks = events.filter((e) => e.event === "whatsapp_click").length;
+                const convRate = menuViews > 0 ? ((totalPedidos / menuViews) * 100).toFixed(1) : "0.0";
+
+                // G. Pedidos por restaurante
+                const unitToRestName: Record<string, string> = {};
+                const unitToRestId: Record<string, string> = {};
+                for (const u of crmData.unitMapping) {
+                  unitToRestId[u.id] = u.restaurant_id;
+                }
+                for (const o of crmData.owners) unitToRestName[o.id] = o.name;
+                const restOrderCount: Record<string, number> = {};
+                const restRevenue: Record<string, number> = {};
+                for (const o of orders) {
+                  const rid = unitToRestId[o.unit_id];
+                  if (!rid) continue;
+                  restOrderCount[rid] = (restOrderCount[rid] ?? 0) + 1;
+                  restRevenue[rid] = (restRevenue[rid] ?? 0) + (parseFloat(String(o.total)) || 0);
+                }
+                const restActivity = Object.entries(restRevenue)
+                  .map(([id, rev]) => ({
+                    name: unitToRestName[id] ?? id.slice(0, 8),
+                    orders: restOrderCount[id] ?? 0,
+                    revenue: rev,
+                    ticket: restOrderCount[id] ? rev / restOrderCount[id] : 0,
+                  }))
+                  .sort((a, b) => b.revenue - a.revenue)
+                  .slice(0, 20);
+
+                return (
+                  <>
+                    <div className="border-t border-gray-800 pt-2">
+                      <h2 className="text-lg font-bold text-gray-200 mb-4">📊 Dados de Consumo (clientes dos restaurantes)</h2>
+                    </div>
+
+                    {/* A. Resumo */}
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                      {[
+                        { icon: "🛒", label: "Total de Pedidos", value: String(totalPedidos), sub: "confirmados", color: "text-purple-400" },
+                        { icon: "💰", label: "Ticket Médio", value: fmt(Math.round(ticketMedioConsumer)), sub: "por pedido", color: "text-yellow-400" },
+                        { icon: "🚚", label: "Delivery", value: String(pedidosDelivery), sub: "sem mesa", color: "text-blue-400" },
+                        { icon: "🪑", label: "Mesa", value: String(pedidosMesa), sub: "com mesa", color: "text-green-400" },
+                      ].map(({ icon, label, value, sub, color }) => (
+                        <div key={label} className="bg-gray-900/60 rounded-2xl border border-gray-800 p-5">
+                          <div className="text-2xl mb-2">{icon}</div>
+                          <p className="text-gray-500 text-xs uppercase tracking-wider">{label}</p>
+                          <p className={`text-2xl font-black mt-1 ${color}`}>{value}</p>
+                          <p className="text-gray-600 text-xs mt-0.5">{sub}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* B. Horários de pico */}
+                    <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
+                      <h3 className="font-bold text-gray-200 mb-1">⏰ Horários de Pico</h3>
+                      <p className="text-gray-500 text-xs mb-4">Pico: {peakHour}h ({hourCount[peakHour]} pedidos)</p>
+                      <div className="flex items-end gap-0.5" style={{ height: 100 }}>
+                        {hourCount.map((count, h) => (
+                          <div key={h} className="flex-1 flex flex-col items-center">
+                            <div
+                              className="w-full rounded-t transition-all"
+                              style={{
+                                height: `${(count / maxHour) * 100}%`,
+                                minHeight: count > 0 ? 2 : 0,
+                                backgroundColor: h === peakHour ? "#a855f7" : "#6b21a8",
+                              }}
+                            />
+                            {h % 3 === 0 && (
+                              <span className="text-gray-600 text-[8px] mt-0.5">{h}h</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* C. Dias da semana */}
+                    <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
+                      <h3 className="font-bold text-gray-200 mb-4">📅 Pedidos por Dia da Semana</h3>
+                      <div className="space-y-2">
+                        {dayNames.map((day, i) => (
+                          <div key={day} className="flex items-center gap-3">
+                            <span className={`text-xs w-7 ${i === peakDay ? "text-purple-300 font-bold" : "text-gray-500"}`}>{day}</span>
+                            <div className="flex-1 h-2 bg-gray-800 rounded-full overflow-hidden">
+                              <div
+                                className="h-full rounded-full"
+                                style={{
+                                  width: `${(dayCount[i] / maxDay) * 100}%`,
+                                  backgroundColor: i === peakDay ? "#a855f7" : "#6b21a8",
+                                }}
+                              />
+                            </div>
+                            <span className="text-gray-400 text-xs w-8 text-right">{dayCount[i]}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* D. Top 20 produtos */}
+                    <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
+                      <h3 className="font-bold text-gray-200 mb-4">🏆 Top 20 Produtos Mais Pedidos</h3>
+                      {topConsumerProducts.length === 0 ? (
+                        <p className="text-gray-600 text-sm">Sem dados.</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {topConsumerProducts.map((p, i) => (
+                            <div key={p.name}>
+                              <div className="flex justify-between text-sm mb-0.5">
+                                <span className="text-gray-300 truncate"><span className="text-gray-500 mr-2">#{i + 1}</span>{p.name}</span>
+                                <span className="text-gray-400 font-medium ml-2 shrink-0">{p.count}</span>
+                              </div>
+                              <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                                <div className="h-full bg-purple-500/70 rounded-full" style={{ width: `${(p.count / maxProd) * 100}%` }} />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* E. Métodos de pagamento */}
+                    <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
+                      <h3 className="font-bold text-gray-200 mb-4">💳 Métodos de Pagamento</h3>
+                      {payEntries.length === 0 ? (
+                        <p className="text-gray-600 text-sm">Sem dados.</p>
+                      ) : (
+                        <div className="space-y-3">
+                          {payEntries.map(([method, count]) => {
+                            const pct = Math.round((count / (totalPedidos || 1)) * 100);
+                            return (
+                              <div key={method}>
+                                <div className="flex justify-between text-sm mb-1">
+                                  <span className="text-gray-300 capitalize">{method}</span>
+                                  <span className="text-gray-400">{count} <span className="text-gray-600">({pct}%)</span></span>
+                                </div>
+                                <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                                  <div className="h-full bg-purple-500/60 rounded-full" style={{ width: `${(count / maxPay) * 100}%` }} />
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* F. Comportamento no cardápio */}
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                      {[
+                        { icon: "👁️", label: "Visualizações", value: String(menuViews), sub: "menu_view", color: "text-blue-400" },
+                        { icon: "👆", label: "Cliques Produto", value: String(productClicks), sub: "product_click", color: "text-purple-400" },
+                        { icon: "💬", label: "Cliques WhatsApp", value: String(waClicks), sub: "whatsapp_click", color: "text-green-400" },
+                        { icon: "📈", label: "Taxa Conversão", value: `${convRate}%`, sub: "pedidos / views", color: "text-yellow-400" },
+                      ].map(({ icon, label, value, sub, color }) => (
+                        <div key={label} className="bg-gray-900/60 rounded-2xl border border-gray-800 p-5">
+                          <div className="text-2xl mb-2">{icon}</div>
+                          <p className="text-gray-500 text-xs uppercase tracking-wider">{label}</p>
+                          <p className={`text-2xl font-black mt-1 ${color}`}>{value}</p>
+                          <p className="text-gray-600 text-xs mt-0.5">{sub}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* G. Pedidos por restaurante */}
+                    <div className="bg-gray-900/60 rounded-2xl border border-gray-800 overflow-hidden">
+                      <div className="px-6 py-4 border-b border-gray-800">
+                        <h3 className="font-bold text-gray-200">📦 Pedidos por Restaurante</h3>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-b border-gray-800 text-gray-500 text-xs uppercase tracking-wider">
+                              <th className="px-4 py-3 text-left">Restaurante</th>
+                              <th className="px-4 py-3 text-right">Pedidos</th>
+                              <th className="px-4 py-3 text-right">Faturamento</th>
+                              <th className="px-4 py-3 text-right">Ticket Médio</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {restActivity.map((r) => (
+                              <tr key={r.name} className="border-b border-gray-800/50 hover:bg-gray-800/30">
+                                <td className="px-4 py-2.5 text-gray-300 truncate max-w-[200px]">{r.name}</td>
+                                <td className="px-4 py-2.5 text-right text-gray-300 font-medium">{r.orders}</td>
+                                <td className="px-4 py-2.5 text-right text-gray-300">{fmt(Math.round(r.revenue))}</td>
+                                <td className="px-4 py-2.5 text-right text-gray-400">{fmt(Math.round(r.ticket))}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
             </div>
           );
         })()}
