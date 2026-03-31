@@ -148,40 +148,6 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
             </div>
           </div>
 
-          <button
-            onClick={() => {
-              const html = document.documentElement;
-              const isDark = html.classList.contains("dark");
-              if (isDark) {
-                html.classList.remove("dark");
-                html.classList.add("light");
-              } else {
-                html.classList.remove("light");
-                html.classList.add("dark");
-              }
-            }}
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 12,
-              background: "rgba(255,255,255,0.12)",
-              border: "0.5px solid rgba(255,255,255,0.15)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
-              fontSize: 14,
-              flexShrink: 0,
-              position: "absolute",
-              top: 8,
-              right: 8,
-              zIndex: 10,
-            }}
-            aria-label="Alternar tema"
-          >
-            🌗
-          </button>
-
           {/* Spacer para o logo flutuante */}
           <div style={{ width: 72, flexShrink: 0 }} />
 
@@ -238,39 +204,6 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path d="M8 13V3M8 3L4 7M8 3L12 7" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-          </button>
-
-          {/* Toggle tema */}
-          <button
-            onClick={() => {
-              const html = document.documentElement;
-              const isDark = html.classList.contains("dark");
-              if (isDark) {
-                html.classList.remove("dark");
-                html.classList.add("light");
-              } else {
-                html.classList.remove("light");
-                html.classList.add("dark");
-              }
-            }}
-            style={{
-              position: "absolute",
-              top: 14,
-              left: 16,
-              width: 36,
-              height: 36,
-              borderRadius: 12,
-              background: "rgba(255,255,255,0.10)",
-              border: "0.5px solid rgba(255,255,255,0.12)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
-              fontSize: 16,
-            }}
-            aria-label="Alternar tema"
-          >
-            🌗
           </button>
 
           {wa && (

@@ -283,6 +283,43 @@ export default function MenuClient({
           onUpdateQty={updateCartQty}
         />
       )}
+
+      {mode === "delivery" && (
+        <button
+          onClick={() => {
+            const html = document.documentElement;
+            const isDark = html.classList.contains("dark");
+            if (isDark) {
+              html.classList.remove("dark");
+              html.classList.add("light");
+            } else {
+              html.classList.remove("light");
+              html.classList.add("dark");
+            }
+          }}
+          style={{
+            position: "fixed",
+            bottom: "calc(100px + env(safe-area-inset-bottom, 0px))",
+            left: 16,
+            width: 36,
+            height: 36,
+            borderRadius: 12,
+            background: "rgba(255,255,255,0.10)",
+            backdropFilter: "blur(20px)",
+            WebkitBackdropFilter: "blur(20px)",
+            border: "0.5px solid rgba(255,255,255,0.15)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            fontSize: 14,
+            zIndex: 40,
+          }}
+          aria-label="Alternar tema"
+        >
+          🌗
+        </button>
+      )}
     </>
   );
 }
