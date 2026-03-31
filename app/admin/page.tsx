@@ -28,6 +28,10 @@ export default async function AdminPage() {
     { data: recentPayments },
     { data: units },
     { data: unitFeatures },
+    { data: allRestaurantsDetailed },
+    { data: allUnitsDetailed },
+    { data: allOrdersCount },
+    { data: allMenuEvents },
   ] = await Promise.all([
     admin.from("restaurants").select("*", { count: "exact", head: true }),
     admin
@@ -52,6 +56,21 @@ export default async function AdminPage() {
       .limit(50),
     admin.from("units").select("id, restaurant_id, city"),
     admin.from("unit_features").select("unit_id, feature, enabled"),
+    admin
+      .from("restaurants")
+      .select("id, name, plan, status, created_at, trial_ends_at, free_access")
+      .order("created_at", { ascending: false }),
+    admin
+      .from("units")
+      .select("id, restaurant_id, slug, city, is_published, created_at"),
+    admin
+      .from("order_intents")
+      .select("id, unit_id, created_at, status, total")
+      .eq("status", "confirmed"),
+    admin
+      .from("menu_events")
+      .select("id, unit_id, event, created_at")
+      .gte("created_at", thirtyDaysAgo),
   ]);
 
   const revenue30d = payments30d?.reduce((s, p) => s + (p.amount ?? 0), 0) ?? 0;
@@ -118,6 +137,12 @@ export default async function AdminPage() {
       unitsByRestaurant={unitsByRestaurant}
       unitFeatures={unitFeatures ?? []}
       user={{ email: user.email ?? "", id: user.id }}
+      analyticsData={{
+        restaurants: allRestaurantsDetailed ?? [],
+        units: allUnitsDetailed ?? [],
+        orders: allOrdersCount ?? [],
+        events: allMenuEvents ?? [],
+      }}
     />
   );
 }

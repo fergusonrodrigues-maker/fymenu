@@ -40,6 +40,12 @@ interface Props {
   unitsByRestaurant: Record<string, string>;
   unitFeatures: { unit_id: string; feature: string; enabled: boolean }[];
   user: { email: string; id: string } | null;
+  analyticsData: {
+    restaurants: Array<{ id: string; name: string; plan: string; status: string; created_at: string; trial_ends_at: string | null; free_access: boolean }>;
+    units: Array<{ id: string; restaurant_id: string; slug: string; city: string | null; is_published: boolean; created_at: string }>;
+    orders: Array<{ id: string; unit_id: string; created_at: string; status: string; total: number }>;
+    events: Array<{ id: string; unit_id: string; event: string; created_at: string }>;
+  };
 }
 
 const TABS = ["Visão Geral", "Usuários", "Faturamento", "Analytics", "Controle"] as const;
@@ -348,7 +354,7 @@ function ActionBtn({
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function AdminClient({
   stats, restaurants, payments, topProducts,
-  planCounts, statusCounts, cities, unitsByRestaurant, unitFeatures, user,
+  planCounts, statusCounts, cities, unitsByRestaurant, unitFeatures, user, analyticsData,
 }: Props) {
   const supabase = createClient();
   const [tab, setTab] = useState<Tab>("Visão Geral");
@@ -676,38 +682,227 @@ export default function AdminClient({
         )}
 
         {/* ANALYTICS */}
-        {tab === "Analytics" && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <ChartPlaceholder title="📈 Crescimento de Restaurantes (30d)" />
-              <ChartPlaceholder title="💰 Receita Mensal (6 meses)" />
-            </div>
-            <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
-              <h3 className="font-bold text-gray-200 mb-4">🏆 Produtos Mais Pedidos</h3>
-              {topProducts.length === 0 ? (
-                <p className="text-gray-600 text-sm">Nenhum pedido registrado ainda.</p>
-              ) : (
+        {tab === "Analytics" && (() => {
+          const now = Date.now();
+          const MS_DAY = 86400000;
+
+          // 1. Tempo médio no plano
+          const planTenure: Record<string, number[]> = {};
+          for (const r of analyticsData.restaurants) {
+            const plan = r.plan ?? "basic";
+            const days = Math.floor((now - new Date(r.created_at).getTime()) / MS_DAY);
+            if (!planTenure[plan]) planTenure[plan] = [];
+            planTenure[plan].push(days);
+          }
+          const planTenureAvg = Object.entries(planTenure).map(([plan, vals]) => ({
+            plan,
+            avg: Math.round(vals.reduce((a, b) => a + b, 0) / vals.length),
+          })).sort((a, b) => b.avg - a.avg);
+
+          // 2. Status counts
+          const statusMap: Record<string, number> = {};
+          for (const r of analyticsData.restaurants) {
+            statusMap[r.status] = (statusMap[r.status] ?? 0) + 1;
+          }
+          const totalR = analyticsData.restaurants.length || 1;
+          const statusColors: Record<string, string> = {
+            active: "bg-green-500",
+            trial: "bg-yellow-500",
+            paused: "bg-orange-500",
+            canceled: "bg-red-500",
+          };
+          const statusLabels: Record<string, string> = {
+            active: "Ativo",
+            trial: "Trial",
+            paused: "Pausado",
+            canceled: "Cancelado",
+          };
+
+          // 3. Crescimento últimos 30 dias
+          const growthMap: Record<string, number> = {};
+          const cutoff = now - 30 * MS_DAY;
+          for (const r of analyticsData.restaurants) {
+            const t = new Date(r.created_at).getTime();
+            if (t >= cutoff) {
+              const day = new Date(r.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+              growthMap[day] = (growthMap[day] ?? 0) + 1;
+            }
+          }
+          const growthData: Array<{ label: string; value: number }> = [];
+          for (let i = 29; i >= 0; i--) {
+            const d = new Date(now - i * MS_DAY);
+            const label = d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+            growthData.push({ label, value: growthMap[label] ?? 0 });
+          }
+
+          // 4. Clientes por cidade
+          const cityMap: Record<string, number> = {};
+          for (const u of analyticsData.units) {
+            const c = u.city?.trim() || "Não informado";
+            cityMap[c] = (cityMap[c] ?? 0) + 1;
+          }
+          const cityData = Object.entries(cityMap)
+            .map(([city, count]) => ({ city, count }))
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 10);
+          const maxCity = cityData[0]?.count || 1;
+
+          // 5. Atividade por restaurante
+          const unitToRestaurant: Record<string, string> = {};
+          for (const u of analyticsData.units) unitToRestaurant[u.id] = u.restaurant_id;
+          const ordersByRestaurant: Record<string, number> = {};
+          for (const o of analyticsData.orders) {
+            const rid = unitToRestaurant[o.unit_id];
+            if (rid) ordersByRestaurant[rid] = (ordersByRestaurant[rid] ?? 0) + 1;
+          }
+          const eventsByRestaurant: Record<string, number> = {};
+          for (const e of analyticsData.events) {
+            const rid = unitToRestaurant[e.unit_id];
+            if (rid) eventsByRestaurant[rid] = (eventsByRestaurant[rid] ?? 0) + 1;
+          }
+          const activityTable = analyticsData.restaurants.map((r) => ({
+            id: r.id,
+            name: r.name,
+            plan: r.plan ?? "basic",
+            status: r.status,
+            orders: ordersByRestaurant[r.id] ?? 0,
+            events: eventsByRestaurant[r.id] ?? 0,
+            daysActive: Math.floor((now - new Date(r.created_at).getTime()) / MS_DAY),
+          })).sort((a, b) => b.orders - a.orders).slice(0, 20);
+
+          return (
+            <div className="space-y-6">
+              {/* Tempo Médio no Plano */}
+              <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
+                <h3 className="font-bold text-gray-200 mb-4">📅 Tempo Médio no Plano</h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {planTenureAvg.map(({ plan, avg }) => (
+                    <div key={plan} className="bg-gray-800/60 rounded-xl p-4 text-center">
+                      <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">{plan}</p>
+                      <p className="text-2xl font-black text-purple-300">{avg}</p>
+                      <p className="text-gray-500 text-xs">dias</p>
+                    </div>
+                  ))}
+                  {planTenureAvg.length === 0 && <p className="text-gray-600 text-sm col-span-3">Sem dados.</p>}
+                </div>
+              </div>
+
+              {/* Status */}
+              <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
+                <h3 className="font-bold text-gray-200 mb-4">⚡ Tempo Ativo vs Inativo</h3>
                 <div className="space-y-3">
-                  {topProducts.map((p, i) => {
-                    const maxCount = topProducts[0]?.count ?? 1;
-                    const pct = Math.round((p.count / maxCount) * 100);
+                  {["active", "trial", "paused", "canceled"].map((s) => {
+                    const count = statusMap[s] ?? 0;
+                    const pct = Math.round((count / totalR) * 100);
                     return (
-                      <div key={p.name}>
+                      <div key={s}>
                         <div className="flex justify-between text-sm mb-1">
-                          <span className="text-gray-300"><span className="text-gray-500 mr-2">#{i + 1}</span>{p.name}</span>
-                          <span className="text-gray-400 font-medium">{p.count} pedidos</span>
+                          <span className="text-gray-300">{statusLabels[s] ?? s}</span>
+                          <span className="text-gray-400">{count} <span className="text-gray-600">({pct}%)</span></span>
                         </div>
-                        <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
-                          <div className="h-full bg-purple-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                        <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                          <div className={`h-full rounded-full transition-all ${statusColors[s] ?? "bg-gray-500"}`} style={{ width: `${pct}%` }} />
                         </div>
                       </div>
                     );
                   })}
                 </div>
-              )}
+              </div>
+
+              {/* Crescimento 30d */}
+              <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
+                <h3 className="font-bold text-gray-200 mb-4">📈 Crescimento de Cadastros (últimos 30 dias)</h3>
+                <BarChart data={growthData} />
+              </div>
+
+              {/* Clientes por Cidade */}
+              <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
+                <h3 className="font-bold text-gray-200 mb-4">🌆 Clientes por Cidade (top 10)</h3>
+                {cityData.length === 0 ? (
+                  <p className="text-gray-600 text-sm">Sem dados de cidade.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {cityData.map(({ city, count }) => {
+                      const pct = Math.round((count / maxCity) * 100);
+                      return (
+                        <div key={city}>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="text-gray-300">{city}</span>
+                            <span className="text-gray-400 font-medium">{count}</span>
+                          </div>
+                          <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                            <div className="h-full bg-purple-500/70 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Atividade por Restaurante */}
+              <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
+                <h3 className="font-bold text-gray-200 mb-4">🏃 Atividade por Restaurante (top 20)</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-gray-500 text-xs uppercase tracking-wider border-b border-gray-800">
+                        <th className="text-left pb-3 pr-4">Nome</th>
+                        <th className="text-left pb-3 pr-4">Plano</th>
+                        <th className="text-right pb-3 pr-4">Pedidos</th>
+                        <th className="text-right pb-3 pr-4">Eventos</th>
+                        <th className="text-right pb-3 pr-4">Dias ativo</th>
+                        <th className="text-left pb-3">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {activityTable.map((r) => (
+                        <tr key={r.id} className="border-b border-gray-800/50 hover:bg-gray-800/30">
+                          <td className="py-2.5 pr-4 text-gray-300 truncate max-w-[160px]">{r.name}</td>
+                          <td className="py-2.5 pr-4">
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${PLAN_BADGE[r.plan] ?? "bg-gray-700 text-gray-300"}`}>{r.plan}</span>
+                          </td>
+                          <td className="py-2.5 pr-4 text-right text-gray-300 font-medium">{r.orders}</td>
+                          <td className="py-2.5 pr-4 text-right text-gray-400">{r.events}</td>
+                          <td className="py-2.5 pr-4 text-right text-gray-400">{r.daysActive}</td>
+                          <td className="py-2.5">
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_BADGE[r.status] ?? "bg-gray-700 text-gray-300"}`}>{r.status}</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Top Produtos */}
+              <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
+                <h3 className="font-bold text-gray-200 mb-4">🏆 Produtos Mais Pedidos</h3>
+                {topProducts.length === 0 ? (
+                  <p className="text-gray-600 text-sm">Nenhum pedido registrado ainda.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {topProducts.map((p, i) => {
+                      const maxCount = topProducts[0]?.count ?? 1;
+                      const pct = Math.round((p.count / maxCount) * 100);
+                      return (
+                        <div key={p.name}>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="text-gray-300"><span className="text-gray-500 mr-2">#{i + 1}</span>{p.name}</span>
+                            <span className="text-gray-400 font-medium">{p.count} pedidos</span>
+                          </div>
+                          <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                            <div className="h-full bg-purple-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* CONTROLE */}
         {tab === "Controle" && (
@@ -888,6 +1083,23 @@ function StatCard({ icon, label, value, sub, color }: { icon: string; label: str
       <div className={`text-2xl font-black ${color}`}>{value}</div>
       <div className="text-gray-300 text-sm font-semibold mt-1">{label}</div>
       <div className="text-gray-600 text-xs mt-0.5">{sub}</div>
+    </div>
+  );
+}
+
+function BarChart({ data }: { data: Array<{ label: string; value: number }> }) {
+  const max = Math.max(...data.map((d) => d.value), 1);
+  return (
+    <div className="flex items-end gap-1" style={{ height: 120 }}>
+      {data.map((d, i) => (
+        <div key={i} className="flex-1 flex flex-col items-center">
+          <div
+            className="w-full bg-purple-500/60 rounded-t"
+            style={{ height: `${(d.value / max) * 100}%`, minHeight: d.value > 0 ? 2 : 0 }}
+          />
+          <span className="text-gray-500 text-[9px] mt-1 truncate w-full text-center">{d.label}</span>
+        </div>
+      ))}
     </div>
   );
 }
