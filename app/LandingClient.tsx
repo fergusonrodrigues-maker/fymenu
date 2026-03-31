@@ -235,8 +235,8 @@ export default function LandingPage() {
         let targetOpacity = 0.20;
 
         const distToMouse = Math.hypot(dot.x - mouseX, dot.y - mouseY);
-        if (distToMouse < 120) {
-          const mouseBrightness = 0.30 * (1 - distToMouse / 120);
+        if (distToMouse < 150) {
+          const mouseBrightness = 0.50 * (1 - distToMouse / 150);
           targetOpacity = Math.max(targetOpacity, 0.20 + mouseBrightness);
         }
 
@@ -244,7 +244,7 @@ export default function LandingPage() {
           const distToCenter = Math.hypot(dot.x - ripple.x, dot.y - ripple.y);
           const distToRing = Math.abs(distToCenter - ripple.radius);
           if (distToRing < 20) {
-            const rippleBrightness = 0.60 * (1 - distToRing / 20);
+            const rippleBrightness = 0.80 * (1 - distToRing / 20);
             const elapsed = now - ripple.startTime;
             const fade = 1 - elapsed / 800;
             targetOpacity = Math.max(targetOpacity, 0.20 + rippleBrightness * fade);
