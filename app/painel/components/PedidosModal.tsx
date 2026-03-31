@@ -12,6 +12,7 @@ type OrderItem = {
   total: number;
   code_name?: string;
   notes?: string;
+  addons?: Array<{ id: string; name: string; price: number }>;
 };
 
 type Order = {
