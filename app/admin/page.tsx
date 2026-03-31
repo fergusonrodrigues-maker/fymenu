@@ -40,6 +40,9 @@ export default async function AdminPage() {
     { data: financeOrders },
     { data: financePlans },
     { data: supportStaffData },
+    { data: photoCitiesData },
+    { data: photoPackagesData },
+    { data: photoSessionsData },
   ] = await Promise.all([
     admin.from("restaurants").select("*", { count: "exact", head: true }),
     admin
@@ -111,6 +114,12 @@ export default async function AdminPage() {
     admin
       .from("support_staff")
       .select("id, email, name, role, is_active, permissions, created_at, last_login_at")
+      .order("created_at", { ascending: false }),
+    admin.from("photo_session_cities").select("*").order("city"),
+    admin.from("photo_session_packages").select("*").order("price"),
+    admin
+      .from("photo_sessions")
+      .select("*, photo_session_packages(name), photo_session_cities(city, state)")
       .order("created_at", { ascending: false }),
   ]);
 
@@ -198,6 +207,11 @@ export default async function AdminPage() {
         plans: financePlans ?? [],
       }}
       supportStaff={supportStaffData ?? []}
+      photoData={{
+        cities: photoCitiesData ?? [],
+        packages: photoPackagesData ?? [],
+        sessions: photoSessionsData ?? [],
+      }}
     />
   );
 }

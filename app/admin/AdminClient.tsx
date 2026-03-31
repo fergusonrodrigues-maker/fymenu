@@ -73,9 +73,22 @@ interface Props {
     plans: Array<{ plan: string; status: string; free_access: boolean }>;
   };
   supportStaff: Array<{ id: string; email: string; name: string; role: string; is_active: boolean; permissions: Record<string, boolean>; created_at?: string; last_login_at?: string | null }>;
+  photoData: {
+    cities: Array<{ id: string; city: string; state: string; is_active: boolean }>;
+    packages: Array<{ id: string; name: string; description: string | null; num_photos: number; includes_video: boolean; price: number; duration_minutes: number; is_active: boolean }>;
+    sessions: Array<{
+      id: string; restaurant_id: string; unit_id: string | null; package_id: string; city_id: string;
+      status: string; scheduled_at: string | null; completed_at: string | null;
+      photographer_name: string | null; price_charged: number; payment_status: string;
+      payment_method: string | null; notes: string | null; photos_delivered: number;
+      created_at: string;
+      photo_session_packages: { name: string } | null;
+      photo_session_cities: { city: string; state: string } | null;
+    }>;
+  };
 }
 
-const TABS = ["Visão Geral", "Usuários", "Faturamento", "Analytics", "CRM", "Controle"] as const;
+const TABS = ["Visão Geral", "Usuários", "Faturamento", "Analytics", "CRM", "Fotos", "Controle"] as const;
 type Tab = (typeof TABS)[number];
 
 const PLAN_PRICES: Record<string, number> = {
@@ -381,7 +394,7 @@ function ActionBtn({
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function AdminClient({
   stats, restaurants, payments, topProducts,
-  planCounts, statusCounts, cities, unitsByRestaurant, unitFeatures, user, analyticsData, crmData, consumerData, financeData, supportStaff: initialSupportStaff,
+  planCounts, statusCounts, cities, unitsByRestaurant, unitFeatures, user, analyticsData, crmData, consumerData, financeData, supportStaff: initialSupportStaff, photoData,
 }: Props) {
   const supabase = createClient();
   const [tab, setTab] = useState<Tab>("Visão Geral");
@@ -417,6 +430,30 @@ export default function AdminClient({
   const [addingStaff, setAddingStaff] = useState(false);
   const [staffError, setStaffError] = useState<string | null>(null);
 
+  // Photo sessions state
+  const [photoTab, setPhotoTab] = useState<"sessoes" | "pacotes" | "cidades">("sessoes");
+  const [photoCitiesState, setPhotoCitiesState] = useState(photoData.cities);
+  const [photoPackagesState, setPhotoPackagesState] = useState(photoData.packages);
+  const [photoSessionsState, setPhotoSessionsState] = useState(photoData.sessions);
+  const [showAddCity, setShowAddCity] = useState(false);
+  const [newCityName, setNewCityName] = useState("");
+  const [newCityState, setNewCityState] = useState("GO");
+  const [showAddPackage, setShowAddPackage] = useState(false);
+  const [pkgName, setPkgName] = useState("");
+  const [pkgDesc, setPkgDesc] = useState("");
+  const [pkgPhotos, setPkgPhotos] = useState(20);
+  const [pkgVideo, setPkgVideo] = useState(false);
+  const [pkgPrice, setPkgPrice] = useState("");
+  const [pkgDuration, setPkgDuration] = useState(60);
+  const [showAddSession, setShowAddSession] = useState(false);
+  const [sessRestaurantId, setSessRestaurantId] = useState("");
+  const [sessPackageId, setSessPackageId] = useState("");
+  const [sessCityId, setSessCityId] = useState("");
+  const [sessDate, setSessDate] = useState("");
+  const [sessPhotographer, setSessPhotographer] = useState("");
+  const [sessNotes, setSessNotes] = useState("");
+  const [photoError, setPhotoError] = useState<string | null>(null);
+
   // Controle tab state
   const [trialRestaurantId, setTrialRestaurantId] = useState("");
   const [trialDays, setTrialDays] = useState("7");
@@ -445,6 +482,82 @@ export default function AdminClient({
     setLocalRestaurants((prev) =>
       prev.map((r) => (r.id === id ? { ...r, ...updates } : r))
     );
+  }
+
+  async function photoApi(body: Record<string, unknown>) {
+    const res = await fetch("/api/admin/photo-sessions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    return res;
+  }
+
+  async function handleAddSession() {
+    if (!sessRestaurantId || !sessPackageId || !sessCityId) {
+      setPhotoError("Restaurante, pacote e cidade são obrigatórios."); return;
+    }
+    setPhotoError(null);
+    const res = await photoApi({ action: "add_session", restaurant_id: sessRestaurantId, package_id: sessPackageId, city_id: sessCityId, scheduled_at: sessDate || null, photographer_name: sessPhotographer || null, notes: sessNotes || null });
+    const json = await res.json();
+    if (!res.ok) { setPhotoError(json.error); return; }
+    setPhotoSessionsState((prev) => [json.session, ...prev]);
+    setSessRestaurantId(""); setSessPackageId(""); setSessCityId(""); setSessDate(""); setSessPhotographer(""); setSessNotes("");
+    setShowAddSession(false);
+  }
+
+  async function handleUpdateSession(id: string, updates: Record<string, unknown>) {
+    await photoApi({ action: "update_session", id, ...updates });
+    setPhotoSessionsState((prev) => prev.map((s) => s.id === id ? { ...s, ...updates } : s));
+  }
+
+  async function handleDeleteSession(id: string) {
+    if (!confirm("Remover sessão?")) return;
+    const res = await photoApi({ action: "delete_session", id });
+    if (res.ok) setPhotoSessionsState((prev) => prev.filter((s) => s.id !== id));
+  }
+
+  async function handleAddPackage() {
+    if (!pkgName || !pkgPrice) { setPhotoError("Nome e preço são obrigatórios."); return; }
+    setPhotoError(null);
+    const res = await photoApi({ action: "add_package", name: pkgName, description: pkgDesc || null, num_photos: pkgPhotos, includes_video: pkgVideo, price: parseInt(pkgPrice), duration_minutes: pkgDuration });
+    const json = await res.json();
+    if (!res.ok) { setPhotoError(json.error); return; }
+    setPhotoPackagesState((prev) => [...prev, json.package]);
+    setPkgName(""); setPkgDesc(""); setPkgPhotos(20); setPkgVideo(false); setPkgPrice(""); setPkgDuration(60);
+    setShowAddPackage(false);
+  }
+
+  async function handleTogglePackage(id: string, active: boolean) {
+    await photoApi({ action: "update_package", id, is_active: active });
+    setPhotoPackagesState((prev) => prev.map((p) => p.id === id ? { ...p, is_active: active } : p));
+  }
+
+  async function handleDeletePackage(id: string) {
+    if (!confirm("Remover pacote?")) return;
+    const res = await photoApi({ action: "delete_package", id });
+    if (res.ok) setPhotoPackagesState((prev) => prev.filter((p) => p.id !== id));
+  }
+
+  async function handleAddCity() {
+    if (!newCityName) { setPhotoError("Nome da cidade é obrigatório."); return; }
+    setPhotoError(null);
+    const res = await photoApi({ action: "add_city", city: newCityName, state: newCityState });
+    const json = await res.json();
+    if (!res.ok) { setPhotoError(json.error); return; }
+    setPhotoCitiesState((prev) => [...prev, json.city]);
+    setNewCityName(""); setShowAddCity(false);
+  }
+
+  async function handleToggleCity(id: string, active: boolean) {
+    await photoApi({ action: "toggle_city", id, is_active: active });
+    setPhotoCitiesState((prev) => prev.map((c) => c.id === id ? { ...c, is_active: active } : c));
+  }
+
+  async function handleDeleteCity(id: string) {
+    if (!confirm("Remover cidade?")) return;
+    const res = await photoApi({ action: "delete_city", id });
+    if (res.ok) setPhotoCitiesState((prev) => prev.filter((c) => c.id !== id));
   }
 
   async function handleAddStaff() {
@@ -1556,6 +1669,262 @@ export default function AdminClient({
             </div>
           );
         })()}
+
+        {/* FOTOS */}
+        {tab === "Fotos" && (
+          <div className="space-y-6">
+            {/* Resumo */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <StatCard icon="📸" label="Sessões Realizadas" value={String(photoSessionsState.filter((s) => s.status === "completed").length)} sub="total" color="text-purple-400" />
+              <StatCard icon="⏳" label="Pendentes" value={String(photoSessionsState.filter((s) => s.status === "pending" || s.status === "confirmed").length)} sub="agendadas" color="text-yellow-400" />
+              <StatCard icon="💰" label="Faturamento Fotos" value={fmt(photoSessionsState.filter((s) => s.payment_status === "paid").reduce((acc, x) => acc + x.price_charged, 0))} sub="recebido" color="text-green-400" />
+              <StatCard icon="🏙️" label="Cidades Ativas" value={String(photoCitiesState.filter((c) => c.is_active).length)} sub="cobertura" color="text-blue-400" />
+            </div>
+
+            {/* Sub-tabs */}
+            <div className="flex gap-1 border-b border-gray-800 pb-1">
+              {(["sessoes", "pacotes", "cidades"] as const).map((key) => {
+                const labels = { sessoes: "Sessões", pacotes: "Pacotes", cidades: "Cidades" };
+                return (
+                  <button key={key} onClick={() => setPhotoTab(key)}
+                    className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors ${photoTab === key ? "border-purple-500 text-white" : "border-transparent text-gray-400 hover:text-gray-200"}`}>
+                    {labels[key]}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Sub-tab: Sessões */}
+            {photoTab === "sessoes" && (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="font-bold text-gray-200">Sessões de Fotos</h3>
+                  <button onClick={() => setShowAddSession(true)} className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold transition-colors">+ Nova Sessão</button>
+                </div>
+
+                {showAddSession && (
+                  <div className="p-4 rounded-xl bg-gray-800/60 border border-gray-700 space-y-3">
+                    <select value={sessRestaurantId} onChange={(e) => setSessRestaurantId(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 text-white text-sm outline-none">
+                      <option value="">Selecionar restaurante...</option>
+                      {restaurants.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+                    </select>
+                    <select value={sessPackageId} onChange={(e) => setSessPackageId(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 text-white text-sm outline-none">
+                      <option value="">Selecionar pacote...</option>
+                      {photoPackagesState.filter((p) => p.is_active).map((p) => <option key={p.id} value={p.id}>{p.name} — {fmt(p.price)}</option>)}
+                    </select>
+                    <select value={sessCityId} onChange={(e) => setSessCityId(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 text-white text-sm outline-none">
+                      <option value="">Selecionar cidade...</option>
+                      {photoCitiesState.filter((c) => c.is_active).map((c) => <option key={c.id} value={c.id}>{c.city} — {c.state}</option>)}
+                    </select>
+                    <input type="datetime-local" value={sessDate} onChange={(e) => setSessDate(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 text-white text-sm outline-none" />
+                    <input type="text" placeholder="Nome do fotógrafo" value={sessPhotographer} onChange={(e) => setSessPhotographer(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 text-white text-sm outline-none" />
+                    <textarea placeholder="Observações" value={sessNotes} onChange={(e) => setSessNotes(e.target.value)} rows={2} className="w-full px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 text-white text-sm outline-none resize-none" />
+                    {photoError && <p className="text-red-400 text-xs">{photoError}</p>}
+                    <div className="flex gap-2">
+                      <button onClick={() => { setShowAddSession(false); setPhotoError(null); }} className="flex-1 py-2 rounded-lg border border-gray-700 text-gray-400 text-sm">Cancelar</button>
+                      <button onClick={handleAddSession} className="flex-1 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold">Agendar</button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="bg-gray-900/60 rounded-2xl border border-gray-800 overflow-hidden">
+                  {photoSessionsState.length === 0 ? (
+                    <p className="text-gray-600 text-sm p-6">Nenhuma sessão cadastrada.</p>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-gray-800 text-gray-500 text-xs uppercase tracking-wider">
+                            <th className="px-4 py-3 text-left">Restaurante</th>
+                            <th className="px-4 py-3 text-left">Pacote</th>
+                            <th className="px-4 py-3 text-left">Cidade</th>
+                            <th className="px-4 py-3 text-left">Data</th>
+                            <th className="px-4 py-3 text-left">Status</th>
+                            <th className="px-4 py-3 text-left">Pagamento</th>
+                            <th className="px-4 py-3 text-right">Valor</th>
+                            <th className="px-4 py-3 text-left">Ações</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {photoSessionsState.map((s) => {
+                            const rest = restaurants.find((r) => r.id === s.restaurant_id);
+                            return (
+                              <tr key={s.id} className="border-b border-gray-800/50 hover:bg-gray-800/30">
+                                <td className="px-4 py-3 text-white max-w-[140px] truncate">{rest?.name ?? "—"}</td>
+                                <td className="px-4 py-3 text-gray-300">{s.photo_session_packages?.name ?? "—"}</td>
+                                <td className="px-4 py-3 text-gray-300">{s.photo_session_cities ? `${s.photo_session_cities.city}/${s.photo_session_cities.state}` : "—"}</td>
+                                <td className="px-4 py-3 text-gray-400">{s.scheduled_at ? new Date(s.scheduled_at).toLocaleDateString("pt-BR") : "—"}</td>
+                                <td className="px-4 py-3">
+                                  <select value={s.status} onChange={(e) => handleUpdateSession(s.id, { status: e.target.value })}
+                                    className="px-2 py-0.5 rounded text-xs bg-gray-800 border border-gray-700 text-gray-300 outline-none">
+                                    <option value="pending">Pendente</option>
+                                    <option value="confirmed">Confirmada</option>
+                                    <option value="completed">Concluída</option>
+                                    <option value="canceled">Cancelada</option>
+                                  </select>
+                                </td>
+                                <td className="px-4 py-3">
+                                  <select value={s.payment_status} onChange={(e) => handleUpdateSession(s.id, { payment_status: e.target.value })}
+                                    className="px-2 py-0.5 rounded text-xs bg-gray-800 border border-gray-700 text-gray-300 outline-none">
+                                    <option value="pending">Pendente</option>
+                                    <option value="paid">Pago</option>
+                                    <option value="refunded">Reembolsado</option>
+                                  </select>
+                                </td>
+                                <td className="px-4 py-3 text-right text-green-400 font-semibold">{fmt(s.price_charged)}</td>
+                                <td className="px-4 py-3">
+                                  <button onClick={() => handleDeleteSession(s.id)} className="text-red-400 text-xs hover:text-red-300">Remover</button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Sub-tab: Pacotes */}
+            {photoTab === "pacotes" && (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="font-bold text-gray-200">Pacotes de Foto</h3>
+                  <button onClick={() => setShowAddPackage(true)} className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold transition-colors">+ Adicionar Pacote</button>
+                </div>
+
+                {showAddPackage && (
+                  <div className="p-4 rounded-xl bg-gray-800/60 border border-gray-700 space-y-3">
+                    <input type="text" placeholder="Nome do pacote" value={pkgName} onChange={(e) => setPkgName(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 text-white text-sm outline-none" />
+                    <input type="text" placeholder="Descrição (opcional)" value={pkgDesc} onChange={(e) => setPkgDesc(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 text-white text-sm outline-none" />
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-gray-500 text-xs block mb-1">Nº de fotos</label>
+                        <input type="number" min={1} value={pkgPhotos} onChange={(e) => setPkgPhotos(Number(e.target.value))} className="w-full px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 text-white text-sm outline-none" />
+                      </div>
+                      <div>
+                        <label className="text-gray-500 text-xs block mb-1">Duração (min)</label>
+                        <input type="number" min={1} value={pkgDuration} onChange={(e) => setPkgDuration(Number(e.target.value))} className="w-full px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 text-white text-sm outline-none" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-gray-500 text-xs block mb-1">Preço (em centavos, ex: 29900 = R$299)</label>
+                      <input type="number" min={0} placeholder="29900" value={pkgPrice} onChange={(e) => setPkgPrice(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 text-white text-sm outline-none" />
+                    </div>
+                    <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+                      <input type="checkbox" checked={pkgVideo} onChange={(e) => setPkgVideo(e.target.checked)} className="accent-purple-500" />
+                      Inclui vídeo
+                    </label>
+                    {photoError && <p className="text-red-400 text-xs">{photoError}</p>}
+                    <div className="flex gap-2">
+                      <button onClick={() => { setShowAddPackage(false); setPhotoError(null); }} className="flex-1 py-2 rounded-lg border border-gray-700 text-gray-400 text-sm">Cancelar</button>
+                      <button onClick={handleAddPackage} className="flex-1 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold">Adicionar</button>
+                    </div>
+                  </div>
+                )}
+
+                {photoPackagesState.length === 0 ? (
+                  <p className="text-gray-600 text-sm">Nenhum pacote cadastrado.</p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {photoPackagesState.map((p) => (
+                      <div key={p.id} className="bg-gray-900/60 rounded-2xl border border-gray-800 p-5 space-y-3">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <h4 className="font-bold text-white">{p.name}</h4>
+                            {p.description && <p className="text-gray-500 text-xs mt-0.5">{p.description}</p>}
+                          </div>
+                          <span className={`px-2 py-0.5 rounded text-xs font-semibold ${p.is_active ? "bg-green-900/40 text-green-300" : "bg-red-900/40 text-red-300"}`}>
+                            {p.is_active ? "Ativo" : "Inativo"}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div>
+                            <span className="text-gray-500">Fotos</span>
+                            <p className="text-gray-200 font-semibold">{p.num_photos}</p>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Duração</span>
+                            <p className="text-gray-200 font-semibold">{p.duration_minutes} min</p>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Vídeo</span>
+                            <p className="text-gray-200 font-semibold">{p.includes_video ? "Sim" : "Não"}</p>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Preço</span>
+                            <p className="text-green-400 font-bold">{fmt(p.price)}</p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2 pt-1">
+                          <button onClick={() => handleTogglePackage(p.id, !p.is_active)} className="flex-1 py-1.5 rounded-lg border border-gray-700 text-gray-400 text-xs hover:text-white transition-colors">
+                            {p.is_active ? "Desativar" : "Ativar"}
+                          </button>
+                          <button onClick={() => handleDeletePackage(p.id)} className="px-3 py-1.5 rounded-lg border border-red-900/50 text-red-400 text-xs hover:text-red-300 transition-colors">
+                            Remover
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Sub-tab: Cidades */}
+            {photoTab === "cidades" && (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="font-bold text-gray-200">Cidades Disponíveis</h3>
+                  <button onClick={() => setShowAddCity(true)} className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold transition-colors">+ Adicionar Cidade</button>
+                </div>
+
+                {showAddCity && (
+                  <div className="p-4 rounded-xl bg-gray-800/60 border border-gray-700 space-y-3">
+                    <input type="text" placeholder="Nome da cidade" value={newCityName} onChange={(e) => setNewCityName(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 text-white text-sm outline-none" />
+                    <select value={newCityState} onChange={(e) => setNewCityState(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 text-white text-sm outline-none">
+                      {["GO", "SP", "MG", "RJ", "BA", "PR", "SC", "RS", "CE", "PE", "DF", "MT", "MS", "PA", "AM", "ES", "PB", "RN", "AL", "SE", "PI", "MA", "TO", "RO", "AC", "RR", "AP"].map((uf) => (
+                        <option key={uf} value={uf}>{uf}</option>
+                      ))}
+                    </select>
+                    {photoError && <p className="text-red-400 text-xs">{photoError}</p>}
+                    <div className="flex gap-2">
+                      <button onClick={() => { setShowAddCity(false); setPhotoError(null); }} className="flex-1 py-2 rounded-lg border border-gray-700 text-gray-400 text-sm">Cancelar</button>
+                      <button onClick={handleAddCity} className="flex-1 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold">Adicionar</button>
+                    </div>
+                  </div>
+                )}
+
+                {photoCitiesState.length === 0 ? (
+                  <p className="text-gray-600 text-sm">Nenhuma cidade cadastrada.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {photoCitiesState.map((c) => (
+                      <div key={c.id} className="flex items-center justify-between p-3 rounded-xl bg-gray-800/30 border border-gray-800">
+                        <div className="flex items-center gap-3">
+                          <span className="text-white text-sm font-semibold">{c.city}</span>
+                          <span className="text-gray-500 text-xs">{c.state}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`px-2 py-0.5 rounded text-xs font-semibold ${c.is_active ? "bg-green-900/40 text-green-300" : "bg-red-900/40 text-red-300"}`}>
+                            {c.is_active ? "Ativa" : "Inativa"}
+                          </span>
+                          <button onClick={() => handleToggleCity(c.id, !c.is_active)} className="px-2 py-1 rounded text-xs border border-gray-700 text-gray-400 hover:text-white transition-colors">
+                            {c.is_active ? "Desativar" : "Ativar"}
+                          </button>
+                          <button onClick={() => handleDeleteCity(c.id)} className="px-2 py-1 rounded text-xs border border-red-900/50 text-red-400 hover:text-red-300 transition-colors">
+                            Remover
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* CONTROLE */}
         {tab === "Controle" && (
