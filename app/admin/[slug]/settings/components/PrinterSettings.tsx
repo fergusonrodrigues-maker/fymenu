@@ -2,9 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePrinterConfig } from "@/lib/hooks/usePrinterConfig";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Trash2, Edit2, Plus } from "lucide-react";
+import { Trash2, Plus } from "lucide-react";
 
 interface PrinterSettingsProps {
   unitId: string;
@@ -69,15 +67,20 @@ export function PrinterSettings({
       <h3 className="text-lg font-semibold">Configuração de Impressoras</h3>
 
       <div className="flex gap-2">
-        <Input
+        <input
+          className="flex-1 px-3 py-2 border rounded text-sm"
           placeholder="Nome da impressora (ex: Cozinha, Bebidas)"
           value={newPrinterName}
           onChange={(e) => setNewPrinterName(e.target.value)}
         />
-        <Button onClick={handleCreatePrinter} disabled={!newPrinterName}>
-          <Plus size={16} className="mr-2" />
+        <button
+          className="flex items-center gap-1 px-3 py-2 bg-black text-white rounded text-sm disabled:opacity-50"
+          onClick={handleCreatePrinter}
+          disabled={!newPrinterName}
+        >
+          <Plus size={16} />
           Adicionar
-        </Button>
+        </button>
       </div>
 
       <div className="space-y-2">
@@ -100,21 +103,19 @@ export function PrinterSettings({
                 </div>
 
                 <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
+                  <button
+                    className="px-2 py-1 border rounded text-sm"
                     onClick={() => handleExpandPrinter(printer.id)}
                   >
                     {expandedPrinterId === printer.id ? "Recolher" : "Expandir"}
-                  </Button>
+                  </button>
 
-                  <Button
-                    size="sm"
-                    variant="destructive"
+                  <button
+                    className="px-2 py-1 bg-red-600 text-white rounded text-sm"
                     onClick={() => deletePrinter(printer.id)}
                   >
                     <Trash2 size={16} />
-                  </Button>
+                  </button>
                 </div>
               </div>
 
@@ -134,13 +135,9 @@ export function PrinterSettings({
                           <span className="text-sm">
                             {cat.categories?.name || cat.category_id}
                           </span>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="text-red-500"
-                          >
+                          <button className="px-2 py-1 border rounded text-red-500 text-sm">
                             X
-                          </Button>
+                          </button>
                         </div>
                       ))}
                     </div>
