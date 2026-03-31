@@ -234,7 +234,7 @@ export default function MenuClient({
         className="min-h-dvh menu-bg-themed"
         style={{
           paddingTop: "calc(44px + env(safe-area-inset-top, 0px))",
-          paddingBottom: "calc(120px + env(safe-area-inset-bottom, 0px))",
+          paddingBottom: "calc(360px + env(safe-area-inset-bottom, 0px))",
         }}
       >
         {/* Categorias em destaque */}
