@@ -8,7 +8,7 @@ export default function MenuLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="w-full h-screen overflow-hidden bg-black">
+    <div className="w-full min-h-screen bg-black">
       {children}
     </div>
   );
