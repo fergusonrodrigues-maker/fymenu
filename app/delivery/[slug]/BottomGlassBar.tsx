@@ -37,14 +37,20 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
   const [isMaximized, setIsMaximized] = useState(false);
   const [hidden, setHidden] = useState(false);
   const lastScrollY = useRef(0);
+  const scrollAccumulator = useRef(0);
 
   useEffect(() => {
     function onScroll() {
       const scrolled = window.scrollY + window.innerHeight;
       const total = document.documentElement.scrollHeight;
       setIsMaximized(scrolled >= total * 0.88);
-      if (window.scrollY > lastScrollY.current + 5) setHidden(true);
-      else if (window.scrollY < lastScrollY.current - 5) setHidden(false);
+      if (window.scrollY > lastScrollY.current) {
+        scrollAccumulator.current += window.scrollY - lastScrollY.current;
+        if (scrollAccumulator.current > 300) setHidden(true);
+      } else {
+        scrollAccumulator.current = 0;
+        setHidden(false);
+      }
       lastScrollY.current = window.scrollY;
     }
     window.addEventListener("scroll", onScroll, { passive: true });
