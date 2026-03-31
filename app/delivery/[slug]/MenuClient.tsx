@@ -82,14 +82,22 @@ export default function MenuClient({
   }, []);
 
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  const isScrollingTo = useRef(false); // evita loop: scroll programático ≠ scroll do usuário
+  const isScrollingTo = useRef(false);
 
   const featuredCategories = categories.filter((c) => c.is_featured);
   const regularCategories  = categories.filter((c) => !c.is_featured);
 
-  // ── IntersectionObserver: scroll vertical → pill ativo ───────────────────
+  // ── Velocity-aware category activation ─────────────────────────────────
+  // Scroll rápido → nada muda (exploração)
+  // Scroll lento/parou → ativa hero suavemente
   useEffect(() => {
     if (regularCategories.length === 0) return;
+
+    let lastScrollY = window.scrollY;
+    let lastTime = Date.now();
+    let velocity = 0;
+    let activateTimer: ReturnType<typeof setTimeout> | null = null;
+    let pendingCategoryId: string | null = null;
 
     const observers: IntersectionObserver[] = [];
 
@@ -101,7 +109,7 @@ export default function MenuClient({
         (entries) => {
           entries.forEach((entry) => {
             if (entry.isIntersecting && !isScrollingTo.current) {
-              setActiveCategoryId(cat.id);
+              pendingCategoryId = cat.id;
             }
           });
         },
@@ -115,15 +123,48 @@ export default function MenuClient({
       observers.push(obs);
     });
 
-    return () => observers.forEach((o) => o.disconnect());
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [regularCategories.length]);
+    function onScroll() {
+      const now = Date.now();
+      const dt = now - lastTime;
+      if (dt > 0) {
+        velocity = Math.abs(window.scrollY - lastScrollY) / dt;
+      }
+      lastScrollY = window.scrollY;
+      lastTime = now;
 
+      // Scroll rápido (>1.5 px/ms): cancela ativação pendente
+      if (velocity > 1.5) {
+        if (activateTimer) {
+          clearTimeout(activateTimer);
+          activateTimer = null;
+        }
+        return;
+      }
+
+      // Scroll lento: agenda ativação com delay
+      if (pendingCategoryId && pendingCategoryId !== activeCategoryId) {
+        if (activateTimer) clearTimeout(activateTimer);
+        activateTimer = setTimeout(() => {
+          if (pendingCategoryId) {
+            setActiveCategoryId(pendingCategoryId);
+          }
+        }, 120);
+      }
+    }
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+
+    return () => {
+      observers.forEach((o) => o.disconnect());
+      window.removeEventListener("scroll", onScroll);
+      if (activateTimer) clearTimeout(activateTimer);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [regularCategories.length, activeCategoryId]);
 
   // ── Scroll programático ao clicar num pill ───────────────────────────────
   const scrollToCategory = useCallback((id: string) => {
     isScrollingTo.current = true;
-    // Scroll ANTES do setState para evitar que o re-render invalide os refs
     const el = sectionRefs.current[id];
     if (el) {
       el.scrollIntoView({ behavior: "smooth", block: "start" });

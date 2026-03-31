@@ -57,7 +57,7 @@ export default function CategoryCarousel({
     const tx = vpW / 2 - cardCenter;
 
     track.style.transition = animate
-      ? "transform 0.32s cubic-bezier(0.34,1.56,0.64,1)"
+      ? "transform 0.5s cubic-bezier(0.22, 1, 0.36, 1)"
       : "none";
     track.style.transform = `translateX(${tx}px)`;
   }
@@ -154,7 +154,7 @@ export default function CategoryCarousel({
                 borderRadius: 18,
                 overflow: "hidden",
                 cursor: "pointer",
-                transition: "all 0.32s cubic-bezier(0.34,1.56,0.64,1)",
+                transition: "all 0.5s cubic-bezier(0.22, 1, 0.36, 1)",
                 opacity: active ? (isHero ? 1 : 0.85) : 1,
                 border: "1px solid rgba(0,0,0,0.06)",
                 marginTop: mt,
