@@ -68,6 +68,10 @@ interface Props {
       product_id: string | null; created_at: string;
     }>;
   };
+  financeData: {
+    orders: Array<{ total: string; created_at: string; unit_id: string; status: string }>;
+    plans: Array<{ plan: string; status: string; free_access: boolean }>;
+  };
 }
 
 const TABS = ["Visão Geral", "Usuários", "Faturamento", "Analytics", "CRM", "Controle"] as const;
@@ -376,7 +380,7 @@ function ActionBtn({
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function AdminClient({
   stats, restaurants, payments, topProducts,
-  planCounts, statusCounts, cities, unitsByRestaurant, unitFeatures, user, analyticsData, crmData, consumerData,
+  planCounts, statusCounts, cities, unitsByRestaurant, unitFeatures, user, analyticsData, crmData, consumerData, financeData,
 }: Props) {
   const supabase = createClient();
   const [tab, setTab] = useState<Tab>("Visão Geral");
@@ -665,46 +669,224 @@ export default function AdminClient({
         )}
 
         {/* BILLING */}
-        {tab === "Faturamento" && (
-          <div className="bg-gray-900/60 rounded-2xl border border-gray-800 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
-              <h3 className="font-bold text-gray-200">Pagamentos Registrados</h3>
-              <span className="text-gray-500 text-sm">{payments.length} registros</span>
-            </div>
-            {payments.length === 0 ? (
-              <p className="text-gray-600 text-sm p-6">Nenhum pagamento registrado ainda.</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-gray-800 text-gray-500 text-xs uppercase tracking-wider">
-                      <th className="px-6 py-3 text-left">Data</th>
-                      <th className="px-6 py-3 text-left">Método</th>
-                      <th className="px-6 py-3 text-left">Status</th>
-                      <th className="px-6 py-3 text-right">Valor</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {payments.map((p) => (
-                      <tr key={p.id} className="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors">
-                        <td className="px-6 py-3 text-gray-400">{fmtDate(p.processed_at)}</td>
-                        <td className="px-6 py-3 text-gray-300">
-                          {p.method === "cash" ? "💵 Dinheiro" : p.method === "card" ? "💳 Cartão" : p.method === "pix" ? "📲 PIX" : p.method ?? "—"}
-                        </td>
-                        <td className="px-6 py-3">
-                          <span className={`px-2 py-0.5 rounded text-xs font-semibold ${STATUS_BADGE[p.status ?? "confirmed"] ?? "bg-gray-700 text-gray-400"}`}>
-                            {p.status ?? "confirmed"}
-                          </span>
-                        </td>
-                        <td className="px-6 py-3 text-right font-semibold text-green-400">{fmt(p.amount)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+        {tab === "Faturamento" && (() => {
+          const BILLING_PRICES: Record<string, number> = {
+            menu: 12900,
+            menupro: 24900,
+            business: 109000,
+          };
+
+          // MRR
+          const payingClients = financeData.plans.filter((p) => p.status === "active" && !p.free_access);
+          const mrr = payingClients.reduce((sum, p) => sum + (BILLING_PRICES[p.plan] ?? 0), 0);
+          const payingCount = payingClients.length;
+
+          // MRR por plano
+          const mrrByPlan: Record<string, { count: number; revenue: number }> = {};
+          for (const p of payingClients) {
+            if (!mrrByPlan[p.plan]) mrrByPlan[p.plan] = { count: 0, revenue: 0 };
+            mrrByPlan[p.plan].count++;
+            mrrByPlan[p.plan].revenue += BILLING_PRICES[p.plan] ?? 0;
+          }
+          const mrrPlanEntries = ["business", "menupro", "menu"]
+            .filter((k) => mrrByPlan[k])
+            .map((k) => ({ plan: k, ...mrrByPlan[k] }));
+          const maxMrrPlan = Math.max(...mrrPlanEntries.map((e) => e.revenue), 1);
+
+          // Receita dos clientes por mês
+          const revenueByMonth: Record<string, number> = {};
+          for (const o of financeData.orders) {
+            const month = o.created_at.substring(0, 7);
+            revenueByMonth[month] = (revenueByMonth[month] ?? 0) + parseFloat(String(o.total));
+          }
+          const sortedMonths = Object.keys(revenueByMonth).sort().slice(-12);
+          const monthChartData = sortedMonths.map((m) => ({
+            label: new Date(m + "-01").toLocaleDateString("pt-BR", { month: "short", year: "2-digit" }),
+            value: revenueByMonth[m],
+          }));
+          const maxMonthVal = Math.max(...monthChartData.map((d) => d.value), 1);
+
+          // Receita 30d e total
+          const cutoff30 = Date.now() - 30 * 24 * 60 * 60 * 1000;
+          const revenue30dFin = financeData.orders
+            .filter((o) => new Date(o.created_at).getTime() >= cutoff30)
+            .reduce((s, o) => s + parseFloat(String(o.total)), 0);
+          const totalClientRevenue = financeData.orders.reduce((s, o) => s + parseFloat(String(o.total)), 0);
+
+          // Projeção (taxa crescimento baseada nos 2 últimos meses disponíveis)
+          let growthRate = 0.10;
+          if (sortedMonths.length >= 2) {
+            const last = revenueByMonth[sortedMonths[sortedMonths.length - 1]] ?? 0;
+            const prev = revenueByMonth[sortedMonths[sortedMonths.length - 2]] ?? 0;
+            if (prev > 0) growthRate = (last - prev) / prev;
+            growthRate = Math.max(-0.5, Math.min(growthRate, 1));
+          }
+          const projections = [1, 2, 3].map((m) => ({
+            month: m,
+            mrr: Math.round(mrr * Math.pow(1 + growthRate, m)),
+          }));
+          const projMonthNames = [1, 2, 3].map((offset) => {
+            const d = new Date();
+            d.setMonth(d.getMonth() + offset);
+            return d.toLocaleDateString("pt-BR", { month: "long" });
+          });
+
+          // Churn: canceled + paused
+          const churned = financeData.plans.filter((p) => p.status === "canceled" || p.status === "paused").length;
+          const totalPlans = financeData.plans.length || 1;
+          const churnRate = ((churned / totalPlans) * 100).toFixed(1);
+
+          const planColors: Record<string, string> = {
+            menu: "bg-gray-500",
+            menupro: "bg-blue-500",
+            business: "bg-purple-500",
+          };
+
+          return (
+            <div className="space-y-6">
+              {/* A. Resumo */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                {[
+                  { icon: "💎", label: "MRR Estimado", value: fmt(mrr), sub: "receita recorrente mensal", color: "text-purple-400" },
+                  { icon: "📦", label: "Receita Clientes 30d", value: fmt(Math.round(revenue30dFin)), sub: "pedidos confirmados", color: "text-green-400" },
+                  { icon: "📊", label: "Receita Clientes Total", value: fmt(Math.round(totalClientRevenue)), sub: "todos os pedidos", color: "text-blue-400" },
+                  { icon: "💳", label: "Clientes Pagantes", value: String(payingCount), sub: "ativos sem free access", color: "text-yellow-400" },
+                ].map(({ icon, label, value, sub, color }) => (
+                  <div key={label} className="bg-gray-900/60 rounded-2xl border border-gray-800 p-5">
+                    <div className="text-2xl mb-2">{icon}</div>
+                    <p className="text-gray-500 text-xs uppercase tracking-wider">{label}</p>
+                    <p className={`text-2xl font-black mt-1 ${color}`}>{value}</p>
+                    <p className="text-gray-600 text-xs mt-0.5">{sub}</p>
+                  </div>
+                ))}
               </div>
-            )}
-          </div>
-        )}
+
+              {/* B. Gráfico mensal */}
+              <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
+                <h3 className="font-bold text-gray-200 mb-4">📈 Receita dos Restaurantes por Mês</h3>
+                {monthChartData.length === 0 ? (
+                  <p className="text-gray-600 text-sm">Sem dados suficientes.</p>
+                ) : (
+                  <div className="flex items-end gap-1" style={{ height: 140 }}>
+                    {monthChartData.map((d, i) => (
+                      <div key={i} className="flex-1 flex flex-col items-center">
+                        <div
+                          className="w-full bg-purple-500/70 rounded-t"
+                          style={{ height: `${(d.value / maxMonthVal) * 100}%`, minHeight: d.value > 0 ? 2 : 0 }}
+                        />
+                        <span className="text-gray-600 text-[9px] mt-1 truncate w-full text-center">{d.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* C. Distribuição MRR por plano */}
+              <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
+                <h3 className="font-bold text-gray-200 mb-4">💰 Distribuição MRR por Plano</h3>
+                {mrrPlanEntries.length === 0 ? (
+                  <p className="text-gray-600 text-sm">Sem clientes pagantes.</p>
+                ) : (
+                  <div className="space-y-4">
+                    {mrrPlanEntries.map(({ plan, count, revenue }) => {
+                      const pct = mrr > 0 ? Math.round((revenue / mrr) * 100) : 0;
+                      return (
+                        <div key={plan}>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="text-gray-300 capitalize font-medium">{plan} <span className="text-gray-500 font-normal">({count} clientes)</span></span>
+                            <span className="text-gray-300">{fmt(revenue)} <span className="text-gray-500">({pct}%)</span></span>
+                          </div>
+                          <div className="h-2.5 bg-gray-800 rounded-full overflow-hidden">
+                            <div className={`h-full rounded-full ${planColors[plan] ?? "bg-gray-500"}`} style={{ width: `${(revenue / maxMrrPlan) * 100}%` }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* D. Projeção */}
+              <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
+                <h3 className="font-bold text-gray-200 mb-1">🔮 Projeção de MRR (próximos 3 meses)</h3>
+                <p className="text-gray-600 text-xs mb-4">
+                  Taxa de crescimento aplicada: {growthRate >= 0 ? "+" : ""}{(growthRate * 100).toFixed(1)}% ao mês.
+                  Baseado na taxa de crescimento atual. Não considera churn.
+                </p>
+                <div className="grid grid-cols-3 gap-4">
+                  {projections.map(({ month, mrr: proj }, i) => (
+                    <div key={month} className="rounded-2xl border border-dashed border-gray-700 p-4 text-center">
+                      <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">{projMonthNames[i]}</p>
+                      <p className="text-xl font-black text-purple-300">{fmt(proj)}</p>
+                      <p className="text-gray-600 text-xs mt-0.5">MRR projetado</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* E. Churn */}
+              <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
+                <h3 className="font-bold text-gray-200 mb-4">📉 Análise de Churn</h3>
+                {churned === 0 ? (
+                  <p className="text-gray-600 text-sm">Nenhum cancelamento ou pausa registrada.</p>
+                ) : (
+                  <div className="flex gap-6 flex-wrap">
+                    <div>
+                      <p className="text-gray-500 text-xs uppercase tracking-wider">Churned</p>
+                      <p className="text-2xl font-black text-red-400 mt-1">{churned}</p>
+                      <p className="text-gray-600 text-xs">cancelados + pausados</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500 text-xs uppercase tracking-wider">Taxa de Churn</p>
+                      <p className="text-2xl font-black text-orange-400 mt-1">{churnRate}%</p>
+                      <p className="text-gray-600 text-xs">do total de contas</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* F. Pagamentos */}
+              <div className="bg-gray-900/60 rounded-2xl border border-gray-800 overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
+                  <h3 className="font-bold text-gray-200">Pagamentos Registrados</h3>
+                  <span className="text-gray-500 text-sm">{payments.length} registros</span>
+                </div>
+                {payments.length === 0 ? (
+                  <p className="text-gray-600 text-sm p-6">Nenhum pagamento registrado ainda.</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-gray-800 text-gray-500 text-xs uppercase tracking-wider">
+                          <th className="px-6 py-3 text-left">Data</th>
+                          <th className="px-6 py-3 text-left">Método</th>
+                          <th className="px-6 py-3 text-left">Status</th>
+                          <th className="px-6 py-3 text-right">Valor</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {payments.map((p) => (
+                          <tr key={p.id} className="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors">
+                            <td className="px-6 py-3 text-gray-400">{fmtDate(p.processed_at)}</td>
+                            <td className="px-6 py-3 text-gray-300">
+                              {p.method === "cash" ? "💵 Dinheiro" : p.method === "card" ? "💳 Cartão" : p.method === "pix" ? "📲 PIX" : p.method ?? "—"}
+                            </td>
+                            <td className="px-6 py-3">
+                              <span className={`px-2 py-0.5 rounded text-xs font-semibold ${STATUS_BADGE[p.status ?? "confirmed"] ?? "bg-gray-700 text-gray-400"}`}>
+                                {p.status ?? "confirmed"}
+                              </span>
+                            </td>
+                            <td className="px-6 py-3 text-right font-semibold text-green-400">{fmt(p.amount)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* ANALYTICS */}
         {tab === "Analytics" && (() => {

@@ -37,6 +37,8 @@ export default async function AdminPage() {
     { data: unitMapping },
     { data: allOrders },
     { data: allEvents },
+    { data: financeOrders },
+    { data: financePlans },
   ] = await Promise.all([
     admin.from("restaurants").select("*", { count: "exact", head: true }),
     admin
@@ -98,6 +100,13 @@ export default async function AdminPage() {
       .select("id, unit_id, event, product_id, created_at")
       .order("created_at", { ascending: false })
       .limit(1000),
+    admin
+      .from("order_intents")
+      .select("total, created_at, unit_id, status")
+      .eq("status", "confirmed"),
+    admin
+      .from("restaurants")
+      .select("plan, status, free_access"),
   ]);
 
   const revenue30d = payments30d?.reduce((s, p) => s + (p.amount ?? 0), 0) ?? 0;
@@ -178,6 +187,10 @@ export default async function AdminPage() {
       consumerData={{
         orders: allOrders ?? [],
         events: allEvents ?? [],
+      }}
+      financeData={{
+        orders: financeOrders ?? [],
+        plans: financePlans ?? [],
       }}
     />
   );
