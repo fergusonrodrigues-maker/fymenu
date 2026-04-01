@@ -100,15 +100,15 @@ function Modal({ open, onClose, children, title }: { open: boolean; onClose: () 
 
   if (!open) return null;
 
-  // ── Desktop: glassmorphism centered modal ───────────────────────────────
+  // ── Desktop: inverted glassmorphism — luminous backdrop, dark modal ──────
   if (isDesktop) {
     return (
       <div
         style={{
           position: "fixed", inset: 0, zIndex: 9999,
-          background: "rgba(0,0,0,0.3)",
-          display: "flex", alignItems: "center", justifyContent: "center",
+          background: "rgba(255,255,255,0.05)",
           backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
+          display: "flex", alignItems: "center", justifyContent: "center",
           animation: "modalBackdropIn 0.2s ease",
         }}
         onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
@@ -118,9 +118,9 @@ function Modal({ open, onClose, children, title }: { open: boolean; onClose: () 
           style={{
             width: "90%", maxWidth: 760, maxHeight: "80vh",
             borderRadius: 28,
-            background: "rgba(10,10,10,0.18)",
+            background: "rgba(8,8,8,0.75)",
             backdropFilter: "blur(80px)", WebkitBackdropFilter: "blur(80px)",
-            boxShadow: "0 1px 0 rgba(255,255,255,0.04) inset, 0 -1px 0 rgba(0,0,0,0.3) inset, 0 32px 64px rgba(0,0,0,0.5)",
+            boxShadow: "0 1px 0 rgba(255,255,255,0.04) inset, 0 -1px 0 rgba(0,0,0,0.4) inset, 0 40px 80px rgba(0,0,0,0.5), 0 0 0 0.5px rgba(255,255,255,0.06)",
             overflowY: "auto",
             overscrollBehavior: "contain",
             animation: "modalContentIn 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
@@ -136,18 +136,18 @@ function Modal({ open, onClose, children, title }: { open: boolean; onClose: () 
               background: "rgba(255,255,255,0.04)",
               boxShadow: "0 1px 0 rgba(255,255,255,0.05) inset, 0 -1px 0 rgba(0,0,0,0.2) inset",
               border: "none",
-              color: "rgba(255,255,255,0.5)",
+              color: "rgba(255,255,255,0.4)",
               display: "flex", alignItems: "center", justifyContent: "center",
               cursor: "pointer", fontSize: 16, marginRight: 16, marginTop: 16,
               transition: "all 0.2s",
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.background = "rgba(255,255,255,0.08)";
-              e.currentTarget.style.color = "#fff";
+              e.currentTarget.style.color = "rgba(255,255,255,0.7)";
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.background = "rgba(255,255,255,0.04)";
-              e.currentTarget.style.color = "rgba(255,255,255,0.5)";
+              e.currentTarget.style.color = "rgba(255,255,255,0.4)";
             }}
           >✕</button>
           <div style={{ padding: "8px 28px 28px" }}>
