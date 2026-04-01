@@ -35,6 +35,7 @@ function Modal({ open, onClose, children, title }: { open: boolean; onClose: () 
       document.body.style.position = "fixed";
       document.body.style.width = "100%";
       document.body.style.top = `-${window.scrollY}px`;
+      document.body.style.overscrollBehavior = "none";
       setDragY(0);
     } else {
       const scrollY = document.body.style.top;
@@ -43,6 +44,7 @@ function Modal({ open, onClose, children, title }: { open: boolean; onClose: () 
       document.body.style.position = "";
       document.body.style.width = "";
       document.body.style.top = "";
+      document.body.style.overscrollBehavior = "";
       if (scrollY) window.scrollTo(0, parseInt(scrollY || "0") * -1);
     }
     return () => {
@@ -52,6 +54,7 @@ function Modal({ open, onClose, children, title }: { open: boolean; onClose: () 
       document.body.style.position = "";
       document.body.style.width = "";
       document.body.style.top = "";
+      document.body.style.overscrollBehavior = "";
       if (scrollY) window.scrollTo(0, parseInt(scrollY || "0") * -1);
     };
   }, [open]);
@@ -106,6 +109,7 @@ function Modal({ open, onClose, children, title }: { open: boolean; onClose: () 
           maxWidth: 480,
           maxHeight: "92vh",
           overflowY: "auto",
+          overscrollBehavior: "contain",
           WebkitOverflowScrolling: "touch",
           position: "relative",
           transform: `translateY(${dragY}px)`,
