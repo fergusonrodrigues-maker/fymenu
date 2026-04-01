@@ -25,8 +25,16 @@ const PrinterModal = dynamic(() => import("./modals/PrinterModal"), { ssr: false
 function Modal({ open, onClose, children, title }: { open: boolean; onClose: () => void; children: React.ReactNode; title: string }) {
   const [dragY, setDragY] = useState(0);
   const [dragging, setDragging] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
   const startY = useRef(0);
   const contentRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const check = () => setIsDesktop(window.innerWidth >= 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   useEffect(() => {
     if (open) {
@@ -59,6 +67,13 @@ function Modal({ open, onClose, children, title }: { open: boolean; onClose: () 
     };
   }, [open]);
 
+  useEffect(() => {
+    if (!open || !isDesktop) return;
+    const handleEsc = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, [open, isDesktop, onClose]);
+
   function onTouchStart(e: React.TouchEvent) {
     const content = contentRef.current;
     if (content && content.scrollTop > 0) return;
@@ -85,6 +100,50 @@ function Modal({ open, onClose, children, title }: { open: boolean; onClose: () 
 
   if (!open) return null;
 
+  // ── Desktop: centered floating modal ────────────────────────────────────
+  if (isDesktop) {
+    return (
+      <div
+        style={{
+          position: "fixed", inset: 0, zIndex: 9999,
+          background: "rgba(0,0,0,0.6)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)",
+        }}
+        onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      >
+        <div
+          style={{
+            width: "90%", maxWidth: 720, maxHeight: "85vh",
+            borderRadius: 24,
+            background: "#0a0a0a",
+            border: "1px solid rgba(255,255,255,0.08)",
+            boxShadow: "0 25px 50px rgba(0,0,0,0.5)",
+            overflowY: "auto",
+            overscrollBehavior: "contain",
+            animation: "modalFadeIn 0.2s ease",
+            position: "relative",
+          }}
+        >
+          <button
+            onClick={onClose}
+            style={{
+              position: "sticky", top: 12, float: "right", zIndex: 10,
+              width: 32, height: 32, borderRadius: 10,
+              background: "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              color: "rgba(255,255,255,0.5)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              cursor: "pointer", fontSize: 16, marginRight: 12, marginTop: 12,
+            }}
+          >✕</button>
+          {children}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Mobile: bottom sheet with swipe-to-close ─────────────────────────────
   const opacity = Math.max(0, 1 - dragY / 300);
 
   return (
