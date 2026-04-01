@@ -5,7 +5,6 @@ import { Unit, Category, Product, ProductVariation } from "./menuTypes";
 import { useTrack } from "./useTrack";
 import CategoryPillsTop from "./CategoryPillsTop";
 import CategoryCarousel from "./CategoryCarousel";
-import FeaturedCarousel from "./FeaturedCarousel";
 import BottomGlassBar from "./BottomGlassBar";
 import ProductModal from "./ProductModal";
 import UpsellModal, { UpsellSuggestion } from "./UpsellModal";
@@ -259,6 +258,7 @@ export default function MenuClient({
   .search-result-card:active {
     opacity: 0.7;
   }
+  .featured-scroll::-webkit-scrollbar { display: none; }
 `}</style>
       {/* Conteúdo scrollável */}
       <div
@@ -535,16 +535,232 @@ export default function MenuClient({
           </div>
         ) : (
           <>
-            {/* Categorias em destaque */}
+            {/* Categorias em destaque — carrossel horizontal grande */}
             {featuredCategories.map((cat) => {
               const catProducts = productsByCategory(cat.id);
               if (!catProducts.length) return null;
               return (
-                <div key={cat.id}>
-                  <FeaturedCarousel
-                    items={catProducts}
-                    onOpen={(p) => handleOpenProduct(p)}
-                  />
+                <div key={cat.id} style={{ marginBottom: 24 }}>
+                  {/* Título */}
+                  <div style={{ padding: "0 16px", marginBottom: 12 }}>
+                    <div style={{ fontSize: 18, fontWeight: 800, color: "#fff" }}>{cat.name}</div>
+                  </div>
+
+                  {/* Scroll horizontal com snap */}
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 12,
+                      overflowX: "auto",
+                      scrollSnapType: "x mandatory",
+                      paddingLeft: 16,
+                      paddingRight: 16,
+                      paddingBottom: 4,
+                      WebkitOverflowScrolling: "touch",
+                      scrollbarWidth: "none",
+                      msOverflowStyle: "none",
+                    } as React.CSSProperties}
+                  >
+                    {catProducts.map((product) => (
+                      <div
+                        key={product.id}
+                        onClick={() => handleOpenProduct(product)}
+                        style={{
+                          flexShrink: 0,
+                          width: 260,
+                          aspectRatio: "4 / 5",
+                          borderRadius: 20,
+                          overflow: "hidden",
+                          position: "relative",
+                          cursor: "pointer",
+                          scrollSnapAlign: "start",
+                        }}
+                      >
+                        {/* Thumbnail */}
+                        {product.thumbnail_url ? (
+                          <img
+                            src={product.thumbnail_url}
+                            alt={product.name}
+                            loading="lazy"
+                            style={{
+                              position: "absolute",
+                              inset: 0,
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
+                            }}
+                          />
+                        ) : (
+                          <div
+                            style={{
+                              position: "absolute",
+                              inset: 0,
+                              background: "linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%)",
+                            }}
+                          />
+                        )}
+
+                        {/* Play icon se tem vídeo */}
+                        {product.video_url && (
+                          <div
+                            style={{
+                              position: "absolute",
+                              top: "50%",
+                              left: "50%",
+                              transform: "translate(-50%, -50%)",
+                              width: 48,
+                              height: 48,
+                              borderRadius: "50%",
+                              background: "rgba(255,255,255,0.15)",
+                              backdropFilter: "blur(10px)",
+                              WebkitBackdropFilter: "blur(10px)",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: 0,
+                                height: 0,
+                                borderLeft: "16px solid white",
+                                borderTop: "10px solid transparent",
+                                borderBottom: "10px solid transparent",
+                                marginLeft: 4,
+                              }}
+                            />
+                          </div>
+                        )}
+
+                        {/* Badge "Mais pedido hoje" */}
+                        <div
+                          style={{
+                            position: "absolute",
+                            top: 12,
+                            left: 12,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 4,
+                            padding: "4px 10px",
+                            borderRadius: 8,
+                            background: "rgba(0,0,0,0.3)",
+                            backdropFilter: "blur(10px)",
+                            WebkitBackdropFilter: "blur(10px)",
+                            fontSize: 11,
+                            fontWeight: 700,
+                            color: "#fff",
+                          }}
+                        >
+                          🔥 Mais pedido hoje
+                        </div>
+
+                        {/* Logo do restaurante */}
+                        {unit.logo_url && (
+                          <div
+                            style={{
+                              position: "absolute",
+                              top: 12,
+                              right: 12,
+                              width: 32,
+                              height: 32,
+                              borderRadius: "50%",
+                              overflow: "hidden",
+                              border: "1.5px solid rgba(255,255,255,0.2)",
+                            }}
+                          >
+                            <img
+                              src={unit.logo_url}
+                              alt=""
+                              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                            />
+                          </div>
+                        )}
+
+                        {/* Gradiente inferior */}
+                        <div
+                          style={{
+                            position: "absolute",
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            height: "55%",
+                            background:
+                              "linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 50%, transparent 100%)",
+                          }}
+                        />
+
+                        {/* Info */}
+                        <div
+                          style={{
+                            position: "absolute",
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            padding: "14px 16px",
+                          }}
+                        >
+                          <div
+                            style={{
+                              fontSize: 18,
+                              fontWeight: 800,
+                              color: "#fff",
+                              lineHeight: 1.2,
+                              marginBottom: 4,
+                            }}
+                          >
+                            {product.name}
+                          </div>
+                          {product.description && (
+                            <div
+                              style={{
+                                fontSize: 12,
+                                color: "rgba(255,255,255,0.6)",
+                                lineHeight: 1.3,
+                                marginBottom: 8,
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                display: "-webkit-box",
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: "vertical",
+                              } as React.CSSProperties}
+                            >
+                              {product.description}
+                            </div>
+                          )}
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                            {product.base_price != null && (
+                              <span style={{ color: "#00ffae", fontSize: 16, fontWeight: 800 }}>
+                                R$ {product.base_price.toFixed(2).replace(".", ",")}
+                              </span>
+                            )}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenProduct(product);
+                              }}
+                              style={{
+                                width: 36,
+                                height: 36,
+                                borderRadius: "50%",
+                                background: "#FF6B00",
+                                border: "none",
+                                color: "#fff",
+                                fontSize: 22,
+                                fontWeight: 700,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                cursor: "pointer",
+                                boxShadow: "0 2px 8px rgba(255,107,0,0.3)",
+                              }}
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               );
             })}
