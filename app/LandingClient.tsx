@@ -223,8 +223,8 @@ export default function LandingPage() {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
       dots = [];
-      for (let x = 12; x < canvas.width; x += 24) {
-        for (let y = 12; y < canvas.height; y += 24) {
+      for (let x = 8; x < canvas.width; x += 16) {
+        for (let y = 8; y < canvas.height; y += 16) {
           dots.push({ x, y, opacity: 0.25 });
         }
       }
@@ -259,44 +259,46 @@ export default function LandingPage() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       const now = performance.now();
 
+      const RIPPLE_EXPAND_MS = 1200;
+      const RIPPLE_TOTAL_MS  = 1500;
       ripples = ripples.filter((r) => {
         const elapsed = now - r.startTime;
-        if (elapsed > 800) return false;
-        const progress = elapsed / 800;
-        r.radius = 300 * (1 - Math.pow(1 - progress, 3));
+        if (elapsed > RIPPLE_TOTAL_MS) return false;
+        const progress = Math.min(elapsed / RIPPLE_EXPAND_MS, 1);
+        r.radius = 400 * (1 - Math.pow(1 - progress, 3));
         return true;
       });
 
       const dark = isDarkMode();
       const baseOpacity = 0.25;
+      const DOT_RADIUS = 1.0;
 
       for (const dot of dots) {
         let targetOpacity = baseOpacity;
 
         const distToMouse = Math.hypot(dot.x - mouseX, dot.y - mouseY);
-        if (distToMouse < 150) {
-          const mouseBrightness = 0.70 * (1 - distToMouse / 150);
+        if (distToMouse < 120) {
+          const t = 1 - distToMouse / 120;
+          const mouseBrightness = 0.40 * (t * t);
           targetOpacity = Math.max(targetOpacity, baseOpacity + mouseBrightness);
         }
 
         for (const ripple of ripples) {
+          const elapsed = now - ripple.startTime;
           const distToCenter = Math.hypot(dot.x - ripple.x, dot.y - ripple.y);
           const distToRing = Math.abs(distToCenter - ripple.radius);
-          if (distToRing < 20) {
-            const rippleBrightness = 1.0 * (1 - distToRing / 20);
-            const elapsed = now - ripple.startTime;
-            const fade = 1 - elapsed / 800;
-            targetOpacity = Math.max(targetOpacity, baseOpacity + rippleBrightness * fade);
+          if (distToRing < 80) {
+            const waveFactor = 1 - distToRing / 80;
+            const fade = Math.max(0, 1 - elapsed / RIPPLE_TOTAL_MS);
+            const rippleBrightness = 0.30 * waveFactor * fade;
+            targetOpacity = Math.max(targetOpacity, baseOpacity + rippleBrightness);
           }
         }
 
         dot.opacity += (targetOpacity - dot.opacity) * 0.08;
 
-        const extra = Math.max(0, dot.opacity - baseOpacity);
-        const radius = 1.5 + extra * 3;
-
         ctx.beginPath();
-        ctx.arc(dot.x, dot.y, radius, 0, Math.PI * 2);
+        ctx.arc(dot.x, dot.y, DOT_RADIUS, 0, Math.PI * 2);
         if (dark) {
           ctx.fillStyle = `rgba(0, 255, 174, ${dot.opacity})`;
         } else {
