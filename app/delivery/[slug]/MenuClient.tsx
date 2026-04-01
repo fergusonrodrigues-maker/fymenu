@@ -4,7 +4,6 @@ import { useRef, useState, useEffect, useCallback } from "react";
 import { Unit, Category, Product, ProductVariation } from "./menuTypes";
 import { useTrack } from "./useTrack";
 import CategoryPillsTop from "./CategoryPillsTop";
-import CategoryCarousel from "./CategoryCarousel";
 import BottomGlassBar from "./BottomGlassBar";
 import ProductModal from "./ProductModal";
 import UpsellModal, { UpsellSuggestion } from "./UpsellModal";
@@ -765,28 +764,219 @@ export default function MenuClient({
               );
             })}
 
-            {/* Categorias regulares */}
+            {/* Categorias regulares — container translúcido + grid 2 colunas */}
             {regularCategories.map((cat) => {
               const catProducts = productsByCategory(cat.id);
               if (!catProducts.length) return null;
-              const isActive = cat.id === activeCategoryId;
+              const isOdd = catProducts.length % 2 !== 0;
 
               return (
                 <div
                   key={cat.id}
                   ref={(el) => { sectionRefs.current[cat.id] = el; }}
                   style={{
-                    marginBottom: 4,
-                    transition: "opacity 0.4s ease",
-                    opacity: isActive ? 1 : 1,
+                    marginBottom: 24,
+                    padding: "0 8px",
                     scrollMarginTop: 66,
                   }}
                 >
-                  <CategoryCarousel
-                    items={catProducts}
-                    active={isActive}
-                    onOpen={(p) => handleOpenProduct(p)}
-                  />
+                  {/* Título da categoria */}
+                  <div
+                    style={{
+                      fontSize: 18,
+                      fontWeight: 800,
+                      color: "#fff",
+                      marginBottom: 12,
+                      paddingLeft: 4,
+                    }}
+                  >
+                    {cat.name}
+                  </div>
+
+                  {/* Container translúcido */}
+                  <div
+                    style={{
+                      background: "rgba(255,255,255,0.02)",
+                      backdropFilter: "blur(20px)",
+                      WebkitBackdropFilter: "blur(20px)",
+                      borderRadius: 20,
+                      padding: 6,
+                      boxShadow:
+                        "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.1) inset",
+                    }}
+                  >
+                    {/* Grid 2 colunas */}
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(2, 1fr)",
+                        gap: 6,
+                      }}
+                    >
+                      {catProducts.map((product, index) => {
+                        const isLast = index === catProducts.length - 1;
+                        const isLastAndOdd = isLast && isOdd;
+
+                        return (
+                          <div
+                            key={product.id}
+                            onClick={() => handleOpenProduct(product)}
+                            style={{
+                              gridColumn: isLastAndOdd ? "span 2" : "span 1",
+                              position: "relative",
+                              aspectRatio: isLastAndOdd ? "2 / 1.2" : "4 / 5",
+                              borderRadius: 14,
+                              overflow: "hidden",
+                              cursor: "pointer",
+                            }}
+                          >
+                            {/* Thumbnail */}
+                            {product.thumbnail_url ? (
+                              <img
+                                src={product.thumbnail_url}
+                                alt={product.name}
+                                loading="lazy"
+                                style={{
+                                  position: "absolute",
+                                  inset: 0,
+                                  width: "100%",
+                                  height: "100%",
+                                  objectFit: "cover",
+                                }}
+                              />
+                            ) : (
+                              <div
+                                style={{
+                                  position: "absolute",
+                                  inset: 0,
+                                  background: "rgba(255,255,255,0.04)",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  fontSize: 32,
+                                  color: "rgba(255,255,255,0.1)",
+                                }}
+                              >
+                                🍽️
+                              </div>
+                            )}
+
+                            {/* Play icon se tem vídeo */}
+                            {product.video_url && (
+                              <div
+                                style={{
+                                  position: "absolute",
+                                  top: "50%",
+                                  left: "50%",
+                                  transform: "translate(-50%, -50%)",
+                                  width: 40,
+                                  height: 40,
+                                  borderRadius: "50%",
+                                  background: "rgba(255,255,255,0.15)",
+                                  backdropFilter: "blur(10px)",
+                                  WebkitBackdropFilter: "blur(10px)",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    width: 0,
+                                    height: 0,
+                                    borderLeft: "12px solid white",
+                                    borderTop: "7px solid transparent",
+                                    borderBottom: "7px solid transparent",
+                                    marginLeft: 3,
+                                  }}
+                                />
+                              </div>
+                            )}
+
+                            {/* Gradiente inferior */}
+                            <div
+                              style={{
+                                position: "absolute",
+                                bottom: 0,
+                                left: 0,
+                                right: 0,
+                                height: "55%",
+                                background:
+                                  "linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.3) 60%, transparent 100%)",
+                              }}
+                            />
+
+                            {/* Info */}
+                            <div
+                              style={{
+                                position: "absolute",
+                                bottom: 0,
+                                left: 0,
+                                right: 0,
+                                padding: isLastAndOdd ? "12px 16px" : "10px 12px",
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "flex-end",
+                              }}
+                            >
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div
+                                  style={{
+                                    color: "#fff",
+                                    fontSize: isLastAndOdd ? 16 : 13,
+                                    fontWeight: 700,
+                                    lineHeight: 1.2,
+                                    marginBottom: 3,
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                    whiteSpace: isLastAndOdd ? "normal" : "nowrap",
+                                  }}
+                                >
+                                  {product.name}
+                                </div>
+                                {product.base_price != null && (
+                                  <span
+                                    style={{
+                                      color: "#00ffae",
+                                      fontSize: isLastAndOdd ? 15 : 13,
+                                      fontWeight: 800,
+                                    }}
+                                  >
+                                    R$ {product.base_price.toFixed(2).replace(".", ",")}
+                                  </span>
+                                )}
+                              </div>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenProduct(product);
+                                }}
+                                style={{
+                                  width: 32,
+                                  height: 32,
+                                  borderRadius: "50%",
+                                  background: "#FF6B00",
+                                  border: "none",
+                                  color: "#fff",
+                                  fontSize: 20,
+                                  fontWeight: 700,
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  cursor: "pointer",
+                                  flexShrink: 0,
+                                  marginLeft: 8,
+                                  boxShadow: "0 2px 8px rgba(255,107,0,0.3)",
+                                }}
+                              >
+                                +
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
               );
             })}
