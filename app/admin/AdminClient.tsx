@@ -503,6 +503,7 @@ export default function AdminClient({
   const [partnerCommission, setPartnerCommission] = useState(10);
   const [partnerIsPhotographer, setPartnerIsPhotographer] = useState(false);
   const [partnerNotes, setPartnerNotes] = useState("");
+  const [partnerPassword, setPartnerPassword] = useState("");
   const [partnerError, setPartnerError] = useState<string | null>(null);
   // Add coupon form
   const [showAddCoupon, setShowAddCoupon] = useState(false);
@@ -748,11 +749,11 @@ export default function AdminClient({
   async function handleAddPartner() {
     if (!partnerName || !partnerEmail) { setPartnerError("Nome e email são obrigatórios."); return; }
     setPartnerError(null);
-    const res = await partnerApi({ action: "add_partner", name: partnerName, email: partnerEmail, phone: partnerPhone || null, document: partnerDocument || null, commission_percent: partnerCommission, is_photographer: partnerIsPhotographer, notes: partnerNotes || null });
+    const res = await partnerApi({ action: "add_partner", name: partnerName, email: partnerEmail, phone: partnerPhone || null, document: partnerDocument || null, commission_percent: partnerCommission, is_photographer: partnerIsPhotographer, notes: partnerNotes || null, password: partnerPassword || null });
     const json = await res.json();
     if (!res.ok) { setPartnerError(json.error); return; }
     setPartnersState((prev) => [json.partner, ...prev]);
-    setPartnerName(""); setPartnerEmail(""); setPartnerPhone(""); setPartnerDocument(""); setPartnerCommission(10); setPartnerIsPhotographer(false); setPartnerNotes("");
+    setPartnerName(""); setPartnerEmail(""); setPartnerPhone(""); setPartnerDocument(""); setPartnerCommission(10); setPartnerIsPhotographer(false); setPartnerNotes(""); setPartnerPassword("");
     setShowAddPartner(false);
   }
 
@@ -1920,6 +1921,7 @@ export default function AdminClient({
                       <input type="email" placeholder="Email *" value={partnerEmail} onChange={(e) => setPartnerEmail(e.target.value)} className="px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 text-white text-sm outline-none" />
                       <input type="text" placeholder="Telefone" value={partnerPhone} onChange={(e) => setPartnerPhone(e.target.value)} className="px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 text-white text-sm outline-none" />
                       <input type="text" placeholder="CPF/CNPJ" value={partnerDocument} onChange={(e) => setPartnerDocument(e.target.value)} className="px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 text-white text-sm outline-none" />
+                      <input type="text" placeholder="Senha inicial do parceiro" value={partnerPassword} onChange={(e) => setPartnerPassword(e.target.value)} className="px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 text-white text-sm outline-none col-span-2" />
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-2">

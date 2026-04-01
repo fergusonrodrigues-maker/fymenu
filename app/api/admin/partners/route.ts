@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import crypto from "crypto";
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
@@ -29,6 +30,10 @@ export async function POST(req: NextRequest) {
       .select()
       .single();
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (body.password) {
+      const hash = crypto.createHash("sha256").update(body.password + data.id).digest("hex");
+      await admin.from("partners").update({ password_hash: hash }).eq("id", data.id);
+    }
     return NextResponse.json({ partner: data });
   }
 

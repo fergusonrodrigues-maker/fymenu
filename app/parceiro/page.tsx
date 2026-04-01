@@ -1,0 +1,8 @@
+"use client";
+import dynamic from "next/dynamic";
+
+const PartnerDashboard = dynamic(() => import("./PartnerDashboard"), { ssr: false });
+
+export default function PartnerPage() {
+  return <PartnerDashboard />;
+}
