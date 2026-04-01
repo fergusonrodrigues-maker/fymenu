@@ -206,6 +206,173 @@ const PLANS = {
   },
 } as const;
 
+// ── Plan Card (with hover effects) ───────────────────────────────────────────
+type PlanKey = keyof typeof PLANS;
+function PlanCard({ planKey, plan, cycle, theme }: {
+  planKey: PlanKey;
+  plan: typeof PLANS[PlanKey];
+  cycle: "MONTHLY" | "QUARTERLY" | "SEMIANNUALLY";
+  theme: "dark" | "light";
+}) {
+  const [hovered, setHovered] = useState(false);
+  const [pressed, setPressed] = useState(false);
+  const isAccent = plan.highlight;
+  const dark = theme === "dark";
+
+  const shadowBase = isAccent
+    ? dark
+      ? "0 0 120px 40px rgba(0,255,174,0.03), 0 0 60px 20px rgba(0,255,174,0.02), 0 1px 0 rgba(0,255,174,0.06) inset, 0 -1px 0 rgba(0,0,0,0.25) inset"
+      : "0 0 100px 40px rgba(0,200,138,0.02), 0 -1px 0 rgba(255,255,255,0.6) inset, 0 1px 0 rgba(0,0,0,0.04) inset"
+    : dark
+      ? "0 0 80px 30px rgba(255,255,255,0.012), 0 1px 0 rgba(255,255,255,0.03) inset, 0 -1px 0 rgba(0,0,0,0.25) inset"
+      : "0 0 80px 30px rgba(0,0,0,0.01), 0 -1px 0 rgba(255,255,255,0.6) inset, 0 1px 0 rgba(0,0,0,0.04) inset";
+
+  const shadowHover = isAccent
+    ? dark
+      ? "0 20px 40px rgba(0,0,0,0.3), 0 0 120px 40px rgba(0,255,174,0.04), 0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.25) inset"
+      : "0 20px 40px rgba(0,0,0,0.08), 0 0 100px 40px rgba(0,200,138,0.04), 0 -1px 0 rgba(255,255,255,0.6) inset, 0 1px 0 rgba(0,0,0,0.04) inset"
+    : dark
+      ? "0 20px 40px rgba(0,0,0,0.25), 0 0 80px 30px rgba(255,255,255,0.015), 0 1px 0 rgba(255,255,255,0.05) inset, 0 -1px 0 rgba(0,0,0,0.25) inset"
+      : "0 20px 40px rgba(0,0,0,0.06), 0 0 80px 30px rgba(0,0,0,0.015), 0 -1px 0 rgba(255,255,255,0.6) inset, 0 1px 0 rgba(0,0,0,0.04) inset";
+
+  const btnShadowBase = isAccent
+    ? "0 1px 0 rgba(0,255,174,0.4) inset, 0 -1px 0 rgba(0,0,0,0.2) inset, 0 2px 8px rgba(0,0,0,0.2)"
+    : dark
+      ? "0 1px 0 rgba(255,255,255,0.06) inset, 0 -1px 0 rgba(0,0,0,0.2) inset, 0 2px 4px rgba(0,0,0,0.15)"
+      : "0 1px 0 rgba(255,255,255,0.8) inset, 0 -1px 0 rgba(0,0,0,0.06) inset, 0 2px 4px rgba(0,0,0,0.06)";
+
+  const btnShadowHover = isAccent
+    ? dark
+      ? "0 0 0 4px rgba(0,255,174,0.12), 0 1px 0 rgba(0,255,174,0.4) inset, 0 -1px 0 rgba(0,0,0,0.2) inset, 0 2px 8px rgba(0,0,0,0.2)"
+      : "0 0 0 4px rgba(0,200,138,0.1), 0 -1px 0 rgba(255,255,255,0.6) inset, 0 1px 0 rgba(0,0,0,0.04) inset"
+    : dark
+      ? "0 0 0 4px rgba(255,255,255,0.06), 0 1px 0 rgba(255,255,255,0.08) inset, 0 -1px 0 rgba(0,0,0,0.2) inset, 0 2px 4px rgba(0,0,0,0.15)"
+      : "0 0 0 4px rgba(0,0,0,0.04), 0 1px 0 rgba(255,255,255,0.8) inset, 0 -1px 0 rgba(0,0,0,0.06) inset";
+
+  return (
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => { setHovered(false); setPressed(false); }}
+      onMouseDown={() => setPressed(true)}
+      onMouseUp={() => setPressed(false)}
+      style={{
+        borderRadius: 24, padding: 28,
+        background: isAccent ? "var(--lp-highlight-bg)" : "var(--lp-card-bg)",
+        backdropFilter: "blur(80px)", WebkitBackdropFilter: "blur(80px)",
+        position: "relative", overflow: "hidden",
+        transform: pressed
+          ? `translateY(-4px) scale(0.99)${isAccent ? " scale(1.02)" : ""}`
+          : hovered
+            ? `translateY(-8px)${isAccent ? " scale(1.02)" : ""}`
+            : isAccent ? "scale(1.02)" : "none",
+        display: "flex", flexDirection: "column",
+        boxShadow: hovered ? shadowHover : shadowBase,
+        transition: "all 0.5s cubic-bezier(0.16, 1, 0.3, 1)",
+        cursor: "pointer",
+      }}
+    >
+      {/* Hover glow radial — top */}
+      <div style={{
+        position: "absolute", inset: -10, pointerEvents: "none",
+        background: isAccent
+          ? dark
+            ? "radial-gradient(circle at 50% 0%, rgba(0,255,174,0.15) 0%, transparent 70%)"
+            : "radial-gradient(circle at 50% 0%, rgba(0,200,138,0.08) 0%, transparent 70%)"
+          : dark
+            ? "radial-gradient(circle at 50% 0%, rgba(255,255,255,0.06) 0%, transparent 70%)"
+            : "radial-gradient(circle at 50% 0%, rgba(0,0,0,0.04) 0%, transparent 70%)",
+        opacity: hovered ? 1 : 0,
+        transition: "opacity 0.5s ease",
+      }} />
+
+      {/* Shine diagonal */}
+      <div style={{
+        position: "absolute", inset: 0, pointerEvents: "none", borderRadius: "inherit",
+        background: "linear-gradient(120deg, transparent 40%, rgba(255,255,255,0.06) 50%, transparent 60%)",
+        backgroundSize: "200% 100%",
+        opacity: hovered ? 1 : 0,
+        animation: hovered ? "cardShine 3s infinite linear" : "none",
+        transition: "opacity 0.3s ease",
+      }} />
+
+      {/* Internal radial light — top glow (static) */}
+      <div style={{
+        position: "absolute", top: 0, left: 0, right: 0, bottom: 0, pointerEvents: "none",
+        maskImage: "linear-gradient(to bottom, white 0%, transparent 60%)",
+        WebkitMaskImage: "linear-gradient(to bottom, white 0%, transparent 60%)",
+      }}>
+        <div style={{
+          position: "absolute", inset: 0,
+          background: isAccent
+            ? "radial-gradient(ellipse at top, rgba(0,255,174,0.08) 0%, transparent 70%)"
+            : dark
+              ? "radial-gradient(ellipse at top, rgba(255,255,255,0.04) 0%, transparent 70%)"
+              : "radial-gradient(ellipse at top, rgba(0,0,0,0.03) 0%, transparent 70%)",
+        }} />
+      </div>
+
+      {/* Content (z-index above overlays) */}
+      <div style={{ position: "relative", zIndex: 2, display: "flex", flexDirection: "column", flex: 1 }}>
+        {/* Inline badge label */}
+        {"badge" in plan && plan.badge ? (
+          <div style={{
+            fontSize: 11, fontWeight: 700, letterSpacing: "1px", textAlign: "center",
+            marginBottom: 8,
+            ...(isAccent
+              ? { background: "linear-gradient(135deg, #00ffae, #00d9ff)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }
+              : { color: dark ? "#fbbf24" : "#a07800" }),
+          }}>
+            {plan.badge.toUpperCase()}
+          </div>
+        ) : (
+          <div style={{ height: 18, marginBottom: 8 }} />
+        )}
+
+        <div style={{ textAlign: "center", marginBottom: 20 }}>
+          <div style={{ fontSize: 28, marginBottom: 4 }}>{plan.icon}</div>
+          <div style={{ fontSize: 20, fontWeight: 900, color: "var(--lp-price-color)" }}>{plan.name}</div>
+          <div style={{ fontSize: 12, color: "var(--lp-text-secondary)", marginTop: 2 }}>{plan.units}</div>
+        </div>
+
+        <div style={{ textAlign: "center", marginBottom: 20 }}>
+          <div style={{ fontSize: 36, fontWeight: 900, color: isAccent ? "var(--lp-price-highlight)" : "var(--lp-price-color)" }}>
+            R${plan.prices[cycle]}
+            <span style={{ fontSize: 14, fontWeight: 400, color: "var(--lp-text-secondary)" }}>/mês</span>
+          </div>
+          {cycle !== "MONTHLY" && (
+            <div style={{ fontSize: 12, color: "var(--lp-text-muted)", marginTop: 4 }}>
+              R${plan.totals[cycle]} total · Economia de {plan.savings[cycle]}
+            </div>
+          )}
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 24, flex: 1 }}>
+          {plan.features.map((f) => (
+            <div key={f} style={{ fontSize: 13, color: "var(--lp-text)", display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ color: "#00cc8a", fontSize: 12 }}>✓</span> {f}
+            </div>
+          ))}
+        </div>
+
+        <a href="/cadastro"
+          style={{
+            display: "block", textAlign: "center", padding: "14px", borderRadius: 14,
+            background: isAccent ? "linear-gradient(135deg, #00ffae, #00d9ff)" : "var(--lp-btn-bg)",
+            color: isAccent ? "#000" : "var(--lp-btn-color)",
+            fontWeight: 800, fontSize: 15, textDecoration: "none",
+            border: "none",
+            boxShadow: hovered ? btnShadowHover : btnShadowBase,
+            transform: hovered ? "scale(1.02)" : "scale(1)",
+            transition: "all 0.4s ease",
+          }}
+        >
+          {plan.cta}
+        </a>
+      </div>
+    </div>
+  );
+}
+
 // ── Main Landing Page ─────────────────────────────────────────────────────────
 export default function LandingPage() {
   const [loading, setLoading] = useState(true);
@@ -987,112 +1154,8 @@ export default function LandingPage() {
 
           {/* Plan cards */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16, maxWidth: 960, margin: "0 auto", padding: "0 16px" }}>
-            {(Object.entries(PLANS) as [string, typeof PLANS[keyof typeof PLANS]][]).map(([key, plan]) => (
-              <div key={key} style={{
-                borderRadius: 24, padding: 28,
-                background: plan.highlight ? "var(--lp-highlight-bg)" : "var(--lp-card-bg)",
-                backdropFilter: "blur(80px)", WebkitBackdropFilter: "blur(80px)",
-                position: "relative", overflow: "hidden",
-                transform: plan.highlight ? "scale(1.02)" : "none",
-                display: "flex", flexDirection: "column",
-                boxShadow: plan.highlight
-                  ? theme === "light"
-                    ? "0 0 100px 40px rgba(0,200,138,0.02), 0 -1px 0 rgba(255,255,255,0.6) inset, 0 1px 0 rgba(0,0,0,0.04) inset"
-                    : "0 0 120px 40px rgba(0,255,174,0.03), 0 0 60px 20px rgba(0,255,174,0.02), 0 1px 0 rgba(0,255,174,0.06) inset, 0 -1px 0 rgba(0,0,0,0.25) inset"
-                  : theme === "light"
-                    ? "0 0 80px 30px rgba(0,0,0,0.01), 0 -1px 0 rgba(255,255,255,0.6) inset, 0 1px 0 rgba(0,0,0,0.04) inset"
-                    : "0 0 80px 30px rgba(255,255,255,0.012), 0 1px 0 rgba(255,255,255,0.03) inset, 0 -1px 0 rgba(0,0,0,0.25) inset",
-              }}>
-                {/* Internal radial light — top glow */}
-                <div style={{
-                  position: "absolute", top: 0, left: 0, right: 0, bottom: 0, pointerEvents: "none",
-                  maskImage: "linear-gradient(to bottom, white 0%, transparent 60%)",
-                  WebkitMaskImage: "linear-gradient(to bottom, white 0%, transparent 60%)",
-                }}>
-                  <div style={{
-                    position: "absolute", inset: 0,
-                    background: plan.highlight
-                      ? "radial-gradient(ellipse at top, rgba(0,255,174,0.08) 0%, transparent 70%)"
-                      : theme === "light"
-                        ? "radial-gradient(ellipse at top, rgba(0,0,0,0.03) 0%, transparent 70%)"
-                        : "radial-gradient(ellipse at top, rgba(255,255,255,0.04) 0%, transparent 70%)",
-                  }} />
-                </div>
-
-                {/* Inline badge label */}
-                {"badge" in plan && plan.badge ? (
-                  <div style={{
-                    fontSize: 11, fontWeight: 700, letterSpacing: "1px", textAlign: "center",
-                    marginBottom: 8, position: "relative",
-                    ...(plan.highlight
-                      ? { background: "linear-gradient(135deg, #00ffae, #00d9ff)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }
-                      : { color: theme === "dark" ? "#fbbf24" : "#a07800" }),
-                  }}>
-                    {plan.badge.toUpperCase()}
-                  </div>
-                ) : (
-                  <div style={{ height: 18, marginBottom: 8 }} />
-                )}
-
-                <div style={{ textAlign: "center", marginBottom: 20, position: "relative" }}>
-                  <div style={{ fontSize: 28, marginBottom: 4 }}>{plan.icon}</div>
-                  <div style={{ fontSize: 20, fontWeight: 900, color: "var(--lp-price-color)" }}>{plan.name}</div>
-                  <div style={{ fontSize: 12, color: "var(--lp-text-secondary)", marginTop: 2 }}>{plan.units}</div>
-                </div>
-
-                <div style={{ textAlign: "center", marginBottom: 20, position: "relative" }}>
-                  <div style={{ fontSize: 36, fontWeight: 900, color: plan.highlight ? "var(--lp-price-highlight)" : "var(--lp-price-color)" }}>
-                    R${plan.prices[cycle]}
-                    <span style={{ fontSize: 14, fontWeight: 400, color: "var(--lp-text-secondary)" }}>/mês</span>
-                  </div>
-                  {cycle !== "MONTHLY" && (
-                    <div style={{ fontSize: 12, color: "var(--lp-text-muted)", marginTop: 4 }}>
-                      R${plan.totals[cycle]} total · Economia de {plan.savings[cycle]}
-                    </div>
-                  )}
-                </div>
-
-                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 24, flex: 1, position: "relative" }}>
-                  {plan.features.map((f) => (
-                    <div key={f} style={{ fontSize: 13, color: "var(--lp-text)", display: "flex", alignItems: "center", gap: 8 }}>
-                      <span style={{ color: plan.highlight ? "#00cc8a" : "#00cc8a", fontSize: 12 }}>✓</span> {f}
-                    </div>
-                  ))}
-                </div>
-
-                <a href="/cadastro"
-                  style={{
-                    display: "block", textAlign: "center", padding: "14px", borderRadius: 14,
-                    background: plan.highlight ? "linear-gradient(135deg, #00ffae, #00d9ff)" : "var(--lp-btn-bg)",
-                    color: plan.highlight ? "#000" : "var(--lp-btn-color)",
-                    fontWeight: 800, fontSize: 15, textDecoration: "none",
-                    border: "none",
-                    transition: "all 0.2s",
-                    position: "relative",
-                    boxShadow: plan.highlight
-                      ? "0 1px 0 rgba(0,255,174,0.4) inset, 0 -1px 0 rgba(0,0,0,0.2) inset, 0 2px 8px rgba(0,0,0,0.2)"
-                      : theme === "light"
-                        ? "0 1px 0 rgba(255,255,255,0.8) inset, 0 -1px 0 rgba(0,0,0,0.06) inset, 0 2px 4px rgba(0,0,0,0.06)"
-                        : "0 1px 0 rgba(255,255,255,0.06) inset, 0 -1px 0 rgba(0,0,0,0.2) inset, 0 2px 4px rgba(0,0,0,0.15)",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.boxShadow = plan.highlight
-                      ? "0 0 40px 10px rgba(0,255,174,0.06), 0 1px 0 rgba(0,255,174,0.4) inset, 0 -1px 0 rgba(0,0,0,0.2) inset"
-                      : theme === "light"
-                        ? "0 0 30px 8px rgba(0,0,0,0.03), 0 1px 0 rgba(255,255,255,0.8) inset, 0 -1px 0 rgba(0,0,0,0.06) inset"
-                        : "0 0 30px 8px rgba(255,255,255,0.04), 0 1px 0 rgba(255,255,255,0.06) inset, 0 -1px 0 rgba(0,0,0,0.2) inset, 0 2px 4px rgba(0,0,0,0.15)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.boxShadow = plan.highlight
-                      ? "0 1px 0 rgba(0,255,174,0.4) inset, 0 -1px 0 rgba(0,0,0,0.2) inset, 0 2px 8px rgba(0,0,0,0.2)"
-                      : theme === "light"
-                        ? "0 1px 0 rgba(255,255,255,0.8) inset, 0 -1px 0 rgba(0,0,0,0.06) inset, 0 2px 4px rgba(0,0,0,0.06)"
-                        : "0 1px 0 rgba(255,255,255,0.06) inset, 0 -1px 0 rgba(0,0,0,0.2) inset, 0 2px 4px rgba(0,0,0,0.15)";
-                  }}
-                >
-                  {plan.cta}
-                </a>
-              </div>
+            {(Object.keys(PLANS) as PlanKey[]).map((key) => (
+              <PlanCard key={key} planKey={key} plan={PLANS[key]} cycle={cycle} theme={theme} />
             ))}
           </div>
         </section>
