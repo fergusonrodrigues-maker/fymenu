@@ -1,210 +1,223 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 
-interface DeliveryInfo {
-  id: string;
-  status: "pending" | "in_route" | "delivered" | "cancelled";
-  picked_up_at: string | null;
-  delivered_at: string | null;
-  estimated_minutes: number | null;
-  deliverer: { id: string; name: string; phone: string | null } | null;
-  current_location: { lat: number; lng: number } | null;
-  tracking_points: { lat: number; lng: number; recorded_at: string }[];
-}
-
-const STATUS_LABELS: Record<string, { label: string; color: string; icon: string }> = {
-  pending: { label: "Aguardando coleta", color: "#fbbf24", icon: "⏳" },
-  in_route: { label: "A caminho!", color: "#00ffae", icon: "🚴" },
-  delivered: { label: "Entregue!", color: "#00ffae", icon: "✅" },
-  cancelled: { label: "Entrega cancelada", color: "#f87171", icon: "❌" },
+type OrderItem = {
+  qty: number;
+  code_name?: string;
+  unit_price: number;
+  total: number;
+  notes?: string;
 };
 
-function formatTime(iso: string | null) {
-  if (!iso) return null;
-  return new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+type DriverOrder = {
+  id: string;
+  table_number: number | null;
+  items: OrderItem[];
+  total: number;
+  notes: string | null;
+  delivery_status: string | null;
+  delivery_picked_at: string | null;
+  delivery_completed_at: string | null;
+  created_at: string;
+};
+
+const STEPS: { status: string; label: string; icon: string; nextLabel: string; nextIcon: string }[] = [
+  { status: "pending",    label: "Aguardando",        icon: "⏳", nextLabel: "Aceitar entrega",     nextIcon: "✋" },
+  { status: "assigned",   label: "Atribuído",          icon: "✋", nextLabel: "Peguei o pedido",      nextIcon: "📦" },
+  { status: "picked_up",  label: "Retirado",           icon: "📦", nextLabel: "Em trânsito",          nextIcon: "🛵" },
+  { status: "in_transit", label: "Em trânsito",        icon: "🛵", nextLabel: "Entrega concluída",    nextIcon: "✅" },
+  { status: "delivered",  label: "Entregue ✓",         icon: "✅", nextLabel: "",                     nextIcon: "" },
+  { status: "failed",     label: "Problema na entrega",icon: "❌", nextLabel: "",                     nextIcon: "" },
+];
+
+const STATUS_COLORS: Record<string, string> = {
+  pending:    "#888",
+  assigned:   "#60a5fa",
+  picked_up:  "#a855f7",
+  in_transit: "#fbbf24",
+  delivered:  "#00ffae",
+  failed:     "#f87171",
+};
+
+function formatPrice(cents: number) {
+  return `R$ ${(cents / 100).toFixed(2)}`;
 }
 
-export default function DeliveryTrackingPage() {
+export default function DriverPortalPage() {
   const params = useParams();
   const orderId = params.orderId as string;
 
-  const [delivery, setDelivery] = useState<DeliveryInfo | null>(null);
+  const [order, setOrder] = useState<DriverOrder | null>(null);
   const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-
-  const fetchTracking = useCallback(async () => {
-    try {
-      const res = await fetch(`/api/deliveries/tracking?order_id=${orderId}`);
-      const json = await res.json();
-      if (!res.ok) {
-        setError(json.error ?? "Entrega não encontrada");
-        return;
-      }
-      setDelivery(json.delivery);
-      setLastUpdated(new Date());
-      setError(null);
-    } catch {
-      setError("Erro ao carregar rastreamento");
-    } finally {
-      setLoading(false);
-    }
-  }, [orderId]);
+  const supabase = createClient();
 
   useEffect(() => {
-    fetchTracking();
-    // Poll every 30 seconds while in transit
-    const interval = setInterval(() => {
-      if (delivery?.status === "in_route" || delivery?.status === "pending") {
-        fetchTracking();
-      }
-    }, 30000);
-    return () => clearInterval(interval);
-  }, [fetchTracking, delivery?.status]);
+    supabase
+      .from("order_intents")
+      .select("id, table_number, items, total, notes, delivery_status, delivery_picked_at, delivery_completed_at, created_at")
+      .eq("id", orderId)
+      .single()
+      .then(({ data, error: err }) => {
+        if (err || !data) setError("Pedido não encontrado");
+        else setOrder(data as DriverOrder);
+        setLoading(false);
+      });
 
-  const statusInfo = delivery ? (STATUS_LABELS[delivery.status] ?? STATUS_LABELS.pending) : null;
+    // Realtime: atualizar se outro dispositivo mudar o status
+    const channel = supabase
+      .channel(`driver-${orderId}`)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "order_intents", filter: `id=eq.${orderId}` }, (payload) => {
+        setOrder(prev => prev ? { ...prev, ...(payload.new as Partial<DriverOrder>) } : prev);
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [orderId]);
+
+  async function advanceStatus() {
+    if (!order) return;
+    const current = order.delivery_status ?? "pending";
+    const currentIdx = STEPS.findIndex(s => s.status === current);
+    if (currentIdx < 0 || currentIdx >= STEPS.length - 2) return; // -2 = don't advance past in_transit via this button
+    const next = STEPS[currentIdx + 1].status;
+
+    const updates: Record<string, unknown> = { delivery_status: next };
+    if (next === "picked_up") updates.delivery_picked_at = new Date().toISOString();
+    if (next === "delivered") updates.delivery_completed_at = new Date().toISOString();
+
+    setUpdating(true);
+    const { error: err } = await supabase.from("order_intents").update(updates).eq("id", orderId);
+    if (!err) setOrder(prev => prev ? { ...prev, delivery_status: next, ...updates } as DriverOrder : prev);
+    else setError("Erro ao atualizar status");
+    setUpdating(false);
+  }
+
+  async function markFailed() {
+    if (!order) return;
+    setUpdating(true);
+    const { error: err } = await supabase.from("order_intents").update({ delivery_status: "failed" }).eq("id", orderId);
+    if (!err) setOrder(prev => prev ? { ...prev, delivery_status: "failed" } : prev);
+    else setError("Erro ao atualizar status");
+    setUpdating(false);
+  }
+
+  const current = order?.delivery_status ?? "pending";
+  const step = STEPS.find(s => s.status === current) ?? STEPS[0];
+  const currentIdx = STEPS.findIndex(s => s.status === current);
+  const canAdvance = currentIdx >= 0 && currentIdx < 4 && current !== "failed" && current !== "delivered";
+  const color = STATUS_COLORS[current] ?? "#888";
 
   return (
     <div style={{
       minHeight: "100vh",
-      background: "linear-gradient(180deg, #0a0a0a 0%, #111 100%)",
+      background: "#0a0a0a",
       fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif",
-      padding: "env(safe-area-inset-top, 0) 0 env(safe-area-inset-bottom, 0)",
       color: "#fff",
+      padding: "0 0 40px",
     }}>
       {/* Header */}
-      <div style={{ padding: "56px 24px 24px" }}>
-        <div style={{ fontSize: 13, color: "#888", marginBottom: 4 }}>Rastreamento de pedido</div>
-        <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.5px" }}>Onde está meu pedido?</div>
+      <div style={{ padding: "48px 20px 20px", background: "rgba(255,255,255,0.02)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+        <div style={{ fontSize: 12, color: "#666", marginBottom: 4, letterSpacing: "0.5px", textTransform: "uppercase" }}>Portal do entregador</div>
+        <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.5px" }}>🛵 Pedido #{orderId.slice(-6).toUpperCase()}</div>
       </div>
 
-      <div style={{ padding: "0 16px 40px" }}>
+      <div style={{ padding: "20px 20px 0" }}>
         {loading && (
           <div style={{ textAlign: "center", padding: "60px 0", color: "#888" }}>
-            <div style={{ fontSize: 40, marginBottom: 12 }}>🔍</div>
-            <div>Localizando seu pedido...</div>
+            <div style={{ fontSize: 36, marginBottom: 12 }}>🔍</div>
+            <div>Carregando pedido...</div>
           </div>
         )}
 
         {error && !loading && (
           <div style={{ textAlign: "center", padding: "60px 0" }}>
-            <div style={{ fontSize: 40, marginBottom: 12 }}>😕</div>
-            <div style={{ color: "#f87171", fontWeight: 700, marginBottom: 8 }}>{error}</div>
-            <button
-              onClick={fetchTracking}
-              style={{ padding: "10px 20px", borderRadius: 12, border: "none", background: "rgba(255,255,255,0.08)", color: "#fff", fontSize: 14, cursor: "pointer", marginTop: 8 }}
-            >
-              Tentar novamente
-            </button>
+            <div style={{ fontSize: 36, marginBottom: 12 }}>😕</div>
+            <div style={{ color: "#f87171", fontWeight: 700 }}>{error}</div>
           </div>
         )}
 
-        {delivery && statusInfo && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {/* Status Card */}
+        {order && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {/* Status atual */}
             <div style={{
-              borderRadius: 20, padding: "24px 20px",
-              background: `linear-gradient(135deg, ${statusInfo.color}11, ${statusInfo.color}06)`,
-              border: `1px solid ${statusInfo.color}33`,
-              textAlign: "center",
+              borderRadius: 18, padding: "24px 20px", textAlign: "center",
+              background: `${color}10`, border: `1px solid ${color}30`,
             }}>
-              <div style={{ fontSize: 52, marginBottom: 8 }}>{statusInfo.icon}</div>
-              <div style={{ color: statusInfo.color, fontSize: 20, fontWeight: 800, marginBottom: 4 }}>{statusInfo.label}</div>
-              {delivery.status === "in_route" && delivery.estimated_minutes && (
-                <div style={{ color: "#888", fontSize: 14 }}>
-                  Previsão: ~{delivery.estimated_minutes} minutos
-                </div>
-              )}
-              {delivery.status === "delivered" && delivery.delivered_at && (
-                <div style={{ color: "#888", fontSize: 14 }}>
-                  Entregue às {formatTime(delivery.delivered_at)}
-                </div>
-              )}
+              <div style={{ fontSize: 48, marginBottom: 6 }}>{step.icon}</div>
+              <div style={{ color, fontSize: 20, fontWeight: 800 }}>{step.label}</div>
             </div>
 
-            {/* Deliverer Info */}
-            {delivery.deliverer && (
-              <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 16, padding: "16px 18px", border: "1px solid rgba(255,255,255,0.07)" }}>
-                <div style={{ color: "#888", fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 10 }}>Entregador</div>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <div style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(0,255,174,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>🚴</div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ color: "#fff", fontSize: 16, fontWeight: 700 }}>{delivery.deliverer.name}</div>
-                    {delivery.deliverer.phone && (
-                      <div style={{ color: "#888", fontSize: 13 }}>{delivery.deliverer.phone}</div>
-                    )}
-                  </div>
-                  {delivery.deliverer.phone && (
-                    <a
-                      href={`https://wa.me/${delivery.deliverer.phone.replace(/\D/g, "")}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      style={{ padding: "8px 14px", borderRadius: 10, background: "rgba(0,255,174,0.1)", border: "1px solid rgba(0,255,174,0.2)", color: "#00ffae", fontSize: 13, fontWeight: 700, textDecoration: "none" }}
-                    >
-                      Contatar
-                    </a>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Timeline */}
-            <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 16, padding: "16px 18px", border: "1px solid rgba(255,255,255,0.07)" }}>
-              <div style={{ color: "#888", fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 14 }}>Linha do tempo</div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-                {[
-                  { key: "pending", label: "Pedido aceito", done: true, time: null },
-                  { key: "in_route", label: "Saiu para entrega", done: delivery.status === "in_route" || delivery.status === "delivered", time: formatTime(delivery.picked_up_at) },
-                  { key: "delivered", label: "Entregue", done: delivery.status === "delivered", time: formatTime(delivery.delivered_at) },
-                ].map((step, i, arr) => (
-                  <div key={step.key} style={{ display: "flex", gap: 14 }}>
-                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: 24 }}>
-                      <div style={{
-                        width: 20, height: 20, borderRadius: "50%", flexShrink: 0,
-                        background: step.done ? "#00ffae" : "rgba(255,255,255,0.1)",
-                        border: step.done ? "none" : "2px solid rgba(255,255,255,0.15)",
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        fontSize: 10, color: "#000", fontWeight: 900,
-                      }}>
-                        {step.done ? "✓" : ""}
-                      </div>
-                      {i < arr.length - 1 && (
-                        <div style={{ width: 2, flex: 1, minHeight: 20, background: step.done ? "rgba(0,255,174,0.3)" : "rgba(255,255,255,0.07)", marginTop: 2 }} />
-                      )}
-                    </div>
-                    <div style={{ paddingBottom: i < arr.length - 1 ? 16 : 0 }}>
-                      <div style={{ color: step.done ? "#fff" : "#555", fontSize: 14, fontWeight: step.done ? 700 : 400 }}>{step.label}</div>
-                      {step.time && <div style={{ color: "#888", fontSize: 12, marginTop: 1 }}>{step.time}</div>}
-                    </div>
+            {/* Detalhes do pedido */}
+            <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 16, padding: "16px 18px", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <div style={{ color: "#888", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 12 }}>Pedido</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {order.items?.map((item, i) => (
+                  <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 14 }}>
+                    <span style={{ color: "#ccc" }}>{item.qty}× {item.code_name ?? `Item ${i + 1}`}{item.notes ? ` (${item.notes})` : ""}</span>
+                    <span style={{ color: "#888" }}>{formatPrice(item.total)}</span>
                   </div>
                 ))}
               </div>
+              {order.notes && (
+                <div style={{ marginTop: 10, padding: "8px 10px", borderRadius: 8, background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.2)", fontSize: 13, color: "#fbbf24" }}>
+                  ⚠️ {order.notes}
+                </div>
+              )}
+              <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px solid rgba(255,255,255,0.07)", display: "flex", justifyContent: "space-between", fontWeight: 700 }}>
+                <span style={{ color: "#888" }}>Total</span>
+                <span style={{ color: "#fff" }}>{formatPrice(order.total)}</span>
+              </div>
+              <div style={{ marginTop: 6, display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                <span style={{ color: "#666" }}>{order.table_number != null ? `Mesa ${order.table_number}` : "Sem mesa"}</span>
+              </div>
             </div>
 
-            {/* Map link */}
-            {delivery.current_location && (
-              <a
-                href={`https://maps.google.com/?q=${delivery.current_location.lat},${delivery.current_location.lng}`}
-                target="_blank"
-                rel="noreferrer"
+            {/* Botão de avançar status */}
+            {canAdvance && (
+              <button
+                disabled={updating}
+                onClick={advanceStatus}
                 style={{
+                  width: "100%", padding: "18px 0", borderRadius: 16, border: "none",
+                  background: color, color: "#000", fontSize: 17, fontWeight: 800,
+                  cursor: updating ? "not-allowed" : "pointer",
+                  opacity: updating ? 0.6 : 1,
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                  padding: "14px", borderRadius: 16,
-                  background: "rgba(96,165,250,0.08)", border: "1px solid rgba(96,165,250,0.2)",
-                  color: "#60a5fa", fontSize: 15, fontWeight: 700, textDecoration: "none",
                 }}
               >
-                📍 Ver localização no mapa
-              </a>
+                <span>{step.nextIcon}</span>
+                <span>{updating ? "Atualizando..." : step.nextLabel}</span>
+              </button>
             )}
 
-            {/* Last updated */}
-            {lastUpdated && (
-              <div style={{ textAlign: "center", color: "#555", fontSize: 11 }}>
-                Atualizado às {formatTime(lastUpdated.toISOString())}
-                {delivery.status === "in_route" && " · atualiza a cada 30s"}
+            {/* Botão de problema — mostrar só enquanto em andamento */}
+            {canAdvance && current !== "pending" && (
+              <button
+                disabled={updating}
+                onClick={markFailed}
+                style={{
+                  width: "100%", padding: "14px 0", borderRadius: 12, border: "1px solid rgba(248,113,113,0.3)",
+                  background: "rgba(248,113,113,0.08)", color: "#f87171",
+                  fontSize: 14, fontWeight: 700, cursor: updating ? "not-allowed" : "pointer",
+                }}
+              >
+                ❌ Problema na entrega
+              </button>
+            )}
+
+            {current === "delivered" && (
+              <div style={{ textAlign: "center", padding: "12px", color: "#00ffae", fontSize: 15, fontWeight: 700 }}>
+                🎉 Entrega concluída! Obrigado.
+              </div>
+            )}
+            {current === "failed" && (
+              <div style={{ textAlign: "center", padding: "12px", color: "#f87171", fontSize: 14, fontWeight: 600 }}>
+                Entre em contato com o restaurante para resolver o problema.
               </div>
             )}
           </div>

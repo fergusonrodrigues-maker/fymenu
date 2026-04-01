@@ -25,7 +25,7 @@ export default async function KitchenPage() {
 
   const { data: orders } = await supabase
     .from("order_intents")
-    .select("id, table_number, items, total, status, waiter_status, kitchen_status, notes, created_at, waiter_confirmed_at")
+    .select("id, table_number, items, total, status, waiter_status, kitchen_status, notes, created_at, waiter_confirmed_at, delivery_status")
     .eq("unit_id", unit.id)
     .eq("status", "confirmed")
     .neq("kitchen_status", "delivered")

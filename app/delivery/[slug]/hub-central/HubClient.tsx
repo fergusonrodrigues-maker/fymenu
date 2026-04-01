@@ -54,6 +54,7 @@ export default function HubClient({
 }: Props) {
   const [orders, setOrders] = useState<HubOrder[]>(initialOrders);
   const [tick, setTick] = useState(0);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const supabase = createClient();
   const audioCtxRef = useRef<AudioContext | null>(null);
 
@@ -226,8 +227,21 @@ export default function HubClient({
           {prontos.map((o) => (
             <OrderCard key={o.id} order={o} tick={tick}>
               <button
+                onClick={() => {
+                  const link = `${window.location.origin}/entrega/${o.id}`;
+                  navigator.clipboard.writeText(link).then(() => {
+                    setCopiedId(o.id);
+                    setTimeout(() => setCopiedId(null), 2000);
+                  });
+                }}
+                className="w-full py-2 rounded-lg text-sm mt-3 transition-colors"
+                style={{ background: "rgba(96,165,250,0.1)", border: "1px solid rgba(96,165,250,0.25)", color: "#60a5fa", fontWeight: 600 }}
+              >
+                {copiedId === o.id ? "✓ Link copiado!" : "🔗 Enviar pro entregador"}
+              </button>
+              <button
                 onClick={() => markKitchenStatus(o.id, "delivered")}
-                className="w-full py-2.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white text-sm mt-3 transition-colors"
+                className="w-full py-2.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white text-sm mt-2 transition-colors"
               >
                 🚀 Entregue — Remover
               </button>

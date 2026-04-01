@@ -14,6 +14,15 @@ type KOrder = {
   notes: string | null;
   created_at: string;
   waiter_confirmed_at: string | null;
+  delivery_status?: string | null;
+};
+
+const deliveryLabels: Record<string, { text: string; color: string }> = {
+  assigned: { text: "Entregador atribuído", color: "#60a5fa" },
+  picked_up: { text: "Retirado", color: "#a855f7" },
+  in_transit: { text: "Em trânsito", color: "#fbbf24" },
+  delivered: { text: "Entregue ✓", color: "#00ffae" },
+  failed: { text: "Problema na entrega", color: "#f87171" },
 };
 
 interface Props {
@@ -73,12 +82,18 @@ export default function KitchenClient({ unitId, unitName, restaurantName, initia
           if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
             const o = payload.new as KOrder;
             if (o.status === "confirmed" && o.kitchen_status !== "delivered") {
-              playBell();
+              if (payload.eventType === "INSERT") playBell();
               setOrders((prev) => {
                 const exists = prev.find((x) => x.id === o.id);
                 if (exists) return prev.map((x) => x.id === o.id ? { ...x, ...o } : x);
+                playBell();
                 return [o, ...prev];
               });
+              if (o.delivery_status === "delivered") {
+                setTimeout(() => {
+                  setOrders((prev) => prev.filter((x) => x.id !== o.id));
+                }, 5000);
+              }
             } else {
               setOrders((prev) => prev.filter((x) => x.id !== o.id));
             }
@@ -178,12 +193,14 @@ export default function KitchenClient({ unitId, unitName, restaurantName, initia
           {ready.length === 0 && <EmptyCol text="Nenhum pronto ainda" />}
           {ready.map((o) => (
             <KitchenCard key={o.id} order={o} tick={tick}>
-              <button
-                onClick={() => markKitchenStatus(o.id, "delivered")}
-                className="w-full py-2.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white text-sm mt-3 transition-colors"
-              >
-                🚀 Entregue — Remover
-              </button>
+              {o.delivery_status !== "delivered" && (
+                <button
+                  onClick={() => markKitchenStatus(o.id, "delivered")}
+                  className="w-full py-2.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white text-sm mt-3 transition-colors"
+                >
+                  🚀 Entregue — Remover
+                </button>
+              )}
             </KitchenCard>
           ))}
         </Column>
@@ -249,6 +266,16 @@ function KitchenCard({ order, tick, children }: { order: KOrder; tick: number; c
         <p className="text-gray-500 text-xs italic mt-2 border-t border-gray-700 pt-1.5">
           ⚠️ {order.notes}
         </p>
+      )}
+      {order.delivery_status && order.delivery_status !== "pending" && deliveryLabels[order.delivery_status] && (
+        <div style={{
+          padding: "4px 10px", borderRadius: 8, fontSize: 11, fontWeight: 600, marginTop: 8,
+          background: `${deliveryLabels[order.delivery_status].color}20`,
+          color: deliveryLabels[order.delivery_status].color,
+          border: `1px solid ${deliveryLabels[order.delivery_status].color}40`,
+        }}>
+          {deliveryLabels[order.delivery_status].text}
+        </div>
       )}
       {children}
     </div>
