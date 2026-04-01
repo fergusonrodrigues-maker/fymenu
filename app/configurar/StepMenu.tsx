@@ -115,21 +115,26 @@ export default function StepMenu({
         }}>
           Planos disponíveis
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
           <PlanCard
-            name="Basic"
-            price="R$ 49/mês"
-            features={["1 unidade", "WhatsApp", "Link público"]}
+            name="Menu"
+            price="R$129/mês"
+            features={["1 unidade", "WhatsApp", "Modo TV"]}
           />
           <PlanCard
-            name="Pro"
-            price="R$ 99/mês"
-            features={["Múltiplas unidades", "Tudo do Basic", "Subdomínio"]}
+            name="MenuPro"
+            price="R$249/mês"
+            features={["Até 3 unidades", "Comanda Digital", "CRM"]}
             highlight
+          />
+          <PlanCard
+            name="Business"
+            price="R$1.090/mês"
+            features={["Até 4 unidades", "Equipe completa", "Estoque + IA"]}
           />
         </div>
         <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 11, margin: 0 }}>
-          Você pode montar seu cardápio agora e ativar o plano quando quiser para publicar.
+          No teste você monta tudo. Para publicar e compartilhar, ative um plano.
         </p>
       </div>
 

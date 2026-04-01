@@ -164,11 +164,40 @@ function PricingCard({
   );
 }
 
+// ── Pricing Plans Data ────────────────────────────────────────────────────────
+const PLANS = {
+  menu: {
+    name: "Menu", icon: "🍽️", units: "1 unidade",
+    prices: { MONTHLY: 129, QUARTERLY: 104, SEMIANNUALLY: 89 },
+    totals: { MONTHLY: 129, QUARTERLY: 312, SEMIANNUALLY: 534 },
+    savings: { QUARTERLY: "19%", SEMIANNUALLY: "31%" } as Record<string, string>,
+    features: ["Cardápio de vídeo 9:16", "Pedidos via WhatsApp", "Link público + QR Code", "Modo TV", "Analytics básico"],
+    cta: "Começar agora", highlight: false,
+  },
+  menupro: {
+    name: "MenuPro", icon: "⭐", units: "Até 3 unidades", badge: "MAIS VENDIDO",
+    prices: { MONTHLY: 249, QUARTERLY: 219, SEMIANNUALLY: 179 },
+    totals: { MONTHLY: 249, QUARTERLY: 657, SEMIANNUALLY: 1074 },
+    savings: { QUARTERLY: "12%", SEMIANNUALLY: "28%" } as Record<string, string>,
+    features: ["Tudo do Menu +", "Comanda Digital", "Cozinha + Garçom em tempo real", "CRM de clientes", "Analytics avançado com IA", "Relatórios em PDF", "Equipe (garçom + avaliações)", "Estoque básico"],
+    cta: "Começar agora", highlight: true,
+  },
+  business: {
+    name: "Business", icon: "🏢", units: "Até 4 unidades", badge: "7 dias grátis",
+    prices: { MONTHLY: 1090, QUARTERLY: 999, SEMIANNUALLY: 849 },
+    totals: { MONTHLY: 1090, QUARTERLY: 2997, SEMIANNUALLY: 5094 },
+    savings: { QUARTERLY: "8%", SEMIANNUALLY: "22%" } as Record<string, string>,
+    features: ["Tudo do MenuPro +", "Gestão completa de equipe + ponto", "Estoque completo com IA", "CRM com disparo de mensagens", "Financeiro com custos e margens", "Relatórios financeiros com IA", "Hub do gerente"],
+    cta: "Testar grátis 7 dias", highlight: false,
+  },
+} as const;
+
 // ── Main Landing Page ─────────────────────────────────────────────────────────
 export default function LandingPage() {
   const [loading, setLoading] = useState(true);
   const [heroVisible, setHeroVisible] = useState(false);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [cycle, setCycle] = useState<"MONTHLY" | "QUARTERLY" | "SEMIANNUALLY">("MONTHLY");
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -851,56 +880,96 @@ export default function LandingPage() {
             zIndex: 1,
           }}
         >
-          <div style={{ textAlign: "center", marginBottom: 64 }}>
-            <h2
-              style={{
-                fontSize: 40,
-                fontWeight: 900,
-                letterSpacing: "-1px",
-                marginBottom: 16,
-              }}
-            >
-              Planos simples,{" "}
-              <span className={theme === "dark" ? "gradient-text-dark" : "gradient-text-light"}>
-                resultado real
-              </span>
+          <div style={{ textAlign: "center", marginBottom: 40 }}>
+            <h2 style={{ fontSize: 32, fontWeight: 900, color: "#fff", margin: 0 }}>
+              Planos que cabem no seu restaurante
             </h2>
+            <p style={{ fontSize: 15, color: "rgba(255,255,255,0.5)", marginTop: 8 }}>
+              Monte seu cardápio grátis. Publique quando estiver pronto.
+            </p>
           </div>
 
-          <div
-            className="pricing-grid"
-            style={{
-              maxWidth: 900,
-              margin: "0 auto",
-              display: "grid",
-              gridTemplateColumns: "repeat(3, 1fr)",
-              gap: 20,
-              alignItems: "start",
-            }}
-          >
-            <PricingCard
-              name="Starter"
-              price="R$ 97"
-              features={["1 unidade", "Cardápio delivery", "Pedidos WhatsApp", "Analytics básico", "Modo TV"]}
-              cta="Começar agora"
-              theme={theme}
-            />
-            <PricingCard
-              name="Pro"
-              price="R$ 197"
-              features={["Múltiplas unidades", "Analytics avançado", "IA integrada", "Relatórios completos", "Hub de operações", "Suporte prioritário"]}
-              highlight
-              cta="Quero o Pro"
-              theme={theme}
-            />
-            <PricingCard
-              name="Pro+"
-              price="R$ 397"
-              features={["Tudo do Pro", "PDV integrado", "CRM + WhatsApp", "Comanda digital", "Consultoria IA", "API dedicada"]}
-              highlight
-              cta="Fale conosco"
-              theme={theme}
-            />
+          {/* Cycle toggle */}
+          <div style={{ display: "flex", justifyContent: "center", gap: 4, marginBottom: 32, background: "rgba(255,255,255,0.04)", borderRadius: 14, padding: 4, width: "fit-content", margin: "0 auto 32px" }}>
+            {([
+              { key: "MONTHLY", label: "Mensal" },
+              { key: "QUARTERLY", label: "Trimestral" },
+              { key: "SEMIANNUALLY", label: "Semestral" },
+            ] as const).map((c) => (
+              <button key={c.key} onClick={() => setCycle(c.key)} style={{
+                padding: "8px 20px", borderRadius: 10, border: "none", cursor: "pointer",
+                background: cycle === c.key ? "rgba(255,255,255,0.12)" : "transparent",
+                color: cycle === c.key ? "#fff" : "rgba(255,255,255,0.4)",
+                fontSize: 13, fontWeight: 700, transition: "all 0.2s", fontFamily: "inherit",
+                display: "flex", alignItems: "center", gap: 4,
+              }}>
+                {c.label}
+                {c.key !== "MONTHLY" && <span style={{ fontSize: 10, color: "#00ffae" }}>Economize</span>}
+              </button>
+            ))}
+          </div>
+
+          {/* Plan cards */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16, maxWidth: 960, margin: "0 auto", padding: "0 16px" }}>
+            {(Object.entries(PLANS) as [string, typeof PLANS[keyof typeof PLANS]][]).map(([key, plan]) => (
+              <div key={key} style={{
+                borderRadius: 24, padding: 28,
+                background: plan.highlight ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.02)",
+                border: plan.highlight ? "2px solid #00ffae" : "1px solid rgba(255,255,255,0.08)",
+                position: "relative",
+                transform: plan.highlight ? "scale(1.02)" : "none",
+                display: "flex", flexDirection: "column",
+              }}>
+                {"badge" in plan && plan.badge && (
+                  <div style={{
+                    position: "absolute", top: -12, left: "50%", transform: "translateX(-50%)",
+                    padding: "4px 14px", borderRadius: 20, fontSize: 11, fontWeight: 800,
+                    background: plan.highlight ? "linear-gradient(135deg, #00ffae, #00d9ff)" : "rgba(251,191,36,0.15)",
+                    color: plan.highlight ? "#000" : "#fbbf24",
+                    letterSpacing: "0.5px", whiteSpace: "nowrap",
+                  }}>
+                    {plan.badge}
+                  </div>
+                )}
+
+                <div style={{ textAlign: "center", marginBottom: 20 }}>
+                  <div style={{ fontSize: 28, marginBottom: 4 }}>{plan.icon}</div>
+                  <div style={{ fontSize: 20, fontWeight: 900, color: "#fff" }}>{plan.name}</div>
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>{plan.units}</div>
+                </div>
+
+                <div style={{ textAlign: "center", marginBottom: 20 }}>
+                  <div style={{ fontSize: 36, fontWeight: 900, color: plan.highlight ? "#00ffae" : "#fff" }}>
+                    R${plan.prices[cycle]}
+                    <span style={{ fontSize: 14, fontWeight: 400, color: "rgba(255,255,255,0.4)" }}>/mês</span>
+                  </div>
+                  {cycle !== "MONTHLY" && (
+                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginTop: 4 }}>
+                      R${plan.totals[cycle]} total · Economia de {plan.savings[cycle]}
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 24, flex: 1 }}>
+                  {plan.features.map((f) => (
+                    <div key={f} style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ color: "#00ffae", fontSize: 12 }}>✓</span> {f}
+                    </div>
+                  ))}
+                </div>
+
+                <a href="/cadastro" style={{
+                  display: "block", textAlign: "center", padding: "14px", borderRadius: 14,
+                  background: plan.highlight ? "linear-gradient(135deg, #00ffae, #00d9ff)" : "rgba(255,255,255,0.08)",
+                  color: plan.highlight ? "#000" : "#fff",
+                  fontWeight: 800, fontSize: 15, textDecoration: "none",
+                  border: plan.highlight ? "none" : "1px solid rgba(255,255,255,0.12)",
+                  transition: "all 0.2s",
+                }}>
+                  {plan.cta}
+                </a>
+              </div>
+            ))}
           </div>
         </section>
 
