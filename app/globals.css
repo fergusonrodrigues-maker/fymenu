@@ -58,9 +58,9 @@ body {
   --dash-text-dim: rgba(255,255,255,0.5);
   --dash-text-muted: rgba(255,255,255,0.4);
   --dash-text-subtle: rgba(255,255,255,0.25);
-  --dash-card: rgba(255,255,255,0.04);
-  --dash-card-subtle: rgba(255,255,255,0.03);
-  --dash-card-hover: rgba(255,255,255,0.08);
+  --dash-card: rgba(10,10,10,0.12);
+  --dash-card-subtle: rgba(10,10,10,0.10);
+  --dash-card-hover: rgba(10,10,10,0.18);
   --dash-card-border: rgba(255,255,255,0.08);
   --dash-link-bg: rgba(255,255,255,0.06);
   --dash-input-bg: rgba(255,255,255,0.05);

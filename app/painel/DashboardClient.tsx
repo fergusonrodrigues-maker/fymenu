@@ -106,9 +106,9 @@ function Modal({ open, onClose, children, title }: { open: boolean; onClose: () 
       <div
         style={{
           position: "fixed", inset: 0, zIndex: 9999,
-          background: "rgba(0,0,0,0.5)",
+          background: "rgba(0,0,0,0.3)",
           display: "flex", alignItems: "center", justifyContent: "center",
-          backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
+          backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
           animation: "modalBackdropIn 0.2s ease",
         }}
         onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
@@ -118,10 +118,9 @@ function Modal({ open, onClose, children, title }: { open: boolean; onClose: () 
           style={{
             width: "90%", maxWidth: 760, maxHeight: "80vh",
             borderRadius: 28,
-            background: "rgba(10,10,10,0.85)",
-            backdropFilter: "blur(40px)", WebkitBackdropFilter: "blur(40px)",
-            border: "1px solid rgba(255,255,255,0.08)",
-            boxShadow: "0 32px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04) inset",
+            background: "rgba(10,10,10,0.18)",
+            backdropFilter: "blur(80px)", WebkitBackdropFilter: "blur(80px)",
+            boxShadow: "0 1px 0 rgba(255,255,255,0.04) inset, 0 -1px 0 rgba(0,0,0,0.3) inset, 0 32px 64px rgba(0,0,0,0.5)",
             overflowY: "auto",
             overscrollBehavior: "contain",
             animation: "modalContentIn 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
@@ -134,20 +133,20 @@ function Modal({ open, onClose, children, title }: { open: boolean; onClose: () 
             style={{
               position: "sticky", top: 16, float: "right", zIndex: 10,
               width: 36, height: 36, borderRadius: 12,
-              background: "rgba(255,255,255,0.06)",
-              backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
-              border: "1px solid rgba(255,255,255,0.08)",
+              background: "rgba(255,255,255,0.04)",
+              boxShadow: "0 1px 0 rgba(255,255,255,0.05) inset, 0 -1px 0 rgba(0,0,0,0.2) inset",
+              border: "none",
               color: "rgba(255,255,255,0.5)",
               display: "flex", alignItems: "center", justifyContent: "center",
               cursor: "pointer", fontSize: 16, marginRight: 16, marginTop: 16,
               transition: "all 0.2s",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = "rgba(255,255,255,0.12)";
+              e.currentTarget.style.background = "rgba(255,255,255,0.08)";
               e.currentTarget.style.color = "#fff";
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = "rgba(255,255,255,0.06)";
+              e.currentTarget.style.background = "rgba(255,255,255,0.04)";
               e.currentTarget.style.color = "rgba(255,255,255,0.5)";
             }}
           >✕</button>

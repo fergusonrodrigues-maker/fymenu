@@ -337,19 +337,19 @@ export default function LandingPage() {
           --lp-text-muted: #505050;
           --lp-check: #00cc8a;
           --lp-check-highlight: #00dda0;
-          --lp-card-bg: rgba(255,255,255,0.03);
-          --lp-card-border: rgba(255,255,255,0.08);
-          --lp-card-shadow: 0 0 80px 20px rgba(255,255,255,0.02), 0 1px 0 rgba(255,255,255,0.03) inset, 0 -1px 0 rgba(0,0,0,0.25) inset;
-          --lp-feature-shadow: 0 0 60px 15px rgba(255,255,255,0.015), 0 1px 0 rgba(255,255,255,0.03) inset, 0 -1px 0 rgba(0,0,0,0.2) inset;
-          --lp-highlight-bg: rgba(0,255,174,0.04);
-          --lp-highlight-border: rgba(0,255,174,0.3);
-          --lp-highlight-shadow: 0 0 100px 30px rgba(0,255,174,0.03), 0 0 40px 10px rgba(0,255,174,0.02), 0 1px 0 rgba(0,255,174,0.06) inset, 0 -1px 0 rgba(0,0,0,0.25) inset;
+          --lp-card-bg: rgba(10,10,10,0.12);
+          --lp-card-border: rgba(255,255,255,0.04);
+          --lp-card-shadow: 0 0 80px 20px rgba(255,255,255,0.015), 0 1px 0 rgba(255,255,255,0.04) inset, 0 -1px 0 rgba(0,0,0,0.3) inset;
+          --lp-feature-shadow: 0 0 60px 15px rgba(255,255,255,0.01), 0 1px 0 rgba(255,255,255,0.03) inset, 0 -1px 0 rgba(0,0,0,0.2) inset;
+          --lp-highlight-bg: rgba(0,40,30,0.15);
+          --lp-highlight-border: rgba(0,255,174,0.12);
+          --lp-highlight-shadow: 0 0 100px 30px rgba(0,255,174,0.02), 0 0 40px 10px rgba(0,255,174,0.015), 0 1px 0 rgba(0,255,174,0.05) inset, 0 -1px 0 rgba(0,0,0,0.25) inset;
           --lp-price-color: #fff;
           --lp-price-highlight: #00ffae;
           --lp-badge-neutral-bg: rgba(251,191,36,0.15);
           --lp-badge-neutral-color: #fbbf24;
-          --lp-btn-bg: rgba(255,255,255,0.08);
-          --lp-btn-border: rgba(255,255,255,0.12);
+          --lp-btn-bg: rgba(255,255,255,0.04);
+          --lp-btn-border: rgba(255,255,255,0.06);
           --lp-btn-color: #fff;
         }
         /* ── Landing CSS vars — light override ── */
@@ -359,19 +359,19 @@ export default function LandingPage() {
           --lp-text-muted: #888;
           --lp-check: #00b07a;
           --lp-check-highlight: #009868;
-          --lp-card-bg: rgba(0,0,0,0.02);
-          --lp-card-border: rgba(0,0,0,0.06);
-          --lp-card-shadow: 0 0 60px 15px rgba(0,0,0,0.015), 0 -1px 0 rgba(255,255,255,0.8) inset, 0 1px 0 rgba(0,0,0,0.04) inset;
-          --lp-feature-shadow: 0 0 60px 15px rgba(0,0,0,0.015), 0 -1px 0 rgba(255,255,255,0.8) inset, 0 1px 0 rgba(0,0,0,0.04) inset;
-          --lp-highlight-bg: rgba(0,200,138,0.04);
-          --lp-highlight-border: rgba(0,200,138,0.12);
-          --lp-highlight-shadow: 0 0 80px 20px rgba(0,200,138,0.025), 0 -1px 0 rgba(255,255,255,0.8) inset, 0 1px 0 rgba(0,0,0,0.04) inset;
+          --lp-card-bg: rgba(255,255,255,0.15);
+          --lp-card-border: rgba(0,0,0,0.04);
+          --lp-card-shadow: 0 0 80px 20px rgba(0,0,0,0.01), 0 -1px 0 rgba(255,255,255,0.6) inset, 0 1px 0 rgba(0,0,0,0.04) inset;
+          --lp-feature-shadow: 0 0 60px 15px rgba(0,0,0,0.01), 0 -1px 0 rgba(255,255,255,0.6) inset, 0 1px 0 rgba(0,0,0,0.04) inset;
+          --lp-highlight-bg: rgba(0,200,138,0.06);
+          --lp-highlight-border: rgba(0,200,138,0.1);
+          --lp-highlight-shadow: 0 0 100px 30px rgba(0,200,138,0.02), 0 -1px 0 rgba(255,255,255,0.6) inset, 0 1px 0 rgba(0,0,0,0.04) inset;
           --lp-price-color: #1a1a1a;
           --lp-price-highlight: #00a87a;
           --lp-badge-neutral-bg: rgba(212,156,0,0.12);
           --lp-badge-neutral-color: #a07800;
           --lp-btn-bg: rgba(0,0,0,0.04);
-          --lp-btn-border: rgba(0,0,0,0.08);
+          --lp-btn-border: rgba(0,0,0,0.06);
           --lp-btn-color: #1a1a1a;
         }
 
@@ -422,23 +422,19 @@ export default function LandingPage() {
         .landing-light h1, .landing-light h2 { color: #222 !important; }
         .landing-light .feature-card {
           background: var(--lp-card-bg);
-          border-color: var(--lp-card-border);
           box-shadow: var(--lp-feature-shadow);
         }
         .landing-light .feature-card:hover {
-          border-color: rgba(0,200,138,0.2);
-          background: rgba(0,200,138,0.03);
+          background: rgba(0,200,138,0.04);
         }
         .landing-light .pricing-card {
           background: var(--lp-card-bg);
-          border-color: var(--lp-card-border);
           box-shadow: var(--lp-card-shadow);
         }
         .landing-light .pricing-card:hover {
-          border-color: rgba(0,200,138,0.2);
+          background: rgba(0,200,138,0.03);
         }
         .landing-light .pricing-highlight {
-          border-color: var(--lp-highlight-border);
           background: var(--lp-highlight-bg);
           box-shadow: var(--lp-highlight-shadow);
         }
@@ -606,13 +602,12 @@ export default function LandingPage() {
           padding: 32px;
           border-radius: 20px;
           background: var(--lp-card-bg);
-          border: 1px solid var(--lp-card-border);
-          backdrop-filter: blur(8px);
+          backdrop-filter: blur(80px);
+          -webkit-backdrop-filter: blur(80px);
           transition: all 0.3s ease;
           box-shadow: var(--lp-feature-shadow);
         }
         .feature-card:hover {
-          border-color: rgba(0,255,174,0.2);
           background: rgba(0,255,174,0.03);
           transform: translateY(-4px);
         }
@@ -622,7 +617,8 @@ export default function LandingPage() {
           padding: 32px;
           border-radius: 20px;
           background: var(--lp-card-bg);
-          border: 1px solid var(--lp-card-border);
+          backdrop-filter: blur(80px);
+          -webkit-backdrop-filter: blur(80px);
           display: flex;
           flex-direction: column;
           position: relative;
@@ -630,11 +626,9 @@ export default function LandingPage() {
           box-shadow: var(--lp-card-shadow);
         }
         .pricing-card:hover {
-          border-color: rgba(0,255,174,0.2);
           transform: translateY(-4px);
         }
         .pricing-highlight {
-          border-color: var(--lp-highlight-border);
           background: var(--lp-highlight-bg);
           box-shadow: var(--lp-highlight-shadow);
         }
@@ -965,7 +959,7 @@ export default function LandingPage() {
               <div key={key} style={{
                 borderRadius: 24, padding: 28,
                 background: plan.highlight ? "var(--lp-highlight-bg)" : "var(--lp-card-bg)",
-                border: plan.highlight ? "2px solid var(--lp-highlight-border)" : "1px solid var(--lp-card-border)",
+                backdropFilter: "blur(80px)", WebkitBackdropFilter: "blur(80px)",
                 position: "relative",
                 transform: plan.highlight ? "scale(1.02)" : "none",
                 display: "flex", flexDirection: "column",
