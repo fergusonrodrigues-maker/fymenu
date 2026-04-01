@@ -28,6 +28,19 @@ type Product = {
 
 const BUCKET = "products";
 
+function getSectionConfig(sectionValue: string | undefined, customSections?: Array<{ name: string; allows_video: boolean; allows_alcoholic_toggle: boolean }>) {
+  const defaults: Record<string, { allows_video: boolean; allows_alcoholic: boolean }> = {
+    pratos: { allows_video: true, allows_alcoholic: false },
+    drinks: { allows_video: true, allows_alcoholic: true },
+    bebidas: { allows_video: false, allows_alcoholic: true },
+  };
+  if (!sectionValue) return { allows_video: true, allows_alcoholic: false };
+  if (defaults[sectionValue]) return defaults[sectionValue];
+  const custom = customSections?.find(cs => cs.name.toLowerCase().replace(/\s+/g, "_") === sectionValue);
+  if (custom) return { allows_video: custom.allows_video, allows_alcoholic: custom.allows_alcoholic_toggle };
+  return { allows_video: true, allows_alcoholic: false };
+}
+
 function StockBadge({ product }: { product: Product }) {
   if (product.unlimited !== false) return null;
   const stock = product.stock ?? 0;
@@ -42,11 +55,15 @@ export default function ProductRow({
   expanded,
   onToggle,
   onClose,
+  section,
+  customSections,
 }: {
   product: Product;
   expanded: boolean;
   onToggle: () => void;
   onClose: () => void;
+  section?: string;
+  customSections?: Array<{ id: string; name: string; allows_video: boolean; allows_alcoholic_toggle: boolean }>;
 }) {
   const [activeTab, setActiveTab] = useState<"info" | "estoque" | "nutricao">("info");
   const [thumbnailUrl, setThumbnailUrl] = useState(product.thumbnail_url ?? "");
@@ -65,7 +82,9 @@ export default function ProductRow({
     },
     onError: (err) => console.error("Error generating description:", err),
   });
+  const [isAlcoholic, setIsAlcoholic] = useState(product.is_alcoholic ?? false);
   const [isActive, setIsActive] = useState(product.is_active !== false);
+  const sectionConfig = getSectionConfig(section, customSections);
   const [uploading, setUploading] = useState<"thumb" | "video" | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [unlimitedStock, setUnlimitedStock] = useState(product.unlimited !== false);
@@ -172,6 +191,7 @@ export default function ProductRow({
               action={async (formData) => {
                 formData.set("thumbnail_url", thumbnailUrl);
                 formData.set("video_url", videoUrl);
+                formData.set("is_alcoholic", isAlcoholic ? "on" : "off");
                 if (priceType === "variable") {
                   await updateProductVariations(product.id, variations);
                 }
@@ -303,27 +323,39 @@ export default function ProductRow({
               </div>
 
               {/* Vídeo */}
-              <div>
-                <label style={labelStyle}>Vídeo (opcional)</label>
-                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  {videoUrl ? (
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, position: "relative" }}>
-                      <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>🎬 {videoUrl.split("/").pop()}</span>
-                      <button type="button" onClick={() => setVideoUrl("")} style={{
-                        width: 22, height: 22, borderRadius: "50%",
-                        background: "#ef4444", color: "#fff", border: "none",
-                        fontSize: 13, cursor: "pointer",
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        lineHeight: 1, flexShrink: 0,
-                      }}>×</button>
-                    </div>
-                  ) : null}
-                  <button type="button" onClick={() => videoRef.current?.click()} disabled={uploading === "video"} style={uploadBtnStyle}>
-                    {uploading === "video" ? "Enviando…" : videoUrl ? "Trocar vídeo" : "🎬 Escolher vídeo"}
-                  </button>
-                  <input ref={videoRef} type="file" accept="video/*" style={{ display: "none" }} onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; const url = await handleFileUpload(f, "video"); if (url) setVideoUrl(url); }} />
+              {sectionConfig.allows_video && (
+                <div>
+                  <label style={labelStyle}>Vídeo (opcional)</label>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    {videoUrl ? (
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, position: "relative" }}>
+                        <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>🎬 {videoUrl.split("/").pop()}</span>
+                        <button type="button" onClick={() => setVideoUrl("")} style={{
+                          width: 22, height: 22, borderRadius: "50%",
+                          background: "#ef4444", color: "#fff", border: "none",
+                          fontSize: 13, cursor: "pointer",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          lineHeight: 1, flexShrink: 0,
+                        }}>×</button>
+                      </div>
+                    ) : null}
+                    <button type="button" onClick={() => videoRef.current?.click()} disabled={uploading === "video"} style={uploadBtnStyle}>
+                      {uploading === "video" ? "Enviando…" : videoUrl ? "Trocar vídeo" : "🎬 Escolher vídeo"}
+                    </button>
+                    <input ref={videoRef} type="file" accept="video/*" style={{ display: "none" }} onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; const url = await handleFileUpload(f, "video"); if (url) setVideoUrl(url); }} />
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {/* Toggle alcoólico */}
+              {sectionConfig.allows_alcoholic && (
+                <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                  <input type="checkbox" checked={isAlcoholic} onChange={e => setIsAlcoholic(e.target.checked)} style={{ accentColor: "#FF6B00" }} />
+                  <span style={{ color: "rgba(255,255,255,0.6)", fontSize: 13 }}>
+                    {section === "drinks" ? "Drink alcoólico" : "Bebida alcoólica"}
+                  </span>
+                </label>
+              )}
 
               {uploadError && <p style={{ color: "#f87171", fontSize: 12, margin: 0 }}>{uploadError}</p>}
 

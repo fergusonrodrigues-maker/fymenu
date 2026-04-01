@@ -9,6 +9,20 @@ import { Unit, Category, Product } from "../types";
 
 const ImportClient = dynamic(() => import("../ia/ImportClient"), { ssr: false });
 
+type CustomSection = { id: string; name: string; icon: string; allows_video: boolean; allows_alcoholic_toggle: boolean };
+
+function getSectionConfig(sectionValue: string, customSections: CustomSection[]) {
+  const defaults: Record<string, { allows_video: boolean; allows_alcoholic: boolean }> = {
+    pratos: { allows_video: true, allows_alcoholic: false },
+    drinks: { allows_video: true, allows_alcoholic: true },
+    bebidas: { allows_video: false, allows_alcoholic: true },
+  };
+  if (defaults[sectionValue]) return defaults[sectionValue];
+  const custom = customSections.find(cs => cs.name.toLowerCase().replace(/\s+/g, "_") === sectionValue);
+  if (custom) return { allows_video: custom.allows_video, allows_alcoholic: custom.allows_alcoholic_toggle };
+  return { allows_video: true, allows_alcoholic: false };
+}
+
 const inp: React.CSSProperties = {
   width: "100%", padding: "11px 14px", borderRadius: 12,
   border: "1px solid var(--dash-input-border)",
@@ -17,13 +31,12 @@ const inp: React.CSSProperties = {
   outline: "none",
 };
 
-function NewProductFormInline({ categoryId, section, anyProductExpanded, onOpen }: { categoryId: string; section: 'pratos' | 'drinks' | 'bebidas'; anyProductExpanded: boolean; onOpen: () => void }) {
+function NewProductFormInline({ categoryId, section, customSections, anyProductExpanded, onOpen }: { categoryId: string; section: string; customSections: CustomSection[]; anyProductExpanded: boolean; onOpen: () => void }) {
   const [open, setOpen] = useState(false);
   const [priceType, setPriceType] = useState("fixed");
   const [isAlcoholic, setIsAlcoholic] = useState(false);
 
-  const showVideo = section !== 'bebidas';
-  const showAlcoholic = section === 'drinks' || section === 'bebidas';
+  const { allows_video: showVideo, allows_alcoholic: showAlcoholic } = getSectionConfig(section, customSections);
 
   useEffect(() => {
     if (anyProductExpanded) setOpen(false);
@@ -105,8 +118,14 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
     return cat.is_active !== false;
   }
   const [newCatType, setNewCatType] = useState<"food" | "drink">("food");
-  const [newCatSection, setNewCatSection] = useState<'pratos' | 'drinks' | 'bebidas'>('pratos');
-  const [editCatSection, setEditCatSection] = useState<Record<string, 'pratos' | 'drinks' | 'bebidas'>>({});
+  const [newCatSection, setNewCatSection] = useState<string>('pratos');
+  const [editCatSection, setEditCatSection] = useState<Record<string, string>>({});
+  const [customSections, setCustomSections] = useState<CustomSection[]>([]);
+  const [showCreateSection, setShowCreateSection] = useState(false);
+  const [newSectionName, setNewSectionName] = useState("");
+  const [newSectionIcon, setNewSectionIcon] = useState("📂");
+  const [newSectionVideo, setNewSectionVideo] = useState(true);
+  const [newSectionAlcoholic, setNewSectionAlcoholic] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [orderedCats, setOrderedCats] = useState(categories);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
@@ -116,6 +135,43 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
   const dragElRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => { setOrderedCats(categories); }, [categories]);
+
+  useEffect(() => {
+    if (!unit) return;
+    createSupabaseClient().from("custom_sections").select("*").eq("unit_id", unit.id).then(({ data }) => {
+      if (data) setCustomSections(data);
+    });
+  }, [unit?.id]);
+
+  const defaultSections = [
+    { value: "pratos", label: "Pratos", icon: "🍽️", allows_video: true, allows_alcoholic: false },
+    { value: "drinks", label: "Drinks", icon: "🍸", allows_video: true, allows_alcoholic: true },
+    { value: "bebidas", label: "Bebidas", icon: "🥤", allows_video: false, allows_alcoholic: true },
+  ];
+  const allSections = [...defaultSections, ...customSections.map(cs => ({
+    value: cs.name.toLowerCase().replace(/\s+/g, "_"),
+    label: cs.name,
+    icon: cs.icon,
+    allows_video: cs.allows_video,
+    allows_alcoholic: cs.allows_alcoholic_toggle,
+  }))];
+
+  async function handleCreateSection() {
+    if (!newSectionName.trim() || !unit) return;
+    const { data, error } = await createSupabaseClient().from("custom_sections").insert({
+      unit_id: unit.id,
+      name: newSectionName.trim(),
+      icon: newSectionIcon || "📂",
+      allows_video: newSectionVideo,
+      allows_alcoholic_toggle: newSectionAlcoholic,
+    }).select().single();
+    if (!error && data) {
+      setCustomSections(prev => [...prev, data]);
+      setNewCatSection(data.name.toLowerCase().replace(/\s+/g, "_"));
+      setShowCreateSection(false);
+      setNewSectionName(""); setNewSectionIcon("📂"); setNewSectionVideo(true); setNewSectionAlcoholic(false);
+    }
+  }
 
   function handleReorder(fromIdx: number, toIdx: number) {
     if (fromIdx === toIdx) return;
@@ -239,22 +295,50 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
           {/* Sessão */}
           <div style={{ marginBottom: 4 }}>
             <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 8 }}>Sessão</div>
-            <div style={{ display: "flex", gap: 8 }}>
-              {([['pratos','🍽️','Pratos'],['drinks','🍸','Drinks'],['bebidas','🥤','Bebidas']] as const).map(([val, icon, label]) => (
-                <button
-                  key={val}
-                  type="button"
-                  onClick={() => setNewCatSection(val)}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {allSections.map(s => (
+                <button key={s.value} type="button" onClick={() => setNewCatSection(s.value)}
                   style={{
-                    flex: 1, padding: "8px 4px", borderRadius: 10, border: "1px solid",
-                    borderColor: newCatSection === val ? "#00ffae" : "rgba(255,255,255,0.12)",
-                    background: newCatSection === val ? "rgba(0,255,174,0.12)" : "rgba(255,255,255,0.04)",
-                    color: newCatSection === val ? "#00ffae" : "rgba(255,255,255,0.5)",
-                    fontSize: 12, fontWeight: 700, cursor: "pointer",
-                  }}
-                >{icon} {label}</button>
+                    padding: "6px 14px", borderRadius: 10, border: "1px solid",
+                    borderColor: newCatSection === s.value ? "#00ffae" : "rgba(255,255,255,0.1)",
+                    background: newCatSection === s.value ? "rgba(0,255,174,0.08)" : "transparent",
+                    color: newCatSection === s.value ? "#00ffae" : "rgba(255,255,255,0.5)",
+                    cursor: "pointer", fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 4,
+                  }}>
+                  <span>{s.icon}</span> {s.label}
+                </button>
               ))}
+              <button type="button" onClick={() => setShowCreateSection(v => !v)}
+                style={{ padding: "6px 14px", borderRadius: 10, border: "1px dashed rgba(255,255,255,0.15)", background: "transparent", color: "rgba(255,255,255,0.3)", cursor: "pointer", fontSize: 12 }}>
+                + Criar sessão
+              </button>
             </div>
+            {showCreateSection && (
+              <div style={{ marginTop: 8, padding: 12, borderRadius: 12, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+                  <input type="text" placeholder="Nome da sessão" value={newSectionName} onChange={e => setNewSectionName(e.target.value)}
+                    style={{ flex: 1, padding: "8px 12px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.05)", color: "#fff", fontSize: 13, outline: "none" }} />
+                  <input type="text" placeholder="🗂" value={newSectionIcon} onChange={e => setNewSectionIcon(e.target.value)} maxLength={2}
+                    style={{ width: 50, padding: "8px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.05)", color: "#fff", fontSize: 18, textAlign: "center", outline: "none" }} />
+                </div>
+                <div style={{ display: "flex", gap: 12, marginBottom: 8 }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: 6, color: "rgba(255,255,255,0.5)", fontSize: 12, cursor: "pointer" }}>
+                    <input type="checkbox" checked={newSectionVideo} onChange={e => setNewSectionVideo(e.target.checked)} style={{ accentColor: "#00ffae" }} />
+                    Permite vídeo
+                  </label>
+                  <label style={{ display: "flex", alignItems: "center", gap: 6, color: "rgba(255,255,255,0.5)", fontSize: 12, cursor: "pointer" }}>
+                    <input type="checkbox" checked={newSectionAlcoholic} onChange={e => setNewSectionAlcoholic(e.target.checked)} style={{ accentColor: "#00ffae" }} />
+                    Toggle alcoólico
+                  </label>
+                </div>
+                <div style={{ display: "flex", gap: 6 }}>
+                  <button type="button" onClick={() => setShowCreateSection(false)}
+                    style={{ padding: "6px 14px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)", background: "transparent", color: "rgba(255,255,255,0.4)", fontSize: 12, cursor: "pointer" }}>Cancelar</button>
+                  <button type="button" onClick={handleCreateSection}
+                    style={{ padding: "6px 14px", borderRadius: 8, border: "none", background: "#00ffae", color: "#000", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Criar</button>
+                </div>
+              </div>
+            )}
           </div>
         </form>
       )}
@@ -299,8 +383,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                 title="Segurar e arrastar para reordenar"
               >⠿</span>
               <span className="cat-header-arrow" data-open={isOpen ? "true" : "false"} style={{ color: "var(--dash-text-muted)", fontSize: 11, flexShrink: 0, width: 14, textAlign: "center", lineHeight: 1 }}>▼</span>
-              {cat.section === 'drinks' && <span style={{ fontSize: 14, flexShrink: 0 }} title="Drinks">🍸</span>}
-              {cat.section === 'bebidas' && <span style={{ fontSize: 14, flexShrink: 0 }} title="Bebidas">🥤</span>}
+              {(() => { const si = allSections.find(s => s.value === (cat.section ?? "pratos")); return si ? <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 6, background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.4)", flexShrink: 0 }}>{si.icon} {si.label}</span> : null; })()}
               <form action={updateCategory} onClick={(e) => e.stopPropagation()} style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
                 <input type="hidden" name="id" value={cat.id} />
                 <input type="hidden" name="section" value={editCatSection[cat.id] ?? cat.section ?? 'pratos'} />
@@ -311,24 +394,26 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                   </button>
                 </div>
                 {isOpen && (
-                  <div style={{ display: "flex", gap: 6 }}>
-                    {([['pratos','🍽️','Pratos'],['drinks','🍸','Drinks'],['bebidas','🥤','Bebidas']] as const).map(([val, icon, label]) => {
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                    {allSections.map(s => {
                       const current = editCatSection[cat.id] ?? cat.section ?? 'pratos';
                       return (
-                        <button
-                          key={val}
-                          type="button"
-                          onClick={() => setEditCatSection(prev => ({ ...prev, [cat.id]: val }))}
+                        <button key={s.value} type="button" onClick={() => setEditCatSection(prev => ({ ...prev, [cat.id]: s.value }))}
                           style={{
-                            flex: 1, padding: "5px 2px", borderRadius: 8, border: "1px solid",
-                            borderColor: current === val ? "#00ffae" : "rgba(255,255,255,0.12)",
-                            background: current === val ? "rgba(0,255,174,0.12)" : "rgba(255,255,255,0.04)",
-                            color: current === val ? "#00ffae" : "rgba(255,255,255,0.5)",
-                            fontSize: 11, fontWeight: 700, cursor: "pointer",
-                          }}
-                        >{icon} {label}</button>
+                            padding: "5px 10px", borderRadius: 8, border: "1px solid",
+                            borderColor: current === s.value ? "#00ffae" : "rgba(255,255,255,0.12)",
+                            background: current === s.value ? "rgba(0,255,174,0.12)" : "rgba(255,255,255,0.04)",
+                            color: current === s.value ? "#00ffae" : "rgba(255,255,255,0.5)",
+                            fontSize: 11, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 3,
+                          }}>
+                          <span>{s.icon}</span> {s.label}
+                        </button>
                       );
                     })}
+                    <button type="button" onClick={() => setShowCreateSection(v => !v)}
+                      style={{ padding: "5px 10px", borderRadius: 8, border: "1px dashed rgba(255,255,255,0.15)", background: "transparent", color: "rgba(255,255,255,0.3)", cursor: "pointer", fontSize: 11 }}>
+                      + Criar
+                    </button>
                   </div>
                 )}
               </form>
@@ -383,6 +468,8 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                           expanded={expandedProductId === p.id}
                           onToggle={() => setExpandedProductId(expandedProductId === p.id ? null : p.id)}
                           onClose={() => setExpandedProductId(null)}
+                          section={editCatSection[cat.id] ?? cat.section ?? 'pratos'}
+                          customSections={customSections}
                         />
                       ))}
                       {catProducts.length > 4 && !showAllProducts[cat.id] && (
@@ -407,6 +494,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                       <NewProductFormInline
                         categoryId={cat.id}
                         section={editCatSection[cat.id] ?? cat.section ?? 'pratos'}
+                        customSections={customSections}
                         anyProductExpanded={expandedProductId !== null}
                         onOpen={() => setExpandedProductId(null)}
                       />
