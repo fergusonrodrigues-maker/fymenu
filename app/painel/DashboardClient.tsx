@@ -100,44 +100,60 @@ function Modal({ open, onClose, children, title }: { open: boolean; onClose: () 
 
   if (!open) return null;
 
-  // ── Desktop: centered floating modal ────────────────────────────────────
+  // ── Desktop: glassmorphism centered modal ───────────────────────────────
   if (isDesktop) {
     return (
       <div
         style={{
           position: "fixed", inset: 0, zIndex: 9999,
-          background: "rgba(0,0,0,0.6)",
+          background: "rgba(0,0,0,0.5)",
           display: "flex", alignItems: "center", justifyContent: "center",
-          backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)",
+          backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
+          animation: "modalBackdropIn 0.2s ease",
         }}
         onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
       >
         <div
+          className="modal-desktop-scroll"
           style={{
-            width: "90%", maxWidth: 720, maxHeight: "85vh",
-            borderRadius: 24,
-            background: "#0a0a0a",
+            width: "90%", maxWidth: 760, maxHeight: "80vh",
+            borderRadius: 28,
+            background: "rgba(10,10,10,0.85)",
+            backdropFilter: "blur(40px)", WebkitBackdropFilter: "blur(40px)",
             border: "1px solid rgba(255,255,255,0.08)",
-            boxShadow: "0 25px 50px rgba(0,0,0,0.5)",
+            boxShadow: "0 32px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04) inset",
             overflowY: "auto",
             overscrollBehavior: "contain",
-            animation: "modalFadeIn 0.2s ease",
+            animation: "modalContentIn 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
             position: "relative",
+            padding: 0,
           }}
         >
           <button
             onClick={onClose}
             style={{
-              position: "sticky", top: 12, float: "right", zIndex: 10,
-              width: 32, height: 32, borderRadius: 10,
+              position: "sticky", top: 16, float: "right", zIndex: 10,
+              width: 36, height: 36, borderRadius: 12,
               background: "rgba(255,255,255,0.06)",
-              border: "1px solid rgba(255,255,255,0.1)",
+              backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
+              border: "1px solid rgba(255,255,255,0.08)",
               color: "rgba(255,255,255,0.5)",
               display: "flex", alignItems: "center", justifyContent: "center",
-              cursor: "pointer", fontSize: 16, marginRight: 12, marginTop: 12,
+              cursor: "pointer", fontSize: 16, marginRight: 16, marginTop: 16,
+              transition: "all 0.2s",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "rgba(255,255,255,0.12)";
+              e.currentTarget.style.color = "#fff";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "rgba(255,255,255,0.06)";
+              e.currentTarget.style.color = "rgba(255,255,255,0.5)";
             }}
           >✕</button>
-          {children}
+          <div style={{ padding: "8px 28px 28px" }}>
+            {children}
+          </div>
         </div>
       </div>
     );
