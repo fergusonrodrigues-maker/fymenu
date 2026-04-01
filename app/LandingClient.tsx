@@ -109,14 +109,14 @@ function FeatureCard({
         style={{
           fontSize: 20,
           fontWeight: 800,
-          color: theme === "dark" ? "#fff" : "#222",
+          color: "var(--lp-price-color)",
           marginBottom: 8,
           letterSpacing: "-0.3px",
         }}
       >
         {title}
       </h3>
-      <p style={{ fontSize: 14, color: theme === "dark" ? "rgba(255,255,255,0.7)" : "rgba(34,34,34,0.65)", lineHeight: 1.6 }}>{desc}</p>
+      <p style={{ fontSize: 14, color: "var(--lp-text)", lineHeight: 1.6 }}>{desc}</p>
     </div>
   );
 }
@@ -330,6 +330,51 @@ export default function LandingPage() {
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { background: #000; color: #fff; font-family: 'Montserrat', -apple-system, sans-serif; overflow-x: hidden; font-weight: 500; }
 
+        /* ── Landing CSS vars — dark (default) ── */
+        :root {
+          --lp-text: #a0a0a0;
+          --lp-text-secondary: #787878;
+          --lp-text-muted: #505050;
+          --lp-check: #00cc8a;
+          --lp-check-highlight: #00dda0;
+          --lp-card-bg: rgba(255,255,255,0.03);
+          --lp-card-border: rgba(255,255,255,0.08);
+          --lp-card-shadow: 0 0 80px 20px rgba(255,255,255,0.02), 0 1px 0 rgba(255,255,255,0.03) inset, 0 -1px 0 rgba(0,0,0,0.25) inset;
+          --lp-feature-shadow: 0 0 60px 15px rgba(255,255,255,0.015), 0 1px 0 rgba(255,255,255,0.03) inset, 0 -1px 0 rgba(0,0,0,0.2) inset;
+          --lp-highlight-bg: rgba(0,255,174,0.04);
+          --lp-highlight-border: rgba(0,255,174,0.3);
+          --lp-highlight-shadow: 0 0 100px 30px rgba(0,255,174,0.03), 0 0 40px 10px rgba(0,255,174,0.02), 0 1px 0 rgba(0,255,174,0.06) inset, 0 -1px 0 rgba(0,0,0,0.25) inset;
+          --lp-price-color: #fff;
+          --lp-price-highlight: #00ffae;
+          --lp-badge-neutral-bg: rgba(251,191,36,0.15);
+          --lp-badge-neutral-color: #fbbf24;
+          --lp-btn-bg: rgba(255,255,255,0.08);
+          --lp-btn-border: rgba(255,255,255,0.12);
+          --lp-btn-color: #fff;
+        }
+        /* ── Landing CSS vars — light override ── */
+        .landing-light {
+          --lp-text: #2a2a2a;
+          --lp-text-secondary: #4a4a4a;
+          --lp-text-muted: #888;
+          --lp-check: #00b07a;
+          --lp-check-highlight: #009868;
+          --lp-card-bg: rgba(0,0,0,0.02);
+          --lp-card-border: rgba(0,0,0,0.06);
+          --lp-card-shadow: 0 0 60px 15px rgba(0,0,0,0.015), 0 -1px 0 rgba(255,255,255,0.8) inset, 0 1px 0 rgba(0,0,0,0.04) inset;
+          --lp-feature-shadow: 0 0 60px 15px rgba(0,0,0,0.015), 0 -1px 0 rgba(255,255,255,0.8) inset, 0 1px 0 rgba(0,0,0,0.04) inset;
+          --lp-highlight-bg: rgba(0,200,138,0.04);
+          --lp-highlight-border: rgba(0,200,138,0.12);
+          --lp-highlight-shadow: 0 0 80px 20px rgba(0,200,138,0.025), 0 -1px 0 rgba(255,255,255,0.8) inset, 0 1px 0 rgba(0,0,0,0.04) inset;
+          --lp-price-color: #1a1a1a;
+          --lp-price-highlight: #00a87a;
+          --lp-badge-neutral-bg: rgba(212,156,0,0.12);
+          --lp-badge-neutral-color: #a07800;
+          --lp-btn-bg: rgba(0,0,0,0.04);
+          --lp-btn-border: rgba(0,0,0,0.08);
+          --lp-btn-color: #1a1a1a;
+        }
+
         /* ── Loader ── */
         .fy-loader {
           position: relative;
@@ -376,25 +421,26 @@ export default function LandingPage() {
         .landing-light .fy-nav a:hover { color: #222 !important; }
         .landing-light h1, .landing-light h2 { color: #222 !important; }
         .landing-light .feature-card {
-          background: rgba(0,0,0,0.015);
-          border-color: rgba(213,22,89,0.08);
+          background: var(--lp-card-bg);
+          border-color: var(--lp-card-border);
+          box-shadow: var(--lp-feature-shadow);
         }
         .landing-light .feature-card:hover {
-          border-color: rgba(213,22,89,0.2);
-          background: rgba(213,22,89,0.03);
+          border-color: rgba(0,200,138,0.2);
+          background: rgba(0,200,138,0.03);
         }
         .landing-light .pricing-card {
-          background: rgba(0,0,0,0.015);
-          border-color: rgba(213,22,89,0.1);
-          color: #222 !important;
+          background: var(--lp-card-bg);
+          border-color: var(--lp-card-border);
+          box-shadow: var(--lp-card-shadow);
         }
         .landing-light .pricing-card:hover {
-          border-color: rgba(213,22,89,0.25);
+          border-color: rgba(0,200,138,0.2);
         }
         .landing-light .pricing-highlight {
-          border-color: rgba(213,22,89,0.3);
-          background: rgba(213,22,89,0.03);
-          box-shadow: 0 0 60px rgba(213,22,89,0.06);
+          border-color: var(--lp-highlight-border);
+          background: var(--lp-highlight-bg);
+          box-shadow: var(--lp-highlight-shadow);
         }
         .landing-light .pricing-badge {
           background: linear-gradient(135deg, #d51659, #fe4a2c);
@@ -559,11 +605,11 @@ export default function LandingPage() {
         .feature-card {
           padding: 32px;
           border-radius: 20px;
-          background: rgba(255,255,255,0.03);
-          border: 1px solid rgba(255,255,255,0.06);
+          background: var(--lp-card-bg);
+          border: 1px solid var(--lp-card-border);
           backdrop-filter: blur(8px);
           transition: all 0.3s ease;
-          box-shadow: 0 0 60px 15px rgba(255,255,255,0.015), 0 1px 0 rgba(255,255,255,0.03) inset, 0 -1px 0 rgba(0,0,0,0.2) inset;
+          box-shadow: var(--lp-feature-shadow);
         }
         .feature-card:hover {
           border-color: rgba(0,255,174,0.2);
@@ -575,22 +621,22 @@ export default function LandingPage() {
         .pricing-card {
           padding: 32px;
           border-radius: 20px;
-          background: rgba(255,255,255,0.03);
-          border: 1px solid rgba(255,255,255,0.08);
+          background: var(--lp-card-bg);
+          border: 1px solid var(--lp-card-border);
           display: flex;
           flex-direction: column;
           position: relative;
           transition: all 0.3s ease;
-          box-shadow: 0 0 80px 20px rgba(255,255,255,0.02), 0 1px 0 rgba(255,255,255,0.03) inset, 0 -1px 0 rgba(0,0,0,0.25) inset;
+          box-shadow: var(--lp-card-shadow);
         }
         .pricing-card:hover {
           border-color: rgba(0,255,174,0.2);
           transform: translateY(-4px);
         }
         .pricing-highlight {
-          border-color: rgba(0,255,174,0.3);
-          background: rgba(0,255,174,0.04);
-          box-shadow: 0 0 100px 30px rgba(0,255,174,0.03), 0 0 40px 10px rgba(0,255,174,0.02), 0 1px 0 rgba(0,255,174,0.06) inset, 0 -1px 0 rgba(0,0,0,0.25) inset;
+          border-color: var(--lp-highlight-border);
+          background: var(--lp-highlight-bg);
+          box-shadow: var(--lp-highlight-shadow);
         }
         .pricing-badge {
           position: absolute;
@@ -918,21 +964,19 @@ export default function LandingPage() {
             {(Object.entries(PLANS) as [string, typeof PLANS[keyof typeof PLANS]][]).map(([key, plan]) => (
               <div key={key} style={{
                 borderRadius: 24, padding: 28,
-                background: plan.highlight ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.02)",
-                border: plan.highlight ? "2px solid #00ffae" : "1px solid rgba(255,255,255,0.08)",
+                background: plan.highlight ? "var(--lp-highlight-bg)" : "var(--lp-card-bg)",
+                border: plan.highlight ? "2px solid var(--lp-highlight-border)" : "1px solid var(--lp-card-border)",
                 position: "relative",
                 transform: plan.highlight ? "scale(1.02)" : "none",
                 display: "flex", flexDirection: "column",
-                boxShadow: plan.highlight
-                  ? "0 0 100px 30px rgba(0,255,174,0.03), 0 0 40px 10px rgba(0,255,174,0.02), 0 1px 0 rgba(0,255,174,0.06) inset, 0 -1px 0 rgba(0,0,0,0.25) inset"
-                  : "0 0 80px 20px rgba(255,255,255,0.02), 0 1px 0 rgba(255,255,255,0.03) inset, 0 -1px 0 rgba(0,0,0,0.25) inset",
+                boxShadow: plan.highlight ? "var(--lp-highlight-shadow)" : "var(--lp-card-shadow)",
               }}>
                 {"badge" in plan && plan.badge && (
                   <div style={{
                     position: "absolute", top: -12, left: "50%", transform: "translateX(-50%)",
                     padding: "4px 14px", borderRadius: 20, fontSize: 11, fontWeight: 800,
-                    background: plan.highlight ? "linear-gradient(135deg, #00ffae, #00d9ff)" : "rgba(251,191,36,0.15)",
-                    color: plan.highlight ? "#000" : "#fbbf24",
+                    background: plan.highlight ? "linear-gradient(135deg, #00ffae, #00d9ff)" : "var(--lp-badge-neutral-bg)",
+                    color: plan.highlight ? "#000" : "var(--lp-badge-neutral-color)",
                     letterSpacing: "0.5px", whiteSpace: "nowrap",
                   }}>
                     {plan.badge}
@@ -941,17 +985,17 @@ export default function LandingPage() {
 
                 <div style={{ textAlign: "center", marginBottom: 20 }}>
                   <div style={{ fontSize: 28, marginBottom: 4 }}>{plan.icon}</div>
-                  <div style={{ fontSize: 20, fontWeight: 900, color: "#fff" }}>{plan.name}</div>
-                  <div style={{ fontSize: 12, color: "#8a8a8a", marginTop: 2 }}>{plan.units}</div>
+                  <div style={{ fontSize: 20, fontWeight: 900, color: "var(--lp-price-color)" }}>{plan.name}</div>
+                  <div style={{ fontSize: 12, color: "var(--lp-text-secondary)", marginTop: 2 }}>{plan.units}</div>
                 </div>
 
                 <div style={{ textAlign: "center", marginBottom: 20 }}>
-                  <div style={{ fontSize: 36, fontWeight: 900, color: plan.highlight ? "#00ffae" : "#fff" }}>
+                  <div style={{ fontSize: 36, fontWeight: 900, color: plan.highlight ? "var(--lp-price-highlight)" : "var(--lp-price-color)" }}>
                     R${plan.prices[cycle]}
-                    <span style={{ fontSize: 14, fontWeight: 400, color: "#8a8a8a" }}>/mês</span>
+                    <span style={{ fontSize: 14, fontWeight: 400, color: "var(--lp-text-secondary)" }}>/mês</span>
                   </div>
                   {cycle !== "MONTHLY" && (
-                    <div style={{ fontSize: 12, color: "#787878", marginTop: 4 }}>
+                    <div style={{ fontSize: 12, color: "var(--lp-text-muted)", marginTop: 4 }}>
                       R${plan.totals[cycle]} total · Economia de {plan.savings[cycle]}
                     </div>
                   )}
@@ -959,8 +1003,8 @@ export default function LandingPage() {
 
                 <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 24, flex: 1 }}>
                   {plan.features.map((f) => (
-                    <div key={f} style={{ fontSize: 13, color: "#a0a0a0", display: "flex", alignItems: "center", gap: 8 }}>
-                      <span style={{ color: plan.highlight ? "#00dda0" : "#00cc8a", fontSize: 12 }}>✓</span> {f}
+                    <div key={f} style={{ fontSize: 13, color: "var(--lp-text)", display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ color: plan.highlight ? "var(--lp-check-highlight)" : "var(--lp-check)", fontSize: 12 }}>✓</span> {f}
                     </div>
                   ))}
                 </div>
@@ -968,18 +1012,27 @@ export default function LandingPage() {
                 <a href="/cadastro"
                   style={{
                     display: "block", textAlign: "center", padding: "14px", borderRadius: 14,
-                    background: plan.highlight ? "linear-gradient(135deg, #00ffae, #00d9ff)" : "rgba(255,255,255,0.08)",
-                    color: plan.highlight ? "#000" : "#fff",
+                    background: plan.highlight ? "linear-gradient(135deg, #00ffae, #00d9ff)" : "var(--lp-btn-bg)",
+                    color: plan.highlight ? "#000" : "var(--lp-btn-color)",
                     fontWeight: 800, fontSize: 15, textDecoration: "none",
-                    border: plan.highlight ? "none" : "1px solid rgba(255,255,255,0.12)",
+                    border: plan.highlight ? "none" : "1px solid var(--lp-btn-border)",
                     transition: "all 0.2s",
+                    boxShadow: theme === "light" && !plan.highlight ? "0 1px 0 rgba(255,255,255,0.8) inset, 0 -1px 0 rgba(0,0,0,0.06) inset, 0 2px 4px rgba(0,0,0,0.06)" : undefined,
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.boxShadow = plan.highlight
-                      ? "0 0 40px 10px rgba(0,255,174,0.06), 0 1px 0 rgba(0,255,174,0.2) inset, 0 -1px 0 rgba(0,0,0,0.2) inset, 0 2px 4px rgba(0,0,0,0.15)"
-                      : "0 0 30px 8px rgba(255,255,255,0.04), 0 1px 0 rgba(255,255,255,0.08) inset, 0 -1px 0 rgba(0,0,0,0.2) inset, 0 2px 4px rgba(0,0,0,0.15)";
+                      ? theme === "light"
+                        ? "0 0 40px 10px rgba(0,200,138,0.04), 0 1px 0 rgba(255,255,255,0.8) inset, 0 -1px 0 rgba(0,0,0,0.06) inset"
+                        : "0 0 40px 10px rgba(0,255,174,0.06), 0 1px 0 rgba(0,255,174,0.2) inset, 0 -1px 0 rgba(0,0,0,0.2) inset, 0 2px 4px rgba(0,0,0,0.15)"
+                      : theme === "light"
+                        ? "0 0 30px 8px rgba(0,0,0,0.03), 0 1px 0 rgba(255,255,255,0.8) inset, 0 -1px 0 rgba(0,0,0,0.06) inset"
+                        : "0 0 30px 8px rgba(255,255,255,0.04), 0 1px 0 rgba(255,255,255,0.08) inset, 0 -1px 0 rgba(0,0,0,0.2) inset, 0 2px 4px rgba(0,0,0,0.15)";
                   }}
-                  onMouseLeave={(e) => { e.currentTarget.style.boxShadow = ""; }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.boxShadow = theme === "light" && !plan.highlight
+                      ? "0 1px 0 rgba(255,255,255,0.8) inset, 0 -1px 0 rgba(0,0,0,0.06) inset, 0 2px 4px rgba(0,0,0,0.06)"
+                      : "";
+                  }}
                 >
                   {plan.cta}
                 </a>
