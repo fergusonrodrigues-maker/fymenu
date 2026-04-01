@@ -120,9 +120,9 @@ const TABS = ["Visão Geral", "Usuários", "Faturamento", "Analytics", "CRM", "P
 type Tab = (typeof TABS)[number];
 
 const PLAN_PRICES: Record<string, number> = {
-  menu: 9700,
-  menupro: 19700,
-  business: 39700,
+  menu: 19990,
+  menupro: 39990,
+  business: 159900,
 };
 
 const AVAILABLE_FEATURES = [
@@ -994,9 +994,9 @@ export default function AdminClient({
         {/* BILLING */}
         {tab === "Faturamento" && (() => {
           const BILLING_PRICES: Record<string, number> = {
-            menu: 12900,
-            menupro: 24900,
-            business: 109000,
+            menu: 19990,
+            menupro: 39990,
+            business: 159900,
           };
 
           // MRR

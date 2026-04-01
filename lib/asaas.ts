@@ -8,9 +8,9 @@ const ASAAS_BASE =
 const ASAAS_KEY = process.env.ASAAS_API_KEY!;
 
 export const PLAN_PRICES: Record<string, Record<string, number>> = {
-  menu:     { MONTHLY: 12900, QUARTERLY: 31200, SEMIANNUALLY: 53400 },
-  menupro:  { MONTHLY: 24900, QUARTERLY: 65700, SEMIANNUALLY: 107400 },
-  business: { MONTHLY: 109000, QUARTERLY: 299700, SEMIANNUALLY: 509400 },
+  menu:     { MONTHLY: 19990, QUARTERLY: 53970, SEMIANNUALLY: 95940 },
+  menupro:  { MONTHLY: 39990, QUARTERLY: 107970, SEMIANNUALLY: 191940 },
+  business: { MONTHLY: 159900, QUARTERLY: 419700, SEMIANNUALLY: 719400 },
 };
 
 export const PLAN_LABELS: Record<string, string> = {

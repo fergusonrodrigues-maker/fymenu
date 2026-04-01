@@ -118,18 +118,18 @@ export default function StepMenu({
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
           <PlanCard
             name="Menu"
-            price="R$129/mês"
+            price="R$199,90/mês"
             features={["1 unidade", "WhatsApp", "Modo TV"]}
           />
           <PlanCard
             name="MenuPro"
-            price="R$249/mês"
+            price="R$399,90/mês"
             features={["Até 3 unidades", "Comanda Digital", "CRM"]}
             highlight
           />
           <PlanCard
             name="Business"
-            price="R$1.090/mês"
+            price="R$1.599/mês"
             features={["Até 4 unidades", "Equipe completa", "Estoque + IA"]}
           />
         </div>

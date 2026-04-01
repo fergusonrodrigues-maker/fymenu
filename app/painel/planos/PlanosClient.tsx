@@ -4,9 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 const PLAN_PRICES: Record<string, Record<string, number>> = {
-  menu:     { MONTHLY: 12900, QUARTERLY: 31200, SEMIANNUALLY: 53400 },
-  menupro:  { MONTHLY: 24900, QUARTERLY: 65700, SEMIANNUALLY: 107400 },
-  business: { MONTHLY: 109000, QUARTERLY: 299700, SEMIANNUALLY: 509400 },
+  menu:     { MONTHLY: 19990, QUARTERLY: 53970, SEMIANNUALLY: 95940 },
+  menupro:  { MONTHLY: 39990, QUARTERLY: 107970, SEMIANNUALLY: 191940 },
+  business: { MONTHLY: 159900, QUARTERLY: 419700, SEMIANNUALLY: 719400 },
 };
 
 const CYCLES = [
@@ -16,29 +16,29 @@ const CYCLES = [
 ];
 
 const SAVINGS: Record<string, string> = {
-  QUARTERLY: "20% off",
-  SEMIANNUALLY: "31% off",
+  QUARTERLY: "10% off",
+  SEMIANNUALLY: "20% off",
 };
 
 const PLANS = [
   {
     key: "menu",
     label: "Menu",
-    description: "Cardápio digital com link público",
-    features: ["Cardápio digital", "Link público", "Analytics básico", "WhatsApp integrado"],
+    description: "1 unidade · Cardápio digital com link público",
+    features: ["Cardápio de vídeo 9:16", "Pedidos via WhatsApp", "Link público + QR Code", "Modo TV", "Analytics básico"],
   },
   {
     key: "menupro",
     label: "MenuPro",
-    description: "Tudo do Menu + ferramentas profissionais",
-    features: ["Tudo do Menu", "Pedidos online", "Gestão de equipe", "Estoque", "Comanda digital"],
+    description: "Até 3 unidades · Ferramentas profissionais",
+    features: ["Tudo do Menu +", "Comanda Digital", "Cozinha + Garçom em tempo real", "CRM de clientes", "Analytics avançado com IA", "Relatórios em PDF", "Equipe (garçom + avaliações)", "Estoque básico"],
     highlight: true,
   },
   {
     key: "business",
     label: "Business",
-    description: "Solução completa com 7 dias grátis",
-    features: ["Tudo do MenuPro", "CRM de clientes", "Multi-unidade", "Relatórios avançados", "7 dias grátis"],
+    description: "Até 4 unidades · Solução completa",
+    features: ["Tudo do MenuPro +", "Gestão completa de equipe + ponto", "Estoque completo com IA", "CRM com disparo de mensagens", "Financeiro com custos e margens", "Relatórios financeiros com IA", "Hub do gerente"],
     trial: true,
   },
 ];
