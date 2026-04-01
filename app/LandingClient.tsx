@@ -102,9 +102,23 @@ function FeatureCard({
         opacity: visible ? 1 : 0,
         transform: visible ? "translateY(0)" : "translateY(32px)",
         transition: "all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)",
+        position: "relative", overflow: "hidden",
       }}
     >
-      <div style={{ fontSize: 36, marginBottom: 16 }}>{icon}</div>
+      {/* Internal radial light — top glow */}
+      <div style={{
+        position: "absolute", top: 0, left: 0, right: 0, bottom: 0, pointerEvents: "none",
+        maskImage: "linear-gradient(to bottom, white 0%, transparent 60%)",
+        WebkitMaskImage: "linear-gradient(to bottom, white 0%, transparent 60%)",
+      }}>
+        <div style={{
+          position: "absolute", inset: 0,
+          background: theme === "light"
+            ? "radial-gradient(ellipse at top, rgba(0,0,0,0.03) 0%, transparent 70%)"
+            : "radial-gradient(ellipse at top, rgba(255,255,255,0.04) 0%, transparent 70%)",
+        }} />
+      </div>
+      <div style={{ fontSize: 36, marginBottom: 16, position: "relative" }}>{icon}</div>
       <h3
         style={{
           fontSize: 20,
@@ -922,8 +936,26 @@ export default function LandingPage() {
             padding: "80px 24px 120px",
             position: "relative",
             zIndex: 1,
+            overflow: "hidden",
           }}
         >
+          {/* Background light blobs */}
+          <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
+            <div style={{
+              position: "absolute", top: "-30%", left: "30%", width: "40%", height: "120%",
+              background: theme === "light"
+                ? "radial-gradient(50% 50% at 50% 50%, rgba(0,200,138,0.025) 0%, transparent 100%)"
+                : "radial-gradient(50% 50% at 50% 50%, rgba(0,255,174,0.03) 0%, transparent 100%)",
+              transform: "rotate(-15deg)",
+            }} />
+            <div style={{
+              position: "absolute", top: "-40%", left: "10%", width: "30%", height: "100%",
+              background: theme === "light"
+                ? "radial-gradient(50% 50% at 50% 50%, rgba(0,0,0,0.01) 0%, transparent 100%)"
+                : "radial-gradient(50% 50% at 50% 50%, rgba(255,255,255,0.015) 0%, transparent 100%)",
+              transform: "rotate(-30deg)",
+            }} />
+          </div>
           <div style={{ textAlign: "center", marginBottom: 40 }}>
             <h2 style={{ fontSize: 32, fontWeight: 900, color: "#fff", margin: 0 }}>
               Planos que cabem no seu restaurante
@@ -960,30 +992,55 @@ export default function LandingPage() {
                 borderRadius: 24, padding: 28,
                 background: plan.highlight ? "var(--lp-highlight-bg)" : "var(--lp-card-bg)",
                 backdropFilter: "blur(80px)", WebkitBackdropFilter: "blur(80px)",
-                position: "relative",
+                position: "relative", overflow: "hidden",
                 transform: plan.highlight ? "scale(1.02)" : "none",
                 display: "flex", flexDirection: "column",
-                boxShadow: plan.highlight ? "var(--lp-highlight-shadow)" : "var(--lp-card-shadow)",
+                boxShadow: plan.highlight
+                  ? theme === "light"
+                    ? "0 0 100px 40px rgba(0,200,138,0.02), 0 -1px 0 rgba(255,255,255,0.6) inset, 0 1px 0 rgba(0,0,0,0.04) inset"
+                    : "0 0 120px 40px rgba(0,255,174,0.03), 0 0 60px 20px rgba(0,255,174,0.02), 0 1px 0 rgba(0,255,174,0.06) inset, 0 -1px 0 rgba(0,0,0,0.25) inset"
+                  : theme === "light"
+                    ? "0 0 80px 30px rgba(0,0,0,0.01), 0 -1px 0 rgba(255,255,255,0.6) inset, 0 1px 0 rgba(0,0,0,0.04) inset"
+                    : "0 0 80px 30px rgba(255,255,255,0.012), 0 1px 0 rgba(255,255,255,0.03) inset, 0 -1px 0 rgba(0,0,0,0.25) inset",
               }}>
-                {"badge" in plan && plan.badge && (
+                {/* Internal radial light — top glow */}
+                <div style={{
+                  position: "absolute", top: 0, left: 0, right: 0, bottom: 0, pointerEvents: "none",
+                  maskImage: "linear-gradient(to bottom, white 0%, transparent 60%)",
+                  WebkitMaskImage: "linear-gradient(to bottom, white 0%, transparent 60%)",
+                }}>
                   <div style={{
-                    position: "absolute", top: -12, left: "50%", transform: "translateX(-50%)",
-                    padding: "4px 14px", borderRadius: 20, fontSize: 11, fontWeight: 800,
-                    background: plan.highlight ? "linear-gradient(135deg, #00ffae, #00d9ff)" : "var(--lp-badge-neutral-bg)",
-                    color: plan.highlight ? "#000" : "var(--lp-badge-neutral-color)",
-                    letterSpacing: "0.5px", whiteSpace: "nowrap",
+                    position: "absolute", inset: 0,
+                    background: plan.highlight
+                      ? "radial-gradient(ellipse at top, rgba(0,255,174,0.08) 0%, transparent 70%)"
+                      : theme === "light"
+                        ? "radial-gradient(ellipse at top, rgba(0,0,0,0.03) 0%, transparent 70%)"
+                        : "radial-gradient(ellipse at top, rgba(255,255,255,0.04) 0%, transparent 70%)",
+                  }} />
+                </div>
+
+                {/* Inline badge label */}
+                {"badge" in plan && plan.badge ? (
+                  <div style={{
+                    fontSize: 11, fontWeight: 700, letterSpacing: "1px", textAlign: "center",
+                    marginBottom: 8, position: "relative",
+                    ...(plan.highlight
+                      ? { background: "linear-gradient(135deg, #00ffae, #00d9ff)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }
+                      : { color: theme === "dark" ? "#fbbf24" : "#a07800" }),
                   }}>
-                    {plan.badge}
+                    {plan.badge.toUpperCase()}
                   </div>
+                ) : (
+                  <div style={{ height: 18, marginBottom: 8 }} />
                 )}
 
-                <div style={{ textAlign: "center", marginBottom: 20 }}>
+                <div style={{ textAlign: "center", marginBottom: 20, position: "relative" }}>
                   <div style={{ fontSize: 28, marginBottom: 4 }}>{plan.icon}</div>
                   <div style={{ fontSize: 20, fontWeight: 900, color: "var(--lp-price-color)" }}>{plan.name}</div>
                   <div style={{ fontSize: 12, color: "var(--lp-text-secondary)", marginTop: 2 }}>{plan.units}</div>
                 </div>
 
-                <div style={{ textAlign: "center", marginBottom: 20 }}>
+                <div style={{ textAlign: "center", marginBottom: 20, position: "relative" }}>
                   <div style={{ fontSize: 36, fontWeight: 900, color: plan.highlight ? "var(--lp-price-highlight)" : "var(--lp-price-color)" }}>
                     R${plan.prices[cycle]}
                     <span style={{ fontSize: 14, fontWeight: 400, color: "var(--lp-text-secondary)" }}>/mês</span>
@@ -995,10 +1052,10 @@ export default function LandingPage() {
                   )}
                 </div>
 
-                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 24, flex: 1 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 24, flex: 1, position: "relative" }}>
                   {plan.features.map((f) => (
                     <div key={f} style={{ fontSize: 13, color: "var(--lp-text)", display: "flex", alignItems: "center", gap: 8 }}>
-                      <span style={{ color: plan.highlight ? "var(--lp-check-highlight)" : "var(--lp-check)", fontSize: 12 }}>✓</span> {f}
+                      <span style={{ color: plan.highlight ? "#00cc8a" : "#00cc8a", fontSize: 12 }}>✓</span> {f}
                     </div>
                   ))}
                 </div>
@@ -1009,23 +1066,28 @@ export default function LandingPage() {
                     background: plan.highlight ? "linear-gradient(135deg, #00ffae, #00d9ff)" : "var(--lp-btn-bg)",
                     color: plan.highlight ? "#000" : "var(--lp-btn-color)",
                     fontWeight: 800, fontSize: 15, textDecoration: "none",
-                    border: plan.highlight ? "none" : "1px solid var(--lp-btn-border)",
+                    border: "none",
                     transition: "all 0.2s",
-                    boxShadow: theme === "light" && !plan.highlight ? "0 1px 0 rgba(255,255,255,0.8) inset, 0 -1px 0 rgba(0,0,0,0.06) inset, 0 2px 4px rgba(0,0,0,0.06)" : undefined,
+                    position: "relative",
+                    boxShadow: plan.highlight
+                      ? "0 1px 0 rgba(0,255,174,0.4) inset, 0 -1px 0 rgba(0,0,0,0.2) inset, 0 2px 8px rgba(0,0,0,0.2)"
+                      : theme === "light"
+                        ? "0 1px 0 rgba(255,255,255,0.8) inset, 0 -1px 0 rgba(0,0,0,0.06) inset, 0 2px 4px rgba(0,0,0,0.06)"
+                        : "0 1px 0 rgba(255,255,255,0.06) inset, 0 -1px 0 rgba(0,0,0,0.2) inset, 0 2px 4px rgba(0,0,0,0.15)",
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.boxShadow = plan.highlight
-                      ? theme === "light"
-                        ? "0 0 40px 10px rgba(0,200,138,0.04), 0 1px 0 rgba(255,255,255,0.8) inset, 0 -1px 0 rgba(0,0,0,0.06) inset"
-                        : "0 0 40px 10px rgba(0,255,174,0.06), 0 1px 0 rgba(0,255,174,0.2) inset, 0 -1px 0 rgba(0,0,0,0.2) inset, 0 2px 4px rgba(0,0,0,0.15)"
+                      ? "0 0 40px 10px rgba(0,255,174,0.06), 0 1px 0 rgba(0,255,174,0.4) inset, 0 -1px 0 rgba(0,0,0,0.2) inset"
                       : theme === "light"
                         ? "0 0 30px 8px rgba(0,0,0,0.03), 0 1px 0 rgba(255,255,255,0.8) inset, 0 -1px 0 rgba(0,0,0,0.06) inset"
-                        : "0 0 30px 8px rgba(255,255,255,0.04), 0 1px 0 rgba(255,255,255,0.08) inset, 0 -1px 0 rgba(0,0,0,0.2) inset, 0 2px 4px rgba(0,0,0,0.15)";
+                        : "0 0 30px 8px rgba(255,255,255,0.04), 0 1px 0 rgba(255,255,255,0.06) inset, 0 -1px 0 rgba(0,0,0,0.2) inset, 0 2px 4px rgba(0,0,0,0.15)";
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.boxShadow = theme === "light" && !plan.highlight
-                      ? "0 1px 0 rgba(255,255,255,0.8) inset, 0 -1px 0 rgba(0,0,0,0.06) inset, 0 2px 4px rgba(0,0,0,0.06)"
-                      : "";
+                    e.currentTarget.style.boxShadow = plan.highlight
+                      ? "0 1px 0 rgba(0,255,174,0.4) inset, 0 -1px 0 rgba(0,0,0,0.2) inset, 0 2px 8px rgba(0,0,0,0.2)"
+                      : theme === "light"
+                        ? "0 1px 0 rgba(255,255,255,0.8) inset, 0 -1px 0 rgba(0,0,0,0.06) inset, 0 2px 4px rgba(0,0,0,0.06)"
+                        : "0 1px 0 rgba(255,255,255,0.06) inset, 0 -1px 0 rgba(0,0,0,0.2) inset, 0 2px 4px rgba(0,0,0,0.15)";
                   }}
                 >
                   {plan.cta}
