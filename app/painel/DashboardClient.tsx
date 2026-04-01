@@ -228,15 +228,6 @@ function Modal({ open, onClose, children, title }: { open: boolean; onClose: () 
   );
 }
 
-// ─── Input style ────────────────────────────────────────────────────────────
-const inp: React.CSSProperties = {
-  width: "100%", padding: "11px 14px", borderRadius: 12,
-  border: "1px solid var(--dash-input-border)",
-  background: "var(--dash-input-bg)",
-  color: "var(--dash-text)", fontSize: 16, boxSizing: "border-box",
-  outline: "none",
-};
-
 // ─── Main Component ──────────────────────────────────────────────────────────
 export default function DashboardClient({
   restaurant, unit, profile, categories, products, upsellItems, analytics, tvCount, stockStats, reportData,
@@ -930,7 +921,7 @@ export default function DashboardClient({
                 <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(0,255,174,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>🍽</div>
               )}
               <div>
-                <div className="dash-gradient-text" style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.5px", lineHeight: 1.1 }}>{unit?.name ?? restaurant.name}</div>
+                <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.5px", lineHeight: 1.1, color: "#fff" }}>{unit?.name ?? restaurant.name}</div>
                 <div style={{ color: "var(--dash-text-muted)", fontSize: 12 }}>{unit?.is_published ? "● Publicado" : "○ Não publicado"}</div>
               </div>
             </div>
@@ -999,7 +990,7 @@ export default function DashboardClient({
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
                         <div>
                           <div style={{ color: "var(--dash-text-muted)", fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 4 }}>Últimos 7 dias</div>
-                          <div className="dash-gradient-text" style={{ fontSize: 18, fontWeight: 800 }}>Analytics</div>
+                          <div style={{ fontSize: 18, fontWeight: 800, color: "#fff" }}>Analytics</div>
                         </div>
                         <div style={{ fontSize: 24 }}>📊</div>
                       </div>
@@ -1034,7 +1025,7 @@ export default function DashboardClient({
                     }}>
                       <div style={{ fontSize: colSpan >= 2 ? 28 : 24 }}>📍</div>
                       <div style={{ flex: colSpan >= 2 ? 1 : undefined }}>
-                        <div className="dash-gradient-text" style={{ fontSize: colSpan >= 2 ? 15 : 16, fontWeight: 800, marginBottom: 2 }}>Unidade</div>
+                        <div style={{ fontSize: colSpan >= 2 ? 15 : 16, fontWeight: 800, marginBottom: 2, color: "#fff" }}>Unidade</div>
                         <div style={{ color: unit?.is_published ? "#00ffae" : "var(--dash-text-muted)", fontSize: 11, display: "flex", alignItems: "center", gap: 4 }}>
                           <span style={{ width: 6, height: 6, borderRadius: "50%", background: unit?.is_published ? "#00ffae" : "var(--dash-card-border)", display: "inline-block", animation: unit?.is_published ? "pulse 2s infinite" : "none" }} />
                           {unit?.is_published ? "Publicado" : "Não publicado"}
@@ -1060,7 +1051,7 @@ export default function DashboardClient({
                     }}>
                       <div style={{ fontSize: colSpan >= 2 ? 28 : 24 }}>⭐</div>
                       <div style={{ flex: colSpan >= 2 ? 1 : undefined }}>
-                        <div className="dash-gradient-text" style={{ fontSize: colSpan >= 2 ? 15 : 16, fontWeight: 800, marginBottom: 2 }}>Plano</div>
+                        <div style={{ fontSize: colSpan >= 2 ? 15 : 16, fontWeight: 800, marginBottom: 2, color: "#fff" }}>Plano</div>
                         <div style={{ color: isPro ? "#fbbf24" : "var(--dash-text-muted)", fontSize: 11, fontWeight: isPro ? 700 : 400 }}>{subText}</div>
                       </div>
                     </div>
@@ -1083,7 +1074,7 @@ export default function DashboardClient({
                     }}>
                       <div style={{ fontSize: colSpan >= 2 ? 28 : 24 }}>📦</div>
                       <div style={{ flex: colSpan >= 2 ? 1 : undefined }}>
-                        <div className="dash-gradient-text" style={{ fontSize: colSpan >= 2 ? 15 : 16, fontWeight: 800, marginBottom: 2 }}>Estoque</div>
+                        <div style={{ fontSize: colSpan >= 2 ? 15 : 16, fontWeight: 800, marginBottom: 2, color: "#fff" }}>Estoque</div>
                         <div style={{ fontSize: 12, display: "flex", gap: 8 }}>
                           {stockStats.out > 0 && <span style={{ color: "#f87171" }}>{stockStats.out} esgotado{stockStats.out !== 1 ? "s" : ""}</span>}
                           {stockStats.low > 0 && <span style={{ color: "#fbbf24" }}>{stockStats.low} baixo{stockStats.low !== 1 ? "s" : ""}</span>}
@@ -1109,7 +1100,7 @@ export default function DashboardClient({
                     }}>
                       <div style={{ fontSize: colSpan >= 2 ? 28 : 24 }}>🎛️</div>
                       <div style={{ flex: colSpan >= 2 ? 1 : undefined }}>
-                        <div className="dash-gradient-text" style={{ fontSize: colSpan >= 2 ? 15 : 16, fontWeight: 800, marginBottom: 2 }}>Operações</div>
+                        <div style={{ fontSize: colSpan >= 2 ? 15 : 16, fontWeight: 800, marginBottom: 2, color: "#fff" }}>Operações</div>
                         <div style={{ color: "var(--dash-text-muted)", fontSize: 12 }}>Cozinha · Garçom · Andamento</div>
                       </div>
                       <div style={{ color: "#00ffae", fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 20, background: "rgba(0,255,174,0.1)", border: "1px solid rgba(0,255,174,0.2)", flexShrink: 0 }}>
@@ -1135,7 +1126,7 @@ export default function DashboardClient({
                   }}>
                     <div style={{ fontSize: colSpan >= 2 ? 28 : 24 }}>{config.icon}</div>
                     <div style={{ flex: colSpan >= 2 ? 1 : undefined }}>
-                      <div className="dash-gradient-text" style={{ fontSize: colSpan >= 2 ? 15 : 16, fontWeight: 800, marginBottom: 2 }}>{config.label}</div>
+                      <div style={{ fontSize: colSpan >= 2 ? 15 : 16, fontWeight: 800, marginBottom: 2, color: "#fff" }}>{config.label}</div>
                       <div style={{ color: "var(--dash-text-muted)", fontSize: 12 }}>{subText}</div>
                     </div>
                   </div>
