@@ -10,6 +10,9 @@ export type Unit = {
   instagram: string | null;
   maps_url: string | null;
   logo_url: string | null;
+  cover_url: string | null;
+  banner_url: string | null;
+  description: string | null;
 };
 export type Category = {
   id: string;

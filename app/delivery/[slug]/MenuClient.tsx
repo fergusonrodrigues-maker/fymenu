@@ -42,6 +42,10 @@ export default function MenuClient({
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
 
+  // Busca
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
   function addToCart(payload: OrderPayload) {
     const productId = payload.variation?.id
       ? `${payload.product.id}__${payload.variation.id}`
@@ -221,6 +225,16 @@ export default function MenuClient({
   const productsByCategory = (categoryId: string) =>
     products.filter((p) => p.category_id === categoryId && p.is_active);
 
+  const searchResults = searchQuery.trim()
+    ? products.filter(
+        (p) =>
+          p.is_active &&
+          p.name.toLowerCase().includes(searchQuery.trim().toLowerCase())
+      )
+    : [];
+
+  const coverUrl = unit.cover_url ?? unit.banner_url ?? null;
+
   return (
     <>
       <style>{`
@@ -238,6 +252,13 @@ export default function MenuClient({
     background-image: radial-gradient(rgba(0,255,174,0.12) 1px, transparent 1px);
     background-size: 18px 18px;
   }
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .search-result-card:active {
+    opacity: 0.7;
+  }
 `}</style>
       {/* Pills fixos no topo */}
       <CategoryPillsTop
@@ -254,45 +275,292 @@ export default function MenuClient({
           paddingBottom: "calc(360px + env(safe-area-inset-bottom, 0px))",
         }}
       >
-        {/* Categorias em destaque */}
-        {featuredCategories.map((cat) => {
-          const catProducts = productsByCategory(cat.id);
-          if (!catProducts.length) return null;
-          return (
-            <div key={cat.id}>
-              <FeaturedCarousel
-                items={catProducts}
-                onOpen={(p) => handleOpenProduct(p)}
+        {/* ── HEADER: Capa + Logo + Busca ──────────────────────────────── */}
+        <div style={{ position: "relative" }}>
+          {/* A) Foto de capa */}
+          <div style={{ position: "relative", width: "100%", height: 200, overflow: "hidden" }}>
+            {coverUrl ? (
+              <img
+                src={coverUrl}
+                alt={unit.name}
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
               />
-            </div>
-          );
-        })}
-
-        {/* Categorias regulares */}
-        {regularCategories.map((cat) => {
-          const catProducts = productsByCategory(cat.id);
-          if (!catProducts.length) return null;
-          const isActive = cat.id === activeCategoryId;
-
-          return (
+            ) : (
+              <div
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  background: "linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%)",
+                }}
+              />
+            )}
+            {/* Gradiente inferior */}
             <div
-              key={cat.id}
-              ref={(el) => { sectionRefs.current[cat.id] = el; }}
               style={{
-                marginBottom: 4,
-                transition: "opacity 0.4s ease",
-                opacity: isActive ? 1 : 1,
-                scrollMarginTop: 42,
+                position: "absolute",
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: "60%",
+                background: "linear-gradient(to top, #000 0%, transparent 100%)",
+              }}
+            />
+            {/* Botão de busca (ícone lupa) */}
+            <button
+              onClick={() => setSearchOpen((o) => !o)}
+              style={{
+                position: "absolute",
+                top: 12,
+                right: 12,
+                zIndex: 10,
+                width: 36,
+                height: 36,
+                borderRadius: 12,
+                background: "rgba(0,0,0,0.3)",
+                backdropFilter: "blur(10px)",
+                WebkitBackdropFilter: "blur(10px)",
+                border: "none",
+                color: "rgba(255,255,255,0.7)",
+                fontSize: 16,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+              }}
+              aria-label="Buscar"
+            >
+              🔍
+            </button>
+          </div>
+
+          {/* B) Logo + Nome (sobrepõe a parte inferior da capa) */}
+          <div
+            style={{
+              position: "relative",
+              marginTop: -40,
+              textAlign: "center",
+              paddingBottom: 16,
+            }}
+          >
+            {unit.logo_url && (
+              <div
+                style={{
+                  width: 64,
+                  height: 64,
+                  borderRadius: "50%",
+                  overflow: "hidden",
+                  margin: "0 auto 10px",
+                  border: "2px solid rgba(255,255,255,0.15)",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+                }}
+              >
+                <img
+                  src={unit.logo_url}
+                  alt=""
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                />
+              </div>
+            )}
+            <div
+              style={{
+                fontSize: 20,
+                fontWeight: 800,
+                color: "#fff",
+                letterSpacing: "-0.3px",
               }}
             >
-              <CategoryCarousel
-                items={catProducts}
-                active={isActive}
-                onOpen={(p) => handleOpenProduct(p)}
+              {unit.name}
+            </div>
+            {unit.description && (
+              <div
+                style={{
+                  fontSize: 13,
+                  color: "rgba(255,255,255,0.5)",
+                  marginTop: 4,
+                }}
+              >
+                {unit.description}
+              </div>
+            )}
+            <div
+              style={{
+                fontSize: 12,
+                color: "rgba(255,255,255,0.35)",
+                marginTop: 6,
+                letterSpacing: "0.5px",
+              }}
+            >
+              Assista · Escolha · Peça
+            </div>
+          </div>
+
+          {/* C) Campo de busca expansível */}
+          {searchOpen && (
+            <div
+              style={{
+                padding: "0 16px 12px",
+                animation: "slideDown 0.2s ease",
+              }}
+            >
+              <input
+                type="text"
+                placeholder="Buscar pratos..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                autoFocus
+                style={{
+                  width: "100%",
+                  padding: "10px 16px",
+                  borderRadius: 12,
+                  background: "rgba(255,255,255,0.06)",
+                  border: "none",
+                  color: "#fff",
+                  fontSize: 14,
+                  outline: "none",
+                  boxSizing: "border-box",
+                }}
               />
             </div>
-          );
-        })}
+          )}
+        </div>
+        {/* ── FIM HEADER ───────────────────────────────────────────────── */}
+
+        {/* Resultados de busca (flat list) */}
+        {searchQuery.trim() ? (
+          <div style={{ padding: "0 12px" }}>
+            {searchResults.length === 0 ? (
+              <div
+                style={{
+                  textAlign: "center",
+                  color: "rgba(255,255,255,0.4)",
+                  padding: "32px 0",
+                  fontSize: 14,
+                }}
+              >
+                Nenhum prato encontrado
+              </div>
+            ) : (
+              searchResults.map((p) => (
+                <button
+                  key={p.id}
+                  className="search-result-card"
+                  onClick={() => handleOpenProduct(p)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    width: "100%",
+                    padding: "10px 0",
+                    borderBottom: "0.5px solid rgba(255,255,255,0.07)",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    textAlign: "left",
+                  }}
+                >
+                  {p.thumbnail_url && (
+                    <img
+                      src={p.thumbnail_url}
+                      alt=""
+                      style={{
+                        width: 56,
+                        height: 56,
+                        borderRadius: 10,
+                        objectFit: "cover",
+                        flexShrink: 0,
+                      }}
+                    />
+                  )}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div
+                      style={{
+                        fontSize: 14,
+                        fontWeight: 600,
+                        color: "#fff",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
+                      {p.name}
+                    </div>
+                    {p.description && (
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: "rgba(255,255,255,0.45)",
+                          marginTop: 2,
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
+                        {p.description}
+                      </div>
+                    )}
+                    {p.base_price != null && (
+                      <div
+                        style={{
+                          fontSize: 13,
+                          color: "rgba(255,255,255,0.7)",
+                          marginTop: 4,
+                        }}
+                      >
+                        {p.price_type === "variable"
+                          ? "A partir de "
+                          : ""}
+                        R${" "}
+                        {p.base_price.toFixed(2).replace(".", ",")}
+                      </div>
+                    )}
+                  </div>
+                </button>
+              ))
+            )}
+          </div>
+        ) : (
+          <>
+            {/* Categorias em destaque */}
+            {featuredCategories.map((cat) => {
+              const catProducts = productsByCategory(cat.id);
+              if (!catProducts.length) return null;
+              return (
+                <div key={cat.id}>
+                  <FeaturedCarousel
+                    items={catProducts}
+                    onOpen={(p) => handleOpenProduct(p)}
+                  />
+                </div>
+              );
+            })}
+
+            {/* Categorias regulares */}
+            {regularCategories.map((cat) => {
+              const catProducts = productsByCategory(cat.id);
+              if (!catProducts.length) return null;
+              const isActive = cat.id === activeCategoryId;
+
+              return (
+                <div
+                  key={cat.id}
+                  ref={(el) => { sectionRefs.current[cat.id] = el; }}
+                  style={{
+                    marginBottom: 4,
+                    transition: "opacity 0.4s ease",
+                    opacity: isActive ? 1 : 1,
+                    scrollMarginTop: 42,
+                  }}
+                >
+                  <CategoryCarousel
+                    items={catProducts}
+                    active={isActive}
+                    onOpen={(p) => handleOpenProduct(p)}
+                  />
+                </div>
+              );
+            })}
+          </>
+        )}
       </div>
 
       {/* Bottom bar (apenas no modo delivery) */}
