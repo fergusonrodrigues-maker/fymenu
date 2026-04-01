@@ -260,18 +260,11 @@ export default function MenuClient({
     opacity: 0.7;
   }
 `}</style>
-      {/* Pills fixos no topo */}
-      <CategoryPillsTop
-        categories={regularCategories}
-        activeCategoryId={activeCategoryId}
-        onSelect={scrollToCategory}
-      />
-
       {/* Conteúdo scrollável */}
       <div
         className="min-h-dvh menu-bg-themed"
         style={{
-          paddingTop: "calc(44px + env(safe-area-inset-top, 0px))",
+          paddingTop: "env(safe-area-inset-top, 0px)",
           paddingBottom: "calc(360px + env(safe-area-inset-bottom, 0px))",
         }}
       >
@@ -425,6 +418,28 @@ export default function MenuClient({
         </div>
         {/* ── FIM HEADER ───────────────────────────────────────────────── */}
 
+        {/* ── PILLS STICKY ─────────────────────────────────────────────── */}
+        {regularCategories.length > 0 && (
+          <div
+            style={{
+              position: "sticky",
+              top: 0,
+              zIndex: 50,
+              background: "rgba(0,0,0,0.9)",
+              backdropFilter: "blur(20px)",
+              WebkitBackdropFilter: "blur(20px)",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+            }}
+          >
+            <CategoryPillsTop
+              categories={regularCategories}
+              activeCategoryId={activeCategoryId}
+              onSelect={scrollToCategory}
+            />
+          </div>
+        )}
+        {/* ── FIM PILLS STICKY ─────────────────────────────────────────── */}
+
         {/* Resultados de busca (flat list) */}
         {searchQuery.trim() ? (
           <div style={{ padding: "0 12px" }}>
@@ -548,7 +563,7 @@ export default function MenuClient({
                     marginBottom: 4,
                     transition: "opacity 0.4s ease",
                     opacity: isActive ? 1 : 1,
-                    scrollMarginTop: 42,
+                    scrollMarginTop: 66,
                   }}
                 >
                   <CategoryCarousel

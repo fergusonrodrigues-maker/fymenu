@@ -157,15 +157,9 @@ export default function CategoryPillsTop({
 
   return (
     <div style={{
-      position: "fixed",
-      top: "env(safe-area-inset-top, 0px)",
-      left: 0,
       width: "100%",
-      zIndex: 50,
       pointerEvents: "none",
       padding: "10px 0 18px",
-      transform: "translateZ(0)",
-      willChange: "transform",
     }}>
       {/* Camada de blur com degradê — não afeta os pills */}
       <div style={{
