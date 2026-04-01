@@ -563,6 +563,7 @@ export default function LandingPage() {
           border: 1px solid rgba(255,255,255,0.06);
           backdrop-filter: blur(8px);
           transition: all 0.3s ease;
+          box-shadow: 0 0 60px 15px rgba(255,255,255,0.015), 0 1px 0 rgba(255,255,255,0.03) inset, 0 -1px 0 rgba(0,0,0,0.2) inset;
         }
         .feature-card:hover {
           border-color: rgba(0,255,174,0.2);
@@ -580,6 +581,7 @@ export default function LandingPage() {
           flex-direction: column;
           position: relative;
           transition: all 0.3s ease;
+          box-shadow: 0 0 80px 20px rgba(255,255,255,0.02), 0 1px 0 rgba(255,255,255,0.03) inset, 0 -1px 0 rgba(0,0,0,0.25) inset;
         }
         .pricing-card:hover {
           border-color: rgba(0,255,174,0.2);
@@ -588,7 +590,7 @@ export default function LandingPage() {
         .pricing-highlight {
           border-color: rgba(0,255,174,0.3);
           background: rgba(0,255,174,0.04);
-          box-shadow: 0 0 60px rgba(0,255,174,0.08);
+          box-shadow: 0 0 100px 30px rgba(0,255,174,0.03), 0 0 40px 10px rgba(0,255,174,0.02), 0 1px 0 rgba(0,255,174,0.06) inset, 0 -1px 0 rgba(0,0,0,0.25) inset;
         }
         .pricing-badge {
           position: absolute;
@@ -921,6 +923,9 @@ export default function LandingPage() {
                 position: "relative",
                 transform: plan.highlight ? "scale(1.02)" : "none",
                 display: "flex", flexDirection: "column",
+                boxShadow: plan.highlight
+                  ? "0 0 100px 30px rgba(0,255,174,0.03), 0 0 40px 10px rgba(0,255,174,0.02), 0 1px 0 rgba(0,255,174,0.06) inset, 0 -1px 0 rgba(0,0,0,0.25) inset"
+                  : "0 0 80px 20px rgba(255,255,255,0.02), 0 1px 0 rgba(255,255,255,0.03) inset, 0 -1px 0 rgba(0,0,0,0.25) inset",
               }}>
                 {"badge" in plan && plan.badge && (
                   <div style={{
@@ -937,16 +942,16 @@ export default function LandingPage() {
                 <div style={{ textAlign: "center", marginBottom: 20 }}>
                   <div style={{ fontSize: 28, marginBottom: 4 }}>{plan.icon}</div>
                   <div style={{ fontSize: 20, fontWeight: 900, color: "#fff" }}>{plan.name}</div>
-                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>{plan.units}</div>
+                  <div style={{ fontSize: 12, color: "#8a8a8a", marginTop: 2 }}>{plan.units}</div>
                 </div>
 
                 <div style={{ textAlign: "center", marginBottom: 20 }}>
                   <div style={{ fontSize: 36, fontWeight: 900, color: plan.highlight ? "#00ffae" : "#fff" }}>
                     R${plan.prices[cycle]}
-                    <span style={{ fontSize: 14, fontWeight: 400, color: "rgba(255,255,255,0.4)" }}>/mês</span>
+                    <span style={{ fontSize: 14, fontWeight: 400, color: "#8a8a8a" }}>/mês</span>
                   </div>
                   {cycle !== "MONTHLY" && (
-                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginTop: 4 }}>
+                    <div style={{ fontSize: 12, color: "#787878", marginTop: 4 }}>
                       R${plan.totals[cycle]} total · Economia de {plan.savings[cycle]}
                     </div>
                   )}
@@ -954,20 +959,28 @@ export default function LandingPage() {
 
                 <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 24, flex: 1 }}>
                   {plan.features.map((f) => (
-                    <div key={f} style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", display: "flex", alignItems: "center", gap: 8 }}>
-                      <span style={{ color: "#00ffae", fontSize: 12 }}>✓</span> {f}
+                    <div key={f} style={{ fontSize: 13, color: "#a0a0a0", display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ color: plan.highlight ? "#00dda0" : "#00cc8a", fontSize: 12 }}>✓</span> {f}
                     </div>
                   ))}
                 </div>
 
-                <a href="/cadastro" style={{
-                  display: "block", textAlign: "center", padding: "14px", borderRadius: 14,
-                  background: plan.highlight ? "linear-gradient(135deg, #00ffae, #00d9ff)" : "rgba(255,255,255,0.08)",
-                  color: plan.highlight ? "#000" : "#fff",
-                  fontWeight: 800, fontSize: 15, textDecoration: "none",
-                  border: plan.highlight ? "none" : "1px solid rgba(255,255,255,0.12)",
-                  transition: "all 0.2s",
-                }}>
+                <a href="/cadastro"
+                  style={{
+                    display: "block", textAlign: "center", padding: "14px", borderRadius: 14,
+                    background: plan.highlight ? "linear-gradient(135deg, #00ffae, #00d9ff)" : "rgba(255,255,255,0.08)",
+                    color: plan.highlight ? "#000" : "#fff",
+                    fontWeight: 800, fontSize: 15, textDecoration: "none",
+                    border: plan.highlight ? "none" : "1px solid rgba(255,255,255,0.12)",
+                    transition: "all 0.2s",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.boxShadow = plan.highlight
+                      ? "0 0 40px 10px rgba(0,255,174,0.06), 0 1px 0 rgba(0,255,174,0.2) inset, 0 -1px 0 rgba(0,0,0,0.2) inset, 0 2px 4px rgba(0,0,0,0.15)"
+                      : "0 0 30px 8px rgba(255,255,255,0.04), 0 1px 0 rgba(255,255,255,0.08) inset, 0 -1px 0 rgba(0,0,0,0.2) inset, 0 2px 4px rgba(0,0,0,0.15)";
+                  }}
+                  onMouseLeave={(e) => { e.currentTarget.style.boxShadow = ""; }}
+                >
                   {plan.cta}
                 </a>
               </div>
