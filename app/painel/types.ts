@@ -1,6 +1,6 @@
 // ─── Shared Dashboard Types ───────────────────────────────────────────────────
 
-export type Restaurant = { id: string; name: string; plan: string; status: string; trial_ends_at: string; whatsapp: string | null; instagram: string | null };
+export type Restaurant = { id: string; name: string; plan: string; status: string; trial_ends_at: string; whatsapp: string | null; instagram: string | null; free_access?: boolean };
 export type Unit = { id: string; name: string; slug: string; custom_domain: string | null; address: string; city: string | null; neighborhood: string | null; whatsapp: string | null; instagram: string | null; logo_url: string | null; maps_url: string | null; delivery_link: string | null; is_published: boolean; comanda_close_permission: "garcom_e_caixa" | "somente_caixa" };
 export type StockStats = { low: number; out: number };
 export type Category = { id: string; name: string; order_index: number | null; is_active?: boolean; section?: string };

@@ -70,13 +70,26 @@ export default async function Page({
   const { data: unitData, error: unitErr } = await supabase
     .from("units")
     .select(
-      "id, restaurant_id, name, slug, city, neighborhood, whatsapp, instagram, maps_url, logo_url"
+      "id, restaurant_id, name, slug, city, neighborhood, whatsapp, instagram, maps_url, logo_url, payment_active"
     )
     .eq("slug", publicSlug)
     .maybeSingle();
 
   if (unitErr) return <ErrorScreen message={unitErr.message} />;
   if (!unitData) return <NotFoundScreen slug={publicSlug} />;
+
+  // ─── Access control: cardápio só visível se payment_active ou free_access ──
+  if (unitData.payment_active === false && unitData.restaurant_id) {
+    const { data: restaurantData } = await supabase
+      .from("restaurants")
+      .select("free_access")
+      .eq("id", unitData.restaurant_id)
+      .single();
+
+    if (!restaurantData?.free_access) {
+      return <InactiveScreen />;
+    }
+  }
 
   const unit: Unit = {
     id: unitData.id,
@@ -237,6 +250,20 @@ function NotFoundScreen({ slug }: { slug: string }) {
         <p className="text-lg font-semibold">Cardápio não encontrado</p>
         <p className="mt-2 text-sm text-white/60">
           Slug: <span className="text-white">{slug}</span>
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function InactiveScreen() {
+  return (
+    <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
+      <div className="max-w-md w-full text-center">
+        <div style={{ fontSize: 48, marginBottom: 16 }}>🔒</div>
+        <p className="text-lg font-semibold">Cardápio inativo</p>
+        <p className="mt-2 text-sm text-white/60">
+          Este cardápio está inativo. O proprietário precisa ativar um plano.
         </p>
       </div>
     </div>

@@ -885,6 +885,16 @@ export default function DashboardClient({
           </div>
         )}
 
+        {/* Offline banner: sem assinatura ativa */}
+        {restaurant.status !== "active" && restaurant.status !== "trial" && !restaurant.free_access && (
+          <div style={{ margin: "12px 24px", padding: "12px 16px", borderRadius: 14, background: "rgba(255,80,80,0.06)", border: "1px solid rgba(255,80,80,0.18)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+            <div style={{ color: "#f87171", fontSize: 13, fontWeight: 600 }}>
+              🔒 Seu cardápio está offline. Assine um plano para publicar.
+            </div>
+            <button onClick={() => router.push("/painel/planos")} style={{ padding: "6px 14px", borderRadius: 8, border: "none", background: "rgba(255,80,80,0.15)", color: "#f87171", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>Ver planos</button>
+          </div>
+        )}
+
         {/* Grid principal */}
         {(() => {
           const currentPlan = restaurant.plan ?? "menu";
