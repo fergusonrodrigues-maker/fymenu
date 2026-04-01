@@ -34,6 +34,13 @@ export default async function WaiterPage() {
     .neq("waiter_status", "delivered")
     .order("created_at", { ascending: false });
 
+  const { data: openComandas } = await supabase
+    .from("comandas")
+    .select("id, table_number, hash, status, opened_by_name, created_at, total, comanda_items(count)")
+    .eq("unit_id", unit.id)
+    .eq("status", "open")
+    .order("created_at", { ascending: false });
+
   return (
     <WaiterClient
       unitId={unit.id}
@@ -42,6 +49,8 @@ export default async function WaiterPage() {
       restaurantName={restaurant.name}
       canCloseComanda={(unit.comanda_close_permission ?? "somente_caixa") === "garcom_e_caixa"}
       initialOrders={orders ?? []}
+      userId={user.id}
+      initialComandas={(openComandas ?? []) as any}
     />
   );
 }

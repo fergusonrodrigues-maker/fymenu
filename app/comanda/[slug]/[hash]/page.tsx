@@ -1,118 +1,75 @@
 // app/comanda/[slug]/[hash]/page.tsx
-// Digital table order / comanda
-// Accessed via: empresa.fymenu.com/comanda/abc123 (middleware rewrites to /comanda/slug/hash)
+// Digital comanda view — customer scans QR and sees their table items in real-time
 
 import { createClient } from "@/lib/supabase/server";
-import { notFound } from "next/navigation";
-import MenuClient from "@/app/delivery/[slug]/MenuClient";
-import type { Category, Product, ProductVariation, Unit } from "@/app/delivery/[slug]/menuTypes";
-import { normalizePublicSlug, slugify, toNumberOrNull } from "@/app/delivery/[slug]/menuTypes";
+import ComandaClientView from "./ComandaClientView";
 
 export const revalidate = 0;
 
-export default async function ComandaPage({
+export default async function ComandaDigitalPage({
   params,
 }: {
   params: Promise<{ slug: string; hash: string }>;
 }) {
   const { slug, hash } = await params;
-  const publicSlug = normalizePublicSlug(slug);
   const supabase = await createClient();
 
-  const { data: unitData } = await supabase
+  const { data: unit } = await supabase
     .from("units")
-    .select("id, restaurant_id, name, slug, city, neighborhood, whatsapp, instagram, maps_url, logo_url")
-    .eq("slug", publicSlug)
+    .select("id, name, logo_url")
+    .eq("slug", slug)
     .maybeSingle();
 
-  if (!unitData) notFound();
-
-  const unit: Unit = {
-    id: unitData.id,
-    restaurant_id: unitData.restaurant_id ?? null,
-    name: unitData.name ?? "",
-    slug: unitData.slug ?? publicSlug,
-    city: unitData.city ?? null,
-    neighborhood: unitData.neighborhood ?? null,
-    whatsapp: unitData.whatsapp ?? null,
-    instagram: unitData.instagram ?? null,
-    maps_url: unitData.maps_url ?? null,
-    logo_url: unitData.logo_url ?? null,
-  };
-
-  const { data: categoriesData } = await supabase
-    .from("categories")
-    .select("id, unit_id, name, order_index, type")
-    .eq("unit_id", unit.id)
-    .order("order_index", { ascending: true, nullsFirst: false });
-
-  const categories: Category[] = (categoriesData ?? []).map((c: any, idx: number) => {
-    const name = (c?.name ?? "").toString();
-    return {
-      id: c.id,
-      unit_id: c.unit_id,
-      name,
-      order_index: typeof c.order_index === "number" ? c.order_index : idx,
-      is_featured: false,
-      slug: slugify(name || `categoria-${idx + 1}`),
-      type: c.type ?? null,
-    };
-  });
-
-  const validCategoryIds = new Set(categories.map((c) => c.id));
-
-  const { data: productsData } = await supabase
-    .from("products")
-    .select("id, category_id, name, description, price_type, base_price, thumbnail_url, video_url, is_active, order_index, is_age_restricted")
-    .in("category_id", Array.from(validCategoryIds))
-    .eq("is_active", true)
-    .order("order_index", { ascending: true, nullsFirst: false });
-
-  const products: Product[] = (productsData ?? []).map((p: any) => ({
-    id: p.id,
-    category_id: p.category_id,
-    name: (p.name ?? "").toString(),
-    description: p.description ?? null,
-    price_type: p.price_type === "variable" ? "variable" : "fixed",
-    base_price: toNumberOrNull(p.base_price),
-    thumbnail_url: p.thumbnail_url ?? null,
-    video_url: p.video_url ?? null,
-    is_active: p.is_active !== false,
-    order_index: typeof p.order_index === "number" ? p.order_index : null,
-    is_age_restricted: p.is_age_restricted ?? false,
-  }));
-
-  const productIds = products.map((p) => p.id);
-
-  const { data: variationsData } = productIds.length
-    ? await supabase
-        .from("product_variations")
-        .select("id, product_id, name, price, order_index")
-        .in("product_id", productIds)
-        .eq("is_active", true)
-        .order("order_index", { ascending: true, nullsFirst: false })
-    : { data: [] };
-
-  const variations: Record<string, ProductVariation[]> = {};
-  for (const v of variationsData ?? []) {
-    if (!variations[v.product_id]) variations[v.product_id] = [];
-    variations[v.product_id].push({
-      id: v.id,
-      product_id: v.product_id,
-      name: (v.name ?? "").toString(),
-      price: toNumberOrNull(v.price) ?? 0,
-      order_index: typeof v.order_index === "number" ? v.order_index : null,
-    });
+  if (!unit) {
+    return (
+      <div style={{ minHeight: "100vh", background: "#0a0a0a", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8 }}>
+        <div style={{ fontSize: 36 }}>🍽️</div>
+        <p style={{ fontSize: 16, fontWeight: 600 }}>Estabelecimento não encontrado</p>
+        <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>Verifique o link do QR code</p>
+      </div>
+    );
   }
 
+  const { data: comanda } = await supabase
+    .from("comandas")
+    .select("id, table_number, hash, status, created_at")
+    .eq("hash", hash)
+    .eq("unit_id", unit.id)
+    .maybeSingle();
+
+  if (!comanda) {
+    return (
+      <div style={{ minHeight: "100vh", background: "#0a0a0a", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8 }}>
+        <div style={{ fontSize: 36 }}>🧾</div>
+        <p style={{ fontSize: 16, fontWeight: 600 }}>Comanda não encontrada</p>
+        <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>O link pode estar expirado ou inválido</p>
+      </div>
+    );
+  }
+
+  if (comanda.status === "closed" || comanda.status === "canceled") {
+    return (
+      <div style={{ minHeight: "100vh", background: "#0a0a0a", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8 }}>
+        <div style={{ fontSize: 36 }}>✅</div>
+        <p style={{ fontSize: 16, fontWeight: 600 }}>Comanda encerrada</p>
+        <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>Obrigado pela visita!</p>
+      </div>
+    );
+  }
+
+  const { data: items } = await supabase
+    .from("comanda_items")
+    .select("id, comanda_id, product_name, quantity, unit_price, addons, notes, status")
+    .eq("comanda_id", comanda.id)
+    .neq("status", "canceled")
+    .order("created_at", { ascending: true });
+
   return (
-    <MenuClient
-      unit={unit}
-      categories={categories}
-      products={products}
-      variations={variations}
-      upsells={{}}
-      mode="presencial"
+    <ComandaClientView
+      comanda={comanda as any}
+      initialItems={(items ?? []) as any}
+      unitName={unit.name ?? ""}
+      unitLogo={unit.logo_url ?? null}
     />
   );
 }

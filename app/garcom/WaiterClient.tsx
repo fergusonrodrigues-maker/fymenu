@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { QRCodeSVG } from "qrcode.react";
 import TableCard from "./components/TableCard";
@@ -29,6 +30,17 @@ export type WaiterOrder = {
   waiter_confirmed_at?: string | null;
 };
 
+type OpenComanda = {
+  id: string;
+  table_number: number | null;
+  hash: string;
+  status: string;
+  opened_by_name: string | null;
+  created_at: string;
+  total: number | null;
+  comanda_items: { count: number }[];
+};
+
 interface WaiterClientProps {
   unitId: string;
   unitName: string;
@@ -36,9 +48,11 @@ interface WaiterClientProps {
   restaurantName: string;
   canCloseComanda: boolean;
   initialOrders: WaiterOrder[];
+  userId: string;
+  initialComandas: OpenComanda[];
 }
 
-type Tab = "queue" | "tables";
+type Tab = "queue" | "tables" | "comandas";
 
 export default function WaiterClient({
   unitId,
@@ -47,14 +61,19 @@ export default function WaiterClient({
   restaurantName,
   canCloseComanda,
   initialOrders,
+  userId,
+  initialComandas,
 }: WaiterClientProps) {
   const [orders, setOrders] = useState<WaiterOrder[]>(initialOrders);
+  const [openComandas, setOpenComandas] = useState<OpenComanda[]>(initialComandas);
   const [tab, setTab] = useState<Tab>("queue");
   const [editOrder, setEditOrder] = useState<WaiterOrder | null>(null);
   const [pdvOrder, setPdvOrder] = useState<WaiterOrder | null>(null);
   const [qrOpen, setQrOpen] = useState(false);
+  const [showNewComanda, setShowNewComanda] = useState(false);
   const supabase = createClient();
   const audioCtxRef = useRef<AudioContext | null>(null);
+  const router = useRouter();
 
   const playSound = (type: "new" | "ready") => {
     try {
@@ -79,7 +98,7 @@ export default function WaiterClient({
     } catch {}
   };
 
-  // Realtime
+  // Realtime — order_intents
   useEffect(() => {
     const channel = supabase
       .channel(`waiter-${unitId}`)
@@ -109,7 +128,27 @@ export default function WaiterClient({
       )
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [unitId]);
+  }, [unitId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Realtime — comandas
+  useEffect(() => {
+    const refetch = async () => {
+      const { data } = await supabase
+        .from("comandas")
+        .select("id, table_number, hash, status, opened_by_name, created_at, total, comanda_items(count)")
+        .eq("unit_id", unitId)
+        .eq("status", "open")
+        .order("created_at", { ascending: false });
+      setOpenComandas(data ?? []);
+    };
+
+    const channel = supabase
+      .channel(`waiter-comandas-${unitId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "comandas", filter: `unit_id=eq.${unitId}` }, refetch)
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [unitId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const updateOrder = async (orderId: string, patch: Partial<WaiterOrder>) => {
     await supabase.from("order_intents").update(patch).eq("id", orderId);
@@ -164,7 +203,7 @@ export default function WaiterClient({
             <h1 className="text-white font-bold text-lg leading-tight">🍽️ {unitName}</h1>
             <p className="text-slate-400 text-xs">{restaurantName}</p>
           </div>
-          <div className="flex gap-2 items-center">
+          <div className="flex gap-2 items-center flex-wrap justify-end">
             {queue.length > 0 && (
               <span className="px-2.5 py-1 rounded-full bg-orange-500/20 text-orange-400 text-xs font-bold border border-orange-500/30 animate-pulse">
                 {queue.length} novo{queue.length > 1 ? "s" : ""}
@@ -181,12 +220,18 @@ export default function WaiterClient({
             >
               📱 QR Mesa
             </button>
+            <button
+              onClick={() => { setTab("comandas"); setShowNewComanda(true); }}
+              className="px-3 py-1.5 rounded-lg bg-orange-600 hover:bg-orange-500 text-white text-xs font-semibold transition-colors"
+            >
+              🧾 Comanda
+            </button>
           </div>
         </div>
 
         {/* Tabs */}
         <div className="max-w-5xl mx-auto px-4 pb-0 flex gap-0">
-          {(["queue", "tables"] as Tab[]).map((t) => (
+          {(["queue", "tables", "comandas"] as Tab[]).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -197,8 +242,10 @@ export default function WaiterClient({
               }`}
             >
               {t === "queue"
-                ? `Fila de Pedidos${queue.length > 0 ? ` (${queue.length})` : ""}`
-                : `Mesas Ativas${active.length > 0 ? ` (${active.length})` : ""}`}
+                ? `Fila${queue.length > 0 ? ` (${queue.length})` : ""}`
+                : t === "tables"
+                ? `Mesas${active.length > 0 ? ` (${active.length})` : ""}`
+                : `Comandas${openComandas.length > 0 ? ` (${openComandas.length})` : ""}`}
             </button>
           ))}
         </div>
@@ -280,6 +327,39 @@ export default function WaiterClient({
             )}
           </>
         )}
+
+        {/* ABA: COMANDAS */}
+        {tab === "comandas" && (
+          <>
+            <div className="flex justify-between items-center mb-5">
+              <h2 className="text-white font-semibold text-base">Comandas abertas</h2>
+              <button
+                onClick={() => setShowNewComanda(true)}
+                className="px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-bold text-sm transition-colors"
+              >
+                + Abrir Comanda
+              </button>
+            </div>
+
+            {openComandas.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-24 text-slate-500">
+                <span className="text-5xl mb-3">📋</span>
+                <p className="text-lg font-medium">Sem comandas abertas</p>
+                <p className="text-sm mt-1">Clique em "Abrir Comanda" para criar</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {openComandas.map(c => (
+                  <ComandaCard
+                    key={c.id}
+                    comanda={c}
+                    onClick={() => router.push(`/garcom/comanda/${c.id}`)}
+                  />
+                ))}
+              </div>
+            )}
+          </>
+        )}
       </main>
 
       {/* Edit Modal */}
@@ -299,7 +379,6 @@ export default function WaiterClient({
               prev.map((o) => (o.id === updatedOrder.id ? { ...o, ...updatedOrder } : o))
             );
             setEditOrder(null);
-            // Log qty changes for remaining items
             for (const updated of updatedOrder.items) {
               const original = originalItems.find((i) => i.product_id === updated.product_id);
               if (original && original.qty !== updated.qty) {
@@ -339,7 +418,6 @@ export default function WaiterClient({
               payment_method: method,
               paid_at: new Date().toISOString(),
             }).eq("id", pdvOrder.id);
-            // Registrar pagamento
             await supabase.from("payments").insert({
               order_id: pdvOrder.id,
               amount: pdvOrder.total,
@@ -366,6 +444,22 @@ export default function WaiterClient({
             });
             setOrders((prev) => prev.filter((o) => o.id !== pdvOrder.id));
             setPdvOrder(null);
+          }}
+        />
+      )}
+
+      {/* Abrir Comanda Modal */}
+      {showNewComanda && (
+        <AbrirComandaModal
+          unitId={unitId}
+          unitSlug={unitSlug}
+          userId={userId}
+          waiterName={unitName}
+          onClose={() => setShowNewComanda(false)}
+          onCreated={(comanda) => {
+            setOpenComandas(prev => [comanda, ...prev]);
+            setShowNewComanda(false);
+            router.push(`/garcom/comanda/${comanda.id}`);
           }}
         />
       )}
@@ -515,6 +609,148 @@ function QueueCard({
           className="flex-1 py-2.5 rounded-lg bg-green-600 hover:bg-green-500 text-white text-sm font-bold transition-colors"
         >
           ✅ Confirmar
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Comanda Card ─────────────────────────────────────────────────────────────
+
+function ComandaCard({ comanda, onClick }: { comanda: OpenComanda; onClick: () => void }) {
+  const itemCount = comanda.comanda_items?.[0]?.count ?? 0;
+  const ageMs = Date.now() - new Date(comanda.created_at).getTime();
+  const ageMin = Math.floor(ageMs / 60000);
+  const ageLabel = ageMin < 60
+    ? `${ageMin}min`
+    : `${Math.floor(ageMin / 60)}h${ageMin % 60 > 0 ? `${ageMin % 60}m` : ""}`;
+
+  return (
+    <button
+      onClick={onClick}
+      className="w-full text-left bg-slate-800/70 border border-slate-700 hover:border-orange-500/50 rounded-xl p-5 transition-colors"
+    >
+      <div className="flex items-start justify-between mb-2">
+        <div>
+          <span className="text-orange-400 font-bold text-lg">
+            Mesa {comanda.table_number ?? "S/N"}
+          </span>
+          <span className="ml-2 text-slate-400 text-xs">{ageLabel} atrás</span>
+        </div>
+        <span className="text-xs font-semibold px-2 py-0.5 rounded-full border border-green-500/30 bg-green-500/10 text-green-400">
+          Aberta
+        </span>
+      </div>
+      <div className="flex gap-4 text-sm text-slate-400">
+        <span>{itemCount} item{itemCount !== 1 ? "s" : ""}</span>
+        {comanda.opened_by_name && (
+          <span className="truncate">por {comanda.opened_by_name}</span>
+        )}
+        {comanda.total != null && comanda.total > 0 && (
+          <span className="ml-auto text-green-400 font-semibold">
+            R$ {(comanda.total / 100).toFixed(2).replace(".", ",")}
+          </span>
+        )}
+      </div>
+    </button>
+  );
+}
+
+// ─── Abrir Comanda Modal ─────────────────────────────────────────────────────
+
+function AbrirComandaModal({
+  unitId,
+  unitSlug,
+  userId,
+  waiterName,
+  onClose,
+  onCreated,
+}: {
+  unitId: string;
+  unitSlug: string;
+  userId: string;
+  waiterName: string;
+  onClose: () => void;
+  onCreated: (comanda: OpenComanda) => void;
+}) {
+  const [tableNumber, setTableNumber] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const supabase = createClient();
+
+  const handleCreate = async () => {
+    if (!tableNumber.trim()) { setError("Digite o número da mesa"); return; }
+    setLoading(true);
+    setError("");
+
+    const hash = crypto.randomUUID().replace(/-/g, "").slice(0, 16);
+
+    const { data, error: insertError } = await supabase
+      .from("comandas")
+      .insert({
+        unit_id: unitId,
+        table_number: parseInt(tableNumber),
+        hash,
+        opened_by: userId,
+        opened_by_name: waiterName,
+        opened_by_role: "garcom",
+        status: "open",
+      })
+      .select()
+      .single();
+
+    setLoading(false);
+
+    if (insertError || !data) {
+      setError("Erro ao criar comanda. Tente novamente.");
+      return;
+    }
+
+    await logComandaAction({
+      comanda_id: data.id,
+      unit_id: unitId,
+      action: "comanda_opened",
+      new_value: { table_number: parseInt(tableNumber) },
+      performed_by: userId,
+      performed_by_role: "garcom",
+      performed_by_name: waiterName,
+    });
+
+    onCreated({ ...data, comanda_items: [] });
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm"
+      onClick={e => e.target === e.currentTarget && onClose()}
+    >
+      <div className="w-full sm:max-w-sm bg-slate-900 border border-slate-700 rounded-t-2xl sm:rounded-2xl p-6">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-white font-bold text-lg">Abrir Comanda</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-white text-xl leading-none">✕</button>
+        </div>
+
+        <div className="mb-5">
+          <label className="text-slate-400 text-xs mb-1.5 block">Número da mesa</label>
+          <input
+            type="number"
+            min={1}
+            value={tableNumber}
+            onChange={e => setTableNumber(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && handleCreate()}
+            placeholder="Ex: 5"
+            className="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-600 text-white placeholder-slate-500 text-base focus:outline-none focus:border-orange-500"
+            autoFocus
+          />
+          {error && <p className="text-red-400 text-xs mt-1.5">{error}</p>}
+        </div>
+
+        <button
+          disabled={loading || !tableNumber.trim()}
+          onClick={handleCreate}
+          className="w-full py-3 rounded-xl bg-orange-600 hover:bg-orange-500 disabled:opacity-50 text-white font-bold text-sm transition-colors"
+        >
+          {loading ? "Abrindo…" : "Abrir comanda"}
         </button>
       </div>
     </div>
