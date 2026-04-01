@@ -1021,6 +1021,63 @@ export default function DashboardClient({
         </div>
       </div>
 
+      {unit && (
+        <div style={{ maxWidth: 980, margin: "24px auto 0", padding: "0 16px" }}>
+          <div style={{ fontSize: 14, fontWeight: 800, color: "#fff", marginBottom: 12, letterSpacing: "-0.3px" }}>
+            Links Rápidos
+          </div>
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
+            gap: 10,
+          }}>
+            {[
+              { icon: "🍽️", label: "Cardápio Delivery", href: `/delivery/${unit.slug}` },
+              { icon: "📋", label: "Cardápio Mesa", href: `/menu/${unit.slug}` },
+              { icon: "📺", label: "Modo TV", href: `/delivery/${unit.slug}/tv` },
+              { icon: "👨‍🍳", label: "Cozinha", href: `/cozinha` },
+              { icon: "🧑‍🍳", label: "Garçom", href: `/garcom` },
+              { icon: "💳", label: "PDV", href: `/delivery/${unit.slug}/pdv` },
+              { icon: "🏠", label: "Hub Central", href: `/delivery/${unit.slug}/hub-central` },
+              { icon: "📊", label: "Operações", href: `/operacoes/${unit.slug}` },
+              { icon: "🔑", label: "Portal Funcionário", href: `/employee-login` },
+              { icon: "📦", label: "Entregador", href: `/entrega/demo` },
+              { icon: "🧾", label: "Comanda", href: `/comanda/${unit.slug}/demo` },
+              { icon: "⚙️", label: "Configurações", href: `/configurar` },
+            ].map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: "flex", flexDirection: "column", alignItems: "center",
+                  justifyContent: "center", gap: 6, padding: "14px 8px",
+                  borderRadius: 16, background: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  textDecoration: "none", transition: "all 0.2s ease", cursor: "pointer",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "rgba(255,255,255,0.08)";
+                  e.currentTarget.style.borderColor = "rgba(255,255,255,0.15)";
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "rgba(255,255,255,0.04)";
+                  e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)";
+                  e.currentTarget.style.transform = "translateY(0)";
+                }}
+              >
+                <span style={{ fontSize: 22 }}>{link.icon}</span>
+                <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.7)", textAlign: "center", lineHeight: 1.2 }}>
+                  {link.label}
+                </span>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
       <Modal open={modal === "analytics"} onClose={close} title="Analytics">
         <AnalyticsModal analytics={analytics} unit={unit} />
       </Modal>
