@@ -296,20 +296,27 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
           <div style={{ marginBottom: 4 }}>
             <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 8 }}>Sessão</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {allSections.map(s => (
-                <button key={s.value} type="button" onClick={() => setNewCatSection(s.value)}
-                  style={{
-                    padding: "6px 14px", borderRadius: 10, border: "1px solid",
-                    borderColor: newCatSection === s.value ? "#00ffae" : "rgba(255,255,255,0.1)",
-                    background: newCatSection === s.value ? "rgba(0,255,174,0.08)" : "transparent",
-                    color: newCatSection === s.value ? "#00ffae" : "rgba(255,255,255,0.5)",
-                    cursor: "pointer", fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 4,
-                  }}>
-                  <span>{s.icon}</span> {s.label}
-                </button>
-              ))}
+              {allSections.map((s, i) => {
+                const isActive = newCatSection === s.value;
+                const gradStart = ["#00ffae", "#60a5fa", "#a855f7", "#f472b6", "#fbbf24"][i % 5];
+                const gradEnd   = ["#00d9ff", "#a855f7", "#f472b6", "#fbbf24", "#00ffae"][i % 5];
+                return (
+                  <button key={s.value} type="button" onClick={() => setNewCatSection(s.value)}
+                    style={{
+                      padding: "6px 16px", borderRadius: 10, border: "1px solid",
+                      borderColor: isActive ? "transparent" : "rgba(255,255,255,0.1)",
+                      background: isActive ? `linear-gradient(135deg, ${gradStart}, ${gradEnd})` : "transparent",
+                      color: isActive ? "#000" : "rgba(255,255,255,0.5)",
+                      cursor: "pointer", fontSize: 12, fontWeight: isActive ? 800 : 600,
+                      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                      transform: isActive ? "scale(1.05)" : "scale(1)",
+                    }}>
+                    {s.label}
+                  </button>
+                );
+              })}
               <button type="button" onClick={() => setShowCreateSection(v => !v)}
-                style={{ padding: "6px 14px", borderRadius: 10, border: "1px dashed rgba(255,255,255,0.15)", background: "transparent", color: "rgba(255,255,255,0.3)", cursor: "pointer", fontSize: 12 }}>
+                style={{ padding: "6px 16px", borderRadius: 10, border: "1px dashed rgba(255,255,255,0.15)", background: "transparent", color: "rgba(255,255,255,0.3)", cursor: "pointer", fontSize: 12, transition: "all 0.3s" }}>
                 + Criar sessão
               </button>
             </div>
@@ -383,7 +390,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                 title="Segurar e arrastar para reordenar"
               >⠿</span>
               <span className="cat-header-arrow" data-open={isOpen ? "true" : "false"} style={{ color: "var(--dash-text-muted)", fontSize: 11, flexShrink: 0, width: 14, textAlign: "center", lineHeight: 1 }}>▼</span>
-              {(() => { const si = allSections.find(s => s.value === (cat.section ?? "pratos")); return si ? <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 6, background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.4)", flexShrink: 0 }}>{si.icon} {si.label}</span> : null; })()}
+
               <form action={updateCategory} onClick={(e) => e.stopPropagation()} style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
                 <input type="hidden" name="id" value={cat.id} />
                 <input type="hidden" name="section" value={editCatSection[cat.id] ?? cat.section ?? 'pratos'} />
@@ -394,26 +401,36 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                   </button>
                 </div>
                 {isOpen && (
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                    {allSections.map(s => {
-                      const current = editCatSection[cat.id] ?? cat.section ?? 'pratos';
-                      return (
-                        <button key={s.value} type="button" onClick={() => setEditCatSection(prev => ({ ...prev, [cat.id]: s.value }))}
-                          style={{
-                            padding: "5px 10px", borderRadius: 8, border: "1px solid",
-                            borderColor: current === s.value ? "#00ffae" : "rgba(255,255,255,0.12)",
-                            background: current === s.value ? "rgba(0,255,174,0.12)" : "rgba(255,255,255,0.04)",
-                            color: current === s.value ? "#00ffae" : "rgba(255,255,255,0.5)",
-                            fontSize: 11, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 3,
-                          }}>
-                          <span>{s.icon}</span> {s.label}
-                        </button>
-                      );
-                    })}
-                    <button type="button" onClick={() => setShowCreateSection(v => !v)}
-                      style={{ padding: "5px 10px", borderRadius: 8, border: "1px dashed rgba(255,255,255,0.15)", background: "transparent", color: "rgba(255,255,255,0.3)", cursor: "pointer", fontSize: 11 }}>
-                      + Criar
-                    </button>
+                  <div style={{ marginTop: 4 }}>
+                    <label style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 6 }}>
+                      Sessão
+                    </label>
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                      {allSections.map((s, i) => {
+                        const current = editCatSection[cat.id] ?? cat.section ?? 'pratos';
+                        const isActive = current === s.value;
+                        const gradStart = ["#00ffae", "#60a5fa", "#a855f7", "#f472b6", "#fbbf24"][i % 5];
+                        const gradEnd   = ["#00d9ff", "#a855f7", "#f472b6", "#fbbf24", "#00ffae"][i % 5];
+                        return (
+                          <button key={s.value} type="button" onClick={() => setEditCatSection(prev => ({ ...prev, [cat.id]: s.value }))}
+                            style={{
+                              padding: "5px 12px", borderRadius: 10, border: "1px solid",
+                              borderColor: isActive ? "transparent" : "rgba(255,255,255,0.1)",
+                              background: isActive ? `linear-gradient(135deg, ${gradStart}, ${gradEnd})` : "transparent",
+                              color: isActive ? "#000" : "rgba(255,255,255,0.5)",
+                              cursor: "pointer", fontSize: 11, fontWeight: isActive ? 800 : 600,
+                              transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                              transform: isActive ? "scale(1.05)" : "scale(1)",
+                            }}>
+                            {s.label}
+                          </button>
+                        );
+                      })}
+                      <button type="button" onClick={() => setShowCreateSection(v => !v)}
+                        style={{ padding: "5px 12px", borderRadius: 10, border: "1px dashed rgba(255,255,255,0.15)", background: "transparent", color: "rgba(255,255,255,0.3)", cursor: "pointer", fontSize: 11, transition: "all 0.3s" }}>
+                        + Criar sessão
+                      </button>
+                    </div>
                   </div>
                 )}
               </form>
