@@ -45,6 +45,16 @@ export default function MenuClient({
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Tema
+  const [isDark, setIsDark] = useState(true);
+  useEffect(() => {
+    const check = () => setIsDark(document.documentElement.classList.contains("dark"));
+    check();
+    const obs = new MutationObserver(check);
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => obs.disconnect();
+  }, []);
+
   function addToCart(payload: OrderPayload) {
     const productId = payload.variation?.id
       ? `${payload.product.id}__${payload.variation.id}`
@@ -283,19 +293,33 @@ export default function MenuClient({
                 style={{
                   width: "100%",
                   height: "100%",
-                  background: "linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%)",
+                  background: isDark
+                    ? "linear-gradient(135deg, rgba(255,255,255,0.02) 0%, rgba(0,255,174,0.03) 50%, rgba(255,255,255,0.01) 100%)"
+                    : "linear-gradient(135deg, rgba(0,0,0,0.02) 0%, rgba(0,200,140,0.03) 50%, rgba(0,0,0,0.01) 100%)",
                 }}
               />
             )}
-            {/* Gradiente inferior */}
+            {/* Vinheta lateral */}
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                background: "radial-gradient(ellipse at center, transparent 50%, rgba(5,5,5,0.4) 100%)",
+                pointerEvents: "none",
+              }}
+            />
+            {/* Gradiente inferior suave */}
             <div
               style={{
                 position: "absolute",
                 bottom: 0,
                 left: 0,
                 right: 0,
-                height: "60%",
-                background: "linear-gradient(to top, #000 0%, transparent 100%)",
+                height: "75%",
+                background: isDark
+                  ? "linear-gradient(to top, #050505 0%, rgba(5,5,5,0.95) 15%, rgba(5,5,5,0.7) 40%, rgba(5,5,5,0.3) 65%, transparent 100%)"
+                  : "linear-gradient(to top, #f5f5f5 0%, rgba(245,245,245,0.95) 15%, rgba(245,245,245,0.7) 40%, rgba(245,245,245,0.3) 65%, transparent 100%)",
+                pointerEvents: "none",
               }}
             />
             {/* Botão de busca (ícone lupa) */}
