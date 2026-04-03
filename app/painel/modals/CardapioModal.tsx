@@ -401,36 +401,30 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                   </button>
                 </div>
                 {isOpen && (
-                  <div style={{ marginTop: 4 }}>
-                    <label style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 6 }}>
-                      Sessão
-                    </label>
-                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                      {allSections.map((s, i) => {
-                        const current = editCatSection[cat.id] ?? cat.section ?? 'pratos';
-                        const isActive = current === s.value;
-                        const gradStart = ["#00ffae", "#60a5fa", "#a855f7", "#f472b6", "#fbbf24"][i % 5];
-                        const gradEnd   = ["#00d9ff", "#a855f7", "#f472b6", "#fbbf24", "#00ffae"][i % 5];
-                        return (
-                          <button key={s.value} type="button" onClick={() => setEditCatSection(prev => ({ ...prev, [cat.id]: s.value }))}
-                            style={{
-                              padding: "5px 12px", borderRadius: 10, border: "1px solid",
-                              borderColor: isActive ? "transparent" : "rgba(255,255,255,0.1)",
-                              background: isActive ? `linear-gradient(135deg, ${gradStart}, ${gradEnd})` : "transparent",
-                              color: isActive ? "#000" : "rgba(255,255,255,0.5)",
-                              cursor: "pointer", fontSize: 11, fontWeight: isActive ? 800 : 600,
-                              transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                              transform: isActive ? "scale(1.05)" : "scale(1)",
-                            }}>
-                            {s.label}
-                          </button>
-                        );
-                      })}
-                      <button type="button" onClick={() => setShowCreateSection(v => !v)}
-                        style={{ padding: "5px 12px", borderRadius: 10, border: "1px dashed rgba(255,255,255,0.15)", background: "transparent", color: "rgba(255,255,255,0.3)", cursor: "pointer", fontSize: 11, transition: "all 0.3s" }}>
-                        + Criar sessão
-                      </button>
-                    </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap", marginTop: 4 }}>
+                    <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 10, marginRight: 2, flexShrink: 0 }}>Sessão:</span>
+                    {allSections.map((s, i) => {
+                      const current = editCatSection[cat.id] ?? cat.section ?? 'pratos';
+                      const isActive = current === s.value;
+                      const gradStart = ["#00ffae", "#60a5fa", "#a855f7", "#f472b6", "#fbbf24"][i % 5];
+                      const gradEnd   = ["#00d9ff", "#a855f7", "#f472b6", "#fbbf24", "#00ffae"][i % 5];
+                      return (
+                        <button key={s.value} type="button" onClick={() => setEditCatSection(prev => ({ ...prev, [cat.id]: s.value }))}
+                          style={{
+                            padding: "3px 10px", borderRadius: 8, border: "none",
+                            background: isActive ? `linear-gradient(135deg, ${gradStart}, ${gradEnd})` : "rgba(255,255,255,0.06)",
+                            color: isActive ? "#000" : "rgba(255,255,255,0.4)",
+                            cursor: "pointer", fontSize: 10, fontWeight: isActive ? 700 : 500,
+                            transition: "all 0.2s", whiteSpace: "nowrap",
+                          }}>
+                          {s.label}
+                        </button>
+                      );
+                    })}
+                    <button type="button" onClick={() => setShowCreateSection(v => !v)}
+                      style={{ padding: "3px 8px", borderRadius: 8, border: "1px dashed rgba(255,255,255,0.1)", background: "transparent", color: "rgba(255,255,255,0.2)", cursor: "pointer", fontSize: 10, whiteSpace: "nowrap" }}>
+                      + Criar
+                    </button>
                   </div>
                 )}
               </form>

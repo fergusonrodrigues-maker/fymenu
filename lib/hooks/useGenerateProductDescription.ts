@@ -21,30 +21,24 @@ export function useGenerateProductDescription(
     setError(null);
 
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/generate-description`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
-          },
-          body: JSON.stringify({
-            image_url: imageUrl,
-            product_name: productName,
-            category: category,
-            manual_description: manualDescription,
-            language: "pt-BR",
-          }),
-        }
-      );
+      const response = await fetch("/api/ia/generate-description", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          image_url: imageUrl,
+          product_name: productName,
+          category,
+          manual_description: manualDescription,
+        }),
+      });
 
       if (!response.ok) {
-        throw new Error("Failed to generate description");
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error ?? "Failed to generate description");
       }
 
       const data = await response.json();
-      options.onSuccess?.(data.description, data.description_source);
+      options.onSuccess?.(data.description, data.description_source ?? "AI_GENERATED");
       return data;
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : "Unknown error";
