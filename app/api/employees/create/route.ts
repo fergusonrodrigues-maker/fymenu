@@ -20,6 +20,14 @@ export async function POST(req: NextRequest) {
       username,
       password,
       category_id,
+      salary,
+      work_days,
+      shift_start,
+      shift_end,
+      lunch_start,
+      lunch_end,
+      extra_costs,
+      extra_costs_description,
     } = body;
 
     if (!unit_id || !name) {
@@ -71,6 +79,14 @@ export async function POST(req: NextRequest) {
         password_hash,
         access_subdomain,
         category_id: category_id || null,
+        salary: salary ?? 0,
+        work_days: work_days ?? [],
+        shift_start: shift_start || "08:00",
+        shift_end: shift_end || "18:00",
+        lunch_start: lunch_start || null,
+        lunch_end: lunch_end || null,
+        extra_costs: extra_costs ?? 0,
+        extra_costs_description: extra_costs_description || null,
       })
       .select("id, name, role, phone, username, access_subdomain, is_active")
       .single();

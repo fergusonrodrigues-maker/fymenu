@@ -10,6 +10,14 @@ interface Employee {
   phone: string | null;
   is_active: boolean;
   category_name: string | null;
+  salary: number;
+  work_days: string[] | null;
+  shift_start: string | null;
+  shift_end: string | null;
+  lunch_start: string | null;
+  lunch_end: string | null;
+  extra_costs: number;
+  extra_costs_description: string | null;
 }
 
 interface WaiterStat {
@@ -63,6 +71,16 @@ export default function StaffAnalyticsModal({ unitId }: { unitId: string }) {
   const [newCategoryName, setNewCategoryName] = useState("");
   const [savingCategory, setSavingCategory] = useState(false);
 
+  // New salary/schedule states
+  const [salary, setSalary] = useState("");
+  const [workDays, setWorkDays] = useState<string[]>(["seg", "ter", "qua", "qui", "sex"]);
+  const [shiftStart, setShiftStart] = useState("08:00");
+  const [shiftEnd, setShiftEnd] = useState("18:00");
+  const [lunchStart, setLunchStart] = useState("12:00");
+  const [lunchEnd, setLunchEnd] = useState("13:00");
+  const [extraCosts, setExtraCosts] = useState("");
+  const [extraCostsDesc, setExtraCostsDesc] = useState("");
+
   const supabase = createClient();
 
   useEffect(() => {
@@ -78,7 +96,7 @@ export default function StaffAnalyticsModal({ unitId }: { unitId: string }) {
   async function loadEmployees() {
     const { data } = await supabase
       .from("employees")
-      .select("id, name, role, phone, is_active, employee_categories(name)")
+      .select("id, name, role, phone, is_active, employee_categories(name), salary, work_days, shift_start, shift_end, lunch_start, lunch_end, extra_costs, extra_costs_description")
       .eq("unit_id", unitId)
       .order("name");
 
@@ -86,6 +104,8 @@ export default function StaffAnalyticsModal({ unitId }: { unitId: string }) {
       (data ?? []).map((e: any) => ({
         ...e,
         category_name: e.employee_categories?.name ?? null,
+        salary: e.salary ?? 0,
+        extra_costs: e.extra_costs ?? 0,
       }))
     );
   }
@@ -151,6 +171,14 @@ export default function StaffAnalyticsModal({ unitId }: { unitId: string }) {
         username: newEmployee.username.trim() || undefined,
         password: newEmployee.password || undefined,
         category_id: newEmployee.category_id || undefined,
+        salary: salary ? Math.round(parseFloat(salary) * 100) : 0,
+        work_days: workDays,
+        shift_start: shiftStart || "08:00",
+        shift_end: shiftEnd || "18:00",
+        lunch_start: lunchStart || null,
+        lunch_end: lunchEnd || null,
+        extra_costs: extraCosts ? Math.round(parseFloat(extraCosts) * 100) : 0,
+        extra_costs_description: extraCostsDesc || null,
       }),
     });
     const json = await res.json();
@@ -162,6 +190,14 @@ export default function StaffAnalyticsModal({ unitId }: { unitId: string }) {
     }
 
     setNewEmployee({ name: "", role: "waiter", phone: "", category_id: "", cpf: "", username: "", password: "", freelancer_service: "", freelancer_date: "" });
+    setSalary("");
+    setWorkDays(["seg", "ter", "qua", "qui", "sex"]);
+    setShiftStart("08:00");
+    setShiftEnd("18:00");
+    setLunchStart("12:00");
+    setLunchEnd("13:00");
+    setExtraCosts("");
+    setExtraCostsDesc("");
     setShowAddForm(false);
     setSaving(false);
     loadEmployees();
@@ -182,6 +218,11 @@ export default function StaffAnalyticsModal({ unitId }: { unitId: string }) {
     transition: "all 0.15s",
   });
 
+  // Team cost summary
+  const totalSalaries = employees.reduce((s, e) => s + (e.salary || 0), 0);
+  const totalExtraCosts = employees.reduce((s, e) => s + (e.extra_costs || 0), 0);
+  const totalTeamCost = totalSalaries + totalExtraCosts;
+
   if (loading) return (
     <div style={{ textAlign: "center", padding: "40px 0", color: "#888" }}>Carregando...</div>
   );
@@ -198,6 +239,22 @@ export default function StaffAnalyticsModal({ unitId }: { unitId: string }) {
       {/* ── Equipe ── */}
       {tab === "equipe" && (
         <div>
+          {/* Team cost summary */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 20 }}>
+            <div style={{ padding: 14, borderRadius: 14, background: "rgba(255,255,255,0.03)", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset", textAlign: "center" }}>
+              <div style={{ fontSize: 18, fontWeight: 800, color: "#fff" }}>{employees.length}</div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>Funcionários</div>
+            </div>
+            <div style={{ padding: 14, borderRadius: 14, background: "rgba(255,255,255,0.03)", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset", textAlign: "center" }}>
+              <div style={{ fontSize: 18, fontWeight: 800, color: "#f87171" }}>R$ {(totalSalaries / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>Salários</div>
+            </div>
+            <div style={{ padding: 14, borderRadius: 14, background: "rgba(255,255,255,0.03)", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset", textAlign: "center" }}>
+              <div style={{ fontSize: 18, fontWeight: 800, color: "#fbbf24" }}>R$ {(totalTeamCost / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>Custo total equipe</div>
+            </div>
+          </div>
+
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
             <div style={{ color: "#888", fontSize: 13 }}>{employees.length} funcionário{employees.length !== 1 ? "s" : ""}</div>
             <div style={{ display: "flex", gap: 6 }}>
@@ -298,6 +355,82 @@ export default function StaffAnalyticsModal({ unitId }: { unitId: string }) {
                     {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
                 )}
+
+                {/* Salário */}
+                <div style={{ marginTop: 12 }}>
+                  <label style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 6 }}>Salário mensal (R$)</label>
+                  <input
+                    type="number"
+                    placeholder="Ex: 1800"
+                    value={salary}
+                    onChange={e => setSalary(e.target.value)}
+                    style={{ width: "100%", padding: "10px 14px", borderRadius: 12, background: "rgba(255,255,255,0.04)", border: "none", color: "#fff", fontSize: 14, outline: "none", boxSizing: "border-box" }}
+                  />
+                </div>
+
+                {/* Dias de trabalho */}
+                <div style={{ marginTop: 12 }}>
+                  <label style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 6 }}>Dias de trabalho</label>
+                  <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                    {["seg", "ter", "qua", "qui", "sex", "sab", "dom"].map(day => (
+                      <button
+                        key={day}
+                        type="button"
+                        onClick={() => {
+                          setWorkDays(prev =>
+                            prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
+                          );
+                        }}
+                        style={{
+                          padding: "6px 12px", borderRadius: 8, border: "none", cursor: "pointer",
+                          background: workDays.includes(day) ? "rgba(0,255,174,0.1)" : "rgba(255,255,255,0.04)",
+                          color: workDays.includes(day) ? "#00ffae" : "rgba(255,255,255,0.3)",
+                          fontSize: 12, fontWeight: 600, textTransform: "capitalize",
+                        }}
+                      >
+                        {day}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Horários */}
+                <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  <div>
+                    <label style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 6 }}>Entrada</label>
+                    <input type="time" value={shiftStart} onChange={e => setShiftStart(e.target.value)}
+                      style={{ width: "100%", padding: "10px 14px", borderRadius: 12, background: "rgba(255,255,255,0.04)", border: "none", color: "#fff", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+                  </div>
+                  <div>
+                    <label style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 6 }}>Saída</label>
+                    <input type="time" value={shiftEnd} onChange={e => setShiftEnd(e.target.value)}
+                      style={{ width: "100%", padding: "10px 14px", borderRadius: 12, background: "rgba(255,255,255,0.04)", border: "none", color: "#fff", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+                  </div>
+                </div>
+
+                {/* Almoço */}
+                <div style={{ marginTop: 8, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  <div>
+                    <label style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 6 }}>Almoço início</label>
+                    <input type="time" value={lunchStart} onChange={e => setLunchStart(e.target.value)}
+                      style={{ width: "100%", padding: "10px 14px", borderRadius: 12, background: "rgba(255,255,255,0.04)", border: "none", color: "#fff", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+                  </div>
+                  <div>
+                    <label style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 6 }}>Almoço fim</label>
+                    <input type="time" value={lunchEnd} onChange={e => setLunchEnd(e.target.value)}
+                      style={{ width: "100%", padding: "10px 14px", borderRadius: 12, background: "rgba(255,255,255,0.04)", border: "none", color: "#fff", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+                  </div>
+                </div>
+
+                {/* Custos extras */}
+                <div style={{ marginTop: 12 }}>
+                  <label style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 6 }}>Custos extras mensais (R$) — VT, VA, etc</label>
+                  <input type="number" placeholder="Ex: 500" value={extraCosts} onChange={e => setExtraCosts(e.target.value)}
+                    style={{ width: "100%", padding: "10px 14px", borderRadius: 12, background: "rgba(255,255,255,0.04)", border: "none", color: "#fff", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+                  <input type="text" placeholder="Descrição (VT + VA + uniforme)" value={extraCostsDesc} onChange={e => setExtraCostsDesc(e.target.value)}
+                    style={{ width: "100%", padding: "10px 14px", borderRadius: 12, background: "rgba(255,255,255,0.04)", border: "none", color: "#fff", fontSize: 14, outline: "none", boxSizing: "border-box", marginTop: 6 }} />
+                </div>
+
                 {saveError && (
                   <div style={{ padding: "8px 12px", borderRadius: 8, background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.2)", color: "#f87171", fontSize: 12 }}>
                     {saveError}
@@ -306,7 +439,7 @@ export default function StaffAnalyticsModal({ unitId }: { unitId: string }) {
                 <button
                   onClick={saveEmployee}
                   disabled={saving || !newEmployee.name.trim()}
-                  style={{ padding: "11px", borderRadius: 10, border: "none", background: saving ? "rgba(0,255,174,0.1)" : "linear-gradient(135deg, #00d9b8, #00ffae)", color: "#000", fontSize: 14, fontWeight: 800, cursor: saving ? "not-allowed" : "pointer" }}
+                  style={{ padding: "11px", borderRadius: 10, border: "none", background: saving ? "rgba(0,255,174,0.1)" : "linear-gradient(135deg, #00d9b8, #00ffae)", color: "#000", fontSize: 14, fontWeight: 800, cursor: saving ? "not-allowed" : "pointer", marginTop: 8 }}
                 >
                   {saving ? "Salvando..." : "Salvar funcionário"}
                 </button>
@@ -332,6 +465,16 @@ export default function StaffAnalyticsModal({ unitId }: { unitId: string }) {
                       {ROLES[emp.role] ?? emp.role}
                       {emp.category_name && ` · ${emp.category_name}`}
                     </div>
+                    <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 11, marginTop: 4 }}>
+                      {emp.salary > 0 && <span>R$ {(emp.salary / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 })} · </span>}
+                      {emp.work_days && emp.work_days.length > 0 && <span>{emp.work_days.join(", ")} · </span>}
+                      {emp.shift_start && emp.shift_end && <span>{emp.shift_start.slice(0, 5)} às {emp.shift_end.slice(0, 5)}</span>}
+                    </div>
+                    {emp.extra_costs > 0 && (
+                      <div style={{ color: "rgba(255,255,255,0.2)", fontSize: 10, marginTop: 2 }}>
+                        Custos extras: R$ {(emp.extra_costs / 100).toFixed(2)}{emp.extra_costs_description ? ` (${emp.extra_costs_description})` : ""}
+                      </div>
+                    )}
                   </div>
                   <button
                     onClick={() => toggleActive(emp)}
@@ -356,7 +499,7 @@ export default function StaffAnalyticsModal({ unitId }: { unitId: string }) {
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {waiterStats.map((stat, i) => (
+              {waiterStats.map((stat) => (
                 <div key={stat.employee_id} style={{ background: "rgba(255,255,255,0.04)", borderRadius: 14, padding: "14px 16px", border: "1px solid rgba(255,255,255,0.07)" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
                     <div>
