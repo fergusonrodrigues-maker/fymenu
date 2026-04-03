@@ -561,11 +561,6 @@ export default function MenuClient({
               if (!catProducts.length) return null;
               return (
                 <div key={cat.id} style={{ marginBottom: 24 }}>
-                  {/* Título */}
-                  <div style={{ padding: "0 16px", marginBottom: 12 }}>
-                    <div style={{ fontSize: 18, fontWeight: 800, color: "#fff" }}>{cat.name}</div>
-                  </div>
-
                   {/* Scroll horizontal com snap */}
                   <div
                     style={{
@@ -766,24 +761,11 @@ export default function MenuClient({
                   key={cat.id}
                   ref={(el) => { sectionRefs.current[cat.id] = el; }}
                   style={{
-                    marginBottom: 24,
+                    marginBottom: 16,
                     padding: "0 8px",
                     scrollMarginTop: 66,
                   }}
                 >
-                  {/* Título da categoria */}
-                  <div
-                    style={{
-                      fontSize: 18,
-                      fontWeight: 800,
-                      color: "#fff",
-                      marginBottom: 12,
-                      paddingLeft: 4,
-                    }}
-                  >
-                    {cat.name}
-                  </div>
-
                   {/* Container translúcido */}
                   <div
                     style={{
