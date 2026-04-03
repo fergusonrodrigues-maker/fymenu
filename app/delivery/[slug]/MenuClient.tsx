@@ -10,6 +10,7 @@ import UpsellModal, { UpsellSuggestion } from "./UpsellModal";
 import CartBar from "./CartBar";
 import CartModal, { CartItem } from "./CartModal";
 import { OrderPayload } from "./orderBuilder";
+import ProductVideoCard from "./ProductVideoCard";
 
 interface MenuClientProps {
   unit: Unit;
@@ -575,8 +576,10 @@ export default function MenuClient({
                           scrollSnapAlign: "start",
                         }}
                       >
-                        {/* Thumbnail */}
-                        {product.thumbnail_url ? (
+                        {/* Media */}
+                        {product.video_url ? (
+                          <ProductVideoCard product={product} />
+                        ) : product.thumbnail_url ? (
                           <img
                             src={product.thumbnail_url}
                             alt={product.name}
@@ -597,38 +600,6 @@ export default function MenuClient({
                               background: "linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%)",
                             }}
                           />
-                        )}
-
-                        {/* Play icon se tem vídeo */}
-                        {product.video_url && (
-                          <div
-                            style={{
-                              position: "absolute",
-                              top: "50%",
-                              left: "50%",
-                              transform: "translate(-50%, -50%)",
-                              width: 48,
-                              height: 48,
-                              borderRadius: "50%",
-                              background: "rgba(255,255,255,0.15)",
-                              backdropFilter: "blur(10px)",
-                              WebkitBackdropFilter: "blur(10px)",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                            }}
-                          >
-                            <div
-                              style={{
-                                width: 0,
-                                height: 0,
-                                borderLeft: "16px solid white",
-                                borderTop: "10px solid transparent",
-                                borderBottom: "10px solid transparent",
-                                marginLeft: 4,
-                              }}
-                            />
-                          </div>
                         )}
 
                         {/* Badge "Mais pedido hoje" */}
@@ -830,8 +801,10 @@ export default function MenuClient({
                               cursor: "pointer",
                             }}
                           >
-                            {/* Thumbnail */}
-                            {product.thumbnail_url ? (
+                            {/* Media */}
+                            {product.video_url ? (
+                              <ProductVideoCard product={product} />
+                            ) : product.thumbnail_url ? (
                               <img
                                 src={product.thumbnail_url}
                                 alt={product.name}
@@ -858,38 +831,6 @@ export default function MenuClient({
                                 }}
                               >
                                 🍽️
-                              </div>
-                            )}
-
-                            {/* Play icon se tem vídeo */}
-                            {product.video_url && (
-                              <div
-                                style={{
-                                  position: "absolute",
-                                  top: "50%",
-                                  left: "50%",
-                                  transform: "translate(-50%, -50%)",
-                                  width: 40,
-                                  height: 40,
-                                  borderRadius: "50%",
-                                  background: "rgba(255,255,255,0.15)",
-                                  backdropFilter: "blur(10px)",
-                                  WebkitBackdropFilter: "blur(10px)",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                }}
-                              >
-                                <div
-                                  style={{
-                                    width: 0,
-                                    height: 0,
-                                    borderLeft: "12px solid white",
-                                    borderTop: "7px solid transparent",
-                                    borderBottom: "7px solid transparent",
-                                    marginLeft: 3,
-                                  }}
-                                />
                               </div>
                             )}
 
