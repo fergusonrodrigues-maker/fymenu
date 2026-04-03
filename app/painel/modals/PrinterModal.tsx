@@ -24,6 +24,7 @@ export default function PrinterModal({ unitId, categories }: PrinterModalProps) 
     getPrinterCategories,
     addCategoryToprinter,
     removeCategoryFromPrinter,
+    error: hookError,
   } = usePrinterConfig(unitId);
 
   const supabase = createClient();
@@ -185,6 +186,17 @@ export default function PrinterModal({ unitId, categories }: PrinterModalProps) 
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingTop: 4 }}>
+      {/* Error display */}
+      {hookError && (
+        <div style={{
+          padding: "10px 14px", borderRadius: 12,
+          background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.25)",
+          fontSize: 12, color: "#f87171",
+        }}>
+          ⚠️ {hookError}
+        </div>
+      )}
+
       {/* Add new printer */}
       <div style={{ display: "flex", gap: 8 }}>
         <input
