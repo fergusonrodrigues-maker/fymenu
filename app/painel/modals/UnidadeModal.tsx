@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { updateUnit } from "../actions";
+import { useRef, useState } from "react";
+import { updateUnit, uploadCoverAction } from "../actions";
 import LogoUploader from "../LogoUploader";
 import DominioSection from "../components/DominioSection";
 import { Unit } from "../types";
+import { createClient } from "@/lib/supabase/client";
 
 const inp: React.CSSProperties = {
   width: "100%", padding: "11px 14px", borderRadius: 12,
@@ -39,8 +40,57 @@ export default function UnidadeModal({ unit, isPro, onClose }: { unit: Unit | nu
   const [isPublished, setIsPublished] = useState(unit?.is_published ?? false);
   const [showNewUnit, setShowNewUnit] = useState(false);
 
+  const coverInputRef = useRef<HTMLInputElement>(null);
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const [coverUrl, setCoverUrl] = useState(unit?.cover_url ?? null);
+
+  const [description, setDescription] = useState(unit?.description ?? "");
+
   if (!unit) return <div style={{ color: "var(--dash-text-muted)", paddingTop: 16 }}>Nenhuma unidade encontrada.</div>;
   const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const unitId = unit.id;
+
+  async function handleCoverUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.currentTarget.value = "";
+
+    setUploadingCover(true);
+
+    const reader = new FileReader();
+    reader.onload = () => setCoverPreview(reader.result as string);
+    reader.readAsDataURL(file);
+
+    try {
+      const formData = new FormData();
+      formData.append("unitId", unitId);
+      formData.append("file", file);
+
+      const res = await uploadCoverAction(formData);
+      if (!res?.ok) throw new Error(res?.message || "Falha ao enviar capa.");
+
+      setCoverUrl(res.publicUrl ?? null);
+      setCoverPreview(null);
+    } catch (err) {
+      console.error("Erro ao enviar capa:", err);
+      setCoverPreview(null);
+    } finally {
+      setUploadingCover(false);
+    }
+  }
+
+  async function handleRemoveCover() {
+    setCoverPreview(null);
+    setCoverUrl(null);
+    const supabase = createClient();
+    await supabase.from("units").update({ cover_url: null }).eq("id", unitId);
+  }
+
+  async function handleDescriptionBlur() {
+    const supabase = createClient();
+    await supabase.from("units").update({ description }).eq("id", unitId);
+  }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingTop: 8 }}>
@@ -55,6 +105,103 @@ export default function UnidadeModal({ unit, isPro, onClose }: { unit: Unit | nu
       <CopyLinkRow label="Link Presencial (QR Code / Mesa)" url={`${origin}/menu/${unit.slug}`} />
 
       <LogoUploader unitId={unit.id} currentLogoUrl={unit.logo_url} />
+
+      {/* ── Foto de Capa ── */}
+      <div style={{ borderRadius: 14, padding: 14, background: "rgba(20,20,20,0.55)", border: "1px solid rgba(255,255,255,0.12)" }}>
+        <div style={{ fontWeight: 900, marginBottom: 10 }}>Foto de Capa</div>
+        <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, marginBottom: 12, marginTop: 0 }}>
+          Aparece no topo do cardápio público. Use uma foto da fachada ou de um prato.
+        </p>
+
+        {/* Preview */}
+        <div
+          onClick={() => coverInputRef.current?.click()}
+          style={{
+            position: "relative",
+            width: "100%",
+            height: 140,
+            borderRadius: 12,
+            overflow: "hidden",
+            background: "rgba(255,255,255,0.04)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            marginBottom: 10,
+            cursor: "pointer",
+          }}
+        >
+          {coverPreview || coverUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={coverPreview || coverUrl!}
+              alt="Capa"
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
+          ) : (
+            <div style={{
+              width: "100%", height: "100%",
+              display: "flex", flexDirection: "column",
+              alignItems: "center", justifyContent: "center",
+              color: "rgba(255,255,255,0.25)",
+            }}>
+              <span style={{ fontSize: 28, marginBottom: 6 }}>📷</span>
+              <span style={{ fontSize: 12 }}>Toque para adicionar foto de capa</span>
+            </div>
+          )}
+
+          {uploadingCover && (
+            <div style={{
+              position: "absolute", inset: 0,
+              background: "rgba(0,0,0,0.6)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              color: "#fff", fontSize: 13,
+            }}>
+              Enviando...
+            </div>
+          )}
+        </div>
+
+        <input
+          ref={coverInputRef}
+          type="file"
+          accept="image/*"
+          style={{ display: "none" }}
+          onChange={handleCoverUpload}
+        />
+
+        {(coverPreview || coverUrl) && (
+          <button
+            type="button"
+            onClick={handleRemoveCover}
+            style={{
+              padding: "6px 14px",
+              borderRadius: 8,
+              background: "rgba(248,113,113,0.08)",
+              border: "none",
+              color: "rgba(248,113,113,0.7)",
+              fontSize: 12,
+              cursor: "pointer",
+            }}
+          >
+            Remover capa
+          </button>
+        )}
+      </div>
+
+      {/* ── Descrição curta ── */}
+      <div style={{ borderRadius: 14, padding: 14, background: "rgba(20,20,20,0.55)", border: "1px solid rgba(255,255,255,0.12)" }}>
+        <div style={{ fontWeight: 900, marginBottom: 10 }}>Descrição curta</div>
+        <input
+          type="text"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          onBlur={handleDescriptionBlur}
+          placeholder="Ex: Lugar de comer porco!"
+          maxLength={100}
+          style={inp}
+        />
+        <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 11, marginTop: 6, display: "block" }}>
+          {description.length}/100 — Aparece abaixo do nome no cardápio público
+        </span>
+      </div>
 
       <form action={updateUnit} onSubmit={() => setTimeout(onClose, 300)} style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 4 }}>
         <input type="hidden" name="unit_id" value={unit.id} />

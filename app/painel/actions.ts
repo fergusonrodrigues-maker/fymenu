@@ -154,6 +154,57 @@ export async function uploadLogoAction(
   }
 }
 
+export async function uploadCoverAction(
+  formData: FormData
+): Promise<{ ok: boolean; message?: string; publicUrl?: string }> {
+  try {
+    const supabase = await createClient();
+
+    const file = formData.get("file");
+    const unitId = await getUnitIdOrThrow(
+      String(formData.get("unitId") ?? "") || undefined
+    );
+
+    if (!file || !(file instanceof File)) {
+      return { ok: false, message: "Arquivo inválido." };
+    }
+
+    if (!file.type.startsWith("image/")) {
+      return { ok: false, message: "Envie uma imagem." };
+    }
+
+    const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    const safeExt = ["png", "jpg", "jpeg", "webp"].includes(ext) ? ext : "jpg";
+    const filePath = `covers/${unitId}/cover-${Date.now()}.${safeExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("logos")
+      .upload(filePath, file, {
+        upsert: true,
+        cacheControl: "3600",
+        contentType: file.type,
+      });
+
+    if (uploadError) return { ok: false, message: uploadError.message };
+
+    const { data: pub } = supabase.storage.from("logos").getPublicUrl(filePath);
+    const publicUrl = pub?.publicUrl ?? "";
+
+    const { error: updateError } = await supabase
+      .from("units")
+      .update({ cover_url: publicUrl })
+      .eq("id", unitId);
+
+    if (updateError) return { ok: false, message: updateError.message };
+
+    revalidatePath("/painel");
+
+    return { ok: true, publicUrl };
+  } catch (e: any) {
+    return { ok: false, message: e?.message || "Falha ao enviar capa." };
+  }
+}
+
 /* ========================= CATEGORIAS ========================= */
 
 export async function createCategory(formData: FormData): Promise<void> {
