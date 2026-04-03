@@ -1141,7 +1141,7 @@ export default function DashboardClient({
         <AnalyticsModal analytics={analytics} unit={unit} />
       </Modal>
       <Modal open={modal === "pedidos"} onClose={close} title="Pedidos de hoje">
-        {unit && <PedidosModal unitId={unit.id} />}
+        {unit && <PedidosModal unitId={unit.id} unit={unit} />}
       </Modal>
       <Modal open={modal === "cardapio"} onClose={close} title="Cardápio">
         <CardapioModal unit={unit} categories={categories} products={products} upsellItems={upsellItems} onClose={close} />

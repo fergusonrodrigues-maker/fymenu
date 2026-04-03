@@ -3,14 +3,6 @@
 import { useState } from "react";
 import { Unit, ReportData, ReportProduct, ReportPayments, DayData } from "../types";
 
-const inp: React.CSSProperties = {
-  width: "100%", padding: "11px 14px", borderRadius: 12,
-  border: "1px solid var(--dash-input-border)",
-  background: "var(--dash-input-bg)",
-  color: "var(--dash-text)", fontSize: 16, boxSizing: "border-box",
-  outline: "none",
-};
-
 function formatBRL(cents: number) {
   return `R$ ${(cents / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
 }
@@ -122,31 +114,13 @@ export default function FinanceiroModal({ unit, analytics, reportData }: {
   analytics: { views: number; clicks: number; orders: number };
   reportData: ReportData;
 }) {
-  const [tab, setTab] = useState<"diario" | "semanal" | "mensal" | "produtos" | "delivery">("diario");
-  const [waCopied, setWaCopied] = useState(false);
-  const [deliveryPlatform, setDeliveryPlatform] = useState("");
-  const [deliveryLink, setDeliveryLink] = useState(unit?.delivery_link ?? "");
-  const [deliverySaving, setDeliverySaving] = useState(false);
-  const [deliverySaved, setDeliverySaved] = useState(false);
-
-  const waLink = unit?.whatsapp ? `https://wa.me/55${unit.whatsapp.replace(/\D/g, "")}` : null;
-
-  async function saveDeliveryLink() {
-    if (!unit || !deliveryLink.trim()) return;
-    setDeliverySaving(true);
-    const { createClient: cc } = await import("@/lib/supabase/client");
-    await cc().from("units").update({ delivery_link: deliveryLink.trim() }).eq("id", unit.id);
-    setDeliverySaving(false);
-    setDeliverySaved(true);
-    setTimeout(() => setDeliverySaved(false), 2000);
-  }
+  const [tab, setTab] = useState<"diario" | "semanal" | "mensal" | "produtos">("diario");
 
   const TABS = [
     { key: "diario" as const, label: "Diário" },
     { key: "semanal" as const, label: "Semanal" },
     { key: "mensal" as const, label: "Mensal" },
     { key: "produtos" as const, label: "Produtos" },
-    { key: "delivery" as const, label: "Delivery" },
   ];
 
   return (
@@ -381,86 +355,6 @@ export default function FinanceiroModal({ unit, analytics, reportData }: {
               <div style={{ color: "var(--dash-text-subtle)", fontSize: 10, marginTop: 8 }}>Considere promoção ou desativação desses itens.</div>
             </div>
           )}
-        </>
-      )}
-
-      {/* ── DELIVERY ── */}
-      {tab === "delivery" && (
-        <>
-          {/* WhatsApp */}
-          <div className="modal-neon-card" style={{ borderRadius: 14, padding: "16px", background: "var(--dash-card)", border: "1px solid rgba(22,163,74,0.25)" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-              <span style={{ fontSize: 18 }}>💬</span>
-              <div style={{ color: "var(--dash-text)", fontSize: 14, fontWeight: 700 }}>WhatsApp</div>
-            </div>
-            <div style={{ color: "var(--dash-text-muted)", fontSize: 12, marginBottom: 10 }}>
-              Pedidos enviados automaticamente com rastreamento
-            </div>
-            {waLink ? (
-              <>
-                <div style={{
-                  padding: "8px 12px", borderRadius: 8, background: "rgba(255,255,255,0.04)",
-                  border: "1px solid var(--dash-card-border)", fontSize: 12, color: "var(--dash-text-muted)",
-                  fontFamily: "monospace", marginBottom: 8, wordBreak: "break-all",
-                }}>{waLink}</div>
-                <div style={{ display: "flex", gap: 8 }}>
-                  <button
-                    onClick={() => { navigator.clipboard.writeText(waLink); setWaCopied(true); setTimeout(() => setWaCopied(false), 1800); }}
-                    style={{ flex: 1, padding: "9px", borderRadius: 9, border: "none", background: waCopied ? "rgba(0,255,174,0.15)" : "rgba(22,163,74,0.15)", color: waCopied ? "#00ffae" : "#4ade80", fontSize: 12, fontWeight: 700, cursor: "pointer" }}
-                  >
-                    {waCopied ? "✓ Copiado!" : "Copiar link"}
-                  </button>
-                  <a href="/painel" style={{ flex: 1, padding: "9px", borderRadius: 9, border: "1px solid var(--dash-btn-border)", background: "transparent", color: "var(--dash-text-dim)", fontSize: 12, fontWeight: 600, cursor: "pointer", textDecoration: "none", textAlign: "center" }}>
-                    ✎ Editar número
-                  </a>
-                </div>
-              </>
-            ) : (
-              <div style={{ color: "#f87171", fontSize: 12 }}>WhatsApp não configurado — edite na seção Unidade.</div>
-            )}
-          </div>
-
-          {/* iFood / Delivery */}
-          <div className="modal-neon-card" style={{ borderRadius: 14, padding: "16px", background: "var(--dash-card)", border: "1px solid rgba(234,88,12,0.25)" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-              <span style={{ fontSize: 18 }}>🛵</span>
-              <div style={{ color: "var(--dash-text)", fontSize: 14, fontWeight: 700 }}>iFood / Delivery</div>
-            </div>
-            <div style={{ color: "var(--dash-text-muted)", fontSize: 12, marginBottom: 10 }}>
-              Configure o link da sua loja nas plataformas de delivery
-            </div>
-            <select
-              value={deliveryPlatform}
-              onChange={(e) => setDeliveryPlatform(e.target.value)}
-              style={inp}
-            >
-              <option value="">Selecionar plataforma...</option>
-              <option value="ifood">iFood</option>
-              <option value="rappi">Rappi</option>
-              <option value="99food">99Food</option>
-              <option value="outro">Outro</option>
-            </select>
-            <input
-              type="url"
-              value={deliveryLink}
-              onChange={(e) => { setDeliveryLink(e.target.value); setDeliverySaved(false); }}
-              placeholder="Cole o link da sua loja"
-              style={{ ...inp, marginTop: 8 }}
-            />
-            <button
-              onClick={saveDeliveryLink}
-              disabled={deliverySaving || !deliveryLink.trim()}
-              style={{
-                width: "100%", padding: "10px", borderRadius: 9, border: "none", marginTop: 8,
-                background: deliverySaved ? "rgba(0,255,174,0.15)" : "rgba(234,88,12,0.15)",
-                color: deliverySaved ? "#00ffae" : "#fb923c",
-                fontSize: 13, fontWeight: 700, cursor: deliverySaving ? "not-allowed" : "pointer",
-                opacity: deliverySaving ? 0.6 : 1,
-              }}
-            >
-              {deliverySaved ? "✓ Salvo!" : deliverySaving ? "Salvando..." : "Salvar link"}
-            </button>
-          </div>
         </>
       )}
 
