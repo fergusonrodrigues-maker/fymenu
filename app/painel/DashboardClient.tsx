@@ -20,6 +20,7 @@ const PlanoModal = dynamic(() => import("./modals/PlanoModal"), { ssr: false, lo
 const EstoqueModal = dynamic(() => import("./modals/EstoqueModal"), { ssr: false, loading: () => loadingFallback });
 const ConfigModal = dynamic(() => import("./modals/ConfigModal"), { ssr: false, loading: () => loadingFallback });
 const PrinterModal = dynamic(() => import("./modals/PrinterModal"), { ssr: false, loading: () => loadingFallback });
+const CrmModal = dynamic(() => import("./modals/CrmModal"), { ssr: false, loading: () => loadingFallback });
 
 // ─── Modal backdrop ─────────────────────────────────────────────────────────
 function Modal({ open, onClose, children, title }: { open: boolean; onClose: () => void; children: React.ReactNode; title: string }) {
@@ -239,7 +240,7 @@ export default function DashboardClient({
   reportData: ReportData;
 }) {
   const router = useRouter();
-  const [modal, setModal] = useState<"analytics" | "cardapio" | "pedidos" | "financeiro" | "unidade" | "plano" | "config" | "tv" | "estoque" | "operacoes" | "equipe" | "impressoras" | "links" | null>(null);
+  const [modal, setModal] = useState<"analytics" | "cardapio" | "pedidos" | "financeiro" | "unidade" | "plano" | "config" | "tv" | "estoque" | "operacoes" | "equipe" | "impressoras" | "links" | "crm" | null>(null);
   const open = (m: typeof modal) => setModal(m);
   const close = () => setModal(null);
 
@@ -1220,6 +1221,9 @@ export default function DashboardClient({
             </a>
           ))}
         </div>
+      </Modal>
+      <Modal open={modal === "crm"} onClose={close} title="CRM">
+        {unit && restaurant && <CrmModal unit={unit} restaurant={restaurant} />}
       </Modal>
     </>
   );
