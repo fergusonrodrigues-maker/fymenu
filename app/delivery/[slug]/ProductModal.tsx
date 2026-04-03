@@ -60,7 +60,7 @@ export default function ProductModal({
   useEffect(() => {
     if (currentProduct) {
       setSelectedVariation(null);
-      setThumbVisible(true);
+      setThumbVisible(!currentProduct.video_url);
       setStarred(false);
       setSelectedAddons([]);
       fetchAddons(currentProduct.id);

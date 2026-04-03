@@ -137,6 +137,11 @@ export default function MenuClient({
     return () => obs.disconnect();
   }, []);
 
+  // Dispatch event so ProductVideoCards pause/resume when modal opens/closes
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent("menu-modal", { detail: { open: !!selectedProduct } }));
+  }, [selectedProduct]);
+
   const featuredCategories = categories.filter((c) => c.is_featured);
   const regularCategories  = categories.filter((c) => !c.is_featured);
   const visibleRegularCategories = regularCategories.filter(
