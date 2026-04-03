@@ -69,8 +69,8 @@ export default function BottomGlassBar({ unit, visible, minimized }: Props) {
       zIndex: 100,
       display: "flex",
       justifyContent: "center",
-      padding: isMaximized ? "0" : "0 12px",
-      paddingBottom: isMaximized ? "0" : "calc(12px + env(safe-area-inset-bottom, 0px))",
+      padding: isMaximized ? "0" : minimized ? "0 8px" : "0 12px",
+      paddingBottom: isMaximized ? "0" : minimized ? "calc(4px + env(safe-area-inset-bottom, 0px))" : "calc(12px + env(safe-area-inset-bottom, 0px))",
       pointerEvents: "none",
       transform: visible ? "translateY(0)" : "translateY(110%)",
       transition: `transform ${DUR} ${EASE}, padding ${DUR} ${EASE}`,
@@ -78,8 +78,8 @@ export default function BottomGlassBar({ unit, visible, minimized }: Props) {
       <div style={{
         position: "relative",
         width: isMaximized ? "100%" : "min(96vw, 520px)",
-        height: isMaximized ? "min(50vh, 340px)" : 72,
-        borderRadius: isMaximized ? "28px 28px 0 0" : 20,
+        height: isMaximized ? "min(50vh, 340px)" : minimized ? 58 : 72,
+        borderRadius: isMaximized ? "28px 28px 0 0" : minimized ? 14 : 20,
         background: isDark
           ? "rgba(10, 10, 10, 0.15)"
           : "rgba(255, 255, 255, 0.15)",
@@ -103,10 +103,10 @@ export default function BottomGlassBar({ unit, visible, minimized }: Props) {
           position: "absolute",
           left: "50%",
           transform: "translateX(-50%)",
-          top: isMaximized ? -32 : -10,
-          width: isMaximized ? 72 : 56,
-          height: isMaximized ? 72 : 56,
-          borderRadius: isMaximized ? 20 : 16,
+          top: isMaximized ? -32 : minimized ? -8 : -10,
+          width: isMaximized ? 72 : minimized ? 44 : 56,
+          height: isMaximized ? 72 : minimized ? 44 : 56,
+          borderRadius: isMaximized ? 20 : minimized ? 12 : 16,
           background: "rgba(255,255,255,0.95)",
           boxShadow: "0 8px 28px rgba(0,0,0,0.5)",
           display: "flex",
@@ -131,11 +131,9 @@ export default function BottomGlassBar({ unit, visible, minimized }: Props) {
           alignItems: "center",
           justifyContent: "space-evenly",
           padding: "0 6px",
-          transform: minimized ? "scale(0.85)" : "scale(1)",
           opacity: isMaximized ? 0 : 1,
           pointerEvents: isMaximized ? "none" : "auto",
-          transition: `opacity 250ms ease ${isMaximized ? "0ms" : "300ms"}, transform ${DUR} ${EASE}`,
-          transformOrigin: "center center",
+          transition: `opacity 250ms ease ${isMaximized ? "0ms" : "300ms"}`,
         }}>
           {maps && (
             <a href={maps} target="_blank" rel="noreferrer" style={{
@@ -168,7 +166,7 @@ export default function BottomGlassBar({ unit, visible, minimized }: Props) {
           </div>
 
           {/* Spacer para o logo flutuante */}
-          <div style={{ width: 60, flexShrink: 0 }} />
+          <div style={{ width: minimized ? 48 : 60, flexShrink: 0 }} />
 
           {wa && (
             <a href={wa} target="_blank" rel="noreferrer" style={{

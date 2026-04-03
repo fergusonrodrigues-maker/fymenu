@@ -39,7 +39,8 @@ html, body {
   padding: 0;
   margin: 0;
   overscroll-behavior-x: none;
-  overflow-x: hidden;
+  /* clip instead of hidden — doesn't create a scroll container, so position:sticky works */
+  overflow-x: clip;
 }
 
 body {

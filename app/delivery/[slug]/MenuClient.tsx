@@ -754,22 +754,20 @@ export default function MenuClient({
                                 handleOpenProduct(product);
                               }}
                               style={{
-                                width: 36,
-                                height: 36,
-                                borderRadius: "50%",
-                                background: "#FF6B00",
+                                width: 32,
+                                height: 32,
+                                background: "transparent",
                                 border: "none",
-                                color: "#fff",
-                                fontSize: 22,
-                                fontWeight: 700,
+                                cursor: "pointer",
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
-                                cursor: "pointer",
-                                boxShadow: "0 2px 8px rgba(255,107,0,0.3)",
+                                flexShrink: 0,
                               }}
                             >
-                              +
+                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zM18.28 11.09c-.42-.35-1.01-.34-1.42-.01L15 12.5V7.5c0-.83-.67-1.5-1.5-1.5S12 6.67 12 7.5v10l-3.73-.93c-.41-.1-.84.01-1.15.3-.43.39-.45 1.04-.05 1.46l3.38 3.55c.28.29.67.46 1.07.46h6.37c.58 0 1.09-.38 1.26-.93l1.59-5.27c.22-.72-.08-1.49-.7-1.88l-1.76-1.17z" fill="white" fillOpacity="0.85"/>
+                              </svg>
                             </button>
                           </div>
                         </div>
@@ -925,24 +923,21 @@ export default function MenuClient({
                                   handleOpenProduct(product);
                                 }}
                                 style={{
-                                  width: 32,
-                                  height: 32,
-                                  borderRadius: "50%",
-                                  background: "#FF6B00",
+                                  width: 28,
+                                  height: 28,
+                                  background: "transparent",
                                   border: "none",
-                                  color: "#fff",
-                                  fontSize: 20,
-                                  fontWeight: 700,
+                                  cursor: "pointer",
                                   display: "flex",
                                   alignItems: "center",
                                   justifyContent: "center",
-                                  cursor: "pointer",
                                   flexShrink: 0,
                                   marginLeft: 8,
-                                  boxShadow: "0 2px 8px rgba(255,107,0,0.3)",
                                 }}
                               >
-                                +
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                  <path d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zM18.28 11.09c-.42-.35-1.01-.34-1.42-.01L15 12.5V7.5c0-.83-.67-1.5-1.5-1.5S12 6.67 12 7.5v10l-3.73-.93c-.41-.1-.84.01-1.15.3-.43.39-.45 1.04-.05 1.46l3.38 3.55c.28.29.67.46 1.07.46h6.37c.58 0 1.09-.38 1.26-.93l1.59-5.27c.22-.72-.08-1.49-.7-1.88l-1.76-1.17z" fill="white" fillOpacity="0.85"/>
+                                </svg>
                               </button>
                             </div>
                           </div>
