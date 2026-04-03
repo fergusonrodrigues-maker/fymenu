@@ -28,5 +28,31 @@ export async function POST(req: NextRequest) {
     .eq("id", restaurantId);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Sync units when free_access changes
+  if (free_access !== undefined) {
+    if (free_access) {
+      await admin
+        .from("units")
+        .update({ payment_active: true, is_published: true })
+        .eq("restaurant_id", restaurantId);
+    } else {
+      const { data: activeSub } = await admin
+        .from("subscriptions")
+        .select("id")
+        .eq("restaurant_id", restaurantId)
+        .eq("status", "active")
+        .limit(1)
+        .single();
+
+      if (!activeSub) {
+        await admin
+          .from("units")
+          .update({ payment_active: false, is_published: false })
+          .eq("restaurant_id", restaurantId);
+      }
+    }
+  }
+
   return NextResponse.json({ success: true });
 }
