@@ -56,6 +56,12 @@ export default function UnidadeModal({ unit, isPro, onClose }: { unit: Unit | nu
     if (!file) return;
     e.currentTarget.value = "";
 
+    const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+    if (file.size > MAX_SIZE) {
+      alert("A imagem deve ter no máximo 5MB.");
+      return;
+    }
+
     setUploadingCover(true);
 
     const reader = new FileReader();

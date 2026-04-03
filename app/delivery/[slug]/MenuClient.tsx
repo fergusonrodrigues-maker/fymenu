@@ -139,6 +139,9 @@ export default function MenuClient({
 
   const featuredCategories = categories.filter((c) => c.is_featured);
   const regularCategories  = categories.filter((c) => !c.is_featured);
+  const visibleRegularCategories = regularCategories.filter(
+    (cat) => products.some((p) => p.category_id === cat.id && p.is_active)
+  );
 
   // ── Snap suave vertical (proximity = só encaixa quando perto, não força) ──
   useEffect(() => {
@@ -148,11 +151,11 @@ export default function MenuClient({
 
   // ── IntersectionObserver: scroll → pill ativo ───────────────────────────
   useEffect(() => {
-    if (regularCategories.length === 0) return;
+    if (visibleRegularCategories.length === 0) return;
 
     const observers: IntersectionObserver[] = [];
 
-    regularCategories.forEach((cat) => {
+    visibleRegularCategories.forEach((cat) => {
       const el = sectionRefs.current[cat.id];
       if (!el) return;
 
@@ -165,7 +168,7 @@ export default function MenuClient({
           });
         },
         {
-          rootMargin: "-30% 0px -50% 0px",
+          rootMargin: "-10% 0px -80% 0px",
           threshold: 0,
         }
       );
@@ -176,7 +179,7 @@ export default function MenuClient({
 
     return () => observers.forEach((o) => o.disconnect());
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [regularCategories.length]);
+  }, [visibleRegularCategories.length]);
 
   // ── Snap suave manual: quando o scroll para, encaixa na categoria mais próxima ──
   useEffect(() => {
@@ -193,7 +196,7 @@ export default function MenuClient({
         let closestDist = Infinity;
         const offset = 60; // compensa pills fixos
 
-        for (const cat of regularCategories) {
+        for (const cat of visibleRegularCategories) {
           const el = sectionRefs.current[cat.id];
           if (!el) continue;
           const rect = el.getBoundingClientRect();
@@ -223,7 +226,7 @@ export default function MenuClient({
       if (snapTimer) clearTimeout(snapTimer);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [regularCategories.length]);
+  }, [visibleRegularCategories.length]);
 
   // ── Scroll programático ao clicar num pill ───────────────────────────────
   const scrollToCategory = useCallback((id: string) => {
@@ -473,7 +476,7 @@ export default function MenuClient({
         <div ref={sentinelRef} style={{ height: 1, width: "100%" }} />
 
         {/* ── PILLS STICKY ─────────────────────────────────────────────── */}
-        {regularCategories.length > 0 && (
+        {visibleRegularCategories.length > 0 && (
           <div
             style={{
               position: "sticky",
@@ -482,7 +485,7 @@ export default function MenuClient({
             }}
           >
             <CategoryPillsTop
-              categories={regularCategories}
+              categories={visibleRegularCategories}
               activeCategoryId={activeCategoryId}
               onSelect={scrollToCategory}
             />
@@ -779,7 +782,7 @@ export default function MenuClient({
             })}
 
             {/* Categorias regulares — container translúcido + grid 2 colunas */}
-            {regularCategories.map((cat) => {
+            {visibleRegularCategories.map((cat) => {
               const catProducts = productsByCategory(cat.id);
               if (!catProducts.length) return null;
               const isOdd = catProducts.length % 2 !== 0;
@@ -956,7 +959,7 @@ export default function MenuClient({
       {mode === "delivery" && (
         <BottomGlassBar
           unit={unit}
-          visible={pillsSticky}
+          visible={pillsSticky && !selectedProduct && !pendingPayload && !cartOpen}
           minimized={!glassBarMaximized}
         />
       )}

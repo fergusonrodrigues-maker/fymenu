@@ -77,7 +77,7 @@ export default function BottomGlassBar({ unit, visible, minimized }: Props) {
     }}>
       <div style={{
         position: "relative",
-        width: isMaximized ? "100%" : "min(96vw, 520px)",
+        width: isMaximized ? "100%" : minimized ? "min(96vw, 280px)" : "min(96vw, 520px)",
         height: isMaximized ? "min(50vh, 340px)" : minimized ? 58 : 72,
         borderRadius: isMaximized ? "28px 28px 0 0" : minimized ? 14 : 20,
         background: isDark
@@ -129,7 +129,8 @@ export default function BottomGlassBar({ unit, visible, minimized }: Props) {
           inset: 0,
           display: "flex",
           alignItems: "center",
-          justifyContent: "space-evenly",
+          justifyContent: "center",
+          gap: 6,
           padding: "0 6px",
           opacity: isMaximized ? 0 : 1,
           pointerEvents: isMaximized ? "none" : "auto",
