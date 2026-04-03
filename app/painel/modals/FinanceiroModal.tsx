@@ -1,7 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
 import { Unit, ReportData, ReportProduct, ReportPayments, DayData } from "../types";
+
+const supabase = createClient();
 
 function formatBRL(cents: number) {
   return `R$ ${(cents / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
@@ -114,14 +117,97 @@ export default function FinanceiroModal({ unit, analytics, reportData }: {
   analytics: { views: number; clicks: number; orders: number };
   reportData: ReportData;
 }) {
-  const [tab, setTab] = useState<"diario" | "semanal" | "mensal" | "produtos">("diario");
+  const [tab, setTab] = useState<"diario" | "semanal" | "mensal" | "produtos" | "custos" | "analise">("diario");
+
+  // Expenses state
+  const [expenses, setExpenses] = useState<any[]>([]);
+  const [showExpenseForm, setShowExpenseForm] = useState(false);
+  const [expenseName, setExpenseName] = useState("");
+  const [expenseAmount, setExpenseAmount] = useState("");
+  const [expenseCategory, setExpenseCategory] = useState("geral");
+  const [expenseRecurring, setExpenseRecurring] = useState(false);
+  const [expenseDate, setExpenseDate] = useState(new Date().toISOString().split("T")[0]);
+  const [financeAI, setFinanceAI] = useState<string | null>(null);
+  const [generatingFinanceAI, setGeneratingFinanceAI] = useState(false);
 
   const TABS = [
     { key: "diario" as const, label: "Diário" },
     { key: "semanal" as const, label: "Semanal" },
     { key: "mensal" as const, label: "Mensal" },
     { key: "produtos" as const, label: "Produtos" },
+    { key: "custos" as const, label: "Custos" },
+    { key: "analise" as const, label: "Análise" },
   ];
+
+  useEffect(() => {
+    if (!unit?.id) return;
+    supabase.from("business_expenses").select("*").eq("unit_id", unit.id).order("date", { ascending: false })
+      .then(({ data }) => { if (data) setExpenses(data); });
+  }, [unit?.id]);
+
+  // Calculations
+  const now = new Date();
+  const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
+  const totalExpensesThisMonth = expenses
+    .filter(e => e.date?.startsWith(thisMonth) || e.is_recurring)
+    .reduce((s, e) => s + e.amount, 0);
+
+  const totalRevenueThisMonth = reportData.monthly.revenue;
+  const profit = totalRevenueThisMonth - totalExpensesThisMonth;
+
+  const expensesByCategory = expenses.reduce((acc: Record<string, any[]>, e) => {
+    if (!acc[e.category]) acc[e.category] = [];
+    acc[e.category].push(e);
+    return acc;
+  }, {});
+
+  async function handleAddExpense() {
+    if (!expenseName || !expenseAmount || !unit?.id) return;
+    const { data, error } = await supabase.from("business_expenses").insert({
+      unit_id: unit.id,
+      name: expenseName,
+      category: expenseCategory,
+      amount: Math.round(parseFloat(expenseAmount) * 100),
+      is_recurring: expenseRecurring,
+      recurrence: expenseRecurring ? "monthly" : "one_time",
+      date: expenseDate,
+    }).select().single();
+    if (!error && data) {
+      setExpenses(prev => [data, ...prev]);
+      setExpenseName(""); setExpenseAmount(""); setExpenseCategory("geral");
+      setExpenseRecurring(false); setShowExpenseForm(false);
+    }
+  }
+
+  async function handleDeleteExpense(id: string) {
+    await supabase.from("business_expenses").delete().eq("id", id);
+    setExpenses(prev => prev.filter(e => e.id !== id));
+  }
+
+  async function handleFinanceAI() {
+    setGeneratingFinanceAI(true);
+    try {
+      const res = await fetch("/api/ia/finance-analysis", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          revenue: totalRevenueThisMonth,
+          expenses: totalExpensesThisMonth,
+          profit,
+          expensesByCategory: Object.entries(expensesByCategory).map(([cat, items]) => ({
+            category: cat,
+            total: (items as any[]).reduce((s: number, e: any) => s + e.amount, 0),
+            count: (items as any[]).length,
+          })),
+          totalOrders: reportData.monthly.orders,
+        }),
+      });
+      const json = await res.json();
+      if (res.ok) setFinanceAI(json.analysis);
+    } catch (err) { console.error(err); }
+    finally { setGeneratingFinanceAI(false); }
+  }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingTop: 8 }}>
@@ -356,6 +442,180 @@ export default function FinanceiroModal({ unit, analytics, reportData }: {
             </div>
           )}
         </>
+      )}
+
+      {/* ── CUSTOS ── */}
+      {tab === "custos" && (
+        <div>
+          {/* Resumo */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 20 }}>
+            <div style={{ padding: 16, borderRadius: 14, background: "rgba(248,113,113,0.06)", boxShadow: "0 1px 0 rgba(248,113,113,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>Custos este mês</div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: "#f87171", marginTop: 4 }}>{formatBRL(totalExpensesThisMonth)}</div>
+            </div>
+            <div style={{ padding: 16, borderRadius: 14, background: "rgba(0,255,174,0.06)", boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>Receita este mês</div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: "#00ffae", marginTop: 4 }}>{formatBRL(totalRevenueThisMonth)}</div>
+            </div>
+          </div>
+
+          {/* Resultado */}
+          <div style={{
+            padding: 16, borderRadius: 14, marginBottom: 20,
+            background: profit >= 0 ? "rgba(0,255,174,0.04)" : "rgba(248,113,113,0.04)",
+            boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
+          }}>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>Resultado do mês</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: profit >= 0 ? "#00ffae" : "#f87171", marginTop: 4 }}>
+              {profit >= 0 ? "+" : ""}{formatBRL(profit)}
+            </div>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginTop: 4 }}>
+              {profit >= 0 ? "Lucro" : "Prejuízo"} · Margem: {totalRevenueThisMonth > 0 ? ((profit / totalRevenueThisMonth) * 100).toFixed(1) : 0}%
+            </div>
+          </div>
+
+          {/* Formulário adicionar custo */}
+          <div style={{ marginBottom: 20 }}>
+            <button onClick={() => setShowExpenseForm(!showExpenseForm)} style={{
+              padding: "8px 16px", borderRadius: 10, border: "none", cursor: "pointer",
+              background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.6)", fontSize: 13, fontWeight: 600,
+              boxShadow: "0 1px 0 rgba(255,255,255,0.04) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
+            }}>
+              + Adicionar custo
+            </button>
+          </div>
+
+          {showExpenseForm && (
+            <div style={{ padding: 16, borderRadius: 16, background: "rgba(255,255,255,0.03)", marginBottom: 20, display: "flex", flexDirection: "column", gap: 10 }}>
+              <input type="text" placeholder="Nome do custo (ex: Aluguel)" value={expenseName} onChange={e => setExpenseName(e.target.value)}
+                style={{ padding: "10px 14px", borderRadius: 12, background: "rgba(255,255,255,0.04)", border: "none", color: "#fff", fontSize: 14, outline: "none" }} />
+              <div style={{ display: "flex", gap: 8 }}>
+                <input type="number" placeholder="Valor (R$)" value={expenseAmount} onChange={e => setExpenseAmount(e.target.value)}
+                  style={{ flex: 1, padding: "10px 14px", borderRadius: 12, background: "rgba(255,255,255,0.04)", border: "none", color: "#fff", fontSize: 14, outline: "none" }} />
+                <select value={expenseCategory} onChange={e => setExpenseCategory(e.target.value)}
+                  style={{ padding: "10px 14px", borderRadius: 12, background: "rgba(255,255,255,0.04)", border: "none", color: "#fff", fontSize: 13, outline: "none" }}>
+                  <option value="aluguel">Aluguel</option>
+                  <option value="salarios">Salários</option>
+                  <option value="fornecedores">Fornecedores</option>
+                  <option value="marketing">Marketing</option>
+                  <option value="impostos">Impostos</option>
+                  <option value="manutencao">Manutenção</option>
+                  <option value="delivery">Delivery</option>
+                  <option value="geral">Geral</option>
+                </select>
+              </div>
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 6, color: "rgba(255,255,255,0.5)", fontSize: 12, cursor: "pointer" }}>
+                  <input type="checkbox" checked={expenseRecurring} onChange={e => setExpenseRecurring(e.target.checked)} style={{ accentColor: "#00ffae" }} />
+                  Recorrente (mensal)
+                </label>
+                <input type="date" value={expenseDate} onChange={e => setExpenseDate(e.target.value)}
+                  style={{ padding: "8px 12px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "none", color: "#fff", fontSize: 12, outline: "none" }} />
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={() => setShowExpenseForm(false)} style={{ flex: 1, padding: "10px", borderRadius: 12, background: "rgba(255,255,255,0.04)", border: "none", color: "rgba(255,255,255,0.4)", fontSize: 13, cursor: "pointer" }}>Cancelar</button>
+                <button onClick={handleAddExpense} style={{ flex: 1, padding: "10px", borderRadius: 12, background: "rgba(0,255,174,0.1)", border: "none", color: "#00ffae", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Salvar</button>
+              </div>
+            </div>
+          )}
+
+          {/* Lista de custos por categoria */}
+          {Object.entries(expensesByCategory).map(([cat, items]) => (
+            <div key={cat} style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.5)", marginBottom: 8, textTransform: "capitalize" }}>
+                {cat === "salarios" ? "Salários" : cat === "manutencao" ? "Manutenção" : cat}
+              </div>
+              {(items as any[]).map((exp: any) => (
+                <div key={exp.id} style={{
+                  display: "flex", justifyContent: "space-between", alignItems: "center",
+                  padding: "10px 14px", borderRadius: 12, background: "rgba(255,255,255,0.02)",
+                  marginBottom: 4,
+                }}>
+                  <div>
+                    <div style={{ color: "#fff", fontSize: 13, fontWeight: 600 }}>{exp.name}</div>
+                    <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 11 }}>
+                      {exp.is_recurring ? "🔄 Recorrente" : "📌 Avulso"} · {new Date(exp.date).toLocaleDateString("pt-BR")}
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ color: "#f87171", fontSize: 14, fontWeight: 700 }}>{formatBRL(exp.amount)}</span>
+                    <button onClick={() => handleDeleteExpense(exp.id)} style={{
+                      background: "transparent", border: "none", color: "rgba(255,255,255,0.2)", fontSize: 14, cursor: "pointer",
+                    }}>✕</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ))}
+
+          {expenses.length === 0 && (
+            <div style={{ color: "rgba(255,255,255,0.2)", fontSize: 12, textAlign: "center", padding: "24px 0" }}>
+              Nenhum custo cadastrado ainda.
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── ANÁLISE ── */}
+      {tab === "analise" && (
+        <div>
+          {/* Ponto de equilíbrio */}
+          <div style={{ padding: 20, borderRadius: 16, background: "rgba(255,255,255,0.03)", marginBottom: 20, boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", marginBottom: 12 }}>Ponto de Equilíbrio</div>
+
+            {/* Barra de progresso visual */}
+            <div style={{ position: "relative", height: 24, borderRadius: 12, background: "rgba(255,255,255,0.04)", overflow: "hidden", marginBottom: 12 }}>
+              <div style={{
+                height: "100%", borderRadius: 12,
+                width: `${Math.min((totalRevenueThisMonth / (totalExpensesThisMonth || 1)) * 100, 100)}%`,
+                background: totalRevenueThisMonth >= totalExpensesThisMonth
+                  ? "linear-gradient(90deg, rgba(0,255,174,0.3), rgba(0,255,174,0.5))"
+                  : "linear-gradient(90deg, rgba(251,191,36,0.3), rgba(248,113,113,0.5))",
+                transition: "width 0.5s ease",
+              }} />
+              <div style={{
+                position: "absolute", top: 0, bottom: 0, left: "100%", width: 2,
+                background: "rgba(255,255,255,0.3)",
+                transform: `translateX(-${totalExpensesThisMonth > 0 ? 100 : 0}%)`,
+              }} />
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
+              <span style={{ color: "rgba(255,255,255,0.4)" }}>Faturado: {formatBRL(totalRevenueThisMonth)}</span>
+              <span style={{ color: "rgba(255,255,255,0.4)" }}>Meta: {formatBRL(totalExpensesThisMonth)}</span>
+            </div>
+
+            <div style={{ marginTop: 12, fontSize: 13, color: totalRevenueThisMonth >= totalExpensesThisMonth ? "#00ffae" : "#fbbf24", fontWeight: 700 }}>
+              {totalRevenueThisMonth >= totalExpensesThisMonth
+                ? `Ponto de equilíbrio atingido! Lucro de ${formatBRL(profit)}`
+                : `Faltam ${formatBRL(totalExpensesThisMonth - totalRevenueThisMonth)} para o ponto de equilíbrio`
+              }
+            </div>
+          </div>
+
+          {/* Análise com IA */}
+          <div style={{ padding: 20, borderRadius: 16, background: "rgba(255,255,255,0.03)", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", marginBottom: 4 }}>Análise Financeira com IA</div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginBottom: 16 }}>
+              Análise baseada nos seus custos e receitas.
+            </div>
+
+            {!financeAI ? (
+              <button onClick={handleFinanceAI} disabled={generatingFinanceAI} style={{
+                padding: "12px 24px", borderRadius: 14, border: "none", cursor: "pointer",
+                background: "rgba(0,255,174,0.1)", color: "#00ffae", fontSize: 14, fontWeight: 700,
+                boxShadow: "0 1px 0 rgba(0,255,174,0.12) inset, 0 -1px 0 rgba(0,0,0,0.2) inset",
+                opacity: generatingFinanceAI ? 0.5 : 1, width: "100%",
+              }}>
+                {generatingFinanceAI ? "Analisando..." : "✨ Gerar análise financeira"}
+              </button>
+            ) : (
+              <div style={{ whiteSpace: "pre-wrap", fontSize: 13, color: "rgba(255,255,255,0.7)", lineHeight: 1.7 }}>
+                {financeAI}
+              </div>
+            )}
+          </div>
+        </div>
       )}
 
     </div>
