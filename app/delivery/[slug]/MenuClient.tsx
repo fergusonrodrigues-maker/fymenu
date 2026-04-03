@@ -425,10 +425,6 @@ export default function MenuClient({
               position: "sticky",
               top: 0,
               zIndex: 50,
-              background: "rgba(0,0,0,0.9)",
-              backdropFilter: "blur(20px)",
-              WebkitBackdropFilter: "blur(20px)",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
             }}
           >
             <CategoryPillsTop
