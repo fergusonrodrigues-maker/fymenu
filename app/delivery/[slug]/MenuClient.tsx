@@ -55,6 +55,29 @@ export default function MenuClient({
     return () => obs.disconnect();
   }, []);
 
+  // GlassBar: visível quando pills estão sticky, maximizada no final
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const [pillsSticky, setPillsSticky] = useState(false);
+  const [scrollPercent, setScrollPercent] = useState(0);
+  useEffect(() => {
+    if (!sentinelRef.current) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => setPillsSticky(!entry.isIntersecting),
+      { threshold: 0 }
+    );
+    obs.observe(sentinelRef.current);
+    return () => obs.disconnect();
+  }, []);
+  useEffect(() => {
+    const handleScroll = () => {
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      setScrollPercent(docHeight > 0 ? window.scrollY / docHeight : 0);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+  const glassBarMaximized = scrollPercent >= 0.97;
+
   function addToCart(payload: OrderPayload) {
     const productId = payload.variation?.id
       ? `${payload.product.id}__${payload.variation.id}`
@@ -275,7 +298,11 @@ export default function MenuClient({
         className="min-h-dvh menu-bg-themed"
         style={{
           paddingTop: "env(safe-area-inset-top, 0px)",
-          paddingBottom: "calc(360px + env(safe-area-inset-bottom, 0px))",
+          paddingBottom: glassBarMaximized
+            ? "calc(360px + env(safe-area-inset-bottom, 0px))"
+            : pillsSticky
+              ? "calc(110px + env(safe-area-inset-bottom, 0px))"
+              : "calc(24px + env(safe-area-inset-bottom, 0px))",
         }}
       >
         {/* ── HEADER: Capa + Logo + Busca ──────────────────────────────── */}
@@ -441,6 +468,9 @@ export default function MenuClient({
           )}
         </div>
         {/* ── FIM HEADER ───────────────────────────────────────────────── */}
+
+        {/* Sentinel: quando sai da viewport, os pills viraram sticky */}
+        <div ref={sentinelRef} style={{ height: 1, width: "100%" }} />
 
         {/* ── PILLS STICKY ─────────────────────────────────────────────── */}
         {regularCategories.length > 0 && (
@@ -928,7 +958,13 @@ export default function MenuClient({
       </div>
 
       {/* Bottom bar (apenas no modo delivery) */}
-      {mode === "delivery" && <BottomGlassBar unit={unit} />}
+      {mode === "delivery" && (
+        <BottomGlassBar
+          unit={unit}
+          visible={pillsSticky}
+          minimized={!glassBarMaximized}
+        />
+      )}
 
       {/* Cart bar flutuante (modo presencial) */}
       {mode === "presencial" && (

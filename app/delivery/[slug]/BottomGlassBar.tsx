@@ -33,25 +33,22 @@ function mapsUrl(unit: Unit): string | null {
   return q ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}` : null;
 }
 
-export default function BottomGlassBar({ unit }: { unit: Unit }) {
-  const [isMaximized, setIsMaximized] = useState(false);
+interface Props {
+  unit: Unit;
+  visible: boolean;
+  minimized: boolean;
+}
+
+export default function BottomGlassBar({ unit, visible, minimized }: Props) {
+  const isMaximized = !minimized;
+
   const [isDark, setIsDark] = useState(true);
   useEffect(() => {
-    const check = () => setIsDark(document.documentElement.classList.contains('dark'));
+    const check = () => setIsDark(document.documentElement.classList.contains("dark"));
     check();
     const obs = new MutationObserver(check);
-    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
     return () => obs.disconnect();
-  }, []);
-  useEffect(() => {
-    function onScroll() {
-      const scrolled = window.scrollY + window.innerHeight;
-      const total = document.documentElement.scrollHeight;
-      setIsMaximized(scrolled >= total * 0.97);
-    }
-    window.addEventListener("scroll", onScroll, { passive: true });
-    onScroll();
-    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   const wa   = normalizeWhatsapp(unit.whatsapp || "");
@@ -60,27 +57,40 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
   const logo = unit.logo_url || null;
   const city = [unit.city, unit.neighborhood].filter(Boolean).join(" - ");
 
-  const EASE = "cubic-bezier(0.34,1.56,0.64,1)";
-  const DUR  = "700ms";
+  const EASE = "cubic-bezier(0.16, 1, 0.3, 1)";
+  const DUR  = "400ms";
 
   return (
     <div style={{
-      position: "fixed", bottom: isMaximized ? 0 : "calc(16px + env(safe-area-inset-bottom, 0px))", left: 0, right: 0,
-      display: "flex", justifyContent: "center",
-      zIndex: 50, padding: isMaximized ? "0" : "0 12px",
+      position: "fixed",
+      bottom: 0,
+      left: 0,
+      right: 0,
+      zIndex: 100,
+      display: "flex",
+      justifyContent: "center",
+      padding: isMaximized ? "0" : "0 12px",
+      paddingBottom: isMaximized ? "0" : "calc(12px + env(safe-area-inset-bottom, 0px))",
       pointerEvents: "none",
-      transition: "bottom 700ms cubic-bezier(0.34,1.56,0.64,1)",
+      transform: visible ? "translateY(0)" : "translateY(110%)",
+      transition: `transform ${DUR} ${EASE}, padding ${DUR} ${EASE}`,
     }}>
       <div style={{
         position: "relative",
         width: isMaximized ? "100%" : "min(96vw, 520px)",
-        height: isMaximized ? "min(50vh, 340px)" : 86,
-        borderRadius: isMaximized ? "28px 28px 0 0" : 24,
-        background: isDark ? "rgba(40,40,40,0.45)" : "linear-gradient(135deg, rgba(213,22,89,0.85), rgba(254,74,44,0.85))",
-        backdropFilter: "blur(40px) saturate(1.8)",
-        WebkitBackdropFilter: "blur(40px) saturate(1.8)",
-        border: "1px solid rgba(255,255,255,0.18)",
-        boxShadow: "0 -4px 40px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -1px 0 rgba(0,0,0,0.1)",
+        height: isMaximized ? "min(50vh, 340px)" : 72,
+        borderRadius: isMaximized ? "28px 28px 0 0" : 20,
+        background: isDark
+          ? "rgba(10, 10, 10, 0.15)"
+          : "rgba(255, 255, 255, 0.15)",
+        backdropFilter: "blur(80px) saturate(1.8)",
+        WebkitBackdropFilter: "blur(80px) saturate(1.8)",
+        border: isDark
+          ? "0.5px solid rgba(255,255,255,0.08)"
+          : "0.5px solid rgba(0,0,0,0.08)",
+        boxShadow: isDark
+          ? "0 1px 0 rgba(255,255,255,0.04) inset, 0 -1px 0 rgba(0,0,0,0.2) inset, 0 -8px 24px rgba(0,0,0,0.2)"
+          : "0 1px 0 rgba(255,255,255,0.6) inset, 0 -1px 0 rgba(0,0,0,0.05) inset, 0 -8px 24px rgba(0,0,0,0.08)",
         display: "flex",
         justifyContent: "center",
         pointerEvents: "auto",
@@ -91,14 +101,17 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
         {/* LOGO — flutua acima */}
         <div style={{
           position: "absolute",
-          left: "50%", transform: "translateX(-50%)",
-          top: isMaximized ? -32 : -12,
-          width: isMaximized ? 72 : 80,
-          height: isMaximized ? 72 : 80,
-          borderRadius: isMaximized ? 20 : 22,
+          left: "50%",
+          transform: "translateX(-50%)",
+          top: isMaximized ? -32 : -10,
+          width: isMaximized ? 72 : 56,
+          height: isMaximized ? 72 : 56,
+          borderRadius: isMaximized ? 20 : 16,
           background: "rgba(255,255,255,0.95)",
           boxShadow: "0 8px 28px rgba(0,0,0,0.5)",
-          display: "flex", alignItems: "center", justifyContent: "center",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
           zIndex: 20,
           transition: `all ${DUR} ${EASE}`,
           overflow: "hidden",
@@ -112,17 +125,21 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
 
         {/* ── MINIMIZADO (horizontal) ── */}
         <div style={{
-          position: "absolute", inset: 0,
-          display: "flex", alignItems: "center",
+          position: "absolute",
+          inset: 0,
+          display: "flex",
+          alignItems: "center",
           justifyContent: "space-evenly",
           padding: "0 6px",
+          transform: minimized ? "scale(0.85)" : "scale(1)",
           opacity: isMaximized ? 0 : 1,
           pointerEvents: isMaximized ? "none" : "auto",
-          transition: `opacity 250ms ease ${isMaximized ? "0ms" : "350ms"}`,
+          transition: `opacity 250ms ease ${isMaximized ? "0ms" : "300ms"}, transform ${DUR} ${EASE}`,
+          transformOrigin: "center center",
         }}>
           {maps && (
             <a href={maps} target="_blank" rel="noreferrer" style={{
-              width: 58, height: 58, borderRadius: 16,
+              width: 46, height: 46, borderRadius: 14,
               overflow: "hidden", flexShrink: 0,
             }}>
               <img src={ICONS.maps} alt="Maps"
@@ -131,7 +148,7 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
           )}
 
           <div style={{
-            width: 58, height: 58, borderRadius: 16,
+            width: 46, height: 46, borderRadius: 14,
             position: "relative", overflow: "hidden", flexShrink: 0,
           }}>
             <img src={ICONS.unidade} alt=""
@@ -141,21 +158,21 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
               height: "100%", display: "flex", flexDirection: "column",
               justifyContent: "center", alignItems: "center", padding: "0 3px",
             }}>
-              <span style={{ fontSize: 8, fontWeight: 900, color: "#1a1a1a", lineHeight: 1.2, textAlign: "center" }}>
+              <span style={{ fontSize: 7, fontWeight: 900, color: "#1a1a1a", lineHeight: 1.2, textAlign: "center" }}>
                 {unit.city || ""}
               </span>
-              <span style={{ fontSize: 7, fontWeight: 800, color: "#1a1a1a", lineHeight: 1.2, textAlign: "center" }}>
+              <span style={{ fontSize: 6, fontWeight: 800, color: "#1a1a1a", lineHeight: 1.2, textAlign: "center" }}>
                 {unit.neighborhood || unit.name}
               </span>
             </div>
           </div>
 
           {/* Spacer para o logo flutuante */}
-          <div style={{ width: 72, flexShrink: 0 }} />
+          <div style={{ width: 60, flexShrink: 0 }} />
 
           {wa && (
             <a href={wa} target="_blank" rel="noreferrer" style={{
-              width: 58, height: 58, borderRadius: 16,
+              width: 46, height: 46, borderRadius: 14,
               overflow: "hidden", flexShrink: 0,
             }}>
               <img src={ICONS.whatsapp} alt="WhatsApp"
@@ -165,7 +182,7 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
 
           {ig && (
             <a href={ig} target="_blank" rel="noreferrer" style={{
-              width: 58, height: 58, borderRadius: 16,
+              width: 46, height: 46, borderRadius: 14,
               overflow: "hidden", flexShrink: 0,
             }}>
               <img src={ICONS.instagram} alt="Instagram"
@@ -176,13 +193,17 @@ export default function BottomGlassBar({ unit }: { unit: Unit }) {
 
         {/* ── MAXIMIZADO (vertical) ── */}
         <div style={{
-          position: "absolute", inset: 0,
+          position: "absolute",
+          inset: 0,
           padding: "52px 20px 20px",
-          display: "flex", flexDirection: "column",
-          justifyContent: "center", gap: 8,
+          paddingBottom: "calc(20px + env(safe-area-inset-bottom, 0px))",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          gap: 8,
           opacity: isMaximized ? 1 : 0,
           pointerEvents: isMaximized ? "auto" : "none",
-          transition: `opacity 250ms ease ${isMaximized ? "350ms" : "0ms"}`,
+          transition: `opacity 250ms ease ${isMaximized ? "300ms" : "0ms"}`,
         }}>
           {/* Botão voltar ao topo — canto superior direito */}
           <button
