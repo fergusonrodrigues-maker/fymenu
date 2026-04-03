@@ -79,6 +79,7 @@ body {
   --dash-dot-color: rgba(0,255,174,0.18);
   --dash-dot-glow: rgba(0,255,174,0.06);
   --dash-accent-gradient: linear-gradient(135deg, #00ffae 0%, #00d9ff 50%, #00ffae 100%);
+  --dash-accent: #00ffae;
 }
 
 /* Light mode — html does NOT have .dark class */
@@ -110,6 +111,7 @@ html:not(.dark) {
   --dash-dot-color: rgba(213,22,89,0.12);
   --dash-dot-glow: rgba(213,22,89,0.04);
   --dash-accent-gradient: linear-gradient(135deg, #d51659 0%, #ff6b9d 50%, #d51659 100%);
+  --dash-accent: #d51659;
 }
 
 /* ===== THEME TOGGLE STYLES ===== */

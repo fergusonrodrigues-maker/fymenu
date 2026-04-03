@@ -27,6 +27,7 @@ function Modal({ open, onClose, children, title }: { open: boolean; onClose: () 
   const [dragY, setDragY] = useState(0);
   const [dragging, setDragging] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
+  const [isDark, setIsDark] = useState(true);
   const startY = useRef(0);
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -35,6 +36,14 @@ function Modal({ open, onClose, children, title }: { open: boolean; onClose: () 
     check();
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
+  }, []);
+
+  useEffect(() => {
+    const check = () => setIsDark(document.documentElement.classList.contains("dark"));
+    check();
+    const observer = new MutationObserver(check);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
   }, []);
 
   useEffect(() => {
@@ -107,7 +116,7 @@ function Modal({ open, onClose, children, title }: { open: boolean; onClose: () 
       <div
         style={{
           position: "fixed", inset: 0, zIndex: 9999,
-          background: "rgba(255,255,255,0.05)",
+          background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.2)",
           backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
           display: "flex", alignItems: "center", justifyContent: "center",
           animation: "modalBackdropIn 0.2s ease",
@@ -119,9 +128,11 @@ function Modal({ open, onClose, children, title }: { open: boolean; onClose: () 
           style={{
             width: "90%", maxWidth: 760, maxHeight: "80vh",
             borderRadius: 28,
-            background: "rgba(8,8,8,0.75)",
+            background: isDark ? "rgba(8,8,8,0.75)" : "rgba(255,255,255,0.92)",
             backdropFilter: "blur(80px)", WebkitBackdropFilter: "blur(80px)",
-            boxShadow: "0 1px 0 rgba(255,255,255,0.04) inset, 0 -1px 0 rgba(0,0,0,0.4) inset, 0 40px 80px rgba(0,0,0,0.5), 0 0 0 0.5px rgba(255,255,255,0.06)",
+            boxShadow: isDark
+              ? "0 1px 0 rgba(255,255,255,0.04) inset, 0 -1px 0 rgba(0,0,0,0.4) inset, 0 40px 80px rgba(0,0,0,0.5), 0 0 0 0.5px rgba(255,255,255,0.06)"
+              : "0 1px 0 rgba(255,255,255,0.8) inset, 0 -1px 0 rgba(0,0,0,0.06) inset, 0 40px 80px rgba(0,0,0,0.15), 0 0 0 0.5px rgba(0,0,0,0.08)",
             overflowY: "auto",
             overscrollBehavior: "contain",
             animation: "modalContentIn 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
@@ -134,21 +145,21 @@ function Modal({ open, onClose, children, title }: { open: boolean; onClose: () 
             style={{
               position: "sticky", top: 16, float: "right", zIndex: 10,
               width: 36, height: 36, borderRadius: 12,
-              background: "rgba(255,255,255,0.04)",
-              boxShadow: "0 1px 0 rgba(255,255,255,0.05) inset, 0 -1px 0 rgba(0,0,0,0.2) inset",
+              background: "var(--dash-close-btn)",
+              boxShadow: isDark ? "0 1px 0 rgba(255,255,255,0.05) inset, 0 -1px 0 rgba(0,0,0,0.2) inset" : "0 1px 0 rgba(255,255,255,0.6) inset, 0 -1px 0 rgba(0,0,0,0.06) inset",
               border: "none",
-              color: "rgba(255,255,255,0.4)",
+              color: "var(--dash-close-color)",
               display: "flex", alignItems: "center", justifyContent: "center",
               cursor: "pointer", fontSize: 16, marginRight: 16, marginTop: 16,
               transition: "all 0.2s",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = "rgba(255,255,255,0.08)";
-              e.currentTarget.style.color = "rgba(255,255,255,0.7)";
+              e.currentTarget.style.background = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.1)";
+              e.currentTarget.style.color = isDark ? "rgba(255,255,255,0.7)" : "rgba(0,0,0,0.7)";
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = "rgba(255,255,255,0.04)";
-              e.currentTarget.style.color = "rgba(255,255,255,0.4)";
+              e.currentTarget.style.background = "var(--dash-close-btn)";
+              e.currentTarget.style.color = "var(--dash-close-color)";
             }}
           >✕</button>
           <div style={{ padding: "8px 28px 28px" }}>
@@ -178,7 +189,7 @@ function Modal({ open, onClose, children, title }: { open: boolean; onClose: () 
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
         style={{
-          background: "#1a1a1a",
+          background: isDark ? "#1a1a1a" : "#fff",
           borderRadius: "24px 24px 0 0",
           width: "100%",
           maxWidth: 480,
@@ -195,28 +206,28 @@ function Modal({ open, onClose, children, title }: { open: boolean; onClose: () 
         {/* Handle bar visual */}
         <div style={{
           position: "sticky", top: 0, zIndex: 10,
-          background: "#1a1a1a",
+          background: isDark ? "#1a1a1a" : "#fff",
           borderRadius: "24px 24px 0 0",
           padding: "12px 0 8px",
         }}>
           <div style={{
             width: 36, height: 4, borderRadius: 2,
-            background: "rgba(255,255,255,0.2)",
+            background: "var(--dash-handle)",
             margin: "0 auto 8px",
           }} />
           <div style={{
             display: "flex", alignItems: "center", justifyContent: "space-between",
             padding: "0 20px 8px",
-            borderBottom: "1px solid rgba(255,255,255,0.06)",
+            borderBottom: "1px solid var(--dash-card-border)",
           }}>
-            <h2 style={{ color: "#fff", fontSize: 18, fontWeight: 800, margin: 0 }}>{title}</h2>
+            <h2 style={{ color: "var(--dash-text)", fontSize: 18, fontWeight: 800, margin: 0 }}>{title}</h2>
             <button
               onClick={onClose}
               style={{
-                background: "rgba(255,255,255,0.08)", border: "none",
+                background: "var(--dash-close-btn)", border: "none",
                 borderRadius: 10, width: 32, height: 32,
                 display: "flex", alignItems: "center", justifyContent: "center",
-                cursor: "pointer", color: "#fff", fontSize: 16,
+                cursor: "pointer", color: "var(--dash-close-color)", fontSize: 16,
               }}
             >✕</button>
           </div>
@@ -253,6 +264,15 @@ export default function DashboardClient({
     check();
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
+  }, []);
+
+  const [isDark, setIsDark] = useState(true);
+  useEffect(() => {
+    const check = () => setIsDark(document.documentElement.classList.contains("dark"));
+    check();
+    const observer = new MutationObserver(check);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
   }, []);
 
   const GRID_LAYOUTS: Record<string, Array<{ id: string; cols: number; mobileCols: number }>> = {
@@ -922,7 +942,7 @@ export default function DashboardClient({
                 <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(0,255,174,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>🍽</div>
               )}
               <div>
-                <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.5px", lineHeight: 1.1, color: "#fff" }}>{unit?.name ?? restaurant.name}</div>
+                <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.5px", lineHeight: 1.1, color: "var(--dash-text)" }}>{unit?.name ?? restaurant.name}</div>
                 <div style={{ color: "var(--dash-text-muted)", fontSize: 12 }}>{unit?.is_published ? "● Publicado" : "○ Não publicado"}</div>
               </div>
             </div>
@@ -933,8 +953,8 @@ export default function DashboardClient({
               <a href={`/delivery/${unit.slug}`} target="_blank" rel="noreferrer" style={{
                 padding: "8px 14px", borderRadius: 12,
                 background: "var(--dash-link-bg)",
-                border: "1px solid rgba(255,255,255,0.12)",
-                boxShadow: "inset 0 1px 0 rgba(255,255,255,0.15), inset 0 -2px 0 rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.15)",
+                border: "1px solid var(--dash-btn-border)",
+                boxShadow: isDark ? "inset 0 1px 0 rgba(255,255,255,0.15), inset 0 -2px 0 rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.15)" : "inset 0 1px 0 rgba(255,255,255,0.8), inset 0 -1px 0 rgba(0,0,0,0.06), 0 2px 6px rgba(0,0,0,0.08)",
                 color: "var(--dash-text-secondary)", fontSize: 13, fontWeight: 600, textDecoration: "none",
               }}>Ver cardápio ↗</a>
             )}
@@ -991,15 +1011,15 @@ export default function DashboardClient({
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
                         <div>
                           <div style={{ color: "var(--dash-text-muted)", fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 4 }}>Últimos 7 dias</div>
-                          <div style={{ fontSize: 18, fontWeight: 800, color: "#fff" }}>Analytics</div>
+                          <div style={{ fontSize: 18, fontWeight: 800, color: "var(--dash-text)" }}>Analytics</div>
                         </div>
                         <div style={{ fontSize: 24 }}>📊</div>
                       </div>
                       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
                         {[
-                          { label: "Visitas", value: analytics.views, color: "#00ffae" },
-                          { label: "Cliques", value: analytics.clicks, color: "#60a5fa" },
-                          { label: "Pedidos", value: analytics.orders, color: "#f472b6" },
+                          { label: "Visitas", value: analytics.views, color: isDark ? "#00ffae" : "#007a55" },
+                          { label: "Cliques", value: analytics.clicks, color: isDark ? "#60a5fa" : "#1d4ed8" },
+                          { label: "Pedidos", value: analytics.orders, color: isDark ? "#f472b6" : "#be185d" },
                         ].map((stat) => (
                           <div key={stat.label} style={{ textAlign: "center" }}>
                             <div style={{ color: stat.color, fontSize: 26, fontWeight: 900, lineHeight: 1 }}>{stat.value}</div>
@@ -1026,9 +1046,9 @@ export default function DashboardClient({
                     }}>
                       <div style={{ fontSize: colSpan >= 2 ? 28 : 24 }}>📍</div>
                       <div style={{ flex: colSpan >= 2 ? 1 : undefined }}>
-                        <div style={{ fontSize: colSpan >= 2 ? 15 : 16, fontWeight: 800, marginBottom: 2, color: "#fff" }}>Unidade</div>
-                        <div style={{ color: unit?.is_published ? "#00ffae" : "var(--dash-text-muted)", fontSize: 11, display: "flex", alignItems: "center", gap: 4 }}>
-                          <span style={{ width: 6, height: 6, borderRadius: "50%", background: unit?.is_published ? "#00ffae" : "var(--dash-card-border)", display: "inline-block", animation: unit?.is_published ? "pulse 2s infinite" : "none" }} />
+                        <div style={{ fontSize: colSpan >= 2 ? 15 : 16, fontWeight: 800, marginBottom: 2, color: "var(--dash-text)" }}>Unidade</div>
+                        <div style={{ color: unit?.is_published ? "var(--dash-accent)" : "var(--dash-text-muted)", fontSize: 11, display: "flex", alignItems: "center", gap: 4 }}>
+                          <span style={{ width: 6, height: 6, borderRadius: "50%", background: unit?.is_published ? "var(--dash-accent)" : "var(--dash-card-border)", display: "inline-block", animation: unit?.is_published ? "pulse 2s infinite" : "none" }} />
                           {unit?.is_published ? "Publicado" : "Não publicado"}
                         </div>
                       </div>
@@ -1052,7 +1072,7 @@ export default function DashboardClient({
                     }}>
                       <div style={{ fontSize: colSpan >= 2 ? 28 : 24 }}>⭐</div>
                       <div style={{ flex: colSpan >= 2 ? 1 : undefined }}>
-                        <div style={{ fontSize: colSpan >= 2 ? 15 : 16, fontWeight: 800, marginBottom: 2, color: "#fff" }}>Plano</div>
+                        <div style={{ fontSize: colSpan >= 2 ? 15 : 16, fontWeight: 800, marginBottom: 2, color: "var(--dash-text)" }}>Plano</div>
                         <div style={{ color: isPro ? "#fbbf24" : "var(--dash-text-muted)", fontSize: 11, fontWeight: isPro ? 700 : 400 }}>{subText}</div>
                       </div>
                     </div>
@@ -1075,10 +1095,10 @@ export default function DashboardClient({
                     }}>
                       <div style={{ fontSize: colSpan >= 2 ? 28 : 24 }}>📦</div>
                       <div style={{ flex: colSpan >= 2 ? 1 : undefined }}>
-                        <div style={{ fontSize: colSpan >= 2 ? 15 : 16, fontWeight: 800, marginBottom: 2, color: "#fff" }}>Estoque</div>
+                        <div style={{ fontSize: colSpan >= 2 ? 15 : 16, fontWeight: 800, marginBottom: 2, color: "var(--dash-text)" }}>Estoque</div>
                         <div style={{ fontSize: 12, display: "flex", gap: 8 }}>
-                          {stockStats.out > 0 && <span style={{ color: "#f87171" }}>{stockStats.out} esgotado{stockStats.out !== 1 ? "s" : ""}</span>}
-                          {stockStats.low > 0 && <span style={{ color: "#fbbf24" }}>{stockStats.low} baixo{stockStats.low !== 1 ? "s" : ""}</span>}
+                          {stockStats.out > 0 && <span style={{ color: isDark ? "#f87171" : "#dc2626" }}>{stockStats.out} esgotado{stockStats.out !== 1 ? "s" : ""}</span>}
+                          {stockStats.low > 0 && <span style={{ color: isDark ? "#fbbf24" : "#b45309" }}>{stockStats.low} baixo{stockStats.low !== 1 ? "s" : ""}</span>}
                           {stockStats.out === 0 && stockStats.low === 0 && <span style={{ color: "var(--dash-text-muted)" }}>Tudo em ordem</span>}
                         </div>
                       </div>
@@ -1101,10 +1121,10 @@ export default function DashboardClient({
                     }}>
                       <div style={{ fontSize: colSpan >= 2 ? 28 : 24 }}>🎛️</div>
                       <div style={{ flex: colSpan >= 2 ? 1 : undefined }}>
-                        <div style={{ fontSize: colSpan >= 2 ? 15 : 16, fontWeight: 800, marginBottom: 2, color: "#fff" }}>Operações</div>
+                        <div style={{ fontSize: colSpan >= 2 ? 15 : 16, fontWeight: 800, marginBottom: 2, color: "var(--dash-text)" }}>Operações</div>
                         <div style={{ color: "var(--dash-text-muted)", fontSize: 12 }}>Cozinha · Garçom · Andamento</div>
                       </div>
-                      <div style={{ color: "#00ffae", fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 20, background: "rgba(0,255,174,0.1)", border: "1px solid rgba(0,255,174,0.2)", flexShrink: 0 }}>
+                      <div style={{ color: "var(--dash-accent)", fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 20, background: isDark ? "rgba(0,255,174,0.1)" : "rgba(213,22,89,0.08)", border: isDark ? "1px solid rgba(0,255,174,0.2)" : "1px solid rgba(213,22,89,0.15)", flexShrink: 0 }}>
                         Realtime
                       </div>
                     </div>
@@ -1127,7 +1147,7 @@ export default function DashboardClient({
                   }}>
                     <div style={{ fontSize: colSpan >= 2 ? 28 : 24 }}>{config.icon}</div>
                     <div style={{ flex: colSpan >= 2 ? 1 : undefined }}>
-                      <div style={{ fontSize: colSpan >= 2 ? 15 : 16, fontWeight: 800, marginBottom: 2, color: "#fff" }}>{config.label}</div>
+                      <div style={{ fontSize: colSpan >= 2 ? 15 : 16, fontWeight: 800, marginBottom: 2, color: "var(--dash-text)" }}>{config.label}</div>
                       <div style={{ color: "var(--dash-text-muted)", fontSize: 12 }}>{subText}</div>
                     </div>
                   </div>
