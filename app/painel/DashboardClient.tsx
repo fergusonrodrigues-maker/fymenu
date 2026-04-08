@@ -1168,7 +1168,7 @@ export default function DashboardClient({
         <CardapioModal unit={unit} categories={categories} products={products} upsellItems={upsellItems} onClose={close} />
       </Modal>
       <Modal open={modal === "financeiro"} onClose={close} title="Financeiro">
-        <FinanceiroModal unit={unit} analytics={analytics} reportData={reportData} />
+        <FinanceiroModal unit={unit} analytics={analytics} reportData={reportData} restaurant={restaurant} onOpenPlano={() => open("plano")} />
       </Modal>
       <Modal open={modal === "unidade"} onClose={close} title="Unidade">
         <UnidadeModal unit={unit} isPro={isPro} onClose={close} />

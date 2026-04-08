@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Unit, ReportData, ReportProduct, ReportPayments, DayData } from "../types";
+import { Unit, Restaurant, ReportData, ReportProduct, ReportPayments, DayData } from "../types";
 
 const supabase = createClient();
 
@@ -112,12 +112,48 @@ function ReportGrowthBadge({ value }: { value: number | null }) {
   );
 }
 
-export default function FinanceiroModal({ unit, analytics, reportData }: {
+const PLAN_FEATURES: Record<string, string[]> = {
+  menu: ["whatsapp_revenue"],
+  menupro: ["whatsapp_revenue", "delivery_revenue", "mesa_revenue", "split_view"],
+  business: ["whatsapp_revenue", "delivery_revenue", "mesa_revenue", "split_view", "costs", "balance", "daily_goal", "ai_report", "import"],
+};
+
+function getSource(order: any): string {
+  if (order.source) return order.source;
+  if (order.table_number && order.table_number > 0) return "mesa";
+  if (order.whatsapp_link) return "whatsapp";
+  return "delivery";
+}
+
+export default function FinanceiroModal({ unit, analytics, reportData, restaurant, onOpenPlano }: {
   unit: Unit | null;
   analytics: { views: number; clicks: number; orders: number };
   reportData: ReportData;
+  restaurant: Restaurant;
+  onOpenPlano: () => void;
 }) {
-  const [tab, setTab] = useState<"diario" | "semanal" | "mensal" | "produtos" | "custos" | "analise">("diario");
+  const hasFeature = (feature: string) => {
+    const plan = restaurant?.plan || "menu";
+    return PLAN_FEATURES[plan]?.includes(feature) || false;
+  };
+
+  const ALL_TABS = [
+    { key: "resumo" as const, label: "Resumo" },
+    { key: "diario" as const, label: "Diário" },
+    { key: "semanal" as const, label: "Semanal" },
+    { key: "mensal" as const, label: "Mensal" },
+    { key: "produtos" as const, label: "Produtos" },
+    { key: "custos" as const, label: "Custos" },
+    { key: "analise" as const, label: "Análise" },
+  ];
+
+  const TABS = ALL_TABS.filter((t) => {
+    if (t.key === "custos") return hasFeature("costs");
+    if (t.key === "analise") return hasFeature("ai_report");
+    return true;
+  });
+
+  const [tab, setTab] = useState<typeof ALL_TABS[number]["key"]>("resumo");
 
   // Expenses state
   const [expenses, setExpenses] = useState<any[]>([]);
@@ -130,19 +166,83 @@ export default function FinanceiroModal({ unit, analytics, reportData }: {
   const [financeAI, setFinanceAI] = useState<string | null>(null);
   const [generatingFinanceAI, setGeneratingFinanceAI] = useState(false);
 
-  const TABS = [
-    { key: "diario" as const, label: "Diário" },
-    { key: "semanal" as const, label: "Semanal" },
-    { key: "mensal" as const, label: "Mensal" },
-    { key: "produtos" as const, label: "Produtos" },
-    { key: "custos" as const, label: "Custos" },
-    { key: "analise" as const, label: "Análise" },
-  ];
+  // Resumo state
+  const [revenueBySource, setRevenueBySource] = useState<Record<string, number>>({ whatsapp: 0, mesa: 0, delivery: 0, ifood: 0, comanda: 0, manual: 0 });
+  const [ordersBySource, setOrdersBySource] = useState<Record<string, number>>({ whatsapp: 0, mesa: 0, delivery: 0, ifood: 0, comanda: 0, manual: 0 });
+  const [totalRevenue, setTotalRevenue] = useState(0);
+  const [totalOrders, setTotalOrders] = useState(0);
+  const [todayRevenue, setTodayRevenue] = useState(0);
+  const [employeeCosts, setEmployeeCosts] = useState(0);
+  const [dailyGoal, setDailyGoal] = useState(0);
+  const [paymentMethodsMap, setPaymentMethodsMap] = useState<Record<string, number>>({});
+  const [showImportFinance, setShowImportFinance] = useState(false);
 
   useEffect(() => {
     if (!unit?.id) return;
+
+    // Load expenses
     supabase.from("business_expenses").select("*").eq("unit_id", unit.id).order("date", { ascending: false })
       .then(({ data }) => { if (data) setExpenses(data); });
+
+    // Load resumo data
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+
+    supabase
+      .from("order_intents")
+      .select("total, source, payment_method, table_number, whatsapp_link, created_at")
+      .eq("unit_id", unit.id)
+      .eq("status", "confirmed")
+      .gte("created_at", monthStart)
+      .then(({ data: orders }) => {
+        const revBySrc: Record<string, number> = { whatsapp: 0, mesa: 0, delivery: 0, ifood: 0, comanda: 0, manual: 0 };
+        const ordBySrc: Record<string, number> = { whatsapp: 0, mesa: 0, delivery: 0, ifood: 0, comanda: 0, manual: 0 };
+        let totRev = 0;
+        let totOrd = 0;
+        let todayRev = 0;
+        const pmMap: Record<string, number> = {};
+
+        for (const o of orders || []) {
+          const src = getSource(o);
+          const val = Number(o.total || 0);
+          revBySrc[src] = (revBySrc[src] || 0) + val;
+          ordBySrc[src] = (ordBySrc[src] || 0) + 1;
+          totRev += val;
+          totOrd++;
+          if (o.created_at >= todayStart) todayRev += val;
+          const method = o.payment_method || "none";
+          pmMap[method] = (pmMap[method] || 0) + val;
+        }
+
+        setRevenueBySource(revBySrc);
+        setOrdersBySource(ordBySrc);
+        setTotalRevenue(totRev);
+        setTotalOrders(totOrd);
+        setTodayRevenue(todayRev);
+        setPaymentMethodsMap(pmMap);
+      });
+
+    // Load employees
+    supabase
+      .from("employees")
+      .select("salary, extra_costs")
+      .eq("unit_id", unit.id)
+      .eq("is_active", true)
+      .then(({ data: emps }) => {
+        const cost = (emps || []).reduce((s, e) => s + (e.salary || 0) + (e.extra_costs || 0), 0);
+        setEmployeeCosts(cost);
+      });
+
+    // Load daily goal from units
+    supabase
+      .from("units")
+      .select("daily_revenue_goal")
+      .eq("id", unit.id)
+      .single()
+      .then(({ data }) => {
+        if (data?.daily_revenue_goal) setDailyGoal(data.daily_revenue_goal);
+      });
   }, [unit?.id]);
 
   // Calculations
@@ -153,8 +253,9 @@ export default function FinanceiroModal({ unit, analytics, reportData }: {
     .filter(e => e.date?.startsWith(thisMonth) || e.is_recurring)
     .reduce((s, e) => s + e.amount, 0);
 
+  const totalCosts = totalExpensesThisMonth + employeeCosts;
   const totalRevenueThisMonth = reportData.monthly.revenue;
-  const profit = totalRevenueThisMonth - totalExpensesThisMonth;
+  const profit = totalRevenueThisMonth - totalCosts;
 
   const expensesByCategory = expenses.reduce((acc: Record<string, any[]>, e) => {
     if (!acc[e.category]) acc[e.category] = [];
@@ -193,7 +294,7 @@ export default function FinanceiroModal({ unit, analytics, reportData }: {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           revenue: totalRevenueThisMonth,
-          expenses: totalExpensesThisMonth,
+          expenses: totalCosts,
           profit,
           expensesByCategory: Object.entries(expensesByCategory).map(([cat, items]) => ({
             category: cat,
@@ -242,6 +343,173 @@ export default function FinanceiroModal({ unit, analytics, reportData }: {
           </button>
         ))}
       </div>
+
+      {/* ── RESUMO ── */}
+      {tab === "resumo" && (
+        <div>
+          {/* Receita do mês */}
+          <div style={{ fontSize: 14, fontWeight: 700, color: "var(--dash-text)", marginBottom: 12 }}>Receita do mês</div>
+
+          {/* Card receita total */}
+          <div style={{ padding: 16, borderRadius: 14, background: "rgba(0,255,174,0.06)", marginBottom: 12, boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+            <div style={{ fontSize: 11, color: "var(--dash-text-muted)" }}>Receita total</div>
+            <div style={{ fontSize: 28, fontWeight: 800, color: "var(--dash-accent)", marginTop: 4 }}>{formatBRL(totalRevenue)}</div>
+            <div style={{ fontSize: 11, color: "var(--dash-text-muted)", marginTop: 4 }}>{totalOrders} pedidos</div>
+          </div>
+
+          {/* Breakdown por fonte */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 20 }}>
+            {/* WhatsApp — sempre visível */}
+            <div style={{ padding: 12, borderRadius: 12, background: "rgba(255,255,255,0.03)", textAlign: "center", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+              <div style={{ fontSize: 18, marginBottom: 4 }}>💬</div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "var(--dash-text)" }}>{formatBRL(revenueBySource.whatsapp)}</div>
+              <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>WhatsApp</div>
+              <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>{ordersBySource.whatsapp} pedidos</div>
+            </div>
+
+            {/* Mesa — menupro+ */}
+            {hasFeature("mesa_revenue") ? (
+              <div style={{ padding: 12, borderRadius: 12, background: "rgba(255,255,255,0.03)", textAlign: "center", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+                <div style={{ fontSize: 18, marginBottom: 4 }}>🍽️</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: "var(--dash-text)" }}>{formatBRL(revenueBySource.mesa)}</div>
+                <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>Mesa</div>
+                <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>{ordersBySource.mesa} pedidos</div>
+              </div>
+            ) : (
+              <div style={{ padding: 12, borderRadius: 12, background: "rgba(255,255,255,0.02)", textAlign: "center", opacity: 0.5 }}>
+                <div style={{ fontSize: 18, marginBottom: 4 }}>🔒</div>
+                <div style={{ fontSize: 11, color: "var(--dash-text-muted)" }}>Mesa</div>
+                <div style={{ fontSize: 9, color: "var(--dash-text-muted)" }}>MenuPro</div>
+              </div>
+            )}
+
+            {/* Delivery — menupro+ */}
+            {hasFeature("delivery_revenue") ? (
+              <div style={{ padding: 12, borderRadius: 12, background: "rgba(255,255,255,0.03)", textAlign: "center", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+                <div style={{ fontSize: 18, marginBottom: 4 }}>🛵</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: "var(--dash-text)" }}>{formatBRL(revenueBySource.delivery)}</div>
+                <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>Delivery</div>
+                <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>{ordersBySource.delivery} pedidos</div>
+              </div>
+            ) : (
+              <div style={{ padding: 12, borderRadius: 12, background: "rgba(255,255,255,0.02)", textAlign: "center", opacity: 0.5 }}>
+                <div style={{ fontSize: 18, marginBottom: 4 }}>🔒</div>
+                <div style={{ fontSize: 11, color: "var(--dash-text-muted)" }}>Delivery</div>
+                <div style={{ fontSize: 9, color: "var(--dash-text-muted)" }}>MenuPro</div>
+              </div>
+            )}
+          </div>
+
+          {/* Meta diária — business only */}
+          {hasFeature("daily_goal") && (
+            <div style={{ padding: 16, borderRadius: 14, background: "rgba(255,255,255,0.03)", marginBottom: 16, boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                <span style={{ fontSize: 12, color: "var(--dash-text-muted)" }}>Meta de hoje</span>
+                <span style={{ fontSize: 12, color: "var(--dash-text-muted)" }}>{formatBRL(todayRevenue)} / {dailyGoal > 0 ? formatBRL(dailyGoal) : "—"}</span>
+              </div>
+              {dailyGoal > 0 && (
+                <>
+                  <div style={{ height: 8, borderRadius: 4, background: "rgba(255,255,255,0.04)", overflow: "hidden" }}>
+                    <div style={{
+                      height: "100%", borderRadius: 4,
+                      width: `${Math.min((todayRevenue / dailyGoal) * 100, 100)}%`,
+                      background: todayRevenue >= dailyGoal ? "var(--dash-accent)" : "linear-gradient(90deg, rgba(251,191,36,0.5), rgba(251,191,36,0.8))",
+                      transition: "width 0.5s ease",
+                    }} />
+                  </div>
+                  {todayRevenue >= dailyGoal && (
+                    <div style={{ fontSize: 11, color: "var(--dash-accent)", marginTop: 6, fontWeight: 700 }}>Meta atingida! 🎉</div>
+                  )}
+                </>
+              )}
+              {/* Campo para configurar meta */}
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12 }}>
+                <span style={{ fontSize: 11, color: "var(--dash-text-muted)" }}>Meta diária:</span>
+                <input
+                  type="number"
+                  placeholder="Ex: 5000"
+                  defaultValue={dailyGoal > 0 ? dailyGoal / 100 : ""}
+                  onBlur={async (e) => {
+                    const val = Math.round(parseFloat(e.target.value || "0") * 100);
+                    await supabase.from("units").update({ daily_revenue_goal: val }).eq("id", unit!.id);
+                    setDailyGoal(val);
+                  }}
+                  style={{
+                    width: 100, padding: "6px 10px", borderRadius: 8,
+                    background: "rgba(255,255,255,0.04)", border: "none",
+                    color: "var(--dash-text)", fontSize: 13, outline: "none",
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Balanço — business only */}
+          {hasFeature("balance") && (
+            <div style={{ padding: 16, borderRadius: 14, background: profit >= 0 ? "rgba(0,255,174,0.04)" : "rgba(248,113,113,0.04)", marginBottom: 16, boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--dash-text)", marginBottom: 10 }}>Balanço do mês</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: "var(--dash-accent)" }}>{formatBRL(totalRevenue)}</div>
+                  <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>Receita</div>
+                </div>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: "#f87171" }}>{formatBRL(totalCosts)}</div>
+                  <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>Custos</div>
+                </div>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: profit >= 0 ? "var(--dash-accent)" : "#f87171" }}>
+                    {profit >= 0 ? "+" : ""}{formatBRL(profit)}
+                  </div>
+                  <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>{profit >= 0 ? "Lucro" : "Prejuízo"}</div>
+                </div>
+              </div>
+              <div style={{ marginTop: 12 }}>
+                <div style={{ height: 6, borderRadius: 3, background: "rgba(255,255,255,0.04)", overflow: "hidden" }}>
+                  <div style={{
+                    height: "100%", borderRadius: 3,
+                    width: `${Math.min((totalRevenue / (totalCosts || 1)) * 100, 100)}%`,
+                    background: totalRevenue >= totalCosts
+                      ? "linear-gradient(90deg, rgba(0,255,174,0.4), rgba(0,255,174,0.7))"
+                      : "linear-gradient(90deg, rgba(251,191,36,0.4), rgba(248,113,113,0.6))",
+                  }} />
+                </div>
+                <div style={{ fontSize: 10, color: "var(--dash-text-muted)", marginTop: 4 }}>
+                  {totalRevenue >= totalCosts ? "Break-even atingido" : `Faltam ${formatBRL(totalCosts - totalRevenue)} para break-even`}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Métodos de pagamento */}
+          <div style={{ fontSize: 12, fontWeight: 700, color: "var(--dash-text)", marginBottom: 8 }}>Pagamentos</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 16 }}>
+            {Object.entries(paymentMethodsMap).length === 0 ? (
+              <div style={{ gridColumn: "1/-1", color: "var(--dash-text-muted)", fontSize: 12 }}>Nenhum pagamento registrado.</div>
+            ) : (
+              Object.entries(paymentMethodsMap).map(([method, amount]) => (
+                <div key={method} style={{ padding: 10, borderRadius: 10, background: "rgba(255,255,255,0.03)", textAlign: "center" }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "var(--dash-text)" }}>{formatBRL(amount as number)}</div>
+                  <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>
+                    {method === "pix" ? "PIX" : method === "card" ? "Cartão" : method === "cash" ? "Dinheiro" : method === "none" ? "N/I" : method}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Botão importar — business only */}
+          {hasFeature("import") && (
+            <button onClick={() => setShowImportFinance(true)} style={{
+              width: "100%", padding: 12, borderRadius: 12, border: "none", cursor: "pointer",
+              background: "rgba(255,255,255,0.04)", color: "var(--dash-text-muted)", fontSize: 13,
+              boxShadow: "0 1px 0 rgba(255,255,255,0.03) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
+            }}>
+              📥 Importar dados financeiros
+            </button>
+          )}
+        </div>
+      )}
 
       {/* ── DIÁRIO ── */}
       {tab === "diario" && (
@@ -451,7 +719,12 @@ export default function FinanceiroModal({ unit, analytics, reportData }: {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 20 }}>
             <div style={{ padding: 16, borderRadius: 14, background: "rgba(248,113,113,0.06)", boxShadow: "0 1px 0 rgba(248,113,113,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
               <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>Custos este mês</div>
-              <div style={{ fontSize: 22, fontWeight: 800, color: "#f87171", marginTop: 4 }}>{formatBRL(totalExpensesThisMonth)}</div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: "#f87171", marginTop: 4 }}>{formatBRL(totalCosts)}</div>
+              {employeeCosts > 0 && (
+                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 4 }}>
+                  Equipe: {formatBRL(employeeCosts)} · Despesas: {formatBRL(totalExpensesThisMonth)}
+                </div>
+              )}
             </div>
             <div style={{ padding: 16, borderRadius: 14, background: "rgba(0,255,174,0.06)", boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
               <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>Receita este mês</div>
@@ -563,32 +836,26 @@ export default function FinanceiroModal({ unit, analytics, reportData }: {
           <div style={{ padding: 20, borderRadius: 16, background: "rgba(255,255,255,0.03)", marginBottom: 20, boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
             <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", marginBottom: 12 }}>Ponto de Equilíbrio</div>
 
-            {/* Barra de progresso visual */}
             <div style={{ position: "relative", height: 24, borderRadius: 12, background: "rgba(255,255,255,0.04)", overflow: "hidden", marginBottom: 12 }}>
               <div style={{
                 height: "100%", borderRadius: 12,
-                width: `${Math.min((totalRevenueThisMonth / (totalExpensesThisMonth || 1)) * 100, 100)}%`,
-                background: totalRevenueThisMonth >= totalExpensesThisMonth
+                width: `${Math.min((totalRevenueThisMonth / (totalCosts || 1)) * 100, 100)}%`,
+                background: totalRevenueThisMonth >= totalCosts
                   ? "linear-gradient(90deg, rgba(0,255,174,0.3), rgba(0,255,174,0.5))"
                   : "linear-gradient(90deg, rgba(251,191,36,0.3), rgba(248,113,113,0.5))",
                 transition: "width 0.5s ease",
-              }} />
-              <div style={{
-                position: "absolute", top: 0, bottom: 0, left: "100%", width: 2,
-                background: "rgba(255,255,255,0.3)",
-                transform: `translateX(-${totalExpensesThisMonth > 0 ? 100 : 0}%)`,
               }} />
             </div>
 
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
               <span style={{ color: "rgba(255,255,255,0.4)" }}>Faturado: {formatBRL(totalRevenueThisMonth)}</span>
-              <span style={{ color: "rgba(255,255,255,0.4)" }}>Meta: {formatBRL(totalExpensesThisMonth)}</span>
+              <span style={{ color: "rgba(255,255,255,0.4)" }}>Custos: {formatBRL(totalCosts)}</span>
             </div>
 
-            <div style={{ marginTop: 12, fontSize: 13, color: totalRevenueThisMonth >= totalExpensesThisMonth ? "#00ffae" : "#fbbf24", fontWeight: 700 }}>
-              {totalRevenueThisMonth >= totalExpensesThisMonth
+            <div style={{ marginTop: 12, fontSize: 13, color: totalRevenueThisMonth >= totalCosts ? "#00ffae" : "#fbbf24", fontWeight: 700 }}>
+              {totalRevenueThisMonth >= totalCosts
                 ? `Ponto de equilíbrio atingido! Lucro de ${formatBRL(profit)}`
-                : `Faltam ${formatBRL(totalExpensesThisMonth - totalRevenueThisMonth)} para o ponto de equilíbrio`
+                : `Faltam ${formatBRL(totalCosts - totalRevenueThisMonth)} para o ponto de equilíbrio`
               }
             </div>
           </div>
