@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Unit, Restaurant, ReportData, ReportProduct, ReportPayments, DayData } from "../types";
 
@@ -176,6 +176,11 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
   const [dailyGoal, setDailyGoal] = useState(0);
   const [paymentMethodsMap, setPaymentMethodsMap] = useState<Record<string, number>>({});
   const [showImportFinance, setShowImportFinance] = useState(false);
+  const [importFinanceStep, setImportFinanceStep] = useState<"upload" | "processing" | "preview" | "done">("upload");
+  const [importFinanceData, setImportFinanceData] = useState<any>(null);
+  const [importingFinance, setImportingFinance] = useState(false);
+  const [financeText, setFinanceText] = useState("");
+  const financeFileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!unit?.id) return;
@@ -308,6 +313,215 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
       if (res.ok) setFinanceAI(json.analysis);
     } catch (err) { console.error(err); }
     finally { setGeneratingFinanceAI(false); }
+  }
+
+  async function handleFinanceFile(file: File | undefined) {
+    if (!file) return;
+    setImportFinanceStep("processing");
+    const formData = new FormData();
+    formData.append("file", file);
+    try {
+      const res = await fetch("/api/ia/import-finance", { method: "POST", body: formData });
+      const json = await res.json();
+      if (res.ok && json.importData) { setImportFinanceData(json.importData); setImportFinanceStep("preview"); }
+      else { alert(json.error || "Erro ao processar"); setImportFinanceStep("upload"); }
+    } catch { setImportFinanceStep("upload"); }
+  }
+
+  async function handleFinanceText(text: string) {
+    setImportFinanceStep("processing");
+    const formData = new FormData();
+    formData.append("text", text);
+    try {
+      const res = await fetch("/api/ia/import-finance", { method: "POST", body: formData });
+      const json = await res.json();
+      if (res.ok && json.importData) { setImportFinanceData(json.importData); setImportFinanceStep("preview"); }
+      else { alert(json.error || "Erro ao processar"); setImportFinanceStep("upload"); }
+    } catch { setImportFinanceStep("upload"); }
+  }
+
+  async function handleConfirmFinanceImport() {
+    if (!unit?.id) return;
+    setImportingFinance(true);
+    try {
+      const inserts = importFinanceData.items.map((item: any) => ({
+        unit_id: unit.id,
+        name: item.name,
+        category: item.category || "geral",
+        amount: Math.round((item.amount || 0) * 100),
+        is_recurring: item.recurring || false,
+        recurrence: item.recurring ? "monthly" : "one_time",
+        date: item.date || new Date().toISOString().split("T")[0],
+        notes: `Importado via IA (${importFinanceData.source || "arquivo"})`,
+      }));
+      const { error } = await supabase.from("business_expenses").insert(inserts);
+      if (error) throw error;
+      const { data: newExpenses } = await supabase.from("business_expenses").select("*").eq("unit_id", unit.id).order("date", { ascending: false });
+      if (newExpenses) setExpenses(newExpenses);
+      setImportFinanceStep("done");
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao salvar custos");
+    } finally {
+      setImportingFinance(false);
+    }
+  }
+
+  // ── Import Finance flow (overlay) ──
+  if (showImportFinance) {
+    const CATS = ["aluguel","salarios","fornecedores","marketing","impostos","manutencao","delivery","geral"];
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingTop: 8 }}>
+
+        {/* UPLOAD */}
+        {importFinanceStep === "upload" && (
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "var(--dash-text)" }}>Importar dados financeiros</div>
+              <button onClick={() => setShowImportFinance(false)} style={{ background: "transparent", border: "none", color: "var(--dash-text-muted)", fontSize: 16, cursor: "pointer" }}>✕</button>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 20 }}>
+              {[
+                { icon: "🧾", label: "Nota fiscal", desc: "PDF ou foto da NF" },
+                { icon: "📊", label: "Planilha de custos", desc: "CSV ou Excel" },
+                { icon: "🏦", label: "Extrato bancário", desc: "CSV do banco" },
+                { icon: "📝", label: "Texto livre", desc: "Cole ou digite" },
+              ].map((t, i) => (
+                <div key={i} onClick={() => financeFileRef.current?.click()} style={{
+                  padding: "16px 14px", borderRadius: 14, cursor: "pointer",
+                  background: "rgba(255,255,255,0.03)",
+                  boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
+                }}>
+                  <div style={{ fontSize: 24, marginBottom: 6 }}>{t.icon}</div>
+                  <div style={{ color: "var(--dash-text)", fontSize: 13, fontWeight: 700 }}>{t.label}</div>
+                  <div style={{ color: "var(--dash-text-muted)", fontSize: 11, marginTop: 2 }}>{t.desc}</div>
+                </div>
+              ))}
+            </div>
+
+            <div
+              onClick={() => financeFileRef.current?.click()}
+              onDragOver={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = "rgba(0,255,174,0.3)"; }}
+              onDragLeave={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; }}
+              onDrop={(e) => { e.preventDefault(); handleFinanceFile(e.dataTransfer.files[0]); }}
+              style={{
+                border: "2px dashed rgba(255,255,255,0.08)", borderRadius: 16,
+                padding: "30px 20px", textAlign: "center", cursor: "pointer",
+                transition: "border-color 0.3s",
+              }}
+            >
+              <div style={{ color: "var(--dash-text-muted)", fontSize: 13 }}>
+                Arraste um arquivo aqui ou clique para selecionar
+              </div>
+              <div style={{ color: "rgba(255,255,255,0.2)", fontSize: 11, marginTop: 6 }}>
+                CSV, Excel, PDF, JPG, PNG
+              </div>
+            </div>
+            <input ref={financeFileRef} type="file" accept=".csv,.xlsx,.xls,.pdf,.jpg,.jpeg,.png" style={{ display: "none" }} onChange={(e) => handleFinanceFile(e.target.files?.[0])} />
+
+            <div style={{ marginTop: 16 }}>
+              <textarea
+                placeholder="Ou cole aqui os dados financeiros (lista de compras, custos, etc)..."
+                value={financeText}
+                onChange={(e) => setFinanceText(e.target.value)}
+                style={{
+                  width: "100%", minHeight: 80, padding: 14, borderRadius: 14,
+                  background: "rgba(255,255,255,0.04)", border: "none", color: "var(--dash-text)",
+                  fontSize: 13, outline: "none", resize: "vertical", boxSizing: "border-box",
+                }}
+              />
+              {financeText.trim() && (
+                <button onClick={() => handleFinanceText(financeText)} style={{
+                  marginTop: 8, padding: "10px 20px", borderRadius: 12,
+                  background: "rgba(0,255,174,0.1)", border: "none", color: "var(--dash-accent)",
+                  fontSize: 13, fontWeight: 700, cursor: "pointer",
+                }}>✨ Analisar com IA</button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* PROCESSING */}
+        {importFinanceStep === "processing" && (
+          <div style={{ textAlign: "center", padding: "50px 20px" }}>
+            <div style={{ fontSize: 36, marginBottom: 12 }}>🧾</div>
+            <div style={{ color: "var(--dash-text)", fontSize: 15, fontWeight: 700 }}>Analisando documento...</div>
+            <div style={{ color: "var(--dash-text-muted)", fontSize: 12, marginTop: 6 }}>A IA está extraindo os dados financeiros</div>
+          </div>
+        )}
+
+        {/* PREVIEW */}
+        {importFinanceStep === "preview" && importFinanceData && (
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 800, color: "var(--dash-text)" }}>Revisar custos</div>
+                <div style={{ fontSize: 12, color: "var(--dash-text-muted)", marginTop: 2 }}>
+                  {importFinanceData.items?.length} itens · Total: R$ {importFinanceData.total?.toFixed(2).replace(".", ",")}
+                </div>
+              </div>
+              <button onClick={() => setImportFinanceStep("upload")} style={{ padding: "6px 12px", borderRadius: 8, background: "rgba(255,255,255,0.06)", border: "none", color: "var(--dash-text-muted)", fontSize: 12, cursor: "pointer" }}>← Voltar</button>
+            </div>
+
+            {importFinanceData.items?.map((item: any, i: number) => (
+              <div key={i} style={{
+                display: "flex", alignItems: "center", gap: 8, padding: "10px 12px",
+                borderRadius: 12, background: "rgba(255,255,255,0.03)", marginBottom: 6,
+              }}>
+                <select value={item.category} onChange={(e) => {
+                  const updated = { ...importFinanceData, items: [...importFinanceData.items] };
+                  updated.items[i] = { ...updated.items[i], category: e.target.value };
+                  setImportFinanceData(updated);
+                }} style={{ padding: "4px 8px", borderRadius: 6, background: "rgba(255,255,255,0.06)", border: "none", color: "var(--dash-text)", fontSize: 11, outline: "none" }}>
+                  {CATS.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+                <input value={item.name} onChange={(e) => {
+                  const updated = { ...importFinanceData, items: [...importFinanceData.items] };
+                  updated.items[i] = { ...updated.items[i], name: e.target.value };
+                  setImportFinanceData(updated);
+                }} style={{ flex: 1, padding: "4px 8px", borderRadius: 6, background: "transparent", border: "none", color: "var(--dash-text)", fontSize: 13, outline: "none" }} />
+                <input type="number" value={item.amount} onChange={(e) => {
+                  const updated = { ...importFinanceData, items: [...importFinanceData.items] };
+                  updated.items[i] = { ...updated.items[i], amount: parseFloat(e.target.value) || 0 };
+                  updated.total = updated.items.reduce((s: number, it: any) => s + (it.amount || 0), 0);
+                  setImportFinanceData(updated);
+                }} style={{ width: 80, padding: "4px 8px", borderRadius: 6, background: "rgba(255,255,255,0.04)", border: "none", color: "#f87171", fontSize: 13, fontWeight: 700, outline: "none", textAlign: "right" }} />
+                <button onClick={() => {
+                  const items = importFinanceData.items.filter((_: any, idx: number) => idx !== i);
+                  setImportFinanceData({ ...importFinanceData, items, total: items.reduce((s: number, it: any) => s + (it.amount || 0), 0) });
+                }} style={{ background: "transparent", border: "none", color: "rgba(255,255,255,0.2)", cursor: "pointer", fontSize: 16 }}>✕</button>
+              </div>
+            ))}
+
+            <button onClick={handleConfirmFinanceImport} disabled={importingFinance} style={{
+              width: "100%", padding: 14, borderRadius: 14, marginTop: 16,
+              background: "rgba(0,255,174,0.1)", border: "none", color: "var(--dash-accent)",
+              fontSize: 14, fontWeight: 800, cursor: "pointer",
+              boxShadow: "0 1px 0 rgba(0,255,174,0.12) inset, 0 -1px 0 rgba(0,0,0,0.2) inset",
+              opacity: importingFinance ? 0.5 : 1,
+            }}>
+              {importingFinance ? "Salvando..." : `✅ Importar ${importFinanceData.items?.length} custos`}
+            </button>
+          </div>
+        )}
+
+        {/* DONE */}
+        {importFinanceStep === "done" && (
+          <div style={{ textAlign: "center", padding: "50px 20px" }}>
+            <div style={{ fontSize: 36, marginBottom: 12 }}>✅</div>
+            <div style={{ color: "var(--dash-text)", fontSize: 16, fontWeight: 800 }}>Custos importados!</div>
+            <div style={{ color: "var(--dash-text-muted)", fontSize: 12, marginTop: 6 }}>Os custos foram adicionados ao financeiro.</div>
+            <button onClick={() => { setShowImportFinance(false); setImportFinanceStep("upload"); setImportFinanceData(null); setFinanceText(""); }} style={{
+              marginTop: 16, padding: "10px 20px", borderRadius: 12,
+              background: "rgba(0,255,174,0.1)", border: "none", color: "var(--dash-accent)",
+              fontSize: 13, fontWeight: 700, cursor: "pointer",
+            }}>Fechar</button>
+          </div>
+        )}
+
+      </div>
+    );
   }
 
   return (
