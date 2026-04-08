@@ -173,6 +173,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
   const [totalOrders, setTotalOrders] = useState(0);
   const [todayRevenue, setTodayRevenue] = useState(0);
   const [employeeCosts, setEmployeeCosts] = useState(0);
+  const [employeeCount, setEmployeeCount] = useState(0);
   const [dailyGoal, setDailyGoal] = useState(0);
   const [paymentMethodsMap, setPaymentMethodsMap] = useState<Record<string, number>>({});
   const [showImportFinance, setShowImportFinance] = useState(false);
@@ -237,6 +238,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
       .then(({ data: emps }) => {
         const cost = (emps || []).reduce((s, e) => s + (e.salary || 0) + (e.extra_costs || 0), 0);
         setEmployeeCosts(cost);
+        setEmployeeCount(emps?.length ?? 0);
       });
 
     // Load daily goal from units
@@ -291,26 +293,37 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
     setExpenses(prev => prev.filter(e => e.id !== id));
   }
 
-  async function handleFinanceAI() {
+  async function handleFullFinanceAI() {
     setGeneratingFinanceAI(true);
     try {
       const res = await fetch("/api/ia/finance-analysis", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          revenue: totalRevenueThisMonth,
-          expenses: totalCosts,
+          revenue: totalRevenue,
+          revenueBySource,
+          expenses: totalExpensesThisMonth,
+          employeeCosts,
+          totalCosts,
           profit,
+          margin: totalRevenue > 0 ? ((profit / totalRevenue) * 100).toFixed(1) : "0",
+          ticketMedio: totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0,
+          totalOrders,
+          ordersBySource,
           expensesByCategory: Object.entries(expensesByCategory).map(([cat, items]) => ({
             category: cat,
-            total: (items as any[]).reduce((s: number, e: any) => s + e.amount, 0),
+            total: (items as any[]).reduce((s: number, e: any) => s + (e.amount || 0), 0),
             count: (items as any[]).length,
           })),
-          totalOrders: reportData.monthly.orders,
+          employeeCount,
+          dailyGoal,
+          todayRevenue,
+          paymentMethods: paymentMethodsMap,
         }),
       });
       const json = await res.json();
       if (res.ok) setFinanceAI(json.analysis);
+      else console.error(json.error);
     } catch (err) { console.error(err); }
     finally { setGeneratingFinanceAI(false); }
   }
@@ -1046,54 +1059,147 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
       {/* ── ANÁLISE ── */}
       {tab === "analise" && (
         <div>
-          {/* Ponto de equilíbrio */}
-          <div style={{ padding: 20, borderRadius: 16, background: "rgba(255,255,255,0.03)", marginBottom: 20, boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", marginBottom: 12 }}>Ponto de Equilíbrio</div>
-
-            <div style={{ position: "relative", height: 24, borderRadius: 12, background: "rgba(255,255,255,0.04)", overflow: "hidden", marginBottom: 12 }}>
+          {/* Seção 1: Break-even */}
+          <div style={{ padding: 16, borderRadius: 14, background: "rgba(255,255,255,0.03)", marginBottom: 16, boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--dash-text)", marginBottom: 10 }}>Ponto de Equilíbrio</div>
+            <div style={{ position: "relative", height: 20, borderRadius: 10, background: "rgba(255,255,255,0.04)", overflow: "hidden", marginBottom: 8 }}>
               <div style={{
-                height: "100%", borderRadius: 12,
-                width: `${Math.min((totalRevenueThisMonth / (totalCosts || 1)) * 100, 100)}%`,
-                background: totalRevenueThisMonth >= totalCosts
-                  ? "linear-gradient(90deg, rgba(0,255,174,0.3), rgba(0,255,174,0.5))"
-                  : "linear-gradient(90deg, rgba(251,191,36,0.3), rgba(248,113,113,0.5))",
+                height: "100%", borderRadius: 10,
+                width: `${Math.min((totalRevenue / (totalCosts || 1)) * 100, 100)}%`,
+                background: totalRevenue >= totalCosts
+                  ? "linear-gradient(90deg, rgba(0,255,174,0.4), rgba(0,255,174,0.7))"
+                  : "linear-gradient(90deg, rgba(251,191,36,0.4), rgba(248,113,113,0.6))",
                 transition: "width 0.5s ease",
               }} />
             </div>
-
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
-              <span style={{ color: "rgba(255,255,255,0.4)" }}>Faturado: {formatBRL(totalRevenueThisMonth)}</span>
-              <span style={{ color: "rgba(255,255,255,0.4)" }}>Custos: {formatBRL(totalCosts)}</span>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--dash-text-muted)" }}>
+              <span>Faturado: {formatBRL(totalRevenue)}</span>
+              <span>Custos: {formatBRL(totalCosts)}</span>
             </div>
-
-            <div style={{ marginTop: 12, fontSize: 13, color: totalRevenueThisMonth >= totalCosts ? "#00ffae" : "#fbbf24", fontWeight: 700 }}>
-              {totalRevenueThisMonth >= totalCosts
-                ? `Ponto de equilíbrio atingido! Lucro de ${formatBRL(profit)}`
-                : `Faltam ${formatBRL(totalCosts - totalRevenueThisMonth)} para o ponto de equilíbrio`
-              }
+            <div style={{ marginTop: 8, fontSize: 13, fontWeight: 700, color: totalRevenue >= totalCosts ? "var(--dash-accent)" : "#fbbf24" }}>
+              {totalRevenue >= totalCosts
+                ? `Break-even atingido! Lucro: ${formatBRL(profit)}`
+                : `Faltam ${formatBRL(totalCosts - totalRevenue)} para break-even`}
             </div>
           </div>
 
-          {/* Análise com IA */}
-          <div style={{ padding: 20, borderRadius: 16, background: "rgba(255,255,255,0.03)", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", marginBottom: 4 }}>Análise Financeira com IA</div>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginBottom: 16 }}>
-              Análise baseada nos seus custos e receitas.
+          {/* Seção 2: Composição dos custos */}
+          <div style={{ padding: 16, borderRadius: 14, background: "rgba(255,255,255,0.03)", marginBottom: 16, boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--dash-text)", marginBottom: 12 }}>Composição dos custos</div>
+            <div style={{ display: "flex", height: 12, borderRadius: 6, overflow: "hidden", marginBottom: 10, background: "rgba(255,255,255,0.04)" }}>
+              {totalCosts > 0 && employeeCosts > 0 && (
+                <div style={{ width: `${(employeeCosts / totalCosts) * 100}%`, background: "rgba(168,85,247,0.5)", transition: "width 0.3s" }} />
+              )}
+              {totalCosts > 0 && totalExpensesThisMonth > 0 && (
+                <div style={{ width: `${(totalExpensesThisMonth / totalCosts) * 100}%`, background: "rgba(248,113,113,0.5)", transition: "width 0.3s" }} />
+              )}
             </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <div style={{ width: 10, height: 10, borderRadius: 3, background: "rgba(168,85,247,0.5)", flexShrink: 0 }} />
+                <span style={{ fontSize: 11, color: "var(--dash-text-muted)" }}>Equipe: {formatBRL(employeeCosts)}</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <div style={{ width: 10, height: 10, borderRadius: 3, background: "rgba(248,113,113,0.5)", flexShrink: 0 }} />
+                <span style={{ fontSize: 11, color: "var(--dash-text-muted)" }}>Despesas: {formatBRL(totalExpensesThisMonth)}</span>
+              </div>
+            </div>
+            <div>
+              {Object.entries(expensesByCategory).map(([cat, items]) => {
+                const catTotal = (items as any[]).reduce((s: number, e: any) => s + (e.amount || 0), 0);
+                return (
+                  <div key={cat} style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
+                    <span style={{ fontSize: 11, color: "var(--dash-text-muted)", textTransform: "capitalize" }}>
+                      {cat === "salarios" ? "Salários" : cat === "manutencao" ? "Manutenção" : cat}
+                    </span>
+                    <span style={{ fontSize: 11, color: "#f87171", fontWeight: 600 }}>{formatBRL(catTotal)}</span>
+                  </div>
+                );
+              })}
+              {employeeCosts > 0 && (
+                <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0" }}>
+                  <span style={{ fontSize: 11, color: "var(--dash-text-muted)" }}>Equipe ({employeeCount} funcionários)</span>
+                  <span style={{ fontSize: 11, color: "rgba(168,85,247,0.8)", fontWeight: 600 }}>{formatBRL(employeeCosts)}</span>
+                </div>
+              )}
+            </div>
+          </div>
 
+          {/* Seção 3: Indicadores */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 16 }}>
+            <div style={{ padding: 12, borderRadius: 12, background: "rgba(255,255,255,0.03)", textAlign: "center", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "var(--dash-text)" }}>
+                {totalRevenue > 0 ? ((profit / totalRevenue) * 100).toFixed(1) : 0}%
+              </div>
+              <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>Margem líquida</div>
+            </div>
+            <div style={{ padding: 12, borderRadius: 12, background: "rgba(255,255,255,0.03)", textAlign: "center", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "var(--dash-text)" }}>
+                {formatBRL(totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0)}
+              </div>
+              <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>Ticket médio</div>
+            </div>
+            <div style={{ padding: 12, borderRadius: 12, background: "rgba(255,255,255,0.03)", textAlign: "center", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "var(--dash-text)" }}>
+                {formatBRL(Math.round(totalCosts / 30))}
+              </div>
+              <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>Custo/dia</div>
+            </div>
+          </div>
+
+          {/* Seção 4: Sugestão de pró-labore */}
+          {profit > 0 && (
+            <div style={{ padding: 16, borderRadius: 14, background: "rgba(0,255,174,0.04)", marginBottom: 16, boxShadow: "0 1px 0 rgba(0,255,174,0.06) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--dash-text)", marginBottom: 8 }}>Sugestão de pró-labore</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: "var(--dash-accent)" }}>{formatBRL(Math.round(profit * 0.3))}</div>
+                  <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>Conservador (30%)</div>
+                </div>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: "var(--dash-accent)" }}>{formatBRL(Math.round(profit * 0.5))}</div>
+                  <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>Moderado (50%)</div>
+                </div>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: "#fbbf24" }}>{formatBRL(Math.round(profit * 0.7))}</div>
+                  <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>Agressivo (70%)</div>
+                </div>
+              </div>
+              <div style={{ fontSize: 10, color: "var(--dash-text-muted)", marginTop: 8 }}>
+                Baseado no lucro líquido de {formatBRL(profit)}. Reservar o restante para capital de giro e reinvestimento.
+              </div>
+            </div>
+          )}
+
+          {/* Seção 5: Relatório IA completo */}
+          <div style={{ padding: 16, borderRadius: 14, background: "rgba(255,255,255,0.03)", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--dash-text)", marginBottom: 4 }}>Relatório Financeiro com IA</div>
+            <div style={{ fontSize: 11, color: "var(--dash-text-muted)", marginBottom: 14 }}>
+              Análise completa cruzando receita, custos, equipe e desempenho.
+            </div>
             {!financeAI ? (
-              <button onClick={handleFinanceAI} disabled={generatingFinanceAI} style={{
-                padding: "12px 24px", borderRadius: 14, border: "none", cursor: "pointer",
-                background: "rgba(0,255,174,0.1)", color: "#00ffae", fontSize: 14, fontWeight: 700,
+              <button onClick={handleFullFinanceAI} disabled={generatingFinanceAI} style={{
+                width: "100%", padding: 14, borderRadius: 14, border: "none", cursor: "pointer",
+                background: "rgba(0,255,174,0.1)", color: "var(--dash-accent)",
+                fontSize: 14, fontWeight: 800,
                 boxShadow: "0 1px 0 rgba(0,255,174,0.12) inset, 0 -1px 0 rgba(0,0,0,0.2) inset",
-                opacity: generatingFinanceAI ? 0.5 : 1, width: "100%",
+                opacity: generatingFinanceAI ? 0.5 : 1,
               }}>
-                {generatingFinanceAI ? "Analisando..." : "✨ Gerar análise financeira"}
+                {generatingFinanceAI ? "Gerando relatório..." : "✨ Gerar relatório completo com IA"}
               </button>
             ) : (
-              <div style={{ whiteSpace: "pre-wrap", fontSize: 13, color: "rgba(255,255,255,0.7)", lineHeight: 1.7 }}>
-                {financeAI}
-              </div>
+              <>
+                <div style={{ whiteSpace: "pre-wrap", fontSize: 13, color: "rgba(255,255,255,0.7)", lineHeight: 1.7 }}>
+                  {financeAI}
+                </div>
+                <button onClick={() => setFinanceAI(null)} style={{
+                  marginTop: 12, padding: "8px 16px", borderRadius: 10, border: "none",
+                  background: "rgba(255,255,255,0.04)", color: "var(--dash-text-muted)",
+                  fontSize: 12, cursor: "pointer",
+                }}>
+                  🔄 Gerar novamente
+                </button>
+              </>
             )}
           </div>
         </div>
