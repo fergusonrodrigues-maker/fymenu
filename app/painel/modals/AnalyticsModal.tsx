@@ -6,8 +6,7 @@ import { Unit } from "../types";
 
 const supabase = createClient();
 
-const TABS = ["Geral", "Produtos", "IA"] as const;
-type Tab = typeof TABS[number];
+type Tab = "Geral" | "Produtos" | "IA" | "Avaliações";
 
 export default function AnalyticsModal({
   analytics,
@@ -31,6 +30,9 @@ export default function AnalyticsModal({
   const [attentionRanking, setAttentionRanking] = useState<{ productId: string; name: string; avgSeconds: number; totalViews: number }[]>([]);
   const [loadingAttention, setLoadingAttention] = useState(false);
   const [generatingPDF, setGeneratingPDF] = useState(false);
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [reviewsAI, setReviewsAI] = useState<string | null>(null);
+  const [generatingReviewsAI, setGeneratingReviewsAI] = useState(false);
   const [showImportAnalytics, setShowImportAnalytics] = useState(false);
   const [importAnalyticsStep, setImportAnalyticsStep] = useState<"upload" | "processing" | "preview" | "done">("upload");
   const [importAnalyticsData, setImportAnalyticsData] = useState<any>(null);
@@ -118,6 +120,18 @@ export default function AnalyticsModal({
         setLoadingAttention(false);
       });
   }, [tab, unit, restaurant]);
+
+  useEffect(() => {
+    if (tab !== "Avaliações" || !unit) return;
+    if (reviews.length > 0) return;
+    supabase
+      .from("reviews")
+      .select("*")
+      .eq("unit_id", unit.id)
+      .order("created_at", { ascending: false })
+      .limit(200)
+      .then(({ data }) => { if (data) setReviews(data); });
+  }, [tab, unit]);
 
   async function handleDownloadPDF() {
     if (!unit) return;
@@ -232,6 +246,48 @@ export default function AnalyticsModal({
     }
   }
 
+  async function handleReviewsAI(
+    totalReviews: number,
+    avgRestaurant: string,
+    avgWaiter: string,
+    starDist: number[],
+    googleRedirects: number,
+    waiterRanking: any[],
+    withComments: any[],
+    reviewsLast7: any[],
+    reviewsLast30: any[]
+  ) {
+    setGeneratingReviewsAI(true);
+    try {
+      const res = await fetch("/api/ia/analyze-reviews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          totalReviews,
+          avgRestaurant,
+          avgWaiter,
+          starDist,
+          googleRedirects,
+          waiterRanking: waiterRanking.slice(0, 5),
+          comments: withComments.slice(0, 15).map((r: any) => ({
+            rating: r.restaurant_rating,
+            waiterRating: r.waiter_rating,
+            comment: r.comment,
+            waiter: r.waiter_name,
+          })),
+          reviewsLast7: reviewsLast7.length,
+          reviewsLast30: reviewsLast30.length,
+        }),
+      });
+      const json = await res.json();
+      if (res.ok) setReviewsAI(json.analysis);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setGeneratingReviewsAI(false);
+    }
+  }
+
   async function handleGenerateAISuggestions() {
     if (!unit) return;
     setGeneratingAI(true);
@@ -258,6 +314,44 @@ export default function AnalyticsModal({
     }
   }
 
+  const hasMenuProFeature = restaurant?.plan === "menupro" || restaurant?.plan === "business";
+  const visibleTabs: Tab[] = [
+    "Geral",
+    "Produtos",
+    ...(hasMenuProFeature ? (["Avaliações", "IA"] as Tab[]) : (["IA"] as Tab[])),
+  ];
+
+  // ── Derived review data (computed here so available to both render and handleReviewsAI call) ──
+  const totalReviews = reviews.length;
+  const avgRestaurant = totalReviews > 0
+    ? (reviews.reduce((s, r) => s + (r.restaurant_rating || 0), 0) / totalReviews).toFixed(1)
+    : "0";
+  const avgWaiter = totalReviews > 0
+    ? (reviews.reduce((s, r) => s + (r.waiter_rating || 0), 0) / totalReviews).toFixed(1)
+    : "0";
+  const starDist = [0, 0, 0, 0, 0];
+  for (const r of reviews) {
+    if (r.restaurant_rating >= 1 && r.restaurant_rating <= 5) starDist[r.restaurant_rating - 1]++;
+  }
+  const googleRedirects = reviews.filter(r => r.redirected_to_google).length;
+  const withComments = reviews.filter(r => r.comment?.trim());
+  const waiterRatingsMap: Record<string, { name: string; total: number; count: number }> = {};
+  for (const r of reviews) {
+    if (!r.waiter_name) continue;
+    const key = r.waiter_id || r.waiter_name;
+    if (!waiterRatingsMap[key]) waiterRatingsMap[key] = { name: r.waiter_name, total: 0, count: 0 };
+    waiterRatingsMap[key].total += r.waiter_rating || 0;
+    waiterRatingsMap[key].count++;
+  }
+  const waiterRanking = Object.values(waiterRatingsMap)
+    .map(w => ({ ...w, avg: (w.total / w.count).toFixed(1) }))
+    .sort((a, b) => parseFloat(b.avg) - parseFloat(a.avg));
+  const now = new Date();
+  const sevenDaysAgoDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const thirtyDaysAgoDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const reviewsLast7 = reviews.filter(r => new Date(r.created_at) >= sevenDaysAgoDate);
+  const reviewsLast30 = reviews.filter(r => new Date(r.created_at) >= thirtyDaysAgoDate);
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingTop: 8 }}>
       {/* Tab bar */}
@@ -266,13 +360,13 @@ export default function AnalyticsModal({
         background: "rgba(255,255,255,0.03)", borderRadius: 14,
         border: "1px solid var(--dash-card-border)",
       }}>
-        {TABS.map(t => (
+        {visibleTabs.map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
             style={{
               flex: 1, padding: "8px 0", borderRadius: 11, border: "none", cursor: "pointer",
-              fontSize: 12, fontWeight: tab === t ? 700 : 500,
+              fontSize: 11, fontWeight: tab === t ? 700 : 500,
               fontFamily: "inherit",
               color: tab === t ? "#000" : "var(--dash-text-muted)",
               background: tab === t ? "var(--dash-accent-gradient)" : "transparent",
@@ -436,6 +530,140 @@ export default function AnalyticsModal({
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* ── AVALIAÇÕES ── */}
+      {tab === "Avaliações" && (
+        <div>
+          {totalReviews === 0 ? (
+            <div style={{ textAlign: "center", padding: 40, color: "var(--dash-text-muted)" }}>
+              <div style={{ fontSize: 32, marginBottom: 12 }}>⭐</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "var(--dash-text)" }}>Nenhuma avaliação ainda</div>
+              <div style={{ fontSize: 12, marginTop: 6 }}>As avaliações aparecem quando clientes fecham comandas.</div>
+            </div>
+          ) : (
+            <>
+              {/* Resumo */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8, marginBottom: 16 }}>
+                {[
+                  { value: avgRestaurant, label: "Restaurante ⭐", color: "var(--dash-accent)" },
+                  { value: avgWaiter, label: "Garçons ⭐", color: "var(--dash-accent)" },
+                  { value: String(totalReviews), label: "Avaliações", color: "var(--dash-text)" },
+                  { value: String(googleRedirects), label: "→ Google", color: "#4285f4" },
+                ].map((card) => (
+                  <div key={card.label} style={{ padding: 14, borderRadius: 14, background: "rgba(255,255,255,0.03)", textAlign: "center", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: card.color }}>{card.value}</div>
+                    <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>{card.label}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Distribuição de estrelas */}
+              <div style={{ padding: 16, borderRadius: 14, background: "rgba(255,255,255,0.03)", marginBottom: 16, boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--dash-text)", marginBottom: 12 }}>Distribuição (Restaurante)</div>
+                {[5, 4, 3, 2, 1].map(star => {
+                  const count = starDist[star - 1];
+                  const pct = totalReviews > 0 ? (count / totalReviews) * 100 : 0;
+                  return (
+                    <div key={star} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                      <span style={{ fontSize: 12, color: "var(--dash-text-muted)", width: 30 }}>{star} ⭐</span>
+                      <div style={{ flex: 1, height: 8, borderRadius: 4, background: "rgba(255,255,255,0.04)", overflow: "hidden" }}>
+                        <div style={{
+                          height: "100%", borderRadius: 4, width: `${pct}%`,
+                          background: star >= 4 ? "var(--dash-accent)" : star === 3 ? "#fbbf24" : "#f87171",
+                          transition: "width 0.5s ease",
+                        }} />
+                      </div>
+                      <span style={{ fontSize: 11, color: "var(--dash-text-muted)", width: 28, textAlign: "right" }}>{count}</span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Ranking de garçons */}
+              {waiterRanking.length > 0 && (
+                <div style={{ padding: 16, borderRadius: 14, background: "rgba(255,255,255,0.03)", marginBottom: 16, boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "var(--dash-text)", marginBottom: 12 }}>Ranking de Garçons</div>
+                  {waiterRanking.map((w, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: i < waiterRanking.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>
+                      <div style={{ width: 26, height: 26, borderRadius: "50%", background: i === 0 ? "rgba(0,255,174,0.1)" : "rgba(255,255,255,0.04)", color: i === 0 ? "var(--dash-accent)" : "var(--dash-text-muted)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800 }}>{i + 1}</div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ color: "var(--dash-text)", fontSize: 13, fontWeight: 600 }}>{w.name}</div>
+                        <div style={{ color: "var(--dash-text-muted)", fontSize: 10 }}>{w.count} avaliações</div>
+                      </div>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: parseFloat(w.avg) >= 4 ? "var(--dash-accent)" : parseFloat(w.avg) >= 3 ? "#fbbf24" : "#f87171" }}>
+                        {w.avg} ⭐
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Feedbacks com comentário */}
+              {withComments.length > 0 && (
+                <div style={{ padding: 16, borderRadius: 14, background: "rgba(255,255,255,0.03)", marginBottom: 16, boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "var(--dash-text)", marginBottom: 12 }}>
+                    Feedbacks dos clientes ({withComments.length})
+                  </div>
+                  {withComments.slice(0, 20).map((r: any) => (
+                    <div key={r.id} style={{ padding: "10px 12px", borderRadius: 12, background: "rgba(255,255,255,0.02)", marginBottom: 6 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                          <span style={{ fontSize: 11, fontWeight: 700, color: r.restaurant_rating >= 4 ? "var(--dash-accent)" : r.restaurant_rating >= 3 ? "#fbbf24" : "#f87171" }}>
+                            {r.restaurant_rating}⭐
+                          </span>
+                          {r.waiter_name && <span style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>Garçom: {r.waiter_name}</span>}
+                        </div>
+                        <span style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>{new Date(r.created_at).toLocaleDateString("pt-BR")}</span>
+                      </div>
+                      <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.5 }}>"{r.comment}"</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Tendência 7d vs 30d */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 16 }}>
+                <div style={{ padding: 14, borderRadius: 14, background: "rgba(255,255,255,0.03)", textAlign: "center", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: "var(--dash-text)" }}>
+                    {reviewsLast7.length > 0 ? (reviewsLast7.reduce((s, r) => s + (r.restaurant_rating || 0), 0) / reviewsLast7.length).toFixed(1) : "-"}
+                  </div>
+                  <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>Média 7 dias ({reviewsLast7.length})</div>
+                </div>
+                <div style={{ padding: 14, borderRadius: 14, background: "rgba(255,255,255,0.03)", textAlign: "center", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: "var(--dash-text)" }}>
+                    {reviewsLast30.length > 0 ? (reviewsLast30.reduce((s, r) => s + (r.restaurant_rating || 0), 0) / reviewsLast30.length).toFixed(1) : "-"}
+                  </div>
+                  <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>Média 30 dias ({reviewsLast30.length})</div>
+                </div>
+              </div>
+
+              {/* Análise IA */}
+              <div style={{ padding: 16, borderRadius: 14, background: "rgba(255,255,255,0.03)", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--dash-text)", marginBottom: 4 }}>Análise das avaliações com IA</div>
+                <div style={{ fontSize: 11, color: "var(--dash-text-muted)", marginBottom: 14 }}>
+                  Padrões, pontos de melhoria e insights dos feedbacks.
+                </div>
+                {!reviewsAI ? (
+                  <button
+                    onClick={() => handleReviewsAI(totalReviews, avgRestaurant, avgWaiter, starDist, googleRedirects, waiterRanking, withComments, reviewsLast7, reviewsLast30)}
+                    disabled={generatingReviewsAI}
+                    style={{ width: "100%", padding: 12, borderRadius: 14, border: "none", cursor: "pointer", background: "rgba(0,255,174,0.1)", color: "var(--dash-accent)", fontSize: 13, fontWeight: 800, boxShadow: "0 1px 0 rgba(0,255,174,0.12) inset, 0 -1px 0 rgba(0,0,0,0.2) inset", opacity: generatingReviewsAI ? 0.5 : 1 }}
+                  >
+                    {generatingReviewsAI ? "Analisando..." : "✨ Analisar avaliações com IA"}
+                  </button>
+                ) : (
+                  <>
+                    <div style={{ whiteSpace: "pre-wrap", fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.7 }}>{reviewsAI}</div>
+                    <button onClick={() => setReviewsAI(null)} style={{ marginTop: 10, padding: "6px 14px", borderRadius: 8, background: "rgba(255,255,255,0.04)", border: "none", color: "var(--dash-text-muted)", fontSize: 11, cursor: "pointer" }}>
+                      🔄 Gerar novamente
+                    </button>
+                  </>
+                )}
+              </div>
+            </>
+          )}
         </div>
       )}
 
