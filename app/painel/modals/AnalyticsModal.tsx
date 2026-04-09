@@ -30,6 +30,7 @@ export default function AnalyticsModal({
   const [ifoodClicks, setIfoodClicks] = useState<number | null>(null);
   const [attentionRanking, setAttentionRanking] = useState<{ productId: string; name: string; avgSeconds: number; totalViews: number }[]>([]);
   const [loadingAttention, setLoadingAttention] = useState(false);
+  const [generatingPDF, setGeneratingPDF] = useState(false);
   const [showImportAnalytics, setShowImportAnalytics] = useState(false);
   const [importAnalyticsStep, setImportAnalyticsStep] = useState<"upload" | "processing" | "preview" | "done">("upload");
   const [importAnalyticsData, setImportAnalyticsData] = useState<any>(null);
@@ -117,6 +118,49 @@ export default function AnalyticsModal({
         setLoadingAttention(false);
       });
   }, [tab, unit, restaurant]);
+
+  async function handleDownloadPDF() {
+    if (!unit) return;
+    setGeneratingPDF(true);
+    try {
+      const res = await fetch("/api/analytics/report-pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          unitId: unit.id,
+          unitName: unit.name,
+          period: "últimos 7 dias",
+          stats: {
+            views: analytics.views,
+            clicks: analytics.clicks,
+            orders: analytics.orders,
+            conversionRate:
+              analytics.views > 0
+                ? ((analytics.orders / analytics.views) * 100).toFixed(1)
+                : "0",
+          },
+          topProducts: topProducts.slice(0, 10),
+          attentionRanking: attentionRanking.slice(0, 10),
+          revenueData: { total: 0, bySource: {}, ticketMedio: 0 },
+        }),
+      });
+      if (!res.ok) throw new Error("Erro ao gerar PDF");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `relatorio-${(unit.name || "analytics").toLowerCase().replace(/\s+/g, "-")}-${new Date().toISOString().split("T")[0]}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Erro ao gerar PDF:", err);
+      alert("Erro ao gerar relatório PDF");
+    } finally {
+      setGeneratingPDF(false);
+    }
+  }
 
   function resetImport() {
     setShowImportAnalytics(false);
@@ -240,6 +284,24 @@ export default function AnalyticsModal({
           </button>
         ))}
       </div>
+
+      {/* PDF download — MenuPro/Business only */}
+      {(restaurant?.plan === "menupro" || restaurant?.plan === "business") && (
+        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+          <button
+            onClick={handleDownloadPDF}
+            disabled={generatingPDF}
+            style={{
+              padding: "8px 14px", borderRadius: 10, border: "none", cursor: "pointer",
+              background: "rgba(255,255,255,0.04)", color: "var(--dash-text-muted)", fontSize: 12,
+              boxShadow: "0 1px 0 rgba(255,255,255,0.03) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
+              opacity: generatingPDF ? 0.5 : 1,
+            }}
+          >
+            {generatingPDF ? "Gerando..." : "📄 Baixar PDF"}
+          </button>
+        </div>
+      )}
 
       {/* ── GERAL ── */}
       {tab === "Geral" && (
