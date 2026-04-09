@@ -70,6 +70,7 @@ export default async function ComandaDigitalPage({
       initialItems={(items ?? []) as any}
       unitName={unit.name ?? ""}
       unitLogo={unit.logo_url ?? null}
+      unitId={unit.id}
     />
   );
 }

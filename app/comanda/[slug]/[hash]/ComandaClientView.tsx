@@ -27,11 +27,13 @@ interface Props {
   initialItems: ComandaItem[];
   unitName: string;
   unitLogo: string | null;
+  unitId: string;
 }
 
-export default function ComandaClientView({ comanda: initialComanda, initialItems, unitName }: Props) {
+export default function ComandaClientView({ comanda: initialComanda, initialItems, unitName, unitId }: Props) {
   const [comanda, setComanda] = useState<ComandaRecord>(initialComanda);
   const [items, setItems] = useState<ComandaItem[]>(initialItems);
+  const [callingWaiter, setCallingWaiter] = useState(false);
   const supabase = createClient();
 
   useEffect(() => {
@@ -53,6 +55,45 @@ export default function ComandaClientView({ comanda: initialComanda, initialItem
 
     return () => { supabase.removeChannel(channel); };
   }, [comanda.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("my-table-call")
+      .on("postgres_changes", {
+        event: "UPDATE",
+        schema: "public",
+        table: "table_calls",
+        filter: `comanda_id=eq.${comanda.id}`,
+      }, (payload) => {
+        if (payload.new.status === "resolved") {
+          setCallingWaiter(false);
+        }
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [comanda.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function handleCallWaiter() {
+    setCallingWaiter(true);
+
+    const { error } = await supabase.from("table_calls").insert({
+      unit_id: unitId,
+      comanda_id: comanda.id,
+      table_number: comanda.table_number,
+      type: "waiter",
+      status: "pending",
+    });
+
+    if (error) {
+      console.error("Erro ao chamar garçom:", error);
+      setCallingWaiter(false);
+      return;
+    }
+
+    // Resetar após 30 segundos (permite chamar novamente)
+    setTimeout(() => setCallingWaiter(false), 30000);
+  }
 
   const activeItems = items.filter(i => i.status !== "canceled");
   const total = activeItems.reduce((s, i) => s + i.quantity * i.unit_price, 0);
@@ -140,6 +181,29 @@ export default function ComandaClientView({ comanda: initialComanda, initialItem
             ))}
           </div>
         )}
+      </div>
+
+      {/* Botão chamar garçom */}
+      <div style={{ padding: "0 16px" }}>
+        <button
+          onClick={handleCallWaiter}
+          disabled={callingWaiter}
+          style={{
+            width: "100%",
+            padding: "14px",
+            borderRadius: 14,
+            border: "none",
+            cursor: "pointer",
+            background: callingWaiter ? "rgba(251,191,36,0.15)" : "rgba(251,191,36,0.1)",
+            color: "#fbbf24",
+            fontSize: 14,
+            fontWeight: 700,
+            marginTop: 16,
+            transition: "all 0.3s",
+          }}
+        >
+          {callingWaiter ? "✋ Garçom chamado! Aguarde..." : "🖐️ Chamar Garçom"}
+        </button>
       </div>
 
       {/* Footer with total */}
