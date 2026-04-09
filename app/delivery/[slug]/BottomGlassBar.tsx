@@ -33,13 +33,44 @@ function mapsUrl(unit: Unit): string | null {
   return q ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}` : null;
 }
 
+function getPlatformGradient(platform: string | null | undefined): string {
+  switch (platform) {
+    case "ifood": return "linear-gradient(135deg, #EA1D2C, #B71C1C)";
+    case "rappi": return "linear-gradient(135deg, #FF6B00, #E65100)";
+    case "uber_eats": return "linear-gradient(135deg, #06C167, #048A46)";
+    case "aiqfome": return "linear-gradient(135deg, #7B1FA2, #4A148C)";
+    default: return "linear-gradient(135deg, #6B7280, #4B5563)";
+  }
+}
+
+function getPlatformIcon(platform: string | null | undefined): string {
+  switch (platform) {
+    case "ifood": return "🍔";
+    case "rappi": return "🛵";
+    case "uber_eats": return "🥡";
+    case "aiqfome": return "🍕";
+    default: return "📱";
+  }
+}
+
+function getPlatformName(platform: string | null | undefined): string {
+  switch (platform) {
+    case "ifood": return "iFood";
+    case "rappi": return "Rappi";
+    case "uber_eats": return "Uber Eats";
+    case "aiqfome": return "AiQFome";
+    default: return "Delivery";
+  }
+}
+
 interface Props {
   unit: Unit;
   visible: boolean;
   minimized: boolean;
+  onIfoodClick?: () => void;
 }
 
-export default function BottomGlassBar({ unit, visible, minimized }: Props) {
+export default function BottomGlassBar({ unit, visible, minimized, onIfoodClick }: Props) {
   const isMaximized = !minimized;
 
   const [isDark, setIsDark] = useState(true);
@@ -188,6 +219,22 @@ export default function BottomGlassBar({ unit, visible, minimized }: Props) {
                 style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             </a>
           )}
+          {unit.ifood_url && (
+            <a
+              href={unit.ifood_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={onIfoodClick}
+              style={{
+                width: 46, height: 46, borderRadius: 14, flexShrink: 0,
+                background: getPlatformGradient(unit.ifood_platform),
+                display: "flex", alignItems: "center", justifyContent: "center",
+                textDecoration: "none", fontSize: 22,
+              }}
+            >
+              {getPlatformIcon(unit.ifood_platform)}
+            </a>
+          )}
         </div>
 
         {/* ── MAXIMIZADO (vertical) ── */}
@@ -261,6 +308,24 @@ export default function BottomGlassBar({ unit, visible, minimized }: Props) {
             }}>
               <img src={ICONS.maps} alt="" style={{ width: 32, height: 32, borderRadius: 10, objectFit: "cover" }} />
               <span style={{ color: "#fff", fontWeight: 800, fontSize: 16 }}>Como Chegar</span>
+            </a>
+          )}
+
+          {unit.ifood_url && (
+            <a
+              href={unit.ifood_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={onIfoodClick}
+              style={{
+                display: "flex", alignItems: "center",
+                width: "100%", height: 48, borderRadius: 14,
+                background: getPlatformGradient(unit.ifood_platform),
+                padding: "0 18px", gap: 12, textDecoration: "none",
+              }}
+            >
+              <span style={{ fontSize: 26 }}>{getPlatformIcon(unit.ifood_platform)}</span>
+              <span style={{ color: "#fff", fontWeight: 800, fontSize: 16 }}>Pedir no {getPlatformName(unit.ifood_platform)}</span>
             </a>
           )}
 

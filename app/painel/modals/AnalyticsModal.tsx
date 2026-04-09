@@ -25,6 +25,19 @@ export default function AnalyticsModal({
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<string | null>(null);
   const [generatingAI, setGeneratingAI] = useState(false);
+  const [ifoodClicks, setIfoodClicks] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!unit) return;
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    supabase
+      .from("menu_events")
+      .select("id", { count: "exact", head: true })
+      .eq("unit_id", unit.id)
+      .eq("event", "ifood_click")
+      .gte("created_at", sevenDaysAgo)
+      .then(({ count }) => setIfoodClicks(count ?? 0));
+  }, [unit]);
 
   const stats = [
     { label: "Visitas ao cardápio", value: analytics.views, icon: "👁", color: "#00ffae", desc: "últimos 7 dias" },
@@ -129,6 +142,16 @@ export default function AnalyticsModal({
             <div style={{ color: "var(--dash-text)", fontSize: 32, fontWeight: 900 }}>{conversion}%</div>
             <div style={{ color: "var(--dash-text-subtle)", fontSize: 11 }}>visitas → pedidos</div>
           </div>
+          {ifoodClicks !== null && ifoodClicks > 0 && unit?.ifood_url && (
+            <div className="modal-neon-card" style={{ borderRadius: 16, padding: "18px 20px", background: "var(--dash-card)", display: "flex", alignItems: "center", gap: 16 }}>
+              <div style={{ fontSize: 28 }}>🛵</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ color: "var(--dash-text-dim)", fontSize: 12 }}>Cliques plataforma delivery</div>
+                <div style={{ color: "#f59e0b", fontSize: 28, fontWeight: 900, lineHeight: 1.1 }}>{ifoodClicks}</div>
+                <div style={{ color: "var(--dash-text-subtle)", fontSize: 11 }}>últimos 7 dias · só cliques</div>
+              </div>
+            </div>
+          )}
           {unit && (
             <a href={`/delivery/${unit.slug}`} target="_blank" rel="noreferrer" style={{ display: "block", textAlign: "center", padding: "14px", borderRadius: 14, background: "var(--dash-link-bg)", border: "1px solid var(--dash-card-border)", color: "var(--dash-text-secondary)", fontSize: 14, fontWeight: 600, textDecoration: "none", transition: "all 0.2s" }}>
               Ver cardápio público ↗

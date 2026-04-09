@@ -178,6 +178,23 @@ export default function MenuClient({
     window.dispatchEvent(new CustomEvent("menu-modal", { detail: { open: !!selectedProduct } }));
   }, [selectedProduct]);
 
+  async function trackIfoodClick() {
+    try {
+      const supabase = (await import("@/lib/supabase/client")).createClient();
+      await supabase.from("menu_events").insert({
+        event: "ifood_click",
+        unit_id: unit.id,
+        product_id: null,
+        created_at: new Date().toISOString(),
+      });
+    } catch {}
+    if (typeof window !== "undefined" && (window as any).fbq) {
+      (window as any).fbq("trackCustom", "ExternalPlatformClick", {
+        platform: unit.ifood_platform || "ifood",
+      });
+    }
+  }
+
   function trackPixel(event: string, data?: Record<string, any>) {
     if (typeof window !== "undefined" && (window as any).fbq) {
       (window as any).fbq("track", event, data);
@@ -1034,6 +1051,7 @@ export default function MenuClient({
           unit={unit}
           visible={pillsSticky && !selectedProduct && !pendingPayload && !cartOpen}
           minimized={!glassBarMaximized}
+          onIfoodClick={trackIfoodClick}
         />
       )}
 

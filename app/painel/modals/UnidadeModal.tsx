@@ -47,6 +47,8 @@ export default function UnidadeModal({ unit, isPro, onClose }: { unit: Unit | nu
 
   const [description, setDescription] = useState(unit?.description ?? "");
   const [pixelId, setPixelId] = useState(unit?.facebook_pixel_id || "");
+  const [ifoodUrl, setIfoodUrl] = useState(unit?.ifood_url || "");
+  const [ifoodPlatform, setIfoodPlatform] = useState(unit?.ifood_platform || "ifood");
 
   if (!unit) return <div style={{ color: "var(--dash-text-muted)", paddingTop: 16 }}>Nenhuma unidade encontrada.</div>;
   const origin = typeof window !== "undefined" ? window.location.origin : "";
@@ -233,6 +235,49 @@ export default function UnidadeModal({ unit, isPro, onClose }: { unit: Unit | nu
           />
           <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 10, marginTop: 4, display: "block" }}>
             Rastreia conversões do cardápio no Facebook/Instagram Ads
+          </span>
+        </div>
+        {/* iFood / Plataforma externa */}
+        <div style={{ marginTop: 16 }}>
+          <label style={{ color: "var(--dash-text-muted)", fontSize: 12, fontWeight: 600, display: "block", marginBottom: 6 }}>Plataforma de Delivery</label>
+          <div style={{ display: "flex", gap: 8, marginBottom: 6 }}>
+            <select
+              value={ifoodPlatform}
+              onChange={async (e) => {
+                setIfoodPlatform(e.target.value);
+                const supabase = createClient();
+                await supabase.from("units").update({ ifood_platform: e.target.value }).eq("id", unit.id);
+              }}
+              style={{
+                padding: "10px 12px", borderRadius: 12,
+                background: "rgba(255,255,255,0.04)", border: "none",
+                color: "var(--dash-text)", fontSize: 13, outline: "none", width: 120,
+              }}
+            >
+              <option value="ifood">iFood</option>
+              <option value="rappi">Rappi</option>
+              <option value="uber_eats">Uber Eats</option>
+              <option value="aiqfome">AiQFome</option>
+              <option value="outro">Outro</option>
+            </select>
+            <input
+              type="url"
+              placeholder="Cole o link da sua loja na plataforma"
+              value={ifoodUrl}
+              onChange={(e) => setIfoodUrl(e.target.value)}
+              onBlur={async () => {
+                const supabase = createClient();
+                await supabase.from("units").update({ ifood_url: ifoodUrl.trim() || null }).eq("id", unit.id);
+              }}
+              style={{
+                flex: 1, padding: "10px 14px", borderRadius: 12,
+                background: "rgba(255,255,255,0.04)", border: "none",
+                color: "var(--dash-text)", fontSize: 13, outline: "none",
+              }}
+            />
+          </div>
+          <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 10, display: "block" }}>
+            Só contabiliza cliques — vendas são processadas na plataforma externa.
           </span>
         </div>
       </div>
