@@ -1,13 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { createCategory, updateCategory, deleteCategory, createProduct } from "../actions";
 import { createClient as createSupabaseClient } from "@/lib/supabase/client";
 import ProductRow from "../ProductRow";
-import dynamic from "next/dynamic";
 import { Unit, Category, Product, Restaurant } from "../types";
-
-const ImportClient = dynamic(() => import("../ia/ImportClient"), { ssr: false });
 
 type CustomSection = { id: string; name: string; icon: string; allows_video: boolean; allows_alcoholic_toggle: boolean };
 
@@ -134,7 +132,11 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
   const [newSectionIcon, setNewSectionIcon] = useState("📂");
   const [newSectionVideo, setNewSectionVideo] = useState(true);
   const [newSectionAlcoholic, setNewSectionAlcoholic] = useState(false);
-  const [showImport, setShowImport] = useState(false);
+  const [importStep, setImportStep] = useState<"idle" | "upload" | "processing" | "preview" | "done">("idle");
+  const [importData, setImportData] = useState<any>(null);
+  const [importing, setImporting] = useState(false);
+  const [pastedText, setPastedText] = useState("");
+  const importFileRef = useRef<HTMLInputElement>(null);
   const [orderedCats, setOrderedCats] = useState(categories);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [overIdx, setOverIdx] = useState<number | null>(null);
@@ -246,6 +248,102 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
     setOverIdx(null);
   }
 
+  const router = useRouter();
+
+  async function handleImportFile(file: File | undefined) {
+    if (!file) return;
+    setImportStep("processing");
+    const formData = new FormData();
+    formData.append("file", file);
+    try {
+      const res = await fetch("/api/ia/import-menu", { method: "POST", body: formData });
+      const json = await res.json();
+      if (res.ok && json.importData) { setImportData(json.importData); setImportStep("preview"); }
+      else { alert(json.error || "Erro ao processar arquivo"); setImportStep("upload"); }
+    } catch { alert("Erro de conexão"); setImportStep("upload"); }
+  }
+
+  async function handleImportText(text: string) {
+    setImportStep("processing");
+    const formData = new FormData();
+    formData.append("text", text);
+    try {
+      const res = await fetch("/api/ia/import-menu", { method: "POST", body: formData });
+      const json = await res.json();
+      if (res.ok && json.importData) { setImportData(json.importData); setImportStep("preview"); }
+      else { alert(json.error || "Erro ao processar texto"); setImportStep("upload"); }
+    } catch { alert("Erro de conexão"); setImportStep("upload"); }
+  }
+
+  async function handleConfirmImport() {
+    if (!importData?.categories || !unit) return;
+    setImporting(true);
+    const supabase = createSupabaseClient();
+    try {
+      const { data: existingCats } = await supabase
+        .from("categories")
+        .select("order_index")
+        .eq("unit_id", unit.id)
+        .order("order_index", { ascending: false })
+        .limit(1);
+      let orderIndex = (existingCats?.[0]?.order_index ?? -1) + 1;
+
+      for (const cat of importData.categories) {
+        if (!cat.products || cat.products.length === 0) continue;
+
+        const { data: newCat, error: catErr } = await supabase
+          .from("categories")
+          .insert({ unit_id: unit.id, name: cat.name, order_index: orderIndex++, section: "pratos" })
+          .select().single();
+
+        if (catErr || !newCat) { console.error("Erro categoria:", catErr); continue; }
+
+        const productInserts = cat.products.map((prod: any) => ({
+          category_id: newCat.id,
+          unit_id: unit.id,
+          name: prod.name,
+          description: prod.description || null,
+          base_price: Math.round((prod.price || 0) * 100),
+          price_type: prod.variations?.length > 0 ? "variable" : "fixed",
+          is_active: true,
+          order_index: 0,
+        }));
+
+        const { data: newProducts, error: prodErr } = await supabase
+          .from("products")
+          .insert(productInserts)
+          .select();
+
+        if (prodErr) { console.error("Erro produtos:", prodErr); continue; }
+
+        if (newProducts) {
+          for (let i = 0; i < cat.products.length; i++) {
+            const prod = cat.products[i];
+            const newProd = newProducts[i];
+            if (prod.variations?.length > 0 && newProd) {
+              await supabase.from("product_variations").insert(
+                prod.variations.map((v: any, vi: number) => ({
+                  product_id: newProd.id,
+                  name: v.name,
+                  price: Math.round((v.price || 0) * 100),
+                  order_index: vi,
+                  is_active: true,
+                }))
+              );
+            }
+          }
+        }
+      }
+
+      setImportStep("done");
+    } catch (err) {
+      console.error("Erro na importação:", err);
+      alert("Erro ao salvar. Tente novamente.");
+    } finally {
+      setImporting(false);
+    }
+  }
+
   const productsByCat = orderedCats.reduce<Record<string, Product[]>>((acc, cat) => {
     acc[cat.id] = products.filter((p) => p.category_id === cat.id);
     return acc;
@@ -253,39 +351,173 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingTop: 8 }}>
-      {/* Links rápidos */}
-      <div style={{ display: "flex", gap: 8 }}>
-        {showImport ? (
-          <>
-            <button type="button" className="btn-ai" style={{ flex: 1 }} onClick={() => setShowImport(false)}>
-              ← Voltar ao cardápio
-            </button>
-            {unit && (
-              <a href={`/delivery/${unit.slug}`} target="_blank" rel="noreferrer" style={{ flex: 1, textAlign: "center", padding: "10px", borderRadius: 12, background: "var(--dash-link-bg)", border: "1px solid rgba(255,255,255,0.12)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.15), inset 0 -2px 0 rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.15)", color: "var(--dash-text-secondary)", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>
-                Ver cardápio ↗
-              </a>
-            )}
-          </>
-        ) : (
-          <>
-            {unit && (
-              <a href={`/delivery/${unit.slug}`} target="_blank" rel="noreferrer" style={{ flex: 1, textAlign: "center", padding: "10px", borderRadius: 12, background: "var(--dash-link-bg)", border: "1px solid rgba(255,255,255,0.12)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.15), inset 0 -2px 0 rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.15)", color: "var(--dash-text-secondary)", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>
-                Ver cardápio ↗
-              </a>
-            )}
-            <button type="button" className="btn-ai" style={{ flex: 1 }} onClick={() => setShowImport(true)}>
-              ✨ Importar com IA
-            </button>
-          </>
-        )}
-      </div>
 
-      {showImport ? (
-        <div style={{ marginTop: 8 }}>
-          {unit && <ImportClient unitId={unit.id} unitName={unit.name} embedded />}
+      {/* ── IMPORT FLOW ── */}
+      {importStep !== "idle" && (
+        <div style={{ padding: "0 4px" }}>
+          <button onClick={() => { setImportStep("idle"); setImportData(null); setPastedText(""); }} style={{
+            padding: "6px 14px", borderRadius: 8, background: "rgba(255,255,255,0.06)",
+            border: "none", color: "var(--dash-text-muted)", fontSize: 12, cursor: "pointer", marginBottom: 16, fontFamily: "inherit",
+          }}>← Voltar ao cardápio</button>
+
+          {/* Upload */}
+          {importStep === "upload" && (
+            <>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "var(--dash-text)", marginBottom: 6 }}>Importar cardápio com IA</div>
+              <div style={{ fontSize: 12, color: "var(--dash-text-muted)", marginBottom: 20 }}>
+                Envie um arquivo ou cole o cardápio em texto. A IA organiza tudo automaticamente.
+              </div>
+              <div
+                onClick={() => importFileRef.current?.click()}
+                onDragOver={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = "rgba(0,255,174,0.3)"; }}
+                onDragLeave={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; }}
+                onDrop={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; handleImportFile(e.dataTransfer.files[0]); }}
+                style={{
+                  border: "2px dashed rgba(255,255,255,0.08)", borderRadius: 20,
+                  padding: "40px 20px", textAlign: "center", cursor: "pointer",
+                  transition: "border-color 0.3s", marginBottom: 16,
+                }}
+              >
+                <div style={{ fontSize: 36, marginBottom: 10 }}>📄</div>
+                <div style={{ color: "var(--dash-text)", fontSize: 14, fontWeight: 700, marginBottom: 6 }}>Arraste seu cardápio aqui</div>
+                <div style={{ color: "var(--dash-text-muted)", fontSize: 12, marginBottom: 12 }}>ou clique para selecionar</div>
+                <div style={{ display: "flex", justifyContent: "center", gap: 6, flexWrap: "wrap" }}>
+                  {["CSV", "Excel", "PDF", "Foto", "JSON"].map(f => (
+                    <span key={f} style={{ padding: "3px 10px", borderRadius: 6, background: "rgba(255,255,255,0.04)", fontSize: 10, color: "var(--dash-text-muted)" }}>{f}</span>
+                  ))}
+                </div>
+              </div>
+              <input ref={importFileRef} type="file" accept=".csv,.xlsx,.xls,.pdf,.jpg,.jpeg,.png,.webp,.json,.txt" style={{ display: "none" }}
+                onChange={(e) => handleImportFile(e.target.files?.[0])} />
+
+              <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "16px 0" }}>
+                <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.06)" }} />
+                <span style={{ fontSize: 11, color: "var(--dash-text-muted)" }}>ou cole o cardápio</span>
+                <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.06)" }} />
+              </div>
+
+              <textarea
+                placeholder="Cole aqui o cardápio copiado do iFood, site do concorrente, WhatsApp, etc..."
+                value={pastedText}
+                onChange={(e) => setPastedText(e.target.value)}
+                style={{
+                  width: "100%", minHeight: 100, padding: 14, borderRadius: 14,
+                  background: "rgba(255,255,255,0.04)", border: "none", color: "var(--dash-text)",
+                  fontSize: 13, outline: "none", resize: "vertical", boxSizing: "border-box", fontFamily: "inherit",
+                }}
+              />
+              {pastedText.trim() && (
+                <button onClick={() => handleImportText(pastedText)} style={{
+                  marginTop: 10, width: "100%", padding: 14, borderRadius: 14,
+                  background: "rgba(0,255,174,0.1)", border: "none", color: "var(--dash-accent)",
+                  fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
+                  boxShadow: "0 1px 0 rgba(0,255,174,0.12) inset, 0 -1px 0 rgba(0,0,0,0.2) inset",
+                }}>✨ Analisar com IA</button>
+              )}
+            </>
+          )}
+
+          {/* Processing */}
+          {importStep === "processing" && (
+            <div style={{ textAlign: "center", padding: "60px 20px" }}>
+              <div style={{ fontSize: 40, marginBottom: 16 }}>✨</div>
+              <div style={{ color: "var(--dash-text)", fontSize: 16, fontWeight: 700 }}>Analisando seu cardápio...</div>
+              <div style={{ color: "var(--dash-text-muted)", fontSize: 13, marginTop: 8 }}>A IA está extraindo categorias, produtos e preços</div>
+            </div>
+          )}
+
+          {/* Preview */}
+          {importStep === "preview" && importData && (
+            <>
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 15, fontWeight: 800, color: "var(--dash-text)" }}>Revisar importação</div>
+                <div style={{ fontSize: 12, color: "var(--dash-text-muted)", marginTop: 2 }}>
+                  {importData.categories?.length} categorias · {importData.categories?.reduce((s: number, c: any) => s + (c.products?.length || 0), 0)} produtos
+                </div>
+              </div>
+
+              {importData.categories?.map((cat: any, ci: number) => (
+                <div key={ci} style={{
+                  marginBottom: 12, padding: 14, borderRadius: 14,
+                  background: "rgba(255,255,255,0.03)",
+                  boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
+                }}>
+                  <input value={cat.name} onChange={(e) => {
+                    const u = structuredClone(importData); u.categories[ci].name = e.target.value; setImportData(u);
+                  }} style={{
+                    width: "100%", padding: "8px 12px", borderRadius: 10,
+                    background: "rgba(255,255,255,0.04)", border: "none",
+                    color: "var(--dash-text)", fontSize: 14, fontWeight: 700, outline: "none",
+                    marginBottom: 8, boxSizing: "border-box" as const, fontFamily: "inherit",
+                  }} />
+                  {cat.products?.map((prod: any, pi: number) => (
+                    <div key={pi} style={{
+                      display: "flex", alignItems: "center", gap: 8,
+                      padding: "6px 0", borderBottom: pi < cat.products.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
+                    }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <input value={prod.name} onChange={(e) => {
+                          const u = structuredClone(importData); u.categories[ci].products[pi].name = e.target.value; setImportData(u);
+                        }} style={{ width: "100%", padding: "3px 6px", borderRadius: 6, background: "transparent", border: "none", color: "var(--dash-text)", fontSize: 13, fontWeight: 600, outline: "none", fontFamily: "inherit" }} />
+                        <input value={prod.description || ""} onChange={(e) => {
+                          const u = structuredClone(importData); u.categories[ci].products[pi].description = e.target.value; setImportData(u);
+                        }} placeholder="Descrição..." style={{ width: "100%", padding: "2px 6px", borderRadius: 6, background: "transparent", border: "none", color: "var(--dash-text-muted)", fontSize: 11, outline: "none", fontFamily: "inherit" }} />
+                      </div>
+                      <input type="number" value={prod.price} onChange={(e) => {
+                        const u = structuredClone(importData); u.categories[ci].products[pi].price = parseFloat(e.target.value) || 0; setImportData(u);
+                      }} style={{ width: 75, padding: "4px 8px", borderRadius: 6, background: "rgba(255,255,255,0.04)", border: "none", color: "var(--dash-accent)", fontSize: 13, fontWeight: 700, outline: "none", textAlign: "right" as const }} />
+                      <button onClick={() => {
+                        const u = structuredClone(importData); u.categories[ci].products.splice(pi, 1); setImportData(u);
+                      }} style={{ background: "transparent", border: "none", color: "rgba(255,255,255,0.2)", cursor: "pointer", fontSize: 14, fontFamily: "inherit" }}>✕</button>
+                    </div>
+                  ))}
+                </div>
+              ))}
+
+              <button onClick={handleConfirmImport} disabled={importing} style={{
+                width: "100%", padding: 14, borderRadius: 14, marginTop: 12,
+                background: "rgba(0,255,174,0.1)", border: "none",
+                color: "var(--dash-accent)", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
+                boxShadow: "0 1px 0 rgba(0,255,174,0.12) inset, 0 -1px 0 rgba(0,0,0,0.2) inset",
+                opacity: importing ? 0.5 : 1,
+              }}>
+                {importing ? "Importando..." : `✨ Importar ${importData.categories?.reduce((s: number, c: any) => s + (c.products?.length || 0), 0)} produtos`}
+              </button>
+            </>
+          )}
+
+          {/* Done */}
+          {importStep === "done" && (
+            <div style={{ textAlign: "center", padding: "60px 20px" }}>
+              <div style={{ fontSize: 40, marginBottom: 16 }}>✅</div>
+              <div style={{ color: "var(--dash-text)", fontSize: 18, fontWeight: 800 }}>Importação concluída!</div>
+              <div style={{ color: "var(--dash-text-muted)", fontSize: 13, marginTop: 8 }}>
+                Seus produtos foram adicionados. Agora adicione fotos e vídeos.
+              </div>
+              <button onClick={() => { setImportStep("idle"); setImportData(null); setPastedText(""); router.refresh(); }} style={{
+                marginTop: 20, padding: "12px 24px", borderRadius: 14,
+                background: "rgba(0,255,174,0.1)", border: "none", color: "var(--dash-accent)",
+                fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+              }}>Voltar ao cardápio</button>
+            </div>
+          )}
         </div>
-      ) : (
+      )}
+
+      {/* ── NORMAL CARDÁPIO VIEW ── */}
+      {importStep === "idle" && (
         <>
+        {/* Links rápidos */}
+        <div style={{ display: "flex", gap: 8 }}>
+          {unit && (
+            <a href={`/delivery/${unit.slug}`} target="_blank" rel="noreferrer" style={{ flex: 1, textAlign: "center", padding: "10px", borderRadius: 12, background: "var(--dash-link-bg)", border: "1px solid rgba(255,255,255,0.12)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.15), inset 0 -2px 0 rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.15)", color: "var(--dash-text-secondary)", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>
+              Ver cardápio ↗
+            </a>
+          )}
+          <button type="button" className="btn-ai" style={{ flex: 1 }} onClick={() => setImportStep("upload")}>
+            ✨ Importar com IA
+          </button>
+        </div>
 
       {/* Nova categoria */}
       {unit && (
