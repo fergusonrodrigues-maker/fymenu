@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import ThemeToggle from "@/components/ThemeToggle";
+import { createClient } from "@/lib/supabase/client";
 import dynamic from "next/dynamic";
 import type { Restaurant, Unit, StockStats, Category, Product, Profile, ReportData } from "./types";
 
@@ -274,6 +275,129 @@ export default function DashboardClient({
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
     return () => observer.disconnect();
   }, []);
+
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  useEffect(() => {
+    async function loadNotifications() {
+      const supabase = createClient();
+      const notifs: any[] = [];
+      const now = new Date();
+
+      // 1. Estoque baixo (menupro + business)
+      if (restaurant?.plan === "menupro" || restaurant?.plan === "business") {
+        const { data: lowStock } = await supabase
+          .from("inventory_items")
+          .select("id, name, current_stock, min_stock, unit_measure")
+          .eq("unit_id", unit?.id)
+          .eq("is_active", true)
+          .gt("min_stock", 0);
+
+        for (const item of lowStock || []) {
+          if (item.current_stock <= item.min_stock) {
+            notifs.push({
+              type: "stock_low",
+              icon: "📦",
+              title: `${item.name} com estoque baixo`,
+              desc: `${item.current_stock} ${item.unit_measure} (mín: ${item.min_stock})`,
+              color: "#f87171",
+              priority: 1,
+            });
+          }
+        }
+      }
+
+      // 2. Validade (business only)
+      if (restaurant?.plan === "business") {
+        const { data: expiringItems } = await supabase
+          .from("inventory_items")
+          .select("id, name, expiry_date, expiry_alert_days")
+          .eq("unit_id", unit?.id)
+          .eq("is_active", true)
+          .not("expiry_date", "is", null);
+
+        for (const item of expiringItems || []) {
+          const expiry = new Date(item.expiry_date);
+          const diffDays = Math.floor((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+          const alertDays = item.expiry_alert_days || 7;
+          if (diffDays < 0) {
+            notifs.push({ type: "expired", icon: "🔴", title: `${item.name} VENCIDO`, desc: `Venceu há ${Math.abs(diffDays)} dias`, color: "#f87171", priority: 0 });
+          } else if (diffDays <= alertDays) {
+            notifs.push({ type: "expiring", icon: "🟡", title: `${item.name} vencendo`, desc: `Vence em ${diffDays} dia${diffDays !== 1 ? "s" : ""}`, color: "#fbbf24", priority: 2 });
+          }
+        }
+      }
+
+      // 3. Meta diária (business only)
+      if (restaurant?.plan === "business" && (unit as any)?.daily_revenue_goal > 0 && now.getHours() >= 18) {
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+        const { data: todayOrders } = await supabase
+          .from("order_intents")
+          .select("total")
+          .eq("unit_id", unit?.id)
+          .eq("status", "confirmed")
+          .gte("created_at", todayStart);
+
+        const todayRevenue = (todayOrders || []).reduce((s: number, o: any) => s + parseFloat(o.total || "0"), 0);
+        const goal = (unit as any).daily_revenue_goal;
+        if (todayRevenue < goal) {
+          const falta = goal - todayRevenue;
+          const fmtVal = goal > 1000 ? `R$ ${(falta / 100).toFixed(2).replace(".", ",")}` : `R$ ${falta.toFixed(2).replace(".", ",")}`;
+          notifs.push({ type: "daily_goal", icon: "🎯", title: "Meta diária não atingida", desc: `Faltam ${fmtVal}`, color: "#fbbf24", priority: 3 });
+        }
+      }
+
+      // 4. Avaliações negativas últimas 24h (menupro + business)
+      if (restaurant?.plan === "menupro" || restaurant?.plan === "business") {
+        const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
+        const { data: badReviews } = await supabase
+          .from("reviews")
+          .select("id, restaurant_rating, comment, waiter_name")
+          .eq("unit_id", unit?.id)
+          .lte("restaurant_rating", 2)
+          .gte("created_at", yesterday);
+
+        for (const r of badReviews || []) {
+          notifs.push({
+            type: "bad_review",
+            icon: "⭐",
+            title: `Avaliação ${r.restaurant_rating}★`,
+            desc: r.comment ? `"${r.comment.slice(0, 50)}..."` : `Garçom: ${r.waiter_name || "N/A"}`,
+            color: "#f87171",
+            priority: 2,
+          });
+        }
+      }
+
+      // 5. Pagamento
+      if (restaurant?.status === "overdue" || restaurant?.status === "suspended") {
+        notifs.push({
+          type: "payment",
+          icon: "💳",
+          title: restaurant.status === "overdue" ? "Pagamento atrasado" : "Conta suspensa",
+          desc: "Ative um plano pra manter o cardápio publicado",
+          color: "#f87171",
+          priority: 0,
+        });
+      }
+
+      notifs.sort((a, b) => a.priority - b.priority);
+      setNotifications(notifs);
+    }
+
+    if (unit?.id) loadNotifications();
+  }, [unit?.id, restaurant]);
+
+  useEffect(() => {
+    if (!showNotifications) return;
+    const handler = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest("[data-notifications]")) setShowNotifications(false);
+    };
+    document.addEventListener("click", handler);
+    return () => document.removeEventListener("click", handler);
+  }, [showNotifications]);
 
   const GRID_LAYOUTS: Record<string, Array<{ id: string; cols: number; mobileCols: number }>> = {
     menu: [
@@ -948,6 +1072,89 @@ export default function DashboardClient({
             </div>
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            {/* Notificações */}
+            <div style={{ position: "relative" }} data-notifications>
+              <button
+                onClick={() => setShowNotifications(!showNotifications)}
+                style={{
+                  width: 36, height: 36, borderRadius: 12,
+                  background: notifications.length > 0 ? "rgba(248,113,113,0.08)" : "rgba(255,255,255,0.04)",
+                  border: "none", cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 18, position: "relative",
+                }}
+              >
+                🔔
+                {notifications.length > 0 && (
+                  <div style={{
+                    position: "absolute", top: -2, right: -2,
+                    width: 18, height: 18, borderRadius: "50%",
+                    background: "#f87171", color: "#fff",
+                    fontSize: 10, fontWeight: 800,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}>
+                    {notifications.length > 9 ? "9+" : notifications.length}
+                  </div>
+                )}
+              </button>
+
+              {showNotifications && (
+                <div style={{
+                  position: "absolute", top: 44, right: 0,
+                  width: 320, maxHeight: 400,
+                  borderRadius: 18, overflow: "hidden",
+                  background: "rgba(15,15,15,0.95)",
+                  backdropFilter: "blur(40px)",
+                  boxShadow: "0 1px 0 rgba(255,255,255,0.04) inset, 0 -1px 0 rgba(0,0,0,0.3) inset, 0 20px 60px rgba(0,0,0,0.5)",
+                  zIndex: 9999,
+                }}>
+                  <div style={{
+                    display: "flex", justifyContent: "space-between", alignItems: "center",
+                    padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.04)",
+                  }}>
+                    <span style={{ fontSize: 14, fontWeight: 800, color: "var(--dash-text)" }}>Notificações</span>
+                    <button onClick={() => setShowNotifications(false)} style={{
+                      background: "transparent", border: "none", color: "var(--dash-text-muted)",
+                      fontSize: 14, cursor: "pointer",
+                    }}>✕</button>
+                  </div>
+
+                  <div style={{ maxHeight: 340, overflowY: "auto", padding: "8px" }}>
+                    {notifications.length === 0 ? (
+                      <div style={{ textAlign: "center", padding: "30px 0", color: "var(--dash-text-muted)", fontSize: 12 }}>
+                        Tudo em ordem! Nenhuma notificação.
+                      </div>
+                    ) : (
+                      notifications.map((n, i) => (
+                        <div key={i} style={{
+                          display: "flex", gap: 10, padding: "10px 12px",
+                          borderRadius: 12, marginBottom: 4,
+                          background: "rgba(255,255,255,0.02)",
+                          cursor: "pointer",
+                          transition: "background 0.2s",
+                        }}
+                          onClick={() => {
+                            if (n.type === "stock_low" || n.type === "expired" || n.type === "expiring") open("estoque");
+                            else if (n.type === "daily_goal") open("financeiro");
+                            else if (n.type === "bad_review") open("analytics");
+                            else if (n.type === "payment") open("plano");
+                            setShowNotifications(false);
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.02)"; }}
+                        >
+                          <span style={{ fontSize: 18, flexShrink: 0 }}>{n.icon}</span>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ color: n.color, fontSize: 12, fontWeight: 700 }}>{n.title}</div>
+                            <div style={{ color: "var(--dash-text-muted)", fontSize: 10, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{n.desc}</div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
             <ThemeToggle />
             {unit && (
               <a href={`/delivery/${unit.slug}`} target="_blank" rel="noreferrer" style={{
