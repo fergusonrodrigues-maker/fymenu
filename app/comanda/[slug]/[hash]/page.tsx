@@ -16,7 +16,7 @@ export default async function ComandaDigitalPage({
 
   const { data: unit } = await supabase
     .from("units")
-    .select("id, name, logo_url")
+    .select("id, name, logo_url, google_review_url")
     .eq("slug", slug)
     .maybeSingle();
 
@@ -32,7 +32,7 @@ export default async function ComandaDigitalPage({
 
   const { data: comanda } = await supabase
     .from("comandas")
-    .select("id, table_number, hash, status, created_at")
+    .select("id, table_number, hash, status, created_at, opened_by, opened_by_name")
     .eq("hash", hash)
     .eq("unit_id", unit.id)
     .maybeSingle();
@@ -47,7 +47,7 @@ export default async function ComandaDigitalPage({
     );
   }
 
-  if (comanda.status === "closed" || comanda.status === "canceled") {
+  if (comanda.status === "canceled") {
     return (
       <div style={{ minHeight: "100vh", background: "#0a0a0a", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8 }}>
         <div style={{ fontSize: 36 }}>✅</div>
@@ -71,6 +71,7 @@ export default async function ComandaDigitalPage({
       unitName={unit.name ?? ""}
       unitLogo={unit.logo_url ?? null}
       unitId={unit.id}
+      googleReviewUrl={(unit as any).google_review_url ?? null}
     />
   );
 }

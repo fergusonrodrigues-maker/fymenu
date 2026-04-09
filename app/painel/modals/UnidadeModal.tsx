@@ -49,6 +49,7 @@ export default function UnidadeModal({ unit, isPro, onClose }: { unit: Unit | nu
   const [pixelId, setPixelId] = useState(unit?.facebook_pixel_id || "");
   const [ifoodUrl, setIfoodUrl] = useState(unit?.ifood_url || "");
   const [ifoodPlatform, setIfoodPlatform] = useState(unit?.ifood_platform || "ifood");
+  const [googleReviewUrl, setGoogleReviewUrl] = useState((unit as any)?.google_review_url || "");
 
   if (!unit) return <div style={{ color: "var(--dash-text-muted)", paddingTop: 16 }}>Nenhuma unidade encontrada.</div>;
   const origin = typeof window !== "undefined" ? window.location.origin : "";
@@ -278,6 +279,28 @@ export default function UnidadeModal({ unit, isPro, onClose }: { unit: Unit | nu
           </div>
           <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 10, display: "block" }}>
             Só contabiliza cliques — vendas são processadas na plataforma externa.
+          </span>
+        </div>
+        {/* Google Reviews */}
+        <div style={{ marginTop: 16 }}>
+          <label style={{ color: "var(--dash-text-muted)", fontSize: 12, fontWeight: 600, display: "block", marginBottom: 6 }}>Link do Google Reviews</label>
+          <input
+            type="url"
+            placeholder="Cole o link do Google Reviews do seu restaurante"
+            value={googleReviewUrl}
+            onChange={(e) => setGoogleReviewUrl(e.target.value)}
+            onBlur={async () => {
+              const supabase = createClient();
+              await supabase.from("units").update({ google_review_url: googleReviewUrl.trim() || null }).eq("id", unit.id);
+            }}
+            style={{
+              width: "100%", padding: "10px 14px", borderRadius: 12,
+              background: "rgba(255,255,255,0.04)", border: "none",
+              color: "var(--dash-text)", fontSize: 13, outline: "none", boxSizing: "border-box",
+            }}
+          />
+          <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 10, marginTop: 4, display: "block" }}>
+            Clientes que dão 4-5 estrelas são redirecionados pra avaliar no Google
           </span>
         </div>
       </div>

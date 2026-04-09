@@ -9,6 +9,8 @@ type ComandaRecord = {
   hash: string;
   status: string;
   created_at: string;
+  opened_by?: string | null;
+  opened_by_name?: string | null;
 };
 
 type ComandaItem = {
@@ -28,12 +30,20 @@ interface Props {
   unitName: string;
   unitLogo: string | null;
   unitId: string;
+  googleReviewUrl: string | null;
 }
 
-export default function ComandaClientView({ comanda: initialComanda, initialItems, unitName, unitId }: Props) {
+export default function ComandaClientView({ comanda: initialComanda, initialItems, unitName, unitId, googleReviewUrl }: Props) {
   const [comanda, setComanda] = useState<ComandaRecord>(initialComanda);
   const [items, setItems] = useState<ComandaItem[]>(initialItems);
   const [callingWaiter, setCallingWaiter] = useState(false);
+  const [showReview, setShowReview] = useState(false);
+  const [reviewSubmitted, setReviewSubmitted] = useState(false);
+  const [restaurantRating, setRestaurantRating] = useState(0);
+  const [waiterRating, setWaiterRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState("");
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [showGoogleRedirect, setShowGoogleRedirect] = useState(false);
   const supabase = createClient();
 
   useEffect(() => {
@@ -93,6 +103,54 @@ export default function ComandaClientView({ comanda: initialComanda, initialItem
 
     // Resetar após 30 segundos (permite chamar novamente)
     setTimeout(() => setCallingWaiter(false), 30000);
+  }
+
+  useEffect(() => {
+    if (comanda.status === "closed" || comanda.status === "pending_payment") {
+      supabase.from("reviews").select("id").eq("comanda_id", comanda.id).limit(1)
+        .then(({ data }) => {
+          if (!data || data.length === 0) {
+            setTimeout(() => setShowReview(true), 1500);
+          } else {
+            setReviewSubmitted(true);
+          }
+        });
+    }
+  }, [comanda.status]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function handleSubmitReview() {
+    if (restaurantRating === 0 || waiterRating === 0) return;
+    setSubmittingReview(true);
+
+    try {
+      const willRedirectGoogle = restaurantRating >= 4 && !!googleReviewUrl;
+
+      await supabase.from("reviews").insert({
+        unit_id: unitId,
+        comanda_id: comanda.id,
+        customer_name: null,
+        restaurant_rating: restaurantRating,
+        waiter_rating: waiterRating,
+        waiter_id: comanda.opened_by ?? null,
+        waiter_name: comanda.opened_by_name ?? null,
+        comment: reviewComment.trim() || null,
+        redirected_to_google: willRedirectGoogle,
+      });
+
+      setReviewSubmitted(true);
+      setShowReview(false);
+
+      if (willRedirectGoogle) {
+        setShowGoogleRedirect(true);
+        setTimeout(() => {
+          window.open(googleReviewUrl!, "_blank");
+        }, 2000);
+      }
+    } catch (err) {
+      console.error("Erro ao enviar avaliação:", err);
+    } finally {
+      setSubmittingReview(false);
+    }
   }
 
   const activeItems = items.filter(i => i.status !== "canceled");
@@ -205,6 +263,138 @@ export default function ComandaClientView({ comanda: initialComanda, initialItem
           {callingWaiter ? "✋ Garçom chamado! Aguarde..." : "🖐️ Chamar Garçom"}
         </button>
       </div>
+
+      {/* Tela de avaliação */}
+      {showReview && !reviewSubmitted && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 1000,
+          background: "rgba(0,0,0,0.85)",
+          backdropFilter: "blur(20px)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          padding: 20,
+          animation: "fadeIn 0.4s ease",
+        }}>
+          <div style={{
+            width: "100%", maxWidth: 380,
+            borderRadius: 24, padding: "28px 24px",
+            background: "rgba(20,20,20,0.9)",
+            boxShadow: "0 1px 0 rgba(255,255,255,0.04) inset, 0 -1px 0 rgba(0,0,0,0.3) inset, 0 20px 60px rgba(0,0,0,0.5)",
+          }}>
+            <div style={{ textAlign: "center", marginBottom: 24 }}>
+              <div style={{ fontSize: 36, marginBottom: 10 }}>⭐</div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: "#fff" }}>Como foi sua experiência?</div>
+              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginTop: 6 }}>
+                Sua avaliação ajuda a melhorar nosso atendimento
+              </div>
+            </div>
+
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.5)", marginBottom: 8 }}>Restaurante</div>
+              <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
+                {[1, 2, 3, 4, 5].map(star => (
+                  <button key={star} onClick={() => setRestaurantRating(star)} style={{
+                    background: "transparent", border: "none", cursor: "pointer",
+                    fontSize: 32, padding: 4,
+                    filter: star <= restaurantRating ? "none" : "grayscale(100%) opacity(0.3)",
+                    transform: star <= restaurantRating ? "scale(1.1)" : "scale(1)",
+                    transition: "all 0.2s",
+                  }}>⭐</button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.5)", marginBottom: 8 }}>
+                Garçom{comanda.opened_by_name ? `: ${comanda.opened_by_name}` : ""}
+              </div>
+              <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
+                {[1, 2, 3, 4, 5].map(star => (
+                  <button key={star} onClick={() => setWaiterRating(star)} style={{
+                    background: "transparent", border: "none", cursor: "pointer",
+                    fontSize: 32, padding: 4,
+                    filter: star <= waiterRating ? "none" : "grayscale(100%) opacity(0.3)",
+                    transform: star <= waiterRating ? "scale(1.1)" : "scale(1)",
+                    transition: "all 0.2s",
+                  }}>⭐</button>
+                ))}
+              </div>
+            </div>
+
+            {restaurantRating > 0 && restaurantRating <= 3 && (
+              <div style={{ marginBottom: 16 }}>
+                <textarea
+                  placeholder="O que podemos melhorar?"
+                  value={reviewComment}
+                  onChange={(e) => setReviewComment(e.target.value)}
+                  style={{
+                    width: "100%", minHeight: 70, padding: 12, borderRadius: 12,
+                    background: "rgba(255,255,255,0.04)", border: "none",
+                    color: "#fff", fontSize: 13, outline: "none",
+                    resize: "none", boxSizing: "border-box",
+                  }}
+                />
+              </div>
+            )}
+
+            <button
+              onClick={handleSubmitReview}
+              disabled={restaurantRating === 0 || waiterRating === 0 || submittingReview}
+              style={{
+                width: "100%", padding: 14, borderRadius: 14, border: "none",
+                background: restaurantRating > 0 && waiterRating > 0 ? "rgba(0,255,174,0.1)" : "rgba(255,255,255,0.04)",
+                color: restaurantRating > 0 && waiterRating > 0 ? "#00ffae" : "rgba(255,255,255,0.2)",
+                fontSize: 15, fontWeight: 800, cursor: "pointer",
+                boxShadow: restaurantRating > 0 && waiterRating > 0
+                  ? "0 1px 0 rgba(0,255,174,0.12) inset, 0 -1px 0 rgba(0,0,0,0.2) inset"
+                  : "none",
+                opacity: submittingReview ? 0.5 : 1,
+                transition: "all 0.3s",
+              }}
+            >
+              {submittingReview ? "Enviando..." : "Enviar avaliação"}
+            </button>
+
+            <button onClick={() => { setShowReview(false); setReviewSubmitted(true); }} style={{
+              width: "100%", padding: 10, marginTop: 8, borderRadius: 12, border: "none",
+              background: "transparent", color: "rgba(255,255,255,0.25)",
+              fontSize: 12, cursor: "pointer",
+            }}>
+              Pular
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Redirecionamento Google */}
+      {showGoogleRedirect && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 1001,
+          background: "rgba(0,0,0,0.9)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          padding: 20,
+        }}>
+          <div style={{ textAlign: "center", maxWidth: 320 }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>🎉</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: "#fff", marginBottom: 8 }}>Obrigado pela avaliação!</div>
+            <div style={{ fontSize: 14, color: "rgba(255,255,255,0.6)", marginBottom: 20, lineHeight: 1.5 }}>
+              Que tal compartilhar essa experiência no Google? Sua avaliação ajuda outros clientes!
+            </div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }}>Abrindo Google Reviews...</div>
+            <a href={googleReviewUrl!} target="_blank" rel="noopener noreferrer" style={{
+              display: "inline-block", marginTop: 16, padding: "12px 24px", borderRadius: 14,
+              background: "rgba(66,133,244,0.15)", color: "#4285f4",
+              fontSize: 14, fontWeight: 700, textDecoration: "none",
+            }}>
+              Avaliar no Google →
+            </a>
+            <button onClick={() => setShowGoogleRedirect(false)} style={{
+              display: "block", width: "100%", marginTop: 12, padding: 10, borderRadius: 12,
+              background: "transparent", border: "none", color: "rgba(255,255,255,0.2)",
+              fontSize: 12, cursor: "pointer",
+            }}>Fechar</button>
+          </div>
+        </div>
+      )}
 
       {/* Footer with total */}
       <div style={{
