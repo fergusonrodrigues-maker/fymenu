@@ -16,7 +16,7 @@ export default async function ComandaDigitalPage({
 
   const { data: unit } = await supabase
     .from("units")
-    .select("id, name, logo_url, google_review_url")
+    .select("id, name, logo_url, google_review_url, restaurants(plan)")
     .eq("slug", slug)
     .maybeSingle();
 
@@ -72,6 +72,7 @@ export default async function ComandaDigitalPage({
       unitLogo={unit.logo_url ?? null}
       unitId={unit.id}
       googleReviewUrl={(unit as any).google_review_url ?? null}
+      restaurantPlan={(() => { const r = (unit as any).restaurants; return (Array.isArray(r) ? r[0]?.plan : r?.plan) ?? ""; })()}
     />
   );
 }

@@ -31,12 +31,14 @@ interface Props {
   unitLogo: string | null;
   unitId: string;
   googleReviewUrl: string | null;
+  restaurantPlan: string;
 }
 
-export default function ComandaClientView({ comanda: initialComanda, initialItems, unitName, unitId, googleReviewUrl }: Props) {
+export default function ComandaClientView({ comanda: initialComanda, initialItems, unitName, unitId, googleReviewUrl, restaurantPlan }: Props) {
   const [comanda, setComanda] = useState<ComandaRecord>(initialComanda);
   const [items, setItems] = useState<ComandaItem[]>(initialItems);
   const [callingWaiter, setCallingWaiter] = useState(false);
+  const [callingManager, setCallingManager] = useState(false);
   const [showReadyNotification, setShowReadyNotification] = useState(false);
   const [latestReadyItem, setLatestReadyItem] = useState("");
   const [showReview, setShowReview] = useState(false);
@@ -85,7 +87,8 @@ export default function ComandaClientView({ comanda: initialComanda, initialItem
         filter: `comanda_id=eq.${comanda.id}`,
       }, (payload) => {
         if (payload.new.status === "resolved") {
-          setCallingWaiter(false);
+          if (payload.new.type === "waiter") setCallingWaiter(false);
+          if (payload.new.type === "manager") setCallingManager(false);
         }
       })
       .subscribe();
@@ -112,6 +115,26 @@ export default function ComandaClientView({ comanda: initialComanda, initialItem
 
     // Resetar após 30 segundos (permite chamar novamente)
     setTimeout(() => setCallingWaiter(false), 30000);
+  }
+
+  async function handleCallManager() {
+    setCallingManager(true);
+
+    const { error } = await supabase.from("table_calls").insert({
+      unit_id: unitId,
+      comanda_id: comanda.id,
+      table_number: comanda.table_number,
+      type: "manager",
+      status: "pending",
+    });
+
+    if (error) {
+      console.error("Erro ao chamar gerente:", error);
+      setCallingManager(false);
+      return;
+    }
+
+    setTimeout(() => setCallingManager(false), 30000);
   }
 
   useEffect(() => {
@@ -315,6 +338,28 @@ export default function ComandaClientView({ comanda: initialComanda, initialItem
         >
           {callingWaiter ? "✋ Garçom chamado! Aguarde..." : "🖐️ Chamar Garçom"}
         </button>
+
+        {restaurantPlan === "business" && (
+          <button
+            onClick={handleCallManager}
+            disabled={callingManager}
+            style={{
+              width: "100%",
+              padding: "14px",
+              borderRadius: 14,
+              border: "none",
+              cursor: "pointer",
+              background: callingManager ? "rgba(168,85,247,0.15)" : "rgba(168,85,247,0.08)",
+              color: callingManager ? "rgba(168,85,247,0.6)" : "rgba(168,85,247,0.8)",
+              fontSize: 14,
+              fontWeight: 700,
+              marginTop: 8,
+              transition: "all 0.3s",
+            }}
+          >
+            {callingManager ? "👔 Gerente chamado! Aguarde..." : "👔 Chamar Gerente"}
+          </button>
+        )}
       </div>
 
       {/* Tela de avaliação */}

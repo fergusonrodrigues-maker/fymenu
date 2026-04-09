@@ -55,6 +55,7 @@ export default function HubClient({
   const [orders, setOrders] = useState<HubOrder[]>(initialOrders);
   const [tick, setTick] = useState(0);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [tableCalls, setTableCalls] = useState<any[]>([]);
   const supabase = createClient();
   const audioCtxRef = useRef<AudioContext | null>(null);
 
@@ -118,6 +119,46 @@ export default function HubClient({
     return () => { supabase.removeChannel(channel); };
   }, [unitId]);
 
+  // Realtime — table_calls
+  useEffect(() => {
+    supabase
+      .from("table_calls")
+      .select("*")
+      .eq("unit_id", unitId)
+      .eq("status", "pending")
+      .order("created_at", { ascending: false })
+      .then(({ data }) => { if (data) setTableCalls(data); });
+
+    const channel = supabase
+      .channel("hub-table-calls")
+      .on("postgres_changes", {
+        event: "INSERT",
+        schema: "public",
+        table: "table_calls",
+        filter: `unit_id=eq.${unitId}`,
+      }, (payload) => {
+        const call = payload.new as any;
+        setTableCalls(prev => [call, ...prev]);
+        if (call.type === "manager" && navigator.vibrate) {
+          navigator.vibrate([500, 200, 500, 200, 500]);
+        } else if (navigator.vibrate) {
+          navigator.vibrate([200, 100, 200]);
+        }
+        try { new Audio("/notification.mp3").play(); } catch {}
+      })
+      .on("postgres_changes", {
+        event: "UPDATE",
+        schema: "public",
+        table: "table_calls",
+        filter: `unit_id=eq.${unitId}`,
+      }, (payload) => {
+        setTableCalls(prev => prev.map(c => c.id === payload.new.id ? payload.new as any : c));
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [unitId]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const markKitchenStatus = async (orderId: string, status: string) => {
     await supabase
       .from("order_intents")
@@ -170,6 +211,82 @@ export default function HubClient({
           </a>
         </div>
       </header>
+
+      {/* Chamados pendentes */}
+      {tableCalls.filter(c => c.status === "pending").length > 0 && (
+        <div style={{ padding: "12px 24px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", flexDirection: "column", gap: 6 }}>
+          {tableCalls.filter(c => c.status === "pending" && c.type === "manager").map(call => (
+            <div key={call.id} style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              padding: "12px 16px", borderRadius: 14,
+              background: "rgba(168,85,247,0.1)",
+              border: "1px solid rgba(168,85,247,0.2)",
+              animation: "pulse 1s infinite",
+            }}>
+              <div>
+                <div style={{ color: "#a855f7", fontSize: 14, fontWeight: 800 }}>
+                  👔 Mesa {call.table_number} — GERENTE!
+                </div>
+                <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, marginTop: 2 }}>
+                  {new Date(call.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                </div>
+              </div>
+              <button
+                onClick={async () => {
+                  await supabase.from("table_calls").update({
+                    status: "resolved",
+                    acknowledged_by: "Gerente",
+                    acknowledged_at: new Date().toISOString(),
+                    resolved_at: new Date().toISOString(),
+                  }).eq("id", call.id);
+                }}
+                style={{
+                  padding: "8px 16px", borderRadius: 10, border: "none", cursor: "pointer",
+                  background: "rgba(168,85,247,0.15)", color: "#a855f7",
+                  fontSize: 12, fontWeight: 700,
+                }}
+              >
+                ✓ Atender
+              </button>
+            </div>
+          ))}
+          {tableCalls.filter(c => c.status === "pending" && c.type === "waiter").map(call => (
+            <div key={call.id} style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              padding: "12px 16px", borderRadius: 14,
+              background: "rgba(251,191,36,0.1)",
+              border: "1px solid rgba(251,191,36,0.2)",
+              animation: "pulse 1.5s infinite",
+            }}>
+              <div>
+                <div style={{ color: "#fbbf24", fontSize: 14, fontWeight: 800 }}>
+                  🖐️ Mesa {call.table_number} chamando!
+                </div>
+                <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, marginTop: 2 }}>
+                  {new Date(call.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                </div>
+              </div>
+              <button
+                onClick={async () => {
+                  await supabase.from("table_calls").update({
+                    status: "resolved",
+                    acknowledged_by: unitName,
+                    acknowledged_at: new Date().toISOString(),
+                    resolved_at: new Date().toISOString(),
+                  }).eq("id", call.id);
+                }}
+                style={{
+                  padding: "8px 16px", borderRadius: 10, border: "none", cursor: "pointer",
+                  background: "rgba(0,255,174,0.1)", color: "#00ffae",
+                  fontSize: 12, fontWeight: 700,
+                }}
+              >
+                ✓ Atender
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Kanban */}
       <div className="flex-1 grid grid-cols-3 divide-x divide-gray-800 min-h-0">
