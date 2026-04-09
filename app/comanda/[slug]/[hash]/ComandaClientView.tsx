@@ -37,6 +37,8 @@ export default function ComandaClientView({ comanda: initialComanda, initialItem
   const [comanda, setComanda] = useState<ComandaRecord>(initialComanda);
   const [items, setItems] = useState<ComandaItem[]>(initialItems);
   const [callingWaiter, setCallingWaiter] = useState(false);
+  const [showReadyNotification, setShowReadyNotification] = useState(false);
+  const [latestReadyItem, setLatestReadyItem] = useState("");
   const [showReview, setShowReview] = useState(false);
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
   const [restaurantRating, setRestaurantRating] = useState(0);
@@ -53,7 +55,14 @@ export default function ComandaClientView({ comanda: initialComanda, initialItem
         if (payload.eventType === "INSERT") {
           setItems(prev => [...prev, payload.new as ComandaItem]);
         } else if (payload.eventType === "UPDATE") {
-          setItems(prev => prev.map(i => i.id === payload.new.id ? { ...i, ...payload.new } : i));
+          const updated = payload.new as ComandaItem;
+          if (updated.status === "ready") {
+            setLatestReadyItem(updated.product_name || "Seu pedido");
+            setShowReadyNotification(true);
+            if (navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 300]);
+            setTimeout(() => setShowReadyNotification(false), 8000);
+          }
+          setItems(prev => prev.map(i => i.id === updated.id ? { ...i, ...updated } : i));
         } else if (payload.eventType === "DELETE") {
           setItems(prev => prev.filter(i => i.id !== (payload.old as any).id));
         }
@@ -185,6 +194,31 @@ export default function ComandaClientView({ comanda: initialComanda, initialItem
 
   return (
     <div style={{ minHeight: "100vh", background: "#0a0a0a", color: "#fff", padding: "0 0 100px" }}>
+      {/* Notificação pedido pronto */}
+      {showReadyNotification && (
+        <div style={{
+          position: "fixed",
+          top: 0, left: 0, right: 0,
+          zIndex: 2000,
+          padding: "16px 20px",
+          paddingTop: "calc(16px + env(safe-area-inset-top))",
+          background: "linear-gradient(135deg, rgba(0,255,174,0.95), rgba(0,217,255,0.95))",
+          color: "#000",
+          textAlign: "center",
+          animation: "slideDownNotif 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
+          boxShadow: "0 4px 20px rgba(0,255,174,0.3)",
+        }}>
+          <div style={{ fontSize: 16, fontWeight: 800 }}>🍽️ Pedido pronto!</div>
+          <div style={{ fontSize: 13, fontWeight: 600, marginTop: 4, opacity: 0.8 }}>{latestReadyItem}</div>
+          <button onClick={() => setShowReadyNotification(false)} style={{
+            position: "absolute", top: 12, right: 12,
+            background: "rgba(0,0,0,0.1)", border: "none",
+            color: "#000", borderRadius: 8, padding: "4px 8px",
+            fontSize: 12, cursor: "pointer",
+          }}>✕</button>
+        </div>
+      )}
+
       {/* Header */}
       <div style={{ padding: "20px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
         <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>{unitName}</div>
@@ -208,16 +242,41 @@ export default function ComandaClientView({ comanda: initialComanda, initialItem
             {activeItems.map(item => (
               <div key={item.id} style={{
                 padding: "12px 16px", borderRadius: 14,
-                background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)",
+                background: item.status === "ready"
+                  ? "rgba(0,255,174,0.06)"
+                  : item.status === "preparing"
+                  ? "rgba(251,191,36,0.06)"
+                  : "rgba(255,255,255,0.03)",
+                border: item.status === "ready"
+                  ? "1px solid rgba(0,255,174,0.15)"
+                  : item.status === "preparing"
+                  ? "1px solid rgba(251,191,36,0.15)"
+                  : "1px solid rgba(255,255,255,0.06)",
+                transition: "background 0.3s, border-color 0.3s",
               }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div>
                     <span style={{ fontWeight: 700, fontSize: 14 }}>{item.quantity}× </span>
                     <span style={{ fontSize: 14 }}>{item.product_name}</span>
                   </div>
-                  <span style={{ color: "#00ffae", fontWeight: 700, fontSize: 14 }}>
-                    R$ {((item.quantity * item.unit_price) / 100).toFixed(2).replace(".", ",")}
-                  </span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ color: "#00ffae", fontWeight: 700, fontSize: 14 }}>
+                      R$ {((item.quantity * item.unit_price) / 100).toFixed(2).replace(".", ",")}
+                    </span>
+                    <span style={{
+                      padding: "3px 8px", borderRadius: 6, fontSize: 10, fontWeight: 700,
+                      background: item.status === "ready" ? "rgba(0,255,174,0.1)"
+                        : item.status === "preparing" ? "rgba(251,191,36,0.1)"
+                        : item.status === "delivered" ? "rgba(255,255,255,0.06)"
+                        : "rgba(255,255,255,0.04)",
+                      color: item.status === "ready" ? "#00ffae"
+                        : item.status === "preparing" ? "#fbbf24"
+                        : item.status === "delivered" ? "rgba(255,255,255,0.3)"
+                        : "rgba(255,255,255,0.25)",
+                    }}>
+                      {itemStatusLabel(item.status)}
+                    </span>
+                  </div>
                 </div>
                 {item.notes && (
                   <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, marginTop: 4 }}>
@@ -229,12 +288,6 @@ export default function ComandaClientView({ comanda: initialComanda, initialItem
                     + {item.addons.map(a => a.name).join(", ")}
                   </div>
                 )}
-                <div style={{
-                  marginTop: 6, fontSize: 11, fontWeight: 600,
-                  color: itemStatusColor(item.status),
-                }}>
-                  {itemStatusLabel(item.status)}
-                </div>
               </div>
             ))}
           </div>

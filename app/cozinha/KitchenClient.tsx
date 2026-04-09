@@ -107,7 +107,9 @@ export default function KitchenClient({ unitId, unitName, restaurantName, initia
   }, [unitId]);
 
   const markKitchenStatus = async (orderId: string, status: string) => {
-    await supabase.from("order_intents").update({ kitchen_status: status }).eq("id", orderId);
+    const patch: Record<string, unknown> = { kitchen_status: status };
+    if (status === "ready") patch.ready_at = new Date().toISOString();
+    await supabase.from("order_intents").update(patch).eq("id", orderId);
     if (status === "ready") {
       setOrders((prev) => prev.map((o) => o.id === orderId ? { ...o, kitchen_status: "ready" } : o));
     } else if (status === "delivered") {
