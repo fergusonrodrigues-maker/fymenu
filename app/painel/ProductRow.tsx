@@ -50,6 +50,168 @@ function StockBadge({ product }: { product: Product }) {
   return <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 6, background: "rgba(0,255,174,0.10)", color: "#00ffae", fontWeight: 700 }}>{stock} em estoque</span>;
 }
 
+function RecipeSection({ productId, unitId, basePrice }: { productId: string; unitId: string; basePrice: number }) {
+  const [recipes, setRecipes] = useState<any[]>([]);
+  const [inventoryItems, setInventoryItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showAdd, setShowAdd] = useState(false);
+  const [selectedItem, setSelectedItem] = useState("");
+  const [quantity, setQuantity] = useState("");
+
+  const supabase = createClient();
+
+  useEffect(() => {
+    async function load() {
+      const [{ data: rec }, { data: inv }] = await Promise.all([
+        supabase.from("product_recipes").select("*, inventory_items(id, name, unit_measure, cost_per_unit, category)").eq("product_id", productId),
+        supabase.from("inventory_items").select("id, name, unit_measure, cost_per_unit, category").eq("unit_id", unitId).eq("is_active", true).order("name"),
+      ]);
+      if (rec) setRecipes(rec);
+      if (inv) setInventoryItems(inv);
+      setLoading(false);
+    }
+    load();
+  }, [productId, unitId]);
+
+  const cmv = recipes.reduce((total, r) => {
+    const costPerUnit = r.inventory_items?.cost_per_unit || 0;
+    return total + (r.quantity * costPerUnit);
+  }, 0);
+
+  const margin = basePrice > 0 ? basePrice - cmv : 0;
+  const marginPercent = basePrice > 0 ? ((margin / basePrice) * 100).toFixed(1) : "0";
+
+  async function handleAddRecipe() {
+    if (!selectedItem || !quantity) return;
+    const { error } = await supabase.from("product_recipes").insert({
+      product_id: productId,
+      inventory_item_id: selectedItem,
+      quantity: parseFloat(quantity),
+    });
+    if (error) {
+      if (error.code === "23505") alert("Ingrediente já adicionado a este produto.");
+      else console.error(error);
+      return;
+    }
+    const { data } = await supabase.from("product_recipes").select("*, inventory_items(id, name, unit_measure, cost_per_unit, category)").eq("product_id", productId);
+    if (data) setRecipes(data);
+    setSelectedItem(""); setQuantity(""); setShowAdd(false);
+  }
+
+  async function handleRemoveRecipe(recipeId: string) {
+    await supabase.from("product_recipes").delete().eq("id", recipeId);
+    setRecipes(prev => prev.filter(r => r.id !== recipeId));
+  }
+
+  async function handleUpdateQuantity(recipeId: string, newQty: string) {
+    const qty = parseFloat(newQty);
+    if (isNaN(qty) || qty <= 0) return;
+    await supabase.from("product_recipes").update({ quantity: qty }).eq("id", recipeId);
+    setRecipes(prev => prev.map(r => r.id === recipeId ? { ...r, quantity: qty } : r));
+  }
+
+  function fmtBRL(v: number) { return `R$ ${(v / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`; }
+
+  if (loading) return <div style={{ color: "var(--dash-text-muted)", fontSize: 12, padding: "10px 0" }}>Carregando ficha técnica...</div>;
+
+  const usedIds = recipes.map(r => r.inventory_item_id);
+  const available = inventoryItems.filter(i => !usedIds.includes(i.id));
+
+  return (
+    <div style={{ marginTop: 16, padding: 14, borderRadius: 14, background: "rgba(255,255,255,0.02)", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.1) inset" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: "var(--dash-text)" }}>📋 Ficha Técnica</div>
+        <button onClick={() => setShowAdd(!showAdd)} style={{
+          padding: "4px 10px", borderRadius: 8, border: "none", cursor: "pointer",
+          background: "rgba(0,255,174,0.08)", color: "var(--dash-accent)", fontSize: 10, fontWeight: 600,
+        }}>+ Ingrediente</button>
+      </div>
+
+      {recipes.length > 0 && (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginBottom: 12 }}>
+          <div style={{ padding: "8px 10px", borderRadius: 10, background: "rgba(248,113,113,0.06)", textAlign: "center" }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: "#f87171" }}>{fmtBRL(Math.round(cmv))}</div>
+            <div style={{ fontSize: 9, color: "var(--dash-text-muted)" }}>CMV</div>
+          </div>
+          <div style={{ padding: "8px 10px", borderRadius: 10, background: "rgba(0,255,174,0.06)", textAlign: "center" }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: "var(--dash-accent)" }}>{fmtBRL(Math.round(margin))}</div>
+            <div style={{ fontSize: 9, color: "var(--dash-text-muted)" }}>Margem</div>
+          </div>
+          <div style={{ padding: "8px 10px", borderRadius: 10, background: "rgba(255,255,255,0.04)", textAlign: "center" }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: parseFloat(marginPercent) >= 60 ? "var(--dash-accent)" : parseFloat(marginPercent) >= 30 ? "#fbbf24" : "#f87171" }}>
+              {marginPercent}%
+            </div>
+            <div style={{ fontSize: 9, color: "var(--dash-text-muted)" }}>Margem %</div>
+          </div>
+        </div>
+      )}
+
+      {showAdd && (
+        <div style={{ display: "flex", gap: 6, marginBottom: 10, flexWrap: "wrap" }}>
+          <select value={selectedItem} onChange={e => setSelectedItem(e.target.value)}
+            style={{ flex: 2, minWidth: 120, padding: "8px 10px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "none", color: "var(--dash-text)", fontSize: 12, outline: "none" }}>
+            <option value="">Selecionar ingrediente...</option>
+            {available.map(i => (
+              <option key={i.id} value={i.id}>{i.name} ({i.unit_measure})</option>
+            ))}
+          </select>
+          <input type="number" step="0.001" placeholder="Qtd" value={quantity} onChange={e => setQuantity(e.target.value)}
+            style={{ width: 70, padding: "8px 10px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "none", color: "var(--dash-text)", fontSize: 12, outline: "none" }} />
+          <button onClick={handleAddRecipe} disabled={!selectedItem || !quantity} style={{
+            padding: "8px 12px", borderRadius: 10, border: "none", cursor: "pointer",
+            background: "rgba(0,255,174,0.1)", color: "var(--dash-accent)", fontSize: 11, fontWeight: 700,
+            opacity: !selectedItem || !quantity ? 0.4 : 1,
+          }}>✓</button>
+          <button onClick={() => setShowAdd(false)} style={{
+            padding: "8px 10px", borderRadius: 10, border: "none", cursor: "pointer",
+            background: "rgba(255,255,255,0.04)", color: "var(--dash-text-muted)", fontSize: 11,
+          }}>✕</button>
+        </div>
+      )}
+
+      {inventoryItems.length === 0 && (
+        <div style={{ fontSize: 11, color: "var(--dash-text-muted)", padding: "8px 0" }}>
+          Nenhum ingrediente cadastrado. Adicione ingredientes no módulo de Estoque primeiro.
+        </div>
+      )}
+
+      {recipes.length === 0 && inventoryItems.length > 0 ? (
+        <div style={{ fontSize: 11, color: "var(--dash-text-muted)", padding: "8px 0" }}>
+          Nenhum ingrediente vinculado. Adicione pra calcular o CMV automaticamente.
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          {recipes.map(r => {
+            const item = r.inventory_items;
+            const itemCost = (r.quantity * (item?.cost_per_unit || 0));
+            return (
+              <div key={r.id} style={{
+                display: "flex", alignItems: "center", gap: 8, padding: "6px 10px",
+                borderRadius: 10, background: "rgba(255,255,255,0.02)",
+              }}>
+                <div style={{ flex: 1 }}>
+                  <span style={{ fontSize: 12, color: "var(--dash-text)", fontWeight: 600 }}>{item?.name || "?"}</span>
+                </div>
+                <input
+                  type="number" step="0.001"
+                  defaultValue={r.quantity}
+                  onBlur={(e) => handleUpdateQuantity(r.id, e.target.value)}
+                  style={{ width: 60, padding: "3px 6px", borderRadius: 6, background: "rgba(255,255,255,0.04)", border: "none", color: "var(--dash-text)", fontSize: 11, outline: "none", textAlign: "center" }}
+                />
+                <span style={{ fontSize: 10, color: "var(--dash-text-muted)", width: 24 }}>{item?.unit_measure}</span>
+                <span style={{ fontSize: 11, color: "#f87171", fontWeight: 600, width: 60, textAlign: "right" }}>{fmtBRL(Math.round(itemCost))}</span>
+                <button onClick={() => handleRemoveRecipe(r.id)} style={{
+                  background: "transparent", border: "none", color: "rgba(255,255,255,0.15)", fontSize: 12, cursor: "pointer",
+                }}>✕</button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ProductRow({
   product,
   expanded,
@@ -57,6 +219,8 @@ export default function ProductRow({
   onClose,
   section,
   customSections,
+  unitId,
+  hasRecipeFeature,
 }: {
   product: Product;
   expanded: boolean;
@@ -64,6 +228,8 @@ export default function ProductRow({
   onClose: () => void;
   section?: string;
   customSections?: Array<{ id: string; name: string; allows_video: boolean; allows_alcoholic_toggle: boolean }>;
+  unitId?: string;
+  hasRecipeFeature?: boolean;
 }) {
   const [activeTab, setActiveTab] = useState<"info" | "estoque" | "nutricao">("info");
   const [thumbnailUrl, setThumbnailUrl] = useState(product.thumbnail_url ?? "");
@@ -187,6 +353,7 @@ export default function ProductRow({
 
           {/* Tab: Info */}
           {activeTab === "info" && (
+            <>
             <form
               action={async (formData) => {
                 formData.set("thumbnail_url", thumbnailUrl);
@@ -369,6 +536,17 @@ export default function ProductRow({
                 </form>
               </div>
             </form>
+            <div style={{ padding: "0 16px 16px" }}>
+              {hasRecipeFeature && unitId ? (
+                <RecipeSection productId={product.id} unitId={unitId} basePrice={product.base_price || 0} />
+              ) : (
+                <div style={{ marginTop: 12, padding: 12, borderRadius: 12, background: "rgba(255,255,255,0.02)", textAlign: "center" }}>
+                  <span style={{ fontSize: 14 }}>🔒</span>
+                  <div style={{ fontSize: 11, color: "var(--dash-text-muted)", marginTop: 4 }}>Ficha técnica disponível no plano Business</div>
+                </div>
+              )}
+            </div>
+            </>
           )}
 
           {/* Tab: Estoque */}

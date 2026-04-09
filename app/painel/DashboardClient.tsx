@@ -1165,7 +1165,7 @@ export default function DashboardClient({
         {unit && <PedidosModal unitId={unit.id} unit={unit} />}
       </Modal>
       <Modal open={modal === "cardapio"} onClose={close} title="Cardápio">
-        <CardapioModal unit={unit} categories={categories} products={products} upsellItems={upsellItems} onClose={close} />
+        <CardapioModal unit={unit} categories={categories} products={products} upsellItems={upsellItems} restaurant={restaurant} onClose={close} />
       </Modal>
       <Modal open={modal === "financeiro"} onClose={close} title="Financeiro">
         <FinanceiroModal unit={unit} analytics={analytics} reportData={reportData} restaurant={restaurant} onOpenPlano={() => open("plano")} />

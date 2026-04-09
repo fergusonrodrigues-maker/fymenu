@@ -5,7 +5,7 @@ import { createCategory, updateCategory, deleteCategory, createProduct } from ".
 import { createClient as createSupabaseClient } from "@/lib/supabase/client";
 import ProductRow from "../ProductRow";
 import dynamic from "next/dynamic";
-import { Unit, Category, Product } from "../types";
+import { Unit, Category, Product, Restaurant } from "../types";
 
 const ImportClient = dynamic(() => import("../ia/ImportClient"), { ssr: false });
 
@@ -105,9 +105,17 @@ function NewProductFormInline({ categoryId, section, customSections, anyProductE
   );
 }
 
-export default function CardapioModal({ unit, categories, products, upsellItems, onClose }: {
-  unit: Unit | null; categories: Category[]; products: Product[]; upsellItems: any[]; onClose: () => void;
+const PLAN_FEATURES_CARDAPIO: Record<string, string[]> = {
+  menu: [],
+  menupro: [],
+  business: ["recipe"],
+};
+
+export default function CardapioModal({ unit, categories, products, upsellItems, restaurant, onClose }: {
+  unit: Unit | null; categories: Category[]; products: Product[]; upsellItems: any[]; restaurant?: Restaurant | null; onClose: () => void;
 }) {
+  const hasRecipeFeature = PLAN_FEATURES_CARDAPIO[restaurant?.plan as keyof typeof PLAN_FEATURES_CARDAPIO]?.includes("recipe") || false;
+
   const [expandedCat, setExpandedCat] = useState<string | null>(null);
   const [expandedProductId, setExpandedProductId] = useState<string | null>(null);
   const [showAllProducts, setShowAllProducts] = useState<Record<string, boolean>>({});
@@ -481,6 +489,8 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                           onClose={() => setExpandedProductId(null)}
                           section={editCatSection[cat.id] ?? cat.section ?? 'pratos'}
                           customSections={customSections}
+                          unitId={unit?.id}
+                          hasRecipeFeature={hasRecipeFeature}
                         />
                       ))}
                       {catProducts.length > 4 && !showAllProducts[cat.id] && (
