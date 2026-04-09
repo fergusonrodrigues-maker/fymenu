@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 const supabase = createClient();
@@ -56,6 +56,14 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
   const [purchaseAI, setPurchaseAI] = useState<string | null>(null);
   const [generatingPurchaseAI, setGeneratingPurchaseAI] = useState(false);
+
+  // Import stock states
+  const [showImportStock, setShowImportStock] = useState(false);
+  const [importStockStep, setImportStockStep] = useState<"upload" | "processing" | "preview" | "done">("upload");
+  const [importStockData, setImportStockData] = useState<any>(null);
+  const [importingStock, setImportingStock] = useState(false);
+  const [stockText, setStockText] = useState("");
+  const stockFileRef = useRef<HTMLInputElement>(null);
 
   // Movement form
   const [showMovement, setShowMovement] = useState<string | null>(null);
@@ -268,6 +276,81 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
     finally { setGeneratingPurchaseAI(false); }
   }
 
+  // ── Stock import handlers ────────────────────────────────────────────────────
+
+  async function handleStockFile(file: File | undefined) {
+    if (!file) return;
+    setImportStockStep("processing");
+    const formData = new FormData();
+    formData.append("file", file);
+    try {
+      const res = await fetch("/api/ia/import-stock", { method: "POST", body: formData });
+      const json = await res.json();
+      if (res.ok && json.importData) { setImportStockData(json.importData); setImportStockStep("preview"); }
+      else { alert(json.error || "Erro ao processar"); setImportStockStep("upload"); }
+    } catch { alert("Erro de conexão"); setImportStockStep("upload"); }
+  }
+
+  async function handleStockText(text: string) {
+    setImportStockStep("processing");
+    const formData = new FormData();
+    formData.append("text", text);
+    try {
+      const res = await fetch("/api/ia/import-stock", { method: "POST", body: formData });
+      const json = await res.json();
+      if (res.ok && json.importData) { setImportStockData(json.importData); setImportStockStep("preview"); }
+      else { alert(json.error || "Erro ao processar"); setImportStockStep("upload"); }
+    } catch { alert("Erro de conexão"); setImportStockStep("upload"); }
+  }
+
+  async function handleConfirmStockImport() {
+    if (!importStockData?.items) return;
+    setImportingStock(true);
+    try {
+      const inserts = importStockData.items.map((item: any) => ({
+        unit_id: unit.id,
+        name: item.name,
+        category: item.category || "geral",
+        unit_measure: item.unit_measure || "kg",
+        current_stock: item.quantity || 0,
+        min_stock: item.min_stock || 0,
+        cost_per_unit: item.cost_per_unit ? Math.round(item.cost_per_unit * 100) : 0,
+        supplier: item.supplier || null,
+        last_purchase_date: new Date().toISOString().split("T")[0],
+        is_active: true,
+      }));
+
+      const { error } = await supabase.from("inventory_items").insert(inserts);
+      if (error) throw error;
+
+      const { data: inserted } = await supabase
+        .from("inventory_items")
+        .select("id, current_stock, cost_per_unit")
+        .eq("unit_id", unit.id)
+        .order("created_at", { ascending: false })
+        .limit(inserts.length);
+
+      if (inserted) {
+        const movInserts = inserted.map((inv: any) => ({
+          inventory_item_id: inv.id,
+          unit_id: unit.id,
+          type: "purchase",
+          quantity: inv.current_stock,
+          cost_total: Math.round(inv.current_stock * (inv.cost_per_unit || 0)),
+          notes: "Estoque inicial (importado via IA)",
+        }));
+        await supabase.from("inventory_movements").insert(movInserts);
+      }
+
+      setImportStockStep("done");
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao salvar ingredientes");
+    } finally {
+      setImportingStock(false);
+    }
+  }
+
   // ── Tabs ────────────────────────────────────────────────────────────────────
 
   const TABS = [
@@ -285,6 +368,142 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
 
   return (
     <div>
+      {/* ── IMPORT STOCK OVERLAY ── */}
+      {showImportStock && (
+        <div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "var(--dash-text)" }}>Importar estoque</div>
+            <button onClick={() => { setShowImportStock(false); setImportStockStep("upload"); setImportStockData(null); setStockText(""); }}
+              style={{ background: "transparent", border: "none", color: "var(--dash-text-muted)", fontSize: 16, cursor: "pointer", fontFamily: "inherit" }}>✕</button>
+          </div>
+
+          {/* Upload */}
+          {importStockStep === "upload" && (
+            <>
+              <div style={{ fontSize: 12, color: "var(--dash-text-muted)", marginBottom: 16 }}>
+                Envie uma planilha de inventário, foto da lista de compras, ou cole o texto.
+              </div>
+              <div
+                onClick={() => stockFileRef.current?.click()}
+                onDragOver={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = "rgba(0,255,174,0.3)"; }}
+                onDragLeave={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; }}
+                onDrop={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; handleStockFile(e.dataTransfer.files[0]); }}
+                style={{
+                  border: "2px dashed rgba(255,255,255,0.08)", borderRadius: 16,
+                  padding: "30px 20px", textAlign: "center", cursor: "pointer",
+                  transition: "border-color 0.3s", marginBottom: 14,
+                }}
+              >
+                <div style={{ fontSize: 32, marginBottom: 8 }}>📦</div>
+                <div style={{ color: "var(--dash-text)", fontSize: 13, fontWeight: 700, marginBottom: 4 }}>Arraste o arquivo aqui</div>
+                <div style={{ color: "var(--dash-text-muted)", fontSize: 11 }}>CSV, Excel, PDF, Foto (lista de compras)</div>
+              </div>
+              <input ref={stockFileRef} type="file" accept=".csv,.xlsx,.xls,.pdf,.jpg,.jpeg,.png,.webp,.txt" style={{ display: "none" }}
+                onChange={(e) => handleStockFile(e.target.files?.[0])} />
+
+              <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "14px 0" }}>
+                <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.06)" }} />
+                <span style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>ou cole a lista</span>
+                <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.06)" }} />
+              </div>
+
+              <textarea
+                placeholder={"Cole aqui a lista de ingredientes, ex:\n\nCarne de sol - 10kg - R$ 95/kg - Frigorífico X\nQueijo mussarela - 5kg - R$ 42/kg\nArroz - 30kg - R$ 6/kg\nCoca-Cola lata - 48un - R$ 2,50/un"}
+                value={stockText}
+                onChange={(e) => setStockText(e.target.value)}
+                style={{
+                  width: "100%", minHeight: 100, padding: 14, borderRadius: 14,
+                  background: "rgba(255,255,255,0.04)", border: "none", color: "var(--dash-text)",
+                  fontSize: 12, outline: "none", resize: "vertical", boxSizing: "border-box", lineHeight: 1.6, fontFamily: "inherit",
+                }}
+              />
+              {stockText.trim() && (
+                <button onClick={() => handleStockText(stockText)} style={{
+                  marginTop: 10, width: "100%", padding: 12, borderRadius: 14,
+                  background: "rgba(0,255,174,0.1)", border: "none", color: "var(--dash-accent)",
+                  fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
+                  boxShadow: "0 1px 0 rgba(0,255,174,0.12) inset, 0 -1px 0 rgba(0,0,0,0.2) inset",
+                }}>✨ Analisar com IA</button>
+              )}
+            </>
+          )}
+
+          {/* Processing */}
+          {importStockStep === "processing" && (
+            <div style={{ textAlign: "center", padding: "50px 20px" }}>
+              <div style={{ fontSize: 36, marginBottom: 12, animation: "pulse 1.5s infinite" }}>📦</div>
+              <div style={{ color: "var(--dash-text)", fontSize: 15, fontWeight: 700 }}>Analisando inventário...</div>
+              <div style={{ color: "var(--dash-text-muted)", fontSize: 12, marginTop: 6 }}>Extraindo ingredientes, quantidades e custos</div>
+            </div>
+          )}
+
+          {/* Preview */}
+          {importStockStep === "preview" && importStockData && (
+            <>
+              <div style={{ fontSize: 12, color: "var(--dash-text-muted)", marginBottom: 12 }}>
+                {importStockData.items?.length} ingredientes encontrados. Revise antes de importar.
+              </div>
+              {importStockData.items?.map((item: any, i: number) => (
+                <div key={i} style={{
+                  display: "flex", alignItems: "center", gap: 6, padding: "8px 10px",
+                  borderRadius: 12, background: "rgba(255,255,255,0.03)", marginBottom: 4,
+                }}>
+                  <select value={item.category || "geral"} onChange={(e) => {
+                    const u = { ...importStockData, items: [...importStockData.items] }; u.items[i] = { ...u.items[i], category: e.target.value }; setImportStockData(u);
+                  }} style={{ padding: "4px 6px", borderRadius: 6, background: "rgba(255,255,255,0.06)", border: "none", color: "var(--dash-text)", fontSize: 10, outline: "none", width: 80, fontFamily: "inherit" }}>
+                    {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.icon} {c.label}</option>)}
+                  </select>
+                  <input value={item.name} onChange={(e) => {
+                    const u = { ...importStockData, items: [...importStockData.items] }; u.items[i] = { ...u.items[i], name: e.target.value }; setImportStockData(u);
+                  }} style={{ flex: 1, padding: "4px 8px", borderRadius: 6, background: "transparent", border: "none", color: "var(--dash-text)", fontSize: 12, fontWeight: 600, outline: "none", fontFamily: "inherit" }} />
+                  <input type="number" step="0.01" value={item.quantity} onChange={(e) => {
+                    const u = { ...importStockData, items: [...importStockData.items] }; u.items[i] = { ...u.items[i], quantity: parseFloat(e.target.value) || 0 }; setImportStockData(u);
+                  }} style={{ width: 55, padding: "4px 6px", borderRadius: 6, background: "rgba(255,255,255,0.04)", border: "none", color: "var(--dash-text)", fontSize: 11, outline: "none", textAlign: "right" as const }} />
+                  <select value={item.unit_measure || "kg"} onChange={(e) => {
+                    const u = { ...importStockData, items: [...importStockData.items] }; u.items[i] = { ...u.items[i], unit_measure: e.target.value }; setImportStockData(u);
+                  }} style={{ padding: "4px 4px", borderRadius: 6, background: "rgba(255,255,255,0.06)", border: "none", color: "var(--dash-text)", fontSize: 10, outline: "none", width: 40, fontFamily: "inherit" }}>
+                    {UNITS.map(u => <option key={u.value} value={u.value}>{u.value}</option>)}
+                  </select>
+                  <input type="number" step="0.01" value={item.cost_per_unit} onChange={(e) => {
+                    const u = { ...importStockData, items: [...importStockData.items] }; u.items[i] = { ...u.items[i], cost_per_unit: parseFloat(e.target.value) || 0 }; setImportStockData(u);
+                  }} placeholder="R$/un" style={{ width: 60, padding: "4px 6px", borderRadius: 6, background: "rgba(255,255,255,0.04)", border: "none", color: "var(--dash-accent)", fontSize: 11, fontWeight: 600, outline: "none", textAlign: "right" as const }} />
+                  <button onClick={() => {
+                    const newItems = importStockData.items.filter((_: any, idx: number) => idx !== i);
+                    setImportStockData({ ...importStockData, items: newItems });
+                  }} style={{ background: "transparent", border: "none", color: "rgba(255,255,255,0.15)", cursor: "pointer", fontSize: 12, fontFamily: "inherit" }}>✕</button>
+                </div>
+              ))}
+              <button onClick={handleConfirmStockImport} disabled={importingStock} style={{
+                width: "100%", padding: 14, borderRadius: 14, marginTop: 14,
+                background: "rgba(0,255,174,0.1)", border: "none", color: "var(--dash-accent)",
+                fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
+                boxShadow: "0 1px 0 rgba(0,255,174,0.12) inset, 0 -1px 0 rgba(0,0,0,0.2) inset",
+                opacity: importingStock ? 0.5 : 1,
+              }}>
+                {importingStock ? "Salvando..." : `✅ Importar ${importStockData.items?.length} ingredientes`}
+              </button>
+            </>
+          )}
+
+          {/* Done */}
+          {importStockStep === "done" && (
+            <div style={{ textAlign: "center", padding: "50px 20px" }}>
+              <div style={{ fontSize: 36, marginBottom: 12 }}>✅</div>
+              <div style={{ color: "var(--dash-text)", fontSize: 16, fontWeight: 800 }}>Estoque importado!</div>
+              <div style={{ color: "var(--dash-text-muted)", fontSize: 12, marginTop: 6 }}>Ingredientes adicionados ao inventário.</div>
+              <button onClick={() => { setShowImportStock(false); setImportStockStep("upload"); setImportStockData(null); setStockText(""); loadData(); }} style={{
+                marginTop: 16, padding: "10px 20px", borderRadius: 12,
+                background: "rgba(0,255,174,0.1)", border: "none", color: "var(--dash-accent)",
+                fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+              }}>Fechar</button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── NORMAL CONTENT (hidden during import) ── */}
+      {!showImportStock && <>
+
       {/* Summary cards */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 20 }}>
         <div style={{ padding: 14, borderRadius: 14, background: "rgba(255,255,255,0.03)", textAlign: "center", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
@@ -335,6 +554,12 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
               boxShadow: "0 1px 0 rgba(0,255,174,0.12) inset, 0 -1px 0 rgba(0,0,0,0.2) inset", whiteSpace: "nowrap",
               fontFamily: "inherit",
             }}>+ Adicionar</button>
+            <button onClick={() => { setShowImportStock(true); setImportStockStep("upload"); }} style={{
+              padding: "8px 14px", borderRadius: 10, border: "none", cursor: "pointer",
+              background: "rgba(255,255,255,0.04)", color: "var(--dash-text-muted)", fontSize: 12,
+              boxShadow: "0 1px 0 rgba(255,255,255,0.03) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
+              whiteSpace: "nowrap", fontFamily: "inherit",
+            }}>📥 Importar</button>
           </div>
 
           {/* Inline form */}
@@ -668,6 +893,8 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
           </div>
         </div>
       )}
+
+      </>}
     </div>
   );
 }
