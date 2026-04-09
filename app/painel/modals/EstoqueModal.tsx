@@ -49,6 +49,8 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
   const [formMinStock, setFormMinStock] = useState("");
   const [formCost, setFormCost] = useState("");
   const [formSupplier, setFormSupplier] = useState("");
+  const [formExpiry, setFormExpiry] = useState("");
+  const [formExpiryAlert, setFormExpiryAlert] = useState("7");
 
   // Recipe / forecast states
   const [recipes, setRecipes] = useState<any[]>([]);
@@ -100,11 +102,17 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
   });
 
   const lowStockItems = items.filter(i => i.min_stock > 0 && i.current_stock <= i.min_stock);
+  const expiryItems = items
+    .map(item => ({ ...item, expiryStatus: getExpiryStatus(item) }))
+    .filter(item => item.expiryStatus.priority <= 2)
+    .sort((a, b) => a.expiryStatus.priority - b.expiryStatus.priority);
+  const totalAlerts = lowStockItems.length + expiryItems.length;
   const totalStockValue = items.reduce((s, i) => s + (i.current_stock * (i.cost_per_unit || 0)), 0);
 
   function resetForm() {
     setFormName(""); setFormCategory("geral"); setFormUnit("kg");
     setFormStock(""); setFormMinStock(""); setFormCost(""); setFormSupplier("");
+    setFormExpiry(""); setFormExpiryAlert("7");
     setEditingItem(null); setShowForm(false);
   }
 
@@ -116,6 +124,8 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
     setFormMinStock(String(item.min_stock || ""));
     setFormCost(item.cost_per_unit ? String(item.cost_per_unit / 100) : "");
     setFormSupplier(item.supplier || "");
+    setFormExpiry(item.expiry_date || "");
+    setFormExpiryAlert(String(item.expiry_alert_days || 7));
     setEditingItem(item);
     setShowForm(true);
   }
@@ -131,6 +141,8 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
       min_stock: parseFloat(formMinStock) || 0,
       cost_per_unit: formCost ? Math.round(parseFloat(formCost) * 100) : 0,
       supplier: formSupplier.trim() || null,
+      expiry_date: formExpiry || null,
+      expiry_alert_days: parseInt(formExpiryAlert) || 7,
       updated_at: new Date().toISOString(),
     };
     if (editingItem) {
@@ -180,6 +192,25 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
   }
 
   const isBusiness = restaurant?.plan === "business";
+
+  function getExpiryStatus(item: any): { label: string; color: string; icon: string; priority: number } {
+    if (!item.expiry_date) return { label: "", color: "", icon: "", priority: 99 };
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const expiry = new Date(item.expiry_date);
+    expiry.setHours(0, 0, 0, 0);
+    const diffDays = Math.floor((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    const alertDays = item.expiry_alert_days || 7;
+    if (diffDays < 0) {
+      return { label: `Vencido há ${Math.abs(diffDays)}d`, color: "#f87171", icon: "🔴", priority: 0 };
+    } else if (diffDays === 0) {
+      return { label: "Vence hoje!", color: "#f87171", icon: "🔴", priority: 1 };
+    } else if (diffDays <= alertDays) {
+      return { label: `Vence em ${diffDays}d`, color: "#fbbf24", icon: "🟡", priority: 2 };
+    } else {
+      return { label: `Válido (${diffDays}d)`, color: "var(--dash-accent)", icon: "🟢", priority: 3 };
+    }
+  }
 
   // ── Forecast calculations ────────────────────────────────────────────────────
 
@@ -355,7 +386,7 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
 
   const TABS = [
     { key: "lista", label: "Ingredientes" },
-    { key: "alertas", label: lowStockItems.length > 0 ? `Alertas (${lowStockItems.length})` : "Alertas" },
+    { key: "alertas", label: totalAlerts > 0 ? `Alertas (${totalAlerts})` : "Alertas" },
     { key: "movimentacoes", label: "Movimentações" },
     ...(isBusiness ? [{ key: "previsao", label: "Previsão" }] : []),
   ];
@@ -510,9 +541,14 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
           <div style={{ fontSize: 20, fontWeight: 800, color: "var(--dash-text)" }}>{items.length}</div>
           <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>Ingredientes</div>
         </div>
-        <div style={{ padding: 14, borderRadius: 14, background: lowStockItems.length > 0 ? "rgba(248,113,113,0.06)" : "rgba(255,255,255,0.03)", textAlign: "center", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
-          <div style={{ fontSize: 20, fontWeight: 800, color: lowStockItems.length > 0 ? "#f87171" : "var(--dash-text)" }}>{lowStockItems.length}</div>
-          <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>Estoque baixo</div>
+        <div style={{ padding: 14, borderRadius: 14, background: totalAlerts > 0 ? "rgba(248,113,113,0.06)" : "rgba(255,255,255,0.03)", textAlign: "center", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+          <div style={{ fontSize: 20, fontWeight: 800, color: totalAlerts > 0 ? "#f87171" : "var(--dash-text)" }}>{totalAlerts}</div>
+          <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>Alertas</div>
+          {expiryItems.filter(e => e.expiryStatus.priority === 0).length > 0 && (
+            <div style={{ fontSize: 9, color: "#f87171", fontWeight: 700, marginTop: 2 }}>
+              {expiryItems.filter(e => e.expiryStatus.priority === 0).length} vencido(s)!
+            </div>
+          )}
         </div>
         <div style={{ padding: 14, borderRadius: 14, background: "rgba(255,255,255,0.03)", textAlign: "center", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
           <div style={{ fontSize: 16, fontWeight: 800, color: "var(--dash-text)" }}>{fmtBRL(Math.round(totalStockValue))}</div>
@@ -598,6 +634,29 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
                 </div>
               </div>
               <input placeholder="Fornecedor (opcional)" value={formSupplier} onChange={e => setFormSupplier(e.target.value)} style={inputStyle} />
+              {isBusiness && (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  <div>
+                    <label style={{ fontSize: 10, color: "var(--dash-text-muted)", display: "block", marginBottom: 4 }}>Validade</label>
+                    <input
+                      type="date"
+                      value={formExpiry}
+                      onChange={(e) => setFormExpiry(e.target.value)}
+                      style={{ width: "100%", padding: "8px 10px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "none", color: "var(--dash-text)", fontSize: 12, outline: "none", boxSizing: "border-box" as const }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 10, color: "var(--dash-text-muted)", display: "block", marginBottom: 4 }}>Alertar X dias antes</label>
+                    <input
+                      type="number"
+                      value={formExpiryAlert}
+                      onChange={(e) => setFormExpiryAlert(e.target.value)}
+                      placeholder="7"
+                      style={{ width: "100%", padding: "8px 10px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "none", color: "var(--dash-text)", fontSize: 12, outline: "none", boxSizing: "border-box" as const }}
+                    />
+                  </div>
+                </div>
+              )}
               <div style={{ display: "flex", gap: 8 }}>
                 <button onClick={resetForm} style={{ flex: 1, padding: 10, borderRadius: 12, background: "rgba(255,255,255,0.04)", border: "none", color: "var(--dash-text-muted)", fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>Cancelar</button>
                 <button onClick={handleSave} style={{ flex: 1, padding: 10, borderRadius: 12, background: "rgba(0,255,174,0.1)", border: "none", color: "var(--dash-accent)", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
@@ -631,7 +690,20 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
                     }}>
                       <span style={{ fontSize: 20 }}>{catInfo?.icon || "📋"}</span>
                       <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: "flex", alignItems: "center" }}>
                         <div style={{ color: "var(--dash-text)", fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.name}</div>
+                        {(() => {
+                          const expiry = getExpiryStatus(item);
+                          if (!expiry.label) return null;
+                          return (
+                            <span style={{
+                              padding: "2px 8px", borderRadius: 6, fontSize: 9, fontWeight: 700,
+                              background: `${expiry.color}15`, color: expiry.color,
+                              marginLeft: 6, whiteSpace: "nowrap" as const,
+                            }}>{expiry.icon} {expiry.label}</span>
+                          );
+                        })()}
+                      </div>
                         <div style={{ color: "var(--dash-text-muted)", fontSize: 11, marginTop: 2 }}>
                           {item.current_stock} {item.unit_measure}
                           {item.cost_per_unit > 0 && ` · ${fmtBRL(item.cost_per_unit)}/${item.unit_measure}`}
@@ -705,38 +777,93 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
       {/* ── TAB ALERTAS ── */}
       {tab === "alertas" && (
         <div>
-          {lowStockItems.length === 0 ? (
-            <div style={{ textAlign: "center", padding: 40, color: "var(--dash-text-muted)" }}>
-              ✅ Tudo em ordem! Nenhum ingrediente com estoque baixo.
-            </div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {lowStockItems.map(item => {
+          {/* Seção Validade */}
+          {expiryItems.length > 0 && (
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--dash-text)", marginBottom: 10 }}>
+                🗓️ Validade ({expiryItems.length})
+              </div>
+              {expiryItems.map(item => {
                 const catInfo = CATEGORIES.find(c => c.value === item.category);
                 return (
                   <div key={item.id} style={{
                     display: "flex", alignItems: "center", gap: 10,
-                    padding: "14px 16px", borderRadius: 14,
-                    background: "rgba(248,113,113,0.04)",
-                    boxShadow: "0 1px 0 rgba(248,113,113,0.06) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
+                    padding: "12px 14px", borderRadius: 14, marginBottom: 6,
+                    background: item.expiryStatus.priority === 0 ? "rgba(248,113,113,0.06)"
+                      : item.expiryStatus.priority === 1 ? "rgba(248,113,113,0.04)"
+                      : "rgba(251,191,36,0.04)",
+                    boxShadow: `0 1px 0 ${item.expiryStatus.color}10 inset, 0 -1px 0 rgba(0,0,0,0.15) inset`,
                   }}>
                     <span style={{ fontSize: 20 }}>{catInfo?.icon || "📋"}</span>
                     <div style={{ flex: 1 }}>
-                      <div style={{ color: "var(--dash-text)", fontSize: 14, fontWeight: 600 }}>{item.name}</div>
-                      <div style={{ color: "#f87171", fontSize: 12, marginTop: 2 }}>
-                        Atual: {item.current_stock} {item.unit_measure} · Mínimo: {item.min_stock} {item.unit_measure}
+                      <div style={{ color: "var(--dash-text)", fontSize: 13, fontWeight: 600 }}>{item.name}</div>
+                      <div style={{ color: item.expiryStatus.color, fontSize: 12, fontWeight: 700, marginTop: 2 }}>
+                        {item.expiryStatus.icon} {item.expiryStatus.label}
                       </div>
-                      {item.supplier && (
-                        <div style={{ color: "var(--dash-text-muted)", fontSize: 11, marginTop: 2 }}>Fornecedor: {item.supplier}</div>
-                      )}
+                      <div style={{ color: "var(--dash-text-muted)", fontSize: 10, marginTop: 2 }}>
+                        Validade: {new Date(item.expiry_date).toLocaleDateString("pt-BR")}
+                        {item.current_stock > 0 && ` · ${item.current_stock} ${item.unit_measure} em estoque`}
+                      </div>
                     </div>
-                    <button onClick={() => { setShowMovement(item.id); setMovType("purchase"); setTab("lista"); }} style={{
-                      padding: "6px 12px", borderRadius: 8, background: "rgba(0,255,174,0.1)", border: "none",
-                      color: "var(--dash-accent)", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
-                    }}>Repor</button>
+                    {item.expiryStatus.priority === 0 && (
+                      <button onClick={() => handleDelete(item.id)} style={{
+                        padding: "6px 12px", borderRadius: 8,
+                        background: "rgba(248,113,113,0.1)", border: "none",
+                        color: "#f87171", fontSize: 10, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+                      }}>Descartar</button>
+                    )}
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {/* Separador */}
+          {expiryItems.length > 0 && lowStockItems.length > 0 && (
+            <div style={{ height: 1, background: "rgba(255,255,255,0.04)", margin: "16px 0" }} />
+          )}
+
+          {/* Seção Estoque Baixo */}
+          {lowStockItems.length > 0 && (
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--dash-text)", marginBottom: 10 }}>
+                📦 Estoque baixo ({lowStockItems.length})
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {lowStockItems.map(item => {
+                  const catInfo = CATEGORIES.find(c => c.value === item.category);
+                  return (
+                    <div key={item.id} style={{
+                      display: "flex", alignItems: "center", gap: 10,
+                      padding: "14px 16px", borderRadius: 14,
+                      background: "rgba(248,113,113,0.04)",
+                      boxShadow: "0 1px 0 rgba(248,113,113,0.06) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
+                    }}>
+                      <span style={{ fontSize: 20 }}>{catInfo?.icon || "📋"}</span>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ color: "var(--dash-text)", fontSize: 14, fontWeight: 600 }}>{item.name}</div>
+                        <div style={{ color: "#f87171", fontSize: 12, marginTop: 2 }}>
+                          Atual: {item.current_stock} {item.unit_measure} · Mínimo: {item.min_stock} {item.unit_measure}
+                        </div>
+                        {item.supplier && (
+                          <div style={{ color: "var(--dash-text-muted)", fontSize: 11, marginTop: 2 }}>Fornecedor: {item.supplier}</div>
+                        )}
+                      </div>
+                      <button onClick={() => { setShowMovement(item.id); setMovType("purchase"); setTab("lista"); }} style={{
+                        padding: "6px 12px", borderRadius: 8, background: "rgba(0,255,174,0.1)", border: "none",
+                        color: "var(--dash-accent)", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+                      }}>Repor</button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Tudo ok */}
+          {expiryItems.length === 0 && lowStockItems.length === 0 && (
+            <div style={{ textAlign: "center", padding: 40, color: "var(--dash-text-muted)" }}>
+              ✅ Tudo em ordem! Nenhum alerta no momento.
             </div>
           )}
         </div>
