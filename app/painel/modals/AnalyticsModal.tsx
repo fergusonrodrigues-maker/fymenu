@@ -14,11 +14,13 @@ export default function AnalyticsModal({
   unit,
   products,
   categories,
+  restaurant,
 }: {
   analytics: { views: number; clicks: number; orders: number };
   unit: Unit | null;
   products?: any[];
   categories?: any[];
+  restaurant?: { plan: string } | null;
 }) {
   const [tab, setTab] = useState<Tab>("Geral");
   const [topProducts, setTopProducts] = useState<{ name: string; thumb: string; count: number }[]>([]);
@@ -26,6 +28,8 @@ export default function AnalyticsModal({
   const [aiSuggestions, setAiSuggestions] = useState<string | null>(null);
   const [generatingAI, setGeneratingAI] = useState(false);
   const [ifoodClicks, setIfoodClicks] = useState<number | null>(null);
+  const [attentionRanking, setAttentionRanking] = useState<{ productId: string; name: string; avgSeconds: number; totalViews: number }[]>([]);
+  const [loadingAttention, setLoadingAttention] = useState(false);
 
   useEffect(() => {
     if (!unit) return;
@@ -70,6 +74,43 @@ export default function AnalyticsModal({
         setLoadingProducts(false);
       });
   }, [tab, unit]);
+
+  useEffect(() => {
+    if (tab !== "Produtos" || !unit) return;
+    if (attentionRanking.length > 0 || loadingAttention) return;
+    const plan = restaurant?.plan ?? "";
+    if (plan !== "menupro" && plan !== "business") return;
+    setLoadingAttention(true);
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    supabase
+      .from("menu_events")
+      .select("product_id, meta")
+      .eq("unit_id", unit.id)
+      .eq("event", "product_view")
+      .not("meta", "is", null)
+      .gte("created_at", sevenDaysAgo)
+      .then(({ data }) => {
+        const byProduct: Record<string, { name: string; totalMs: number; count: number }> = {};
+        for (const e of data || []) {
+          if (!e.product_id || !(e.meta as any)?.duration_ms) continue;
+          if (!byProduct[e.product_id]) {
+            byProduct[e.product_id] = { name: (e.meta as any).product_name || "?", totalMs: 0, count: 0 };
+          }
+          byProduct[e.product_id].totalMs += (e.meta as any).duration_ms;
+          byProduct[e.product_id].count++;
+        }
+        const ranking = Object.entries(byProduct)
+          .map(([id, d]) => ({
+            productId: id,
+            name: d.name,
+            avgSeconds: Math.round(d.totalMs / d.count / 1000),
+            totalViews: d.count,
+          }))
+          .sort((a, b) => b.avgSeconds - a.avgSeconds);
+        setAttentionRanking(ranking);
+        setLoadingAttention(false);
+      });
+  }, [tab, unit, restaurant]);
 
   async function handleGenerateAISuggestions() {
     if (!unit) return;
@@ -191,6 +232,72 @@ export default function AnalyticsModal({
               </div>
             ))
           )}
+
+          {/* Product Attention Time */}
+          <div style={{ marginTop: 20 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "var(--dash-text)", marginBottom: 12 }}>⏱️ Product Attention Time</div>
+            <div style={{ fontSize: 11, color: "var(--dash-text-muted)", marginBottom: 12 }}>
+              Tempo médio que cada cliente fica vendo o produto
+            </div>
+
+            {(restaurant?.plan === "menupro" || restaurant?.plan === "business") ? (
+              loadingAttention ? (
+                <div style={{ textAlign: "center", padding: 20, color: "var(--dash-text-muted)", fontSize: 12 }}>Carregando...</div>
+              ) : attentionRanking.length === 0 ? (
+                <div style={{ textAlign: "center", padding: 20, color: "var(--dash-text-muted)", fontSize: 12 }}>
+                  Ainda sem dados de atenção. Os dados aparecem conforme clientes visualizam produtos.
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {attentionRanking.slice(0, 15).map((p, i) => {
+                    const maxTime = attentionRanking[0]?.avgSeconds || 1;
+                    const barWidth = (p.avgSeconds / maxTime) * 100;
+                    return (
+                      <div key={p.productId} style={{
+                        padding: "10px 14px", borderRadius: 12,
+                        background: "rgba(255,255,255,0.03)",
+                        boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
+                        position: "relative", overflow: "hidden",
+                      }}>
+                        <div style={{
+                          position: "absolute", left: 0, top: 0, bottom: 0,
+                          width: `${barWidth}%`,
+                          background: i < 3 ? "rgba(0,255,174,0.04)" : "rgba(255,255,255,0.02)",
+                          transition: "width 0.5s ease",
+                        }} />
+                        <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <span style={{
+                              width: 22, height: 22, borderRadius: "50%",
+                              background: i < 3 ? "rgba(0,255,174,0.1)" : "rgba(255,255,255,0.04)",
+                              color: i < 3 ? "var(--dash-accent)" : "var(--dash-text-muted)",
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                              fontSize: 10, fontWeight: 800,
+                            }}>{i + 1}</span>
+                            <div>
+                              <div style={{ color: "var(--dash-text)", fontSize: 12, fontWeight: 600 }}>{p.name}</div>
+                              <div style={{ color: "var(--dash-text-muted)", fontSize: 10 }}>{p.totalViews} views</div>
+                            </div>
+                          </div>
+                          <div style={{ textAlign: "right" }}>
+                            <div style={{ fontSize: 14, fontWeight: 800, color: i < 3 ? "var(--dash-accent)" : "var(--dash-text)" }}>
+                              {p.avgSeconds}s
+                            </div>
+                            <div style={{ fontSize: 9, color: "var(--dash-text-muted)" }}>média</div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )
+            ) : (
+              <div style={{ textAlign: "center", padding: 20 }}>
+                <span style={{ fontSize: 20 }}>🔒</span>
+                <div style={{ fontSize: 11, color: "var(--dash-text-muted)", marginTop: 6 }}>Disponível no plano MenuPro</div>
+              </div>
+            )}
+          </div>
         </div>
       )}
 

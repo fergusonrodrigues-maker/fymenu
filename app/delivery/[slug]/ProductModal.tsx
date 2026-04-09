@@ -5,6 +5,7 @@ import { Product, ProductVariation } from "./menuTypes";
 import { OrderPayload, UpsellItem } from "./orderBuilder";
 import { useSwipeGesture } from "./useSwipeGesture";
 import { useProductAddons } from "@/lib/hooks/useProductAddons";
+import { useTrack } from "./useTrack";
 
 interface ProductModalProps {
   product: Product | null;
@@ -44,6 +45,8 @@ export default function ProductModal({
   const { addons, fetchAddons } = useProductAddons({ unitId });
 
   const modalRef = useRef<HTMLDivElement>(null);
+  const openedAt = useRef<number>(0);
+  const { track } = useTrack(unitId ?? "");
 
   useEffect(() => {
     if (!product) return;
@@ -66,6 +69,33 @@ export default function ProductModal({
       fetchAddons(currentProduct.id);
     }
   }, [currentProduct?.id, fetchAddons]);
+
+  // Attention time tracking: mede quanto tempo o cliente fica vendo cada produto
+  useEffect(() => {
+    if (!currentProduct || !unitId) return;
+    openedAt.current = Date.now();
+    const productId = currentProduct.id;
+    const productName = currentProduct.name;
+
+    return () => {
+      if (openedAt.current > 0) {
+        const duration = Date.now() - openedAt.current;
+        if (duration > 1000) {
+          track({
+            event: "product_view",
+            product_id: productId,
+            meta: {
+              duration_ms: duration,
+              duration_s: Math.round(duration / 1000),
+              product_name: productName,
+            },
+          });
+        }
+        openedAt.current = 0;
+      }
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentProduct?.id]);
 
   const total = allProducts.length;
 
