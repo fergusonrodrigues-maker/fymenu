@@ -142,10 +142,30 @@ export default function MenuClient({
     window.dispatchEvent(new CustomEvent("menu-modal", { detail: { open: !!selectedProduct } }));
   }, [selectedProduct]);
 
+  function isCategoryAvailable(cat: Category): boolean {
+    if (!cat.schedule_enabled) return true;
+    const days = cat.available_days ?? [];
+    const start = cat.start_time;
+    const end = cat.end_time;
+    const now = new Date();
+    const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+    const todayName = dayNames[now.getDay()];
+    if (days.length > 0 && !days.includes(todayName)) return false;
+    if (start && end) {
+      const [sh, sm] = start.split(":").map(Number);
+      const [eh, em] = end.split(":").map(Number);
+      const nowMinutes = now.getHours() * 60 + now.getMinutes();
+      const startMinutes = sh * 60 + sm;
+      const endMinutes = eh * 60 + em;
+      if (nowMinutes < startMinutes || nowMinutes > endMinutes) return false;
+    }
+    return true;
+  }
+
   const featuredCategories = categories.filter((c) => c.is_featured);
   const regularCategories  = categories.filter((c) => !c.is_featured);
   const visibleRegularCategories = regularCategories.filter(
-    (cat) => products.some((p) => p.category_id === cat.id && p.is_active)
+    (cat) => products.some((p) => p.category_id === cat.id && p.is_active) && isCategoryAvailable(cat)
   );
 
   // ── Snap suave vertical (proximity = só encaixa quando perto, não força) ──

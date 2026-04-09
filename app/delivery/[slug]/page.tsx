@@ -118,6 +118,10 @@ export default async function Page({
     is_featured: c.is_featured ?? false,
     slug: slugify(c.name || `categoria-${idx + 1}`),
     type: null,
+    schedule_enabled: c.schedule_enabled ?? false,
+    available_days: c.available_days ?? [],
+    start_time: c.start_time ?? null,
+    end_time: c.end_time ?? null,
   }));
 
   if (!categories.length) {

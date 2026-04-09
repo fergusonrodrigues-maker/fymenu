@@ -22,6 +22,10 @@ export type Category = {
   is_featured: boolean;
   slug?: string;
   type?: string | null;
+  schedule_enabled?: boolean;
+  available_days?: string[];
+  start_time?: string | null;
+  end_time?: string | null;
 };
 export type ProductVariation = {
   id: string;
