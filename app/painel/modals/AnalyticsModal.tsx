@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Unit } from "../types";
 
@@ -30,6 +30,12 @@ export default function AnalyticsModal({
   const [ifoodClicks, setIfoodClicks] = useState<number | null>(null);
   const [attentionRanking, setAttentionRanking] = useState<{ productId: string; name: string; avgSeconds: number; totalViews: number }[]>([]);
   const [loadingAttention, setLoadingAttention] = useState(false);
+  const [showImportAnalytics, setShowImportAnalytics] = useState(false);
+  const [importAnalyticsStep, setImportAnalyticsStep] = useState<"upload" | "processing" | "preview" | "done">("upload");
+  const [importAnalyticsData, setImportAnalyticsData] = useState<any>(null);
+  const [importingAnalytics, setImportingAnalytics] = useState(false);
+  const [analyticsText, setAnalyticsText] = useState("");
+  const analyticsFileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!unit) return;
@@ -111,6 +117,76 @@ export default function AnalyticsModal({
         setLoadingAttention(false);
       });
   }, [tab, unit, restaurant]);
+
+  function resetImport() {
+    setShowImportAnalytics(false);
+    setImportAnalyticsStep("upload");
+    setImportAnalyticsData(null);
+    setAnalyticsText("");
+  }
+
+  async function handleAnalyticsFile(file: File | undefined) {
+    if (!file) return;
+    setImportAnalyticsStep("processing");
+    const formData = new FormData();
+    formData.append("file", file);
+    try {
+      const res = await fetch("/api/ia/import-analytics", { method: "POST", body: formData });
+      const json = await res.json();
+      if (res.ok && json.importData) {
+        setImportAnalyticsData(json.importData);
+        setImportAnalyticsStep("preview");
+      } else {
+        alert(json.error || "Erro ao processar arquivo");
+        setImportAnalyticsStep("upload");
+      }
+    } catch {
+      setImportAnalyticsStep("upload");
+    }
+  }
+
+  async function handleAnalyticsText(text: string) {
+    setImportAnalyticsStep("processing");
+    const formData = new FormData();
+    formData.append("text", text);
+    try {
+      const res = await fetch("/api/ia/import-analytics", { method: "POST", body: formData });
+      const json = await res.json();
+      if (res.ok && json.importData) {
+        setImportAnalyticsData(json.importData);
+        setImportAnalyticsStep("preview");
+      } else {
+        alert(json.error || "Erro ao processar dados");
+        setImportAnalyticsStep("upload");
+      }
+    } catch {
+      setImportAnalyticsStep("upload");
+    }
+  }
+
+  async function handleConfirmAnalyticsImport() {
+    if (!importAnalyticsData?.events || !unit) return;
+    setImportingAnalytics(true);
+    try {
+      const events = importAnalyticsData.events;
+      for (let i = 0; i < events.length; i += 50) {
+        const batch = events.slice(i, i + 50).map((e: any) => ({
+          unit_id: unit.id,
+          event: e.event,
+          product_id: e.product_id || null,
+          meta: { imported: true, source: "ai_import" },
+          created_at: e.date || new Date().toISOString(),
+        }));
+        await supabase.from("menu_events").insert(batch);
+      }
+      setImportAnalyticsStep("done");
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao importar");
+    } finally {
+      setImportingAnalytics(false);
+    }
+  }
 
   async function handleGenerateAISuggestions() {
     if (!unit) return;
@@ -304,46 +380,195 @@ export default function AnalyticsModal({
       {/* ── IA ── */}
       {tab === "IA" && (
         <div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: "var(--dash-text)", marginBottom: 4 }}>Análise com IA</div>
-          <div style={{ fontSize: 12, color: "var(--dash-text-muted)", marginBottom: 16 }}>
-            Sugestões baseadas nos dados do seu cardápio e vendas.
-          </div>
-          {!aiSuggestions ? (
-            <div style={{ textAlign: "center", padding: "30px 0" }}>
-              <button
-                onClick={handleGenerateAISuggestions}
-                disabled={generatingAI}
-                style={{
-                  padding: "12px 24px", borderRadius: 14, border: "none", cursor: "pointer",
-                  background: "rgba(0,255,174,0.1)",
-                  boxShadow: "0 1px 0 rgba(0,255,174,0.12) inset, 0 -1px 0 rgba(0,0,0,0.2) inset",
-                  color: "#00ffae", fontSize: 14, fontWeight: 700,
-                  opacity: generatingAI ? 0.5 : 1,
-                }}
-              >
-                {generatingAI ? "Analisando..." : "✨ Gerar análise com IA"}
-              </button>
-            </div>
-          ) : (
+          {!showImportAnalytics ? (
             <>
-              <div style={{
-                padding: 20, borderRadius: 16,
-                background: "var(--dash-card)",
-                boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
-                whiteSpace: "pre-wrap", fontSize: 13, color: "var(--dash-text-secondary)", lineHeight: 1.7,
-              }}>
-                {aiSuggestions}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--dash-text)" }}>Análise com IA</div>
+                {(restaurant?.plan === "menupro" || restaurant?.plan === "business") && (
+                  <button onClick={() => setShowImportAnalytics(true)} style={{
+                    padding: "8px 14px", borderRadius: 10, border: "none", cursor: "pointer",
+                    background: "rgba(255,255,255,0.04)", color: "var(--dash-text-muted)", fontSize: 12,
+                    boxShadow: "0 1px 0 rgba(255,255,255,0.03) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
+                  }}>📥 Importar dados</button>
+                )}
               </div>
-              <button
-                onClick={() => setAiSuggestions(null)}
-                style={{
-                  marginTop: 12, padding: "8px 16px", borderRadius: 10, border: "none", cursor: "pointer",
-                  background: "var(--dash-card)", color: "var(--dash-text-muted)", fontSize: 12, fontWeight: 600,
-                }}
-              >
-                Gerar novamente
-              </button>
+              <div style={{ fontSize: 12, color: "var(--dash-text-muted)", marginBottom: 16 }}>
+                Sugestões baseadas nos dados do seu cardápio e vendas.
+              </div>
+              {!aiSuggestions ? (
+                <div style={{ textAlign: "center", padding: "30px 0" }}>
+                  <button
+                    onClick={handleGenerateAISuggestions}
+                    disabled={generatingAI}
+                    style={{
+                      padding: "12px 24px", borderRadius: 14, border: "none", cursor: "pointer",
+                      background: "rgba(0,255,174,0.1)",
+                      boxShadow: "0 1px 0 rgba(0,255,174,0.12) inset, 0 -1px 0 rgba(0,0,0,0.2) inset",
+                      color: "#00ffae", fontSize: 14, fontWeight: 700,
+                      opacity: generatingAI ? 0.5 : 1,
+                    }}
+                  >
+                    {generatingAI ? "Analisando..." : "✨ Gerar análise com IA"}
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div style={{
+                    padding: 20, borderRadius: 16,
+                    background: "var(--dash-card)",
+                    boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
+                    whiteSpace: "pre-wrap", fontSize: 13, color: "var(--dash-text-secondary)", lineHeight: 1.7,
+                  }}>
+                    {aiSuggestions}
+                  </div>
+                  <button
+                    onClick={() => setAiSuggestions(null)}
+                    style={{
+                      marginTop: 12, padding: "8px 16px", borderRadius: 10, border: "none", cursor: "pointer",
+                      background: "var(--dash-card)", color: "var(--dash-text-muted)", fontSize: 12, fontWeight: 600,
+                    }}
+                  >
+                    Gerar novamente
+                  </button>
+                </>
+              )}
             </>
+          ) : (
+            /* ── IMPORT FLOW ── */
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                <div style={{ fontSize: 15, fontWeight: 800, color: "var(--dash-text)" }}>Importar dados de analytics</div>
+                <button onClick={resetImport}
+                  style={{ background: "transparent", border: "none", color: "var(--dash-text-muted)", fontSize: 16, cursor: "pointer" }}>✕</button>
+              </div>
+
+              {/* UPLOAD */}
+              {importAnalyticsStep === "upload" && (
+                <>
+                  <div style={{ fontSize: 12, color: "var(--dash-text-muted)", marginBottom: 16 }}>
+                    Importe dados históricos de outro sistema. A IA converte pro formato do FyMenu.
+                  </div>
+
+                  <div
+                    onClick={() => analyticsFileRef.current?.click()}
+                    onDragOver={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = "rgba(0,255,174,0.3)"; }}
+                    onDragLeave={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; }}
+                    onDrop={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; handleAnalyticsFile(e.dataTransfer.files[0]); }}
+                    style={{
+                      border: "2px dashed rgba(255,255,255,0.08)", borderRadius: 16,
+                      padding: "30px 20px", textAlign: "center", cursor: "pointer",
+                      transition: "border-color 0.3s", marginBottom: 14,
+                    }}
+                  >
+                    <div style={{ fontSize: 32, marginBottom: 8 }}>📊</div>
+                    <div style={{ color: "var(--dash-text)", fontSize: 13, fontWeight: 700, marginBottom: 4 }}>Arraste o arquivo aqui</div>
+                    <div style={{ color: "var(--dash-text-muted)", fontSize: 11 }}>CSV, Excel, ou dados exportados de outro sistema</div>
+                  </div>
+                  <input ref={analyticsFileRef} type="file" accept=".csv,.xlsx,.xls,.json,.txt" style={{ display: "none" }}
+                    onChange={(e) => handleAnalyticsFile(e.target.files?.[0])} />
+
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "14px 0" }}>
+                    <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.06)" }} />
+                    <span style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>ou cole os dados</span>
+                    <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.06)" }} />
+                  </div>
+
+                  <textarea
+                    placeholder={"Cole dados de analytics, ex:\n\nData, Visualizações, Cliques, Pedidos\n01/03/2026, 150, 45, 12\n02/03/2026, 180, 62, 18\n..."}
+                    value={analyticsText}
+                    onChange={(e) => setAnalyticsText(e.target.value)}
+                    style={{
+                      width: "100%", minHeight: 100, padding: 14, borderRadius: 14,
+                      background: "rgba(255,255,255,0.04)", border: "none", color: "var(--dash-text)",
+                      fontSize: 12, outline: "none", resize: "vertical", boxSizing: "border-box", lineHeight: 1.6,
+                    }}
+                  />
+                  {analyticsText.trim() && (
+                    <button onClick={() => handleAnalyticsText(analyticsText)} style={{
+                      marginTop: 10, width: "100%", padding: 12, borderRadius: 14,
+                      background: "rgba(0,255,174,0.1)", border: "none", color: "var(--dash-accent)",
+                      fontSize: 13, fontWeight: 800, cursor: "pointer",
+                      boxShadow: "0 1px 0 rgba(0,255,174,0.12) inset, 0 -1px 0 rgba(0,0,0,0.2) inset",
+                    }}>✨ Analisar com IA</button>
+                  )}
+                </>
+              )}
+
+              {/* PROCESSING */}
+              {importAnalyticsStep === "processing" && (
+                <div style={{ textAlign: "center", padding: "50px 20px" }}>
+                  <div style={{ fontSize: 36, marginBottom: 12 }}>📊</div>
+                  <div style={{ color: "var(--dash-text)", fontSize: 15, fontWeight: 700 }}>Analisando dados...</div>
+                  <div style={{ color: "var(--dash-text-muted)", fontSize: 12, marginTop: 6 }}>Convertendo pro formato FyMenu</div>
+                </div>
+              )}
+
+              {/* PREVIEW */}
+              {importAnalyticsStep === "preview" && importAnalyticsData && (
+                <>
+                  <div style={{ fontSize: 12, color: "var(--dash-text-muted)", marginBottom: 12 }}>
+                    {importAnalyticsData.events?.length} eventos extraídos. Período: {importAnalyticsData.period || "N/A"}
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 16 }}>
+                    <div style={{ padding: 12, borderRadius: 12, background: "rgba(255,255,255,0.03)", textAlign: "center" }}>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: "var(--dash-accent)" }}>
+                        {importAnalyticsData.events?.filter((e: any) => e.event === "menu_view").length || 0}
+                      </div>
+                      <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>Visualizações</div>
+                    </div>
+                    <div style={{ padding: 12, borderRadius: 12, background: "rgba(255,255,255,0.03)", textAlign: "center" }}>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: "var(--dash-accent)" }}>
+                        {importAnalyticsData.events?.filter((e: any) => e.event === "product_click").length || 0}
+                      </div>
+                      <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>Cliques</div>
+                    </div>
+                    <div style={{ padding: 12, borderRadius: 12, background: "rgba(255,255,255,0.03)", textAlign: "center" }}>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: "var(--dash-accent)" }}>
+                        {importAnalyticsData.events?.filter((e: any) => e.event === "whatsapp_click").length || 0}
+                      </div>
+                      <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>Pedidos</div>
+                    </div>
+                  </div>
+
+                  <div style={{ maxHeight: 200, overflowY: "auto", marginBottom: 16 }}>
+                    {importAnalyticsData.daily_summary?.map((day: any, i: number) => (
+                      <div key={i} style={{
+                        display: "flex", justifyContent: "space-between", padding: "6px 10px",
+                        borderBottom: "1px solid rgba(255,255,255,0.03)", fontSize: 12,
+                      }}>
+                        <span style={{ color: "var(--dash-text-muted)" }}>{day.date}</span>
+                        <span style={{ color: "var(--dash-text)" }}>{day.views} views · {day.clicks} cliques · {day.orders} pedidos</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <button onClick={handleConfirmAnalyticsImport} disabled={importingAnalytics} style={{
+                    width: "100%", padding: 14, borderRadius: 14,
+                    background: "rgba(0,255,174,0.1)", border: "none", color: "var(--dash-accent)",
+                    fontSize: 14, fontWeight: 800, cursor: "pointer",
+                    boxShadow: "0 1px 0 rgba(0,255,174,0.12) inset, 0 -1px 0 rgba(0,0,0,0.2) inset",
+                    opacity: importingAnalytics ? 0.5 : 1,
+                  }}>
+                    {importingAnalytics ? "Importando..." : `✅ Importar ${importAnalyticsData.events?.length} eventos`}
+                  </button>
+                </>
+              )}
+
+              {/* DONE */}
+              {importAnalyticsStep === "done" && (
+                <div style={{ textAlign: "center", padding: "50px 20px" }}>
+                  <div style={{ fontSize: 36, marginBottom: 12 }}>✅</div>
+                  <div style={{ color: "var(--dash-text)", fontSize: 16, fontWeight: 800 }}>Dados importados!</div>
+                  <div style={{ color: "var(--dash-text-muted)", fontSize: 12, marginTop: 6 }}>Os dados históricos já aparecem nos gráficos.</div>
+                  <button onClick={resetImport} style={{
+                    marginTop: 16, padding: "10px 20px", borderRadius: 12,
+                    background: "rgba(0,255,174,0.1)", border: "none", color: "var(--dash-accent)",
+                    fontSize: 13, fontWeight: 700, cursor: "pointer",
+                  }}>Fechar</button>
+                </div>
+              )}
+            </div>
           )}
         </div>
       )}
