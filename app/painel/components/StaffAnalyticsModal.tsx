@@ -18,6 +18,9 @@ interface Employee {
   lunch_end: string | null;
   extra_costs: number;
   extra_costs_description: string | null;
+  current_status: string | null;
+  last_clock_in: string | null;
+  team: string | null;
 }
 
 interface WaiterStat {
@@ -45,6 +48,15 @@ const ROLES: Record<string, string> = {
   freelancer: "Freelancer",
 };
 
+const STATUS_CONFIG: Record<string, { label: string; color: string; icon: string }> = {
+  working: { label: "Trabalhando", color: "#00ffae", icon: "🟢" },
+  break: { label: "Descanso", color: "#fbbf24", icon: "🟡" },
+  lunch: { label: "Almoço", color: "#60a5fa", icon: "🔵" },
+  off: { label: "Folga", color: "rgba(255,255,255,0.3)", icon: "⚪" },
+  absent: { label: "Ausente", color: "#f87171", icon: "🔴" },
+  vacation: { label: "Férias", color: "#a855f7", icon: "🟣" },
+};
+
 function RatingStars({ value }: { value: number | null }) {
   if (!value) return <span style={{ color: "#666", fontSize: 12 }}>Sem avaliações</span>;
   const stars = Math.round(value);
@@ -56,7 +68,7 @@ function RatingStars({ value }: { value: number | null }) {
   );
 }
 
-export default function StaffAnalyticsModal({ unitId }: { unitId: string }) {
+export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; plan?: string }) {
   const [tab, setTab] = useState<"equipe" | "garcons" | "entregadores">("equipe");
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [waiterStats, setWaiterStats] = useState<WaiterStat[]>([]);
@@ -80,8 +92,13 @@ export default function StaffAnalyticsModal({ unitId }: { unitId: string }) {
   const [lunchEnd, setLunchEnd] = useState("13:00");
   const [extraCosts, setExtraCosts] = useState("");
   const [extraCostsDesc, setExtraCostsDesc] = useState("");
+  const [formTeam, setFormTeam] = useState("geral");
+
+  // Filter state
+  const [filterTeam, setFilterTeam] = useState("all");
 
   const supabase = createClient();
+  const isBusiness = plan === "business";
 
   useEffect(() => {
     loadAll();
@@ -96,7 +113,7 @@ export default function StaffAnalyticsModal({ unitId }: { unitId: string }) {
   async function loadEmployees() {
     const { data } = await supabase
       .from("employees")
-      .select("id, name, role, phone, is_active, employee_categories(name), salary, work_days, shift_start, shift_end, lunch_start, lunch_end, extra_costs, extra_costs_description")
+      .select("*, employee_categories(name)")
       .eq("unit_id", unitId)
       .order("name");
 
@@ -179,6 +196,7 @@ export default function StaffAnalyticsModal({ unitId }: { unitId: string }) {
         lunch_end: lunchEnd || null,
         extra_costs: extraCosts ? Math.round(parseFloat(extraCosts) * 100) : 0,
         extra_costs_description: extraCostsDesc || null,
+        team: formTeam,
       }),
     });
     const json = await res.json();
@@ -198,6 +216,7 @@ export default function StaffAnalyticsModal({ unitId }: { unitId: string }) {
     setLunchEnd("13:00");
     setExtraCosts("");
     setExtraCostsDesc("");
+    setFormTeam("geral");
     setShowAddForm(false);
     setSaving(false);
     loadEmployees();
@@ -222,6 +241,12 @@ export default function StaffAnalyticsModal({ unitId }: { unitId: string }) {
   const totalSalaries = employees.reduce((s, e) => s + (e.salary || 0), 0);
   const totalExtraCosts = employees.reduce((s, e) => s + (e.extra_costs || 0), 0);
   const totalTeamCost = totalSalaries + totalExtraCosts;
+
+  // Filtered list
+  const filteredEmployees = employees.filter(e => {
+    if (filterTeam !== "all" && (e.team || "geral") !== filterTeam) return false;
+    return true;
+  });
 
   if (loading) return (
     <div style={{ textAlign: "center", padding: "40px 0", color: "#888" }}>Carregando...</div>
@@ -254,6 +279,39 @@ export default function StaffAnalyticsModal({ unitId }: { unitId: string }) {
               <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>Custo total equipe</div>
             </div>
           </div>
+
+          {/* Status table — Business only */}
+          {isBusiness && (
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--dash-text)", marginBottom: 10 }}>Status da equipe agora</div>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {[
+                  { key: "working", label: "Trabalhando", color: "#00ffae", icon: "🟢" },
+                  { key: "break", label: "Descanso", color: "#fbbf24", icon: "🟡" },
+                  { key: "lunch", label: "Almoço", color: "#60a5fa", icon: "🔵" },
+                  { key: "off", label: "Folga", color: "rgba(255,255,255,0.3)", icon: "⚪" },
+                  { key: "absent", label: "Ausente", color: "#f87171", icon: "🔴" },
+                  { key: "vacation", label: "Férias", color: "#a855f7", icon: "🟣" },
+                ].map(s => {
+                  const count = employees.filter(e => (e.current_status || "off") === s.key).length;
+                  return (
+                    <div key={s.key} style={{
+                      padding: "8px 14px", borderRadius: 12,
+                      background: count > 0 ? `${s.color}10` : "rgba(255,255,255,0.02)",
+                      display: "flex", alignItems: "center", gap: 6,
+                      minWidth: 100,
+                    }}>
+                      <span style={{ fontSize: 12 }}>{s.icon}</span>
+                      <div>
+                        <div style={{ fontSize: 14, fontWeight: 800, color: count > 0 ? s.color : "var(--dash-text-muted)" }}>{count}</div>
+                        <div style={{ fontSize: 9, color: "var(--dash-text-muted)" }}>{s.label}</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
             <div style={{ color: "#888", fontSize: 13 }}>{employees.length} funcionário{employees.length !== 1 ? "s" : ""}</div>
@@ -322,6 +380,27 @@ export default function StaffAnalyticsModal({ unitId }: { unitId: string }) {
                     />
                   </div>
                 )}
+
+                {/* Equipe */}
+                <div style={{ marginTop: 10 }}>
+                  <label style={{ color: "var(--dash-text-muted)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 6 }}>Equipe</label>
+                  <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                    {["cozinha", "salao", "bar", "delivery", "gerencia", "limpeza", "geral"].map(t => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => setFormTeam(t)}
+                        style={{
+                          padding: "5px 12px", borderRadius: 8, border: "none", cursor: "pointer",
+                          background: formTeam === t ? "rgba(0,255,174,0.1)" : "rgba(255,255,255,0.04)",
+                          color: formTeam === t ? "var(--dash-accent)" : "var(--dash-text-muted)",
+                          fontSize: 11, fontWeight: 600, textTransform: "capitalize",
+                        }}
+                      >{t}</button>
+                    ))}
+                  </div>
+                </div>
+
                 <input
                   style={inp} placeholder="Telefone (opcional)"
                   value={newEmployee.phone}
@@ -447,43 +526,104 @@ export default function StaffAnalyticsModal({ unitId }: { unitId: string }) {
             </div>
           )}
 
-          {employees.length === 0 ? (
+          {/* Filter by team */}
+          <div style={{ display: "flex", gap: 4, marginBottom: 12, overflowX: "auto", paddingBottom: 4 }}>
+            <button onClick={() => setFilterTeam("all")} style={{
+              padding: "5px 12px", borderRadius: 8, border: "none", cursor: "pointer", whiteSpace: "nowrap",
+              background: filterTeam === "all" ? "rgba(0,255,174,0.1)" : "rgba(255,255,255,0.04)",
+              color: filterTeam === "all" ? "var(--dash-accent)" : "var(--dash-text-muted)",
+              fontSize: 11, fontWeight: 600,
+            }}>Todos ({employees.length})</button>
+            {[...new Set(employees.map(e => e.team || "geral"))].map(t => {
+              const count = employees.filter(e => (e.team || "geral") === t).length;
+              return (
+                <button key={t} onClick={() => setFilterTeam(t)} style={{
+                  padding: "5px 12px", borderRadius: 8, border: "none", cursor: "pointer", whiteSpace: "nowrap",
+                  background: filterTeam === t ? "rgba(0,255,174,0.1)" : "rgba(255,255,255,0.04)",
+                  color: filterTeam === t ? "var(--dash-accent)" : "var(--dash-text-muted)",
+                  fontSize: 11, fontWeight: 600, textTransform: "capitalize",
+                }}>{t} ({count})</button>
+              );
+            })}
+          </div>
+
+          {filteredEmployees.length === 0 ? (
             <div style={{ textAlign: "center", padding: "32px 0", color: "#666" }}>
               <div style={{ fontSize: 32, marginBottom: 8 }}>👥</div>
-              <div style={{ fontSize: 14 }}>Nenhum funcionário cadastrado</div>
+              <div style={{ fontSize: 14 }}>{employees.length === 0 ? "Nenhum funcionário cadastrado" : "Nenhum funcionário nessa equipe"}</div>
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {employees.map((emp) => (
-                <div key={emp.id} style={{ background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: "12px 14px", border: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", gap: 12 }}>
-                  <div style={{ width: 36, height: 36, borderRadius: "50%", background: emp.is_active ? "rgba(0,255,174,0.12)" : "rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>
-                    {emp.role === "deliverer" ? "🚴" : emp.role === "kitchen" ? "👨‍🍳" : emp.role === "freelancer" ? "🤝" : "🧑‍🍳"}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ color: emp.is_active ? "#fff" : "#666", fontSize: 14, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{emp.name}</div>
-                    <div style={{ color: "#888", fontSize: 11, marginTop: 1 }}>
-                      {ROLES[emp.role] ?? emp.role}
-                      {emp.category_name && ` · ${emp.category_name}`}
+              {filteredEmployees.map((emp) => {
+                const status = STATUS_CONFIG[emp.current_status || "off"];
+                return (
+                  <div key={emp.id} style={{ background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: "12px 14px", border: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", gap: 12 }}>
+                    <div style={{ width: 36, height: 36, borderRadius: "50%", background: emp.is_active ? "rgba(0,255,174,0.12)" : "rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>
+                      {emp.role === "deliverer" ? "🚴" : emp.role === "kitchen" ? "👨‍🍳" : emp.role === "freelancer" ? "🤝" : "🧑‍🍳"}
                     </div>
-                    <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 11, marginTop: 4 }}>
-                      {emp.salary > 0 && <span>R$ {(emp.salary / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 })} · </span>}
-                      {emp.work_days && emp.work_days.length > 0 && <span>{emp.work_days.join(", ")} · </span>}
-                      {emp.shift_start && emp.shift_end && <span>{emp.shift_start.slice(0, 5)} às {emp.shift_end.slice(0, 5)}</span>}
-                    </div>
-                    {emp.extra_costs > 0 && (
-                      <div style={{ color: "rgba(255,255,255,0.2)", fontSize: 10, marginTop: 2 }}>
-                        Custos extras: R$ {(emp.extra_costs / 100).toFixed(2)}{emp.extra_costs_description ? ` (${emp.extra_costs_description})` : ""}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 4 }}>
+                        <span style={{ color: emp.is_active ? "#fff" : "#666", fontSize: 14, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{emp.name}</span>
+                        <span style={{
+                          padding: "2px 8px", borderRadius: 6, fontSize: 9, fontWeight: 700,
+                          background: `${status.color}15`,
+                          color: status.color,
+                        }}>
+                          {status.icon} {status.label}
+                        </span>
+                        <span style={{
+                          padding: "2px 8px", borderRadius: 6, fontSize: 9,
+                          background: "rgba(255,255,255,0.04)",
+                          color: "var(--dash-text-muted)",
+                          textTransform: "capitalize",
+                        }}>
+                          {emp.team || "geral"}
+                        </span>
                       </div>
-                    )}
+                      <div style={{ color: "#888", fontSize: 11, marginTop: 1 }}>
+                        {ROLES[emp.role] ?? emp.role}
+                        {emp.category_name && ` · ${emp.category_name}`}
+                      </div>
+                      <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 11, marginTop: 4 }}>
+                        {emp.salary > 0 && <span>R$ {(emp.salary / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 })} · </span>}
+                        {emp.work_days && emp.work_days.length > 0 && <span>{emp.work_days.join(", ")} · </span>}
+                        {emp.shift_start && emp.shift_end && <span>{emp.shift_start.slice(0, 5)} às {emp.shift_end.slice(0, 5)}</span>}
+                      </div>
+                      {emp.extra_costs > 0 && (
+                        <div style={{ color: "rgba(255,255,255,0.2)", fontSize: 10, marginTop: 2 }}>
+                          Custos extras: R$ {(emp.extra_costs / 100).toFixed(2)}{emp.extra_costs_description ? ` (${emp.extra_costs_description})` : ""}
+                        </div>
+                      )}
+                      {/* Manual status change */}
+                      <select
+                        value={emp.current_status || "off"}
+                        onChange={async (e) => {
+                          await supabase.from("employees").update({ current_status: e.target.value }).eq("id", emp.id);
+                          setEmployees(prev => prev.map(em => em.id === emp.id ? { ...em, current_status: e.target.value } : em));
+                        }}
+                        style={{
+                          marginTop: 6, padding: "3px 8px", borderRadius: 6,
+                          background: "rgba(255,255,255,0.04)", border: "none",
+                          color: "var(--dash-text)", fontSize: 10, outline: "none",
+                        }}
+                      >
+                        <option value="working">🟢 Trabalhando</option>
+                        <option value="break">🟡 Descanso</option>
+                        <option value="lunch">🔵 Almoço</option>
+                        <option value="off">⚪ Folga</option>
+                        <option value="absent">🔴 Ausente</option>
+                        <option value="vacation">🟣 Férias</option>
+                      </select>
+                    </div>
+                    <button
+                      onClick={() => toggleActive(emp)}
+                      style={{ padding: "5px 10px", borderRadius: 8, border: "none", background: emp.is_active ? "rgba(248,113,113,0.1)" : "rgba(0,255,174,0.1)", color: emp.is_active ? "#f87171" : "#00ffae", fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}
+                    >
+                      {emp.is_active ? "Desativar" : "Ativar"}
+                    </button>
                   </div>
-                  <button
-                    onClick={() => toggleActive(emp)}
-                    style={{ padding: "5px 10px", borderRadius: 8, border: "none", background: emp.is_active ? "rgba(248,113,113,0.1)" : "rgba(0,255,174,0.1)", color: emp.is_active ? "#f87171" : "#00ffae", fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}
-                  >
-                    {emp.is_active ? "Desativar" : "Ativar"}
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

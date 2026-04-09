@@ -1192,7 +1192,7 @@ export default function DashboardClient({
         {unit && <PrinterModal unitId={unit.id} categories={categories} />}
       </Modal>
       <Modal open={modal === "equipe"} onClose={close} title="Equipe">
-        {unit && <StaffAnalyticsModal unitId={unit.id} />}
+        {unit && <StaffAnalyticsModal unitId={unit.id} plan={restaurant.plan ?? "menu"} />}
       </Modal>
       <Modal open={modal === "links"} onClose={close} title="Links Rápidos">
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
