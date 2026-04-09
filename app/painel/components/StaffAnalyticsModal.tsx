@@ -69,7 +69,7 @@ function RatingStars({ value }: { value: number | null }) {
 }
 
 export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; plan?: string }) {
-  const [tab, setTab] = useState<"equipe" | "garcons" | "entregadores">("equipe");
+  const [tab, setTab] = useState<"equipe" | "garcons" | "entregadores" | "ponto">("equipe");
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [waiterStats, setWaiterStats] = useState<WaiterStat[]>([]);
   const [delivererStats, setDelivererStats] = useState<DelivererStat[]>([]);
@@ -97,6 +97,10 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
   // Filter state
   const [filterTeam, setFilterTeam] = useState("all");
 
+  // Ponto state
+  const [timeEntries, setTimeEntries] = useState<any[]>([]);
+  const [pontoView, setPontoView] = useState<"registro" | "historico" | "resumo">("registro");
+
   const supabase = createClient();
   const isBusiness = plan === "business";
 
@@ -106,7 +110,9 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
 
   async function loadAll() {
     setLoading(true);
-    await Promise.all([loadEmployees(), loadWaiterStats(), loadDelivererStats(), loadCategories()]);
+    const tasks = [loadEmployees(), loadWaiterStats(), loadDelivererStats(), loadCategories()];
+    if (plan === "business") tasks.push(loadTimeEntries());
+    await Promise.all(tasks);
     setLoading(false);
   }
 
@@ -149,6 +155,36 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
       .select("id, name")
       .eq("unit_id", unitId);
     setCategories(data ?? []);
+  }
+
+  async function loadTimeEntries() {
+    const { data: entries } = await supabase
+      .from("time_entries")
+      .select("*, employees(name, role, team)")
+      .eq("unit_id", unitId)
+      .gte("timestamp", new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
+      .order("timestamp", { ascending: false })
+      .limit(500);
+    if (entries) setTimeEntries(entries);
+  }
+
+  async function handlePonto(employeeId: string, type: string, nextStatus: string) {
+    const now = new Date().toISOString();
+
+    await supabase.from("time_entries").insert({
+      employee_id: employeeId,
+      unit_id: unitId,
+      type,
+      timestamp: now,
+    });
+
+    const updatePayload: any = { current_status: nextStatus };
+    if (type === "clock_in") updatePayload.last_clock_in = now;
+
+    await supabase.from("employees").update(updatePayload).eq("id", employeeId);
+
+    setEmployees(prev => prev.map(e => e.id === employeeId ? { ...e, ...updatePayload } : e));
+    await loadTimeEntries();
   }
 
   async function toggleActive(emp: Employee) {
@@ -222,6 +258,60 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
     loadEmployees();
   }
 
+  function calculateHours(entries: any[]): { weekHours: number; monthHours: number } {
+    const now = new Date();
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - now.getDay());
+    weekStart.setHours(0, 0, 0, 0);
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    let weekMs = 0;
+    let monthMs = 0;
+
+    const sorted = [...entries].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+    let clockInTime: Date | null = null;
+    let pauseTime: Date | null = null;
+
+    for (const entry of sorted) {
+      const ts = new Date(entry.timestamp);
+      if (entry.type === "clock_in") {
+        clockInTime = ts;
+        pauseTime = null;
+      } else if (entry.type === "break_start" || entry.type === "lunch_start") {
+        if (clockInTime && !pauseTime) {
+          const worked = ts.getTime() - clockInTime.getTime();
+          if (ts >= weekStart) weekMs += worked;
+          if (ts >= monthStart) monthMs += worked;
+          pauseTime = ts;
+        }
+      } else if (entry.type === "break_end" || entry.type === "lunch_end") {
+        if (pauseTime) {
+          clockInTime = ts;
+          pauseTime = null;
+        }
+      } else if (entry.type === "clock_out") {
+        if (clockInTime && !pauseTime) {
+          const worked = ts.getTime() - clockInTime.getTime();
+          if (ts >= weekStart) weekMs += worked;
+          if (ts >= monthStart) monthMs += worked;
+        }
+        clockInTime = null;
+        pauseTime = null;
+      }
+    }
+
+    if (clockInTime && !pauseTime) {
+      const worked = now.getTime() - clockInTime.getTime();
+      if (clockInTime >= weekStart) weekMs += worked;
+      if (clockInTime >= monthStart) monthMs += worked;
+    }
+
+    return {
+      weekHours: Math.round((weekMs / 3600000) * 10) / 10,
+      monthHours: Math.round((monthMs / 3600000) * 10) / 10,
+    };
+  }
+
   const inp: React.CSSProperties = {
     width: "100%", padding: "10px 12px", borderRadius: 10,
     border: "1px solid rgba(255,255,255,0.1)",
@@ -258,7 +348,10 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
       <div style={{ display: "flex", gap: 4, background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: 4, marginBottom: 20 }}>
         <button style={tabStyle(tab === "equipe")} onClick={() => setTab("equipe")}>👥 Equipe</button>
         <button style={tabStyle(tab === "garcons")} onClick={() => setTab("garcons")}>🧑‍🍳 Garçons</button>
-        <button style={tabStyle(tab === "entregadores")} onClick={() => setTab("entregadores")}>🚴 Entregadores</button>
+        <button style={tabStyle(tab === "entregadores")} onClick={() => setTab("entregadores")}>🛵 Entregadores</button>
+        {isBusiness && (
+          <button style={tabStyle(tab === "ponto")} onClick={() => setTab("ponto")}>⏱️ Ponto</button>
+        )}
       </div>
 
       {/* ── Equipe ── */}
@@ -706,6 +799,238 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Ponto ── */}
+      {tab === "ponto" && isBusiness && (
+        <div>
+          {/* Sub-tabs */}
+          <div style={{ display: "flex", gap: 4, marginBottom: 16, background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: 4 }}>
+            {[
+              { key: "registro", label: "Registrar" },
+              { key: "historico", label: "Histórico" },
+              { key: "resumo", label: "Horas" },
+            ].map(t => (
+              <button key={t.key} onClick={() => setPontoView(t.key as any)} style={{
+                flex: 1, padding: "8px 10px", borderRadius: 10, border: "none", cursor: "pointer",
+                background: pontoView === t.key ? "rgba(0,255,174,0.1)" : "transparent",
+                color: pontoView === t.key ? "var(--dash-accent)" : "var(--dash-text-muted)",
+                fontSize: 12, fontWeight: 600, transition: "all 0.2s",
+              }}>{t.label}</button>
+            ))}
+          </div>
+
+          {/* SUB-TAB: REGISTRO */}
+          {pontoView === "registro" && (
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--dash-text)", marginBottom: 12 }}>Registrar ponto</div>
+              {employees.filter(e => e.is_active).map(emp => {
+                const status = emp.current_status || "off";
+                const statusConfig: Record<string, { label: string; color: string; actions: { type: string; label: string; icon: string; nextStatus: string }[] }> = {
+                  off: {
+                    label: "Fora", color: "rgba(255,255,255,0.3)",
+                    actions: [{ type: "clock_in", label: "Entrada", icon: "▶️", nextStatus: "working" }],
+                  },
+                  working: {
+                    label: "Trabalhando", color: "#00ffae",
+                    actions: [
+                      { type: "break_start", label: "Descanso", icon: "☕", nextStatus: "break" },
+                      { type: "lunch_start", label: "Almoço", icon: "🍽️", nextStatus: "lunch" },
+                      { type: "clock_out", label: "Saída", icon: "⏹️", nextStatus: "off" },
+                    ],
+                  },
+                  break: {
+                    label: "Descanso", color: "#fbbf24",
+                    actions: [{ type: "break_end", label: "Retornar", icon: "▶️", nextStatus: "working" }],
+                  },
+                  lunch: {
+                    label: "Almoço", color: "#60a5fa",
+                    actions: [{ type: "lunch_end", label: "Retornar", icon: "▶️", nextStatus: "working" }],
+                  },
+                  absent: {
+                    label: "Ausente", color: "#f87171",
+                    actions: [{ type: "clock_in", label: "Entrada", icon: "▶️", nextStatus: "working" }],
+                  },
+                  vacation: {
+                    label: "Férias", color: "#a855f7",
+                    actions: [],
+                  },
+                };
+                const config = statusConfig[status] || statusConfig.off;
+                return (
+                  <div key={emp.id} style={{
+                    display: "flex", alignItems: "center", gap: 10,
+                    padding: "12px 14px", borderRadius: 14,
+                    background: "rgba(255,255,255,0.03)",
+                    boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
+                    marginBottom: 6,
+                  }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{ color: "var(--dash-text)", fontSize: 13, fontWeight: 700 }}>{emp.name}</span>
+                        <span style={{
+                          padding: "2px 8px", borderRadius: 6, fontSize: 9, fontWeight: 700,
+                          background: `${config.color}15`, color: config.color,
+                        }}>{config.label}</span>
+                      </div>
+                      <div style={{ color: "var(--dash-text-muted)", fontSize: 10, marginTop: 2 }}>
+                        {ROLES[emp.role] ?? emp.role} · {emp.team || "geral"}
+                        {emp.last_clock_in && status === "working" && (
+                          <span> · desde {new Date(emp.last_clock_in).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span>
+                        )}
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", gap: 4 }}>
+                      {config.actions.map(action => (
+                        <button
+                          key={action.type}
+                          onClick={() => handlePonto(emp.id, action.type, action.nextStatus)}
+                          style={{
+                            padding: "6px 10px", borderRadius: 8, border: "none", cursor: "pointer",
+                            background: action.type === "clock_out" ? "rgba(248,113,113,0.08)" : "rgba(0,255,174,0.08)",
+                            color: action.type === "clock_out" ? "#f87171" : "var(--dash-accent)",
+                            fontSize: 10, fontWeight: 700, whiteSpace: "nowrap",
+                          }}
+                        >
+                          {action.icon} {action.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* SUB-TAB: HISTÓRICO */}
+          {pontoView === "historico" && (
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--dash-text)", marginBottom: 12 }}>Últimos registros</div>
+              {timeEntries.length === 0 ? (
+                <div style={{ textAlign: "center", padding: 30, color: "var(--dash-text-muted)", fontSize: 12 }}>Nenhum registro de ponto.</div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                  {timeEntries.slice(0, 50).map(entry => {
+                    const typeConfig: Record<string, { label: string; icon: string; color: string }> = {
+                      clock_in: { label: "Entrada", icon: "▶️", color: "#00ffae" },
+                      clock_out: { label: "Saída", icon: "⏹️", color: "#f87171" },
+                      break_start: { label: "Início descanso", icon: "☕", color: "#fbbf24" },
+                      break_end: { label: "Fim descanso", icon: "▶️", color: "#00ffae" },
+                      lunch_start: { label: "Início almoço", icon: "🍽️", color: "#60a5fa" },
+                      lunch_end: { label: "Fim almoço", icon: "▶️", color: "#00ffae" },
+                    };
+                    const tc = typeConfig[entry.type] || { label: entry.type, icon: "📌", color: "var(--dash-text-muted)" };
+                    return (
+                      <div key={entry.id} style={{
+                        display: "flex", alignItems: "center", gap: 8,
+                        padding: "8px 12px", borderRadius: 10, background: "rgba(255,255,255,0.02)",
+                      }}>
+                        <span style={{ fontSize: 12 }}>{tc.icon}</span>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ color: "var(--dash-text)", fontSize: 12, fontWeight: 600 }}>
+                            {entry.employees?.name || "?"} — <span style={{ color: tc.color }}>{tc.label}</span>
+                          </div>
+                        </div>
+                        <div style={{ textAlign: "right" }}>
+                          <div style={{ color: "var(--dash-text-muted)", fontSize: 11 }}>
+                            {new Date(entry.timestamp).toLocaleDateString("pt-BR")}
+                          </div>
+                          <div style={{ color: "var(--dash-text)", fontSize: 12, fontWeight: 600 }}>
+                            {new Date(entry.timestamp).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* SUB-TAB: RESUMO DE HORAS */}
+          {pontoView === "resumo" && (
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--dash-text)", marginBottom: 12 }}>Horas trabalhadas</div>
+              {employees.filter(e => e.is_active).map(emp => {
+                const empEntries = timeEntries.filter(e => e.employee_id === emp.id);
+                const { weekHours, monthHours } = calculateHours(empEntries);
+                return (
+                  <div key={emp.id} style={{
+                    padding: "12px 14px", borderRadius: 14,
+                    background: "rgba(255,255,255,0.03)",
+                    boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
+                    marginBottom: 6,
+                  }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                      <div>
+                        <span style={{ color: "var(--dash-text)", fontSize: 13, fontWeight: 700 }}>{emp.name}</span>
+                        <span style={{ color: "var(--dash-text-muted)", fontSize: 10, marginLeft: 6 }}>{ROLES[emp.role] ?? emp.role}</span>
+                      </div>
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+                      <div style={{ textAlign: "center", padding: "6px 0" }}>
+                        <div style={{ fontSize: 16, fontWeight: 800, color: "var(--dash-accent)" }}>{weekHours}h</div>
+                        <div style={{ fontSize: 9, color: "var(--dash-text-muted)" }}>Esta semana</div>
+                      </div>
+                      <div style={{ textAlign: "center", padding: "6px 0" }}>
+                        <div style={{ fontSize: 16, fontWeight: 800, color: "var(--dash-text)" }}>{monthHours}h</div>
+                        <div style={{ fontSize: 9, color: "var(--dash-text-muted)" }}>Este mês</div>
+                      </div>
+                      <div style={{ textAlign: "center", padding: "6px 0" }}>
+                        {(() => {
+                          const dailyHours = emp.shift_start && emp.shift_end
+                            ? (parseInt(emp.shift_end.split(":")[0]) + parseInt(emp.shift_end.split(":")[1]) / 60)
+                            - (parseInt(emp.shift_start.split(":")[0]) + parseInt(emp.shift_start.split(":")[1]) / 60)
+                            - (emp.lunch_start && emp.lunch_end
+                              ? (parseInt(emp.lunch_end.split(":")[0]) + parseInt(emp.lunch_end.split(":")[1]) / 60)
+                              - (parseInt(emp.lunch_start.split(":")[0]) + parseInt(emp.lunch_start.split(":")[1]) / 60)
+                              : 0)
+                            : 0;
+                          const weekTarget = (emp.work_days?.length || 5) * dailyHours;
+                          const costPerHour = emp.salary > 0 && weekTarget > 0
+                            ? (emp.salary / 100) / (weekTarget * 4)
+                            : 0;
+                          return (
+                            <>
+                              <div style={{ fontSize: 16, fontWeight: 800, color: costPerHour > 0 ? "#fbbf24" : "var(--dash-text-muted)" }}>
+                                {costPerHour > 0 ? `R$ ${costPerHour.toFixed(0)}/h` : "—"}
+                              </div>
+                              <div style={{ fontSize: 9, color: "var(--dash-text-muted)" }}>Custo/hora</div>
+                            </>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                    {emp.shift_start && emp.shift_end && (
+                      <div style={{ marginTop: 6 }}>
+                        {(() => {
+                          const dailyHours = (parseInt(emp.shift_end.split(":")[0]) + parseInt(emp.shift_end.split(":")[1]) / 60)
+                            - (parseInt(emp.shift_start.split(":")[0]) + parseInt(emp.shift_start.split(":")[1]) / 60)
+                            - (emp.lunch_start && emp.lunch_end
+                              ? (parseInt(emp.lunch_end.split(":")[0]) + parseInt(emp.lunch_end.split(":")[1]) / 60)
+                              - (parseInt(emp.lunch_start.split(":")[0]) + parseInt(emp.lunch_start.split(":")[1]) / 60)
+                              : 0);
+                          const weekTarget = (emp.work_days?.length || 5) * dailyHours;
+                          const pct = weekTarget > 0 ? Math.min((weekHours / weekTarget) * 100, 100) : 0;
+                          return (
+                            <>
+                              <div style={{ height: 4, borderRadius: 2, background: "rgba(255,255,255,0.04)", overflow: "hidden" }}>
+                                <div style={{ height: "100%", borderRadius: 2, width: `${pct}%`, background: "var(--dash-accent)", transition: "width 0.5s" }} />
+                              </div>
+                              <div style={{ fontSize: 9, color: "var(--dash-text-muted)", marginTop: 3 }}>
+                                {weekHours}h / {weekTarget.toFixed(0)}h meta semanal ({pct.toFixed(0)}%)
+                              </div>
+                            </>
+                          );
+                        })()}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
