@@ -13,6 +13,7 @@ export type Unit = {
   cover_url: string | null;
   banner_url: string | null;
   description: string | null;
+  facebook_pixel_id?: string | null;
 };
 export type Category = {
   id: string;

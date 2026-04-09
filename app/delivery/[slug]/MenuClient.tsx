@@ -137,10 +137,52 @@ export default function MenuClient({
     return () => obs.disconnect();
   }, []);
 
+  // ── Facebook Pixel injection ────────────────────────────────────────────────
+  useEffect(() => {
+    if (!unit.facebook_pixel_id) return;
+    if ((window as any).fbq) return;
+
+    const script = document.createElement("script");
+    script.innerHTML = `
+      !function(f,b,e,v,n,t,s)
+      {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+      n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+      n.queue=[];t=b.createElement(e);t.async=!0;
+      t.src=v;s=b.getElementsByTagName(e)[0];
+      s.parentNode.insertBefore(t,s)}(window,document,'script',
+      'https://connect.facebook.net/en_US/fbevents.js');
+      fbq('init', '${unit.facebook_pixel_id}');
+      fbq('track', 'PageView');
+    `;
+    document.head.appendChild(script);
+
+    const noscript = document.createElement("noscript");
+    const img = document.createElement("img");
+    img.height = 1;
+    img.width = 1;
+    img.style.display = "none";
+    img.src = `https://www.facebook.com/tr?id=${unit.facebook_pixel_id}&ev=PageView&noscript=1`;
+    noscript.appendChild(img);
+    document.body.appendChild(noscript);
+
+    return () => {
+      try { document.head.removeChild(script); } catch {}
+      try { document.body.removeChild(noscript); } catch {}
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [unit.facebook_pixel_id]);
+
   // Dispatch event so ProductVideoCards pause/resume when modal opens/closes
   useEffect(() => {
     window.dispatchEvent(new CustomEvent("menu-modal", { detail: { open: !!selectedProduct } }));
   }, [selectedProduct]);
+
+  function trackPixel(event: string, data?: Record<string, any>) {
+    if (typeof window !== "undefined" && (window as any).fbq) {
+      (window as any).fbq("track", event, data);
+    }
+  }
 
   function isCategoryAvailable(cat: Category): boolean {
     if (!cat.schedule_enabled) return true;
@@ -267,6 +309,12 @@ export default function MenuClient({
   function handleOpenProduct(product: Product) {
     setSelectedProduct(product);
     track({ event: "product_click", product_id: product.id, category_id: product.category_id });
+    trackPixel("ViewContent", {
+      content_name: product.name,
+      content_type: "product",
+      value: (product.base_price || 0) > 500 ? (product.base_price! / 100) : product.base_price,
+      currency: "BRL",
+    });
   }
 
   function handleProductOrder(payload: OrderPayload) {

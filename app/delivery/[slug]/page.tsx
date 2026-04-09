@@ -70,7 +70,7 @@ export default async function Page({
   const { data: unitData, error: unitErr } = await supabase
     .from("units")
     .select(
-      "id, restaurant_id, name, slug, city, neighborhood, whatsapp, instagram, maps_url, logo_url, cover_url, banner_url, description, payment_active"
+      "id, restaurant_id, name, slug, city, neighborhood, whatsapp, instagram, maps_url, logo_url, cover_url, banner_url, description, payment_active, facebook_pixel_id"
     )
     .eq("slug", publicSlug)
     .maybeSingle();
@@ -105,6 +105,7 @@ export default async function Page({
     cover_url: unitData.cover_url ?? null,
     banner_url: unitData.banner_url ?? null,
     description: unitData.description ?? null,
+    facebook_pixel_id: unitData.facebook_pixel_id ?? null,
   };
 
   // ─── 2–4) CATEGORIES + PRODUCTS + VARIATIONS (via cache) ──────────────────

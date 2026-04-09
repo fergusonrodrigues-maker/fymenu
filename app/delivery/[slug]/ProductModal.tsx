@@ -127,6 +127,14 @@ export default function ProductModal({
 
   function handleOrder() {
     if (!canOrder || activePrice == null || !currentProduct) return;
+    if (typeof window !== "undefined" && (window as any).fbq) {
+      (window as any).fbq("track", "AddToCart", {
+        content_name: currentProduct.name,
+        content_type: "product",
+        value: (currentProduct.base_price || 0) > 500 ? (currentProduct.base_price! / 100) : currentProduct.base_price,
+        currency: "BRL",
+      });
+    }
     onOrder({
       product: currentProduct,
       variation: selectedVariation ?? undefined,

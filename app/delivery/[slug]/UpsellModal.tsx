@@ -50,6 +50,15 @@ export default function UpsellModal({
     if (!unit.whatsapp) return;
     const url = buildWhatsAppMessage(finalPayload, unit.whatsapp);
     track({ event: "whatsapp_click", product_id: payload?.product.id });
+    if (typeof window !== "undefined" && (window as any).fbq) {
+      const totalValue = finalPayload.total;
+      (window as any).fbq("track", "Purchase", {
+        value: totalValue > 500 ? totalValue / 100 : totalValue,
+        currency: "BRL",
+        content_type: "product",
+        num_items: 1 + (finalPayload.upsells?.length ?? 0),
+      });
+    }
     window.open(url, "_blank");
     onClose();
   }

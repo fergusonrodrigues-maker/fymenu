@@ -46,6 +46,7 @@ export default function UnidadeModal({ unit, isPro, onClose }: { unit: Unit | nu
   const [coverUrl, setCoverUrl] = useState(unit?.cover_url ?? null);
 
   const [description, setDescription] = useState(unit?.description ?? "");
+  const [pixelId, setPixelId] = useState(unit?.facebook_pixel_id || "");
 
   if (!unit) return <div style={{ color: "var(--dash-text-muted)", paddingTop: 16 }}>Nenhuma unidade encontrada.</div>;
   const origin = typeof window !== "undefined" ? window.location.origin : "";
@@ -207,6 +208,33 @@ export default function UnidadeModal({ unit, isPro, onClose }: { unit: Unit | nu
         <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 11, marginTop: 6, display: "block" }}>
           {description.length}/100 — Aparece abaixo do nome no cardápio público
         </span>
+      </div>
+
+      {/* ── Facebook Pixel ── */}
+      <div style={{ borderRadius: 14, padding: 14, background: "rgba(20,20,20,0.55)", border: "1px solid rgba(255,255,255,0.12)" }}>
+        <div style={{ fontWeight: 900, marginBottom: 10 }}>Facebook Pixel</div>
+        {/* Facebook Pixel */}
+        <div style={{ marginTop: 0 }}>
+          <label style={{ color: "var(--dash-text-muted)", fontSize: 12, fontWeight: 600, display: "block", marginBottom: 6 }}>Facebook Pixel ID</label>
+          <input
+            type="text"
+            placeholder="Ex: 123456789012345"
+            value={pixelId}
+            onChange={(e) => setPixelId(e.target.value)}
+            onBlur={async () => {
+              const supabase = createClient();
+              await supabase.from("units").update({ facebook_pixel_id: pixelId.trim() || null }).eq("id", unit.id);
+            }}
+            style={{
+              width: "100%", padding: "10px 14px", borderRadius: 12,
+              background: "rgba(255,255,255,0.04)", border: "none",
+              color: "var(--dash-text)", fontSize: 14, outline: "none", boxSizing: "border-box",
+            }}
+          />
+          <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 10, marginTop: 4, display: "block" }}>
+            Rastreia conversões do cardápio no Facebook/Instagram Ads
+          </span>
+        </div>
       </div>
 
       <form action={updateUnit} onSubmit={() => setTimeout(onClose, 300)} style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 4 }}>
