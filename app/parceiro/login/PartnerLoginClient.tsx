@@ -24,7 +24,7 @@ export default function PartnerLoginClient() {
       localStorage.setItem("partner_token", json.token);
       localStorage.setItem("partner_id", json.partner.id);
       localStorage.setItem("partner_name", json.partner.name);
-      router.push("/parceiro");
+      router.push("/parceiro/painel");
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -70,9 +70,18 @@ export default function PartnerLoginClient() {
             {loading ? "Entrando..." : "Entrar"}
           </button>
         </form>
-        <p style={{ color: "rgba(255,255,255,0.15)", fontSize: 11, textAlign: "center", marginTop: 24 }}>
-          Acesso exclusivo para parceiros FyMenu.
-        </p>
+        <div style={{ textAlign: "center", marginTop: 24 }}>
+          <p style={{ color: "rgba(255,255,255,0.15)", fontSize: 11, margin: "0 0 12px" }}>
+            Acesso exclusivo para parceiros FyMenu.
+          </p>
+          <a
+            href="https://wa.me/5562982301642?text=Olá! Sou parceiro FyMenu e preciso de suporte."
+            target="_blank" rel="noopener noreferrer"
+            style={{ color: "rgba(37,211,102,0.5)", fontSize: 12, textDecoration: "none" }}
+          >
+            💬 Suporte via WhatsApp
+          </a>
+        </div>
       </div>
     </div>
   );

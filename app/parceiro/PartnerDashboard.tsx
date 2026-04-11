@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
 const PLAN_PRICES: Record<string, number> = {
@@ -17,7 +17,7 @@ function fmtDate(iso: string | null) {
   return new Date(iso).toLocaleDateString("pt-BR");
 }
 
-type Tab = "resumo" | "indicacoes" | "cupons" | "comissoes" | "fotos";
+type Tab = "resumo" | "indicacoes" | "cupons" | "comissoes" | "fotos" | "config";
 
 interface Partner {
   id: string;
@@ -125,6 +125,14 @@ export default function PartnerDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Change password state
+  const [currentPw, setCurrentPw] = useState("");
+  const [newPw, setNewPw] = useState("");
+  const [confirmPw, setConfirmPw] = useState("");
+  const [pwError, setPwError] = useState("");
+  const [pwSuccess, setPwSuccess] = useState(false);
+  const [changingPw, setChangingPw] = useState(false);
+
   useEffect(() => {
     const token = localStorage.getItem("partner_token");
     if (!token) { router.replace("/parceiro/login"); return; }
@@ -148,6 +156,23 @@ export default function PartnerDashboard() {
     localStorage.removeItem("partner_id");
     localStorage.removeItem("partner_name");
     router.replace("/parceiro/login");
+  }
+
+  async function handleChangePw() {
+    setPwError(""); setPwSuccess(false);
+    if (newPw.length < 6) { setPwError("Mínimo 6 caracteres"); return; }
+    if (newPw !== confirmPw) { setPwError("Senhas não conferem"); return; }
+    setChangingPw(true);
+    try {
+      const res = await fetch("/api/parceiro/change-password", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ partnerId: partner!.id, currentPassword: currentPw, newPassword: newPw }),
+      });
+      const json = await res.json();
+      if (!res.ok) { setPwError(json.error || "Erro ao alterar senha"); }
+      else { setPwSuccess(true); setCurrentPw(""); setNewPw(""); setConfirmPw(""); setTimeout(() => setPwSuccess(false), 3000); }
+    } catch { setPwError("Erro de conexão"); }
+    finally { setChangingPw(false); }
   }
 
   if (loading) {
@@ -186,6 +211,7 @@ export default function PartnerDashboard() {
     { key: "cupons", label: "Cupons" },
     { key: "comissoes", label: "Comissões" },
     ...(partner.is_photographer ? [{ key: "fotos" as Tab, label: "Sessões de Fotos" }] : []),
+    { key: "config", label: "Configurações" },
   ];
 
   return (
@@ -423,6 +449,79 @@ export default function PartnerDashboard() {
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {/* CONFIGURAÇÕES */}
+        {tab === "config" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+            {/* Dados do parceiro */}
+            <div style={card}>
+              <p style={{ margin: "0 0 14px", fontSize: 13, fontWeight: 700 }}>Seus dados</p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 13, color: "rgba(255,255,255,0.55)" }}>
+                <div>Nome: <span style={{ color: "#fff", fontWeight: 600 }}>{partner.name}</span></div>
+                <div>Email: <span style={{ color: "#fff" }}>{partner.email}</span></div>
+                <div>Comissão: <span style={{ color: "#00ffae", fontWeight: 700 }}>{partner.commission_percent}%</span></div>
+              </div>
+            </div>
+
+            {/* Alterar senha */}
+            <div style={card}>
+              <p style={{ margin: "0 0 16px", fontSize: 13, fontWeight: 700 }}>Alterar senha</p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <input
+                  type="password" value={currentPw} onChange={e => setCurrentPw(e.target.value)}
+                  placeholder="Senha atual"
+                  style={{ width: "100%", padding: "12px 16px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.04)", color: "#fff", fontSize: 14, outline: "none", boxSizing: "border-box" as const }}
+                />
+                <input
+                  type="password" value={newPw} onChange={e => setNewPw(e.target.value)}
+                  placeholder="Nova senha (mín. 6 caracteres)"
+                  style={{ width: "100%", padding: "12px 16px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.04)", color: "#fff", fontSize: 14, outline: "none", boxSizing: "border-box" as const }}
+                />
+                <input
+                  type="password" value={confirmPw} onChange={e => setConfirmPw(e.target.value)}
+                  placeholder="Confirmar nova senha"
+                  style={{ width: "100%", padding: "12px 16px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.04)", color: "#fff", fontSize: 14, outline: "none", boxSizing: "border-box" as const }}
+                />
+              </div>
+              {pwError && (
+                <div style={{ marginTop: 10, padding: "8px 12px", borderRadius: 10, background: "rgba(248,113,113,0.08)", color: "#f87171", fontSize: 13 }}>
+                  {pwError}
+                </div>
+              )}
+              {pwSuccess && (
+                <div style={{ marginTop: 10, padding: "8px 12px", borderRadius: 10, background: "rgba(0,255,174,0.06)", color: "#00ffae", fontSize: 13 }}>
+                  ✅ Senha alterada com sucesso!
+                </div>
+              )}
+              <button
+                onClick={handleChangePw}
+                disabled={changingPw || !currentPw || !newPw || !confirmPw}
+                style={{
+                  marginTop: 14, width: "100%", padding: 14, borderRadius: 12, border: "none",
+                  background: "rgba(0,255,174,0.1)", color: "#00ffae",
+                  fontSize: 14, fontWeight: 700, cursor: "pointer",
+                  opacity: changingPw || !currentPw || !newPw || !confirmPw ? 0.4 : 1,
+                }}
+              >
+                {changingPw ? "Alterando..." : "Alterar senha"}
+              </button>
+            </div>
+
+            {/* Suporte */}
+            <a
+              href="https://wa.me/5562982301642?text=Olá! Sou parceiro FyMenu e preciso de suporte."
+              target="_blank" rel="noopener noreferrer"
+              style={{
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                padding: 16, borderRadius: 16, border: "1px solid rgba(37,211,102,0.2)",
+                background: "rgba(37,211,102,0.04)", color: "#25d366",
+                fontSize: 14, fontWeight: 700, textDecoration: "none",
+              }}
+            >
+              💬 Canal de suporte do parceiro
+            </a>
           </div>
         )}
 
