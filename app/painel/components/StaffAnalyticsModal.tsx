@@ -321,8 +321,8 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
 
   const tabStyle = (active: boolean): React.CSSProperties => ({
     flex: 1, padding: "9px 4px", borderRadius: 10, border: "none",
-    background: active ? "rgba(0,255,174,0.12)" : "transparent",
-    color: active ? "#00ffae" : "#888",
+    background: active ? "var(--dash-accent-soft)" : "transparent",
+    color: active ? "var(--dash-accent)" : "var(--dash-text-muted)",
     fontSize: 12, fontWeight: 700, cursor: "pointer",
     transition: "all 0.15s",
   });
@@ -345,7 +345,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
   return (
     <div>
       {/* Tabs */}
-      <div style={{ display: "flex", gap: 4, background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: 4, marginBottom: 20 }}>
+      <div style={{ display: "flex", gap: 4, background: "var(--dash-input-bg)", borderRadius: 12, padding: 4, marginBottom: 20 }}>
         <button style={tabStyle(tab === "equipe")} onClick={() => setTab("equipe")}>👥 Equipe</button>
         <button style={tabStyle(tab === "garcons")} onClick={() => setTab("garcons")}>🧑‍🍳 Garçons</button>
         <button style={tabStyle(tab === "entregadores")} onClick={() => setTab("entregadores")}>🛵 Entregadores</button>
@@ -808,7 +808,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
       {tab === "ponto" && isBusiness && (
         <div>
           {/* Sub-tabs */}
-          <div style={{ display: "flex", gap: 4, marginBottom: 16, background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: 4 }}>
+          <div style={{ display: "flex", gap: 4, marginBottom: 16, background: "var(--dash-input-bg)", borderRadius: 12, padding: 4 }}>
             {[
               { key: "registro", label: "Registrar" },
               { key: "historico", label: "Histórico" },
@@ -816,7 +816,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
             ].map(t => (
               <button key={t.key} onClick={() => setPontoView(t.key as any)} style={{
                 flex: 1, padding: "8px 10px", borderRadius: 10, border: "none", cursor: "pointer",
-                background: pontoView === t.key ? "rgba(0,255,174,0.1)" : "transparent",
+                background: pontoView === t.key ? "var(--dash-accent-soft)" : "transparent",
                 color: pontoView === t.key ? "var(--dash-accent)" : "var(--dash-text-muted)",
                 fontSize: 12, fontWeight: 600, transition: "all 0.2s",
               }}>{t.label}</button>

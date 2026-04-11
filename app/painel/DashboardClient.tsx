@@ -855,7 +855,7 @@ export default function DashboardClient({
           left: calc(100% - var(--circle-d) - var(--sw-offset));
           box-shadow: -1px 1px 2px rgba(163,163,163,0.45);
         }
-        html:not(.dark) .switch-toggle .sw-slider { --sw-checked-bg: #d51659; }
+        html:not(.dark) .switch-toggle .sw-slider { --sw-checked-bg: var(--dash-accent); }
         .ios-checkbox {
           position: relative;
           display: inline-block;

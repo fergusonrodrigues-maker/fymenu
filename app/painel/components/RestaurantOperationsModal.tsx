@@ -170,11 +170,10 @@ export default function RestaurantOperationsModal({
             onClick={() => setTab(t.id)}
             style={{
               flex: 1, padding: "9px 4px", borderRadius: 10, border: "none",
-              background: tab === t.id ? "var(--dash-card)" : "transparent",
-              color: tab === t.id ? "var(--dash-text)" : "var(--dash-text-muted)",
+              background: tab === t.id ? "var(--dash-accent-soft)" : "transparent",
+              color: tab === t.id ? "var(--dash-accent)" : "var(--dash-text-muted)",
               fontSize: 12, fontWeight: tab === t.id ? 700 : 500,
               cursor: "pointer",
-              boxShadow: tab === t.id ? "0 1px 4px rgba(0,0,0,0.2)" : "none",
               transition: "all 0.15s",
             }}
           >

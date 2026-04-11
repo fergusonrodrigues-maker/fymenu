@@ -175,11 +175,10 @@ export default function PedidosModal({ unitId, unit }: { unitId: string; unit?: 
             onClick={() => setMainTab(t.id)}
             style={{
               flex: 1, padding: "8px 4px", borderRadius: 9, border: "none",
-              background: mainTab === t.id ? "var(--dash-card)" : "transparent",
-              color: mainTab === t.id ? "var(--dash-text)" : "var(--dash-text-muted)",
+              background: mainTab === t.id ? "var(--dash-accent-soft)" : "transparent",
+              color: mainTab === t.id ? "var(--dash-accent)" : "var(--dash-text-muted)",
               fontSize: 12, fontWeight: mainTab === t.id ? 700 : 500,
               cursor: "pointer",
-              boxShadow: mainTab === t.id ? "0 1px 4px rgba(0,0,0,0.2)" : "none",
               transition: "all 0.15s",
             }}
           >
