@@ -400,48 +400,48 @@ export default function DashboardClient({
   }, [showNotifications]);
 
   const GRID_LAYOUTS: Record<string, Array<{ id: string; cols: number; mobileCols: number }>> = {
+    // menu: analytics full-width + 2 rows of 4
     menu: [
-      { id: "analytics", cols: 4, mobileCols: 2 },
-      { id: "cardapio", cols: 1, mobileCols: 1 },
-      { id: "pedidos", cols: 1, mobileCols: 1 },
-      { id: "financeiro", cols: 1, mobileCols: 1 },
-      { id: "unidade", cols: 1, mobileCols: 1 },
-      { id: "tv", cols: 1, mobileCols: 1 },
-      { id: "plano", cols: 1, mobileCols: 1 },
-      { id: "config", cols: 2, mobileCols: 2 },
-      { id: "impressoras", cols: 2, mobileCols: 2 },
-      { id: "links", cols: 2, mobileCols: 2 },
-    ],
-    menupro: [
-      { id: "analytics", cols: 4, mobileCols: 2 },
-      { id: "cardapio", cols: 1, mobileCols: 1 },
-      { id: "pedidos", cols: 1, mobileCols: 1 },
-      { id: "financeiro", cols: 1, mobileCols: 1 },
-      { id: "operacoes", cols: 1, mobileCols: 1 },
-      { id: "unidade", cols: 1, mobileCols: 1 },
-      { id: "equipe", cols: 1, mobileCols: 1 },
-      { id: "estoque", cols: 2, mobileCols: 2 },
-      { id: "tv", cols: 1, mobileCols: 1 },
-      { id: "plano", cols: 1, mobileCols: 1 },
-      { id: "config", cols: 2, mobileCols: 2 },
-      { id: "impressoras", cols: 2, mobileCols: 2 },
-      { id: "links", cols: 2, mobileCols: 2 },
-    ],
-    business: [
-      { id: "analytics", cols: 4, mobileCols: 2 },
-      { id: "cardapio", cols: 1, mobileCols: 1 },
-      { id: "pedidos", cols: 1, mobileCols: 1 },
-      { id: "financeiro", cols: 1, mobileCols: 1 },
-      { id: "operacoes", cols: 1, mobileCols: 1 },
-      { id: "unidade", cols: 1, mobileCols: 1 },
-      { id: "equipe", cols: 1, mobileCols: 1 },
-      { id: "estoque", cols: 1, mobileCols: 1 },
-      { id: "crm", cols: 1, mobileCols: 1 },
-      { id: "tv", cols: 1, mobileCols: 1 },
-      { id: "plano", cols: 1, mobileCols: 1 },
-      { id: "config", cols: 1, mobileCols: 1 },
+      { id: "analytics",   cols: 4, mobileCols: 2 },
+      { id: "cardapio",    cols: 1, mobileCols: 1 },
+      { id: "pedidos",     cols: 1, mobileCols: 1 },
+      { id: "financeiro",  cols: 1, mobileCols: 1 },
+      { id: "unidade",     cols: 1, mobileCols: 1 },
+      { id: "tv",          cols: 1, mobileCols: 1 },
+      { id: "plano",       cols: 1, mobileCols: 1 },
+      { id: "config",      cols: 1, mobileCols: 1 },
       { id: "impressoras", cols: 1, mobileCols: 1 },
-      { id: "links", cols: 2, mobileCols: 2 },
+    ],
+    // menupro: analytics full-width + 3 rows of 4
+    menupro: [
+      { id: "analytics",   cols: 4, mobileCols: 2 },
+      { id: "cardapio",    cols: 1, mobileCols: 1 },
+      { id: "pedidos",     cols: 1, mobileCols: 1 },
+      { id: "financeiro",  cols: 1, mobileCols: 1 },
+      { id: "operacoes",   cols: 1, mobileCols: 1 },
+      { id: "unidade",     cols: 1, mobileCols: 1 },
+      { id: "equipe",      cols: 1, mobileCols: 1 },
+      { id: "estoque",     cols: 1, mobileCols: 1 },
+      { id: "tv",          cols: 1, mobileCols: 1 },
+      { id: "plano",       cols: 1, mobileCols: 1 },
+      { id: "config",      cols: 1, mobileCols: 1 },
+      { id: "impressoras", cols: 2, mobileCols: 2 },
+    ],
+    // business: analytics full-width + 3 rows of 4
+    business: [
+      { id: "analytics",   cols: 4, mobileCols: 2 },
+      { id: "cardapio",    cols: 1, mobileCols: 1 },
+      { id: "pedidos",     cols: 1, mobileCols: 1 },
+      { id: "financeiro",  cols: 1, mobileCols: 1 },
+      { id: "operacoes",   cols: 1, mobileCols: 1 },
+      { id: "unidade",     cols: 1, mobileCols: 1 },
+      { id: "equipe",      cols: 1, mobileCols: 1 },
+      { id: "estoque",     cols: 1, mobileCols: 1 },
+      { id: "crm",         cols: 1, mobileCols: 1 },
+      { id: "tv",          cols: 1, mobileCols: 1 },
+      { id: "plano",       cols: 1, mobileCols: 1 },
+      { id: "config",      cols: 1, mobileCols: 1 },
+      { id: "impressoras", cols: 1, mobileCols: 1 },
     ],
   };
 
@@ -469,10 +469,10 @@ export default function DashboardClient({
         * { box-sizing: border-box; }
         body { margin: 0; background: var(--dash-bg); }
         @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:0.5 } }
-        .card:active { transform: scale(0.97); }
-        .card { transition: transform 0.15s, background 0.2s, border-color 0.2s; }
-        .dark .card:hover { background: rgba(0,255,174,0.03) !important; border-color: rgba(0,255,174,0.25) !important; }
-        html:not(.dark) .card:hover { background: rgba(213,22,89,0.02) !important; border-color: rgba(213,22,89,0.2) !important; }
+        .card { transition: transform 0.25s cubic-bezier(0.16,1,0.3,1), background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease; }
+        .card:active { transform: scale(0.97) !important; }
+        .dark .card:hover { background: rgba(0,255,174,0.03) !important; border-color: rgba(0,255,174,0.15) !important; box-shadow: 0 8px 32px rgba(0,0,0,0.25) !important; transform: translateY(-2px) !important; }
+        html:not(.dark) .card:hover { background: rgba(0,179,126,0.02) !important; border-color: rgba(0,179,126,0.15) !important; box-shadow: 0 4px 20px rgba(0,0,0,0.1) !important; transform: translateY(-2px) !important; }
         .dash-dots {
           position: fixed;
           inset: 0;
@@ -1072,6 +1072,15 @@ export default function DashboardClient({
             </div>
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            {/* Links Rápidos */}
+            <button onClick={() => open("links")} style={{
+              width: 36, height: 36, borderRadius: 12,
+              background: "var(--dash-card)",
+              border: "1px solid var(--dash-border)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 16, cursor: "pointer", color: "var(--dash-text-muted)",
+              boxShadow: "var(--dash-shadow)",
+            }}>🔗</button>
             {/* Notificações */}
             <div style={{ position: "relative" }} data-notifications>
               <button
@@ -1193,9 +1202,49 @@ export default function DashboardClient({
           const currentPlan = restaurant.plan ?? "menu";
           const layout = GRID_LAYOUTS[currentPlan] ?? GRID_LAYOUTS.menu;
           const gridCols = isMobile ? 2 : 4;
+
+          // Icon container color per card category
+          const ICON_COLORS: Record<string, string> = {
+            cardapio:    "rgba(0,255,174,0.08)",
+            pedidos:     "rgba(0,255,174,0.08)",
+            financeiro:  "rgba(251,191,36,0.08)",
+            operacoes:   "rgba(96,165,250,0.08)",
+            unidade:     "rgba(248,113,113,0.08)",
+            equipe:      "rgba(168,85,247,0.08)",
+            estoque:     "rgba(168,85,247,0.08)",
+            crm:         "rgba(0,217,255,0.08)",
+            tv:          "rgba(255,255,255,0.06)",
+            plano:       "rgba(251,191,36,0.08)",
+            config:      "rgba(255,255,255,0.06)",
+            impressoras: "rgba(255,255,255,0.06)",
+          };
+
+          const baseCard: React.CSSProperties = {
+            borderRadius: 18,
+            padding: "18px",
+            background: "var(--dash-card)",
+            border: "1px solid var(--dash-border)",
+            boxShadow: "var(--dash-shadow)",
+            cursor: "pointer",
+            display: "flex",
+            flexDirection: "column",
+            gap: 4,
+            position: "relative",
+            overflow: "hidden",
+          };
+
+          const IconBox = ({ id, bg }: { id: string; bg?: string }) => (
+            <div style={{
+              width: 40, height: 40, borderRadius: 12,
+              background: bg ?? ICON_COLORS[id] ?? "rgba(255,255,255,0.06)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 20, marginBottom: 8, flexShrink: 0,
+            }}>{CARD_CONFIGS[id]?.icon}</div>
+          );
+
           return (
             <div style={{
-              padding: "16px 16px 100px",
+              padding: "12px 16px 100px",
               display: "grid",
               gridTemplateColumns: `repeat(${gridCols}, 1fr)`,
               gap: 12,
@@ -1206,30 +1255,31 @@ export default function DashboardClient({
                 const colSpan = isMobile ? item.mobileCols : item.cols;
                 const subText = typeof config.sub === "function" ? config.sub() : config.sub;
 
-                // Card especial: Analytics
+                // ── Analytics — hero full-width card ──────────────────────
                 if (item.id === "analytics") {
                   return (
-                    <div key={item.id} className="card modal-neon-card" onClick={() => open("analytics")} style={{
-                      gridColumn: `span ${colSpan}`,
-                      borderRadius: 20, padding: "20px 24px",
-                      background: "var(--dash-card)",
-                      cursor: "pointer",
+                    <div key="analytics" className="card" onClick={() => open("analytics")} style={{
+                      ...baseCard,
+                      gridColumn: "1 / -1",
+                      padding: "20px 24px",
+                      borderRadius: 20,
+                      background: "linear-gradient(135deg, var(--dash-card) 0%, var(--dash-accent-soft) 400%)",
                     }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
                         <div>
-                          <div style={{ color: "var(--dash-text-muted)", fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 4 }}>Últimos 7 dias</div>
+                          <div style={{ fontSize: 10, fontWeight: 700, color: "var(--dash-text-muted)", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 4 }}>Últimos 7 dias</div>
                           <div style={{ fontSize: 18, fontWeight: 800, color: "var(--dash-text)" }}>Analytics</div>
                         </div>
-                        <div style={{ fontSize: 24 }}>📊</div>
+                        <div style={{ width: 40, height: 40, borderRadius: 12, background: "var(--dash-accent-soft)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>📊</div>
                       </div>
-                      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
                         {[
-                          { label: "Visitas", value: analytics.views, color: isDark ? "#00ffae" : "#007a55" },
-                          { label: "Cliques", value: analytics.clicks, color: isDark ? "#60a5fa" : "#1d4ed8" },
-                          { label: "Pedidos", value: analytics.orders, color: isDark ? "#f472b6" : "#be185d" },
+                          { label: "Visitas", value: analytics.views },
+                          { label: "Cliques", value: analytics.clicks },
+                          { label: "Pedidos", value: analytics.orders },
                         ].map((stat) => (
-                          <div key={stat.label} style={{ textAlign: "center" }}>
-                            <div style={{ color: stat.color, fontSize: 26, fontWeight: 900, lineHeight: 1 }}>{stat.value}</div>
+                          <div key={stat.label} style={{ textAlign: "center", padding: "12px 8px", borderRadius: 12, background: "var(--dash-card)" }}>
+                            <div style={{ color: "var(--dash-accent)", fontSize: 26, fontWeight: 900, lineHeight: 1 }}>{stat.value}</div>
                             <div style={{ color: "var(--dash-text-muted)", fontSize: 11, marginTop: 4 }}>{stat.label}</div>
                           </div>
                         ))}
@@ -1238,125 +1288,82 @@ export default function DashboardClient({
                   );
                 }
 
-                // Card especial: Unidade (com indicador de status)
-                if (item.id === "unidade") {
-                  return (
-                    <div key={item.id} className="card modal-neon-card" onClick={() => open("unidade")} style={{
-                      gridColumn: `span ${colSpan}`,
-                      borderRadius: 20, padding: "20px 18px",
-                      background: "var(--dash-card)",
-                      cursor: "pointer", minHeight: colSpan >= 2 ? 100 : 120,
-                      display: "flex", flexDirection: colSpan >= 2 ? "row" : "column",
-                      alignItems: colSpan >= 2 ? "center" : "flex-start",
-                      justifyContent: colSpan >= 2 ? "flex-start" : "space-between",
-                      gap: colSpan >= 2 ? 16 : 0,
-                    }}>
-                      <div style={{ fontSize: colSpan >= 2 ? 28 : 24 }}>📍</div>
-                      <div style={{ flex: colSpan >= 2 ? 1 : undefined }}>
-                        <div style={{ fontSize: colSpan >= 2 ? 15 : 16, fontWeight: 800, marginBottom: 2, color: "var(--dash-text)" }}>Unidade</div>
-                        <div style={{ color: unit?.is_published ? "var(--dash-accent)" : "var(--dash-text-muted)", fontSize: 11, display: "flex", alignItems: "center", gap: 4 }}>
-                          <span style={{ width: 6, height: 6, borderRadius: "50%", background: unit?.is_published ? "var(--dash-accent)" : "var(--dash-card-border)", display: "inline-block", animation: unit?.is_published ? "pulse 2s infinite" : "none" }} />
-                          {unit?.is_published ? "Publicado" : "Não publicado"}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                }
-
-                // Card especial: Plano (gradiente dourado se pro)
-                if (item.id === "plano") {
-                  return (
-                    <div key={item.id} className={`card ${isPro ? "" : "modal-neon-card"}`} onClick={() => open("plano")} style={{
-                      gridColumn: `span ${colSpan}`,
-                      borderRadius: 20, padding: "20px 18px",
-                      background: isPro ? "linear-gradient(135deg, rgba(255,215,0,0.06) 0%, rgba(255,215,0,0.02) 100%)" : "var(--dash-card)",
-                      border: isPro ? "1px solid rgba(255,215,0,0.15)" : undefined,
-                      cursor: "pointer", minHeight: colSpan >= 2 ? 100 : 120,
-                      display: "flex", flexDirection: colSpan >= 2 ? "row" : "column",
-                      alignItems: colSpan >= 2 ? "center" : "flex-start",
-                      justifyContent: colSpan >= 2 ? "flex-start" : "space-between",
-                      gap: colSpan >= 2 ? 16 : 0,
-                    }}>
-                      <div style={{ fontSize: colSpan >= 2 ? 28 : 24 }}>⭐</div>
-                      <div style={{ flex: colSpan >= 2 ? 1 : undefined }}>
-                        <div style={{ fontSize: colSpan >= 2 ? 15 : 16, fontWeight: 800, marginBottom: 2, color: "var(--dash-text)" }}>Plano</div>
-                        <div style={{ color: isPro ? "#fbbf24" : "var(--dash-text-muted)", fontSize: 11, fontWeight: isPro ? 700 : 400 }}>{subText}</div>
-                      </div>
-                    </div>
-                  );
-                }
-
-                // Card especial: Estoque (alerta vermelho/amarelo)
-                if (item.id === "estoque") {
-                  return (
-                    <div key={item.id} className={`card ${stockStats.out === 0 && stockStats.low === 0 ? "modal-neon-card" : ""}`} onClick={() => open("estoque")} style={{
-                      gridColumn: `span ${colSpan}`,
-                      borderRadius: 20, padding: "20px 18px",
-                      background: stockStats.out > 0 ? "rgba(248,113,113,0.04)" : stockStats.low > 0 ? "rgba(251,191,36,0.04)" : "var(--dash-card)",
-                      border: stockStats.out > 0 ? "1px solid rgba(248,113,113,0.15)" : stockStats.low > 0 ? "1px solid rgba(251,191,36,0.15)" : undefined,
-                      cursor: "pointer", minHeight: colSpan >= 2 ? 100 : 120,
-                      display: "flex", flexDirection: colSpan >= 2 ? "row" : "column",
-                      alignItems: colSpan >= 2 ? "center" : "flex-start",
-                      justifyContent: colSpan >= 2 ? "flex-start" : "space-between",
-                      gap: colSpan >= 2 ? 16 : 0,
-                    }}>
-                      <div style={{ fontSize: colSpan >= 2 ? 28 : 24 }}>📦</div>
-                      <div style={{ flex: colSpan >= 2 ? 1 : undefined }}>
-                        <div style={{ fontSize: colSpan >= 2 ? 15 : 16, fontWeight: 800, marginBottom: 2, color: "var(--dash-text)" }}>Estoque</div>
-                        <div style={{ fontSize: 12, display: "flex", gap: 8 }}>
-                          {stockStats.out > 0 && <span style={{ color: isDark ? "#f87171" : "#dc2626" }}>{stockStats.out} esgotado{stockStats.out !== 1 ? "s" : ""}</span>}
-                          {stockStats.low > 0 && <span style={{ color: isDark ? "#fbbf24" : "#b45309" }}>{stockStats.low} baixo{stockStats.low !== 1 ? "s" : ""}</span>}
-                          {stockStats.out === 0 && stockStats.low === 0 && <span style={{ color: "var(--dash-text-muted)" }}>Tudo em ordem</span>}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                }
-
-                // Card especial: Operações (badge Realtime)
+                // ── Operações — Realtime badge ────────────────────────────
                 if (item.id === "operacoes") {
                   return (
-                    <div key={item.id} className="card modal-neon-card" onClick={() => open("operacoes")} style={{
+                    <div key="operacoes" className="card" onClick={() => open("operacoes")} style={{
+                      ...baseCard,
                       gridColumn: `span ${colSpan}`,
-                      borderRadius: 20, padding: "20px 18px",
-                      background: "linear-gradient(135deg, rgba(0,255,174,0.04) 0%, rgba(96,165,250,0.04) 100%)",
-                      cursor: "pointer", minHeight: colSpan >= 2 ? 100 : 120,
-                      display: "flex", flexDirection: colSpan >= 2 ? "row" : "column",
-                      alignItems: colSpan >= 2 ? "center" : "flex-start",
-                      justifyContent: colSpan >= 2 ? "flex-start" : "space-between",
-                      gap: colSpan >= 2 ? 16 : 0,
+                      background: "linear-gradient(135deg, var(--dash-card) 0%, rgba(96,165,250,0.04) 100%)",
                     }}>
-                      <div style={{ fontSize: colSpan >= 2 ? 28 : 24 }}>🎛️</div>
-                      <div style={{ flex: colSpan >= 2 ? 1 : undefined }}>
-                        <div style={{ fontSize: colSpan >= 2 ? 15 : 16, fontWeight: 800, marginBottom: 2, color: "var(--dash-text)" }}>Operações</div>
-                        <div style={{ color: "var(--dash-text-muted)", fontSize: 12 }}>Cozinha · Garçom · Andamento</div>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                        <IconBox id="operacoes" />
+                        <span style={{ display: "inline-flex", padding: "3px 8px", borderRadius: 6, background: "var(--dash-accent-soft)", color: "var(--dash-accent)", fontSize: 9, fontWeight: 700 }}>● Realtime</span>
                       </div>
-                      <div style={{ color: "var(--dash-accent)", fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 20, background: isDark ? "rgba(0,255,174,0.1)" : "rgba(213,22,89,0.08)", border: isDark ? "1px solid rgba(0,255,174,0.2)" : "1px solid rgba(213,22,89,0.15)", flexShrink: 0 }}>
-                        Realtime
+                      <div style={{ color: "var(--dash-text)", fontSize: 14, fontWeight: 700, lineHeight: 1.2 }}>Operações</div>
+                      <div style={{ color: "var(--dash-text-secondary)", fontSize: 12, lineHeight: 1.3 }}>Cozinha · Garçom · Andamento</div>
+                    </div>
+                  );
+                }
+
+                // ── Unidade — published status dot ───────────────────────
+                if (item.id === "unidade") {
+                  return (
+                    <div key="unidade" className="card" onClick={() => open("unidade")} style={{ ...baseCard, gridColumn: `span ${colSpan}` }}>
+                      <IconBox id="unidade" />
+                      <div style={{ color: "var(--dash-text)", fontSize: 14, fontWeight: 700, lineHeight: 1.2 }}>Unidade</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                        <span style={{ width: 6, height: 6, borderRadius: "50%", background: unit?.is_published ? "var(--dash-accent)" : "var(--dash-text-subtle)", display: "inline-block", animation: unit?.is_published ? "pulse 2s infinite" : "none", flexShrink: 0 }} />
+                        <span style={{ color: unit?.is_published ? "var(--dash-accent)" : "var(--dash-text-muted)", fontSize: 12 }}>{unit?.is_published ? "Publicado" : "Não publicado"}</span>
                       </div>
                     </div>
                   );
                 }
 
-                // Card padrão
-                return (
-                  <div key={item.id} className="card modal-neon-card" onClick={() => open(config.modalKey as any)} style={{
-                    gridColumn: `span ${colSpan}`,
-                    borderRadius: 20, padding: "20px 18px",
-                    background: "var(--dash-card)",
-                    cursor: "pointer",
-                    minHeight: colSpan >= 2 ? 100 : 120,
-                    display: "flex",
-                    flexDirection: colSpan >= 2 ? "row" : "column",
-                    alignItems: colSpan >= 2 ? "center" : "flex-start",
-                    justifyContent: colSpan >= 2 ? "flex-start" : "space-between",
-                    gap: colSpan >= 2 ? 16 : 0,
-                  }}>
-                    <div style={{ fontSize: colSpan >= 2 ? 28 : 24 }}>{config.icon}</div>
-                    <div style={{ flex: colSpan >= 2 ? 1 : undefined }}>
-                      <div style={{ fontSize: colSpan >= 2 ? 15 : 16, fontWeight: 800, marginBottom: 2, color: "var(--dash-text)" }}>{config.label}</div>
-                      <div style={{ color: "var(--dash-text-muted)", fontSize: 12 }}>{subText}</div>
+                // ── Plano — pro gold styling ──────────────────────────────
+                if (item.id === "plano") {
+                  return (
+                    <div key="plano" className="card" onClick={() => open("plano")} style={{
+                      ...baseCard,
+                      gridColumn: `span ${colSpan}`,
+                      background: isPro ? "linear-gradient(135deg, rgba(255,215,0,0.06) 0%, rgba(255,215,0,0.02) 100%)" : "var(--dash-card)",
+                      border: isPro ? "1px solid rgba(255,215,0,0.15)" : "1px solid var(--dash-border)",
+                    }}>
+                      <IconBox id="plano" bg={isPro ? "rgba(251,191,36,0.12)" : undefined} />
+                      <div style={{ color: "var(--dash-text)", fontSize: 14, fontWeight: 700, lineHeight: 1.2 }}>Plano</div>
+                      <div style={{ color: isPro ? "#fbbf24" : "var(--dash-text-secondary)", fontSize: 12, fontWeight: isPro ? 700 : 400 }}>{subText}</div>
                     </div>
+                  );
+                }
+
+                // ── Estoque — alert state ─────────────────────────────────
+                if (item.id === "estoque") {
+                  const hasOut = stockStats.out > 0;
+                  const hasLow = !hasOut && stockStats.low > 0;
+                  return (
+                    <div key="estoque" className="card" onClick={() => open("estoque")} style={{
+                      ...baseCard,
+                      gridColumn: `span ${colSpan}`,
+                      background: hasOut ? "rgba(248,113,113,0.04)" : hasLow ? "rgba(251,191,36,0.04)" : "var(--dash-card)",
+                      border: hasOut ? "1px solid rgba(248,113,113,0.15)" : hasLow ? "1px solid rgba(251,191,36,0.15)" : "1px solid var(--dash-border)",
+                    }}>
+                      <IconBox id="estoque" />
+                      <div style={{ color: "var(--dash-text)", fontSize: 14, fontWeight: 700, lineHeight: 1.2 }}>Estoque</div>
+                      <div style={{ fontSize: 12 }}>
+                        {hasOut && <span style={{ color: "#f87171" }}>{stockStats.out} esgotado{stockStats.out !== 1 ? "s" : ""}</span>}
+                        {hasLow && <span style={{ color: "#fbbf24" }}>{stockStats.low} baixo{stockStats.low !== 1 ? "s" : ""}</span>}
+                        {!hasOut && !hasLow && <span style={{ color: "var(--dash-text-secondary)" }}>Tudo em ordem</span>}
+                      </div>
+                    </div>
+                  );
+                }
+
+                // ── Card padrão ───────────────────────────────────────────
+                return (
+                  <div key={item.id} className="card" onClick={() => open(config.modalKey as any)} style={{ ...baseCard, gridColumn: `span ${colSpan}` }}>
+                    <IconBox id={item.id} />
+                    <div style={{ color: "var(--dash-text)", fontSize: 14, fontWeight: 700, lineHeight: 1.2 }}>{config.label}</div>
+                    <div style={{ color: "var(--dash-text-secondary)", fontSize: 12, lineHeight: 1.3 }}>{subText}</div>
                   </div>
                 );
               })}
