@@ -163,6 +163,13 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
   const touchCurrentY = useRef(0);
   const dragElRef = useRef<HTMLDivElement | null>(null);
 
+  // Copy from unit states
+  const [otherUnits, setOtherUnits] = useState<any[]>([]);
+  const [showCopyFromUnit, setShowCopyFromUnit] = useState(false);
+  const [selectedSourceUnit, setSelectedSourceUnit] = useState<string>("");
+  const [sourcePreview, setSourcePreview] = useState<any>(null);
+  const [copying, setCopying] = useState(false);
+
   useEffect(() => { setOrderedCats(categories); }, [categories]);
 
   useEffect(() => {
@@ -171,6 +178,16 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
       if (data) setCustomSections(data);
     });
   }, [unit?.id]);
+
+  useEffect(() => {
+    if (!unit || !restaurant) return;
+    createSupabaseClient()
+      .from("units")
+      .select("id, name, slug")
+      .eq("restaurant_id", restaurant.id)
+      .neq("id", unit.id)
+      .then(({ data }) => { if (data) setOtherUnits(data); });
+  }, [restaurant?.id, unit?.id]);
 
   const defaultSections = [
     { value: "pratos", label: "Pratos", icon: "🍽️", allows_video: true, allows_alcoholic: false },
@@ -420,6 +437,144 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
     finally { setGeneratingAISuggestion(false); }
   }
 
+  async function handleCopyFromUnit() {
+    if (!selectedSourceUnit || !sourcePreview || !unit) return;
+    const supabase = createSupabaseClient();
+    setCopying(true);
+    try {
+      const { data: existingCats } = await supabase
+        .from("categories")
+        .select("order_index")
+        .eq("unit_id", unit.id)
+        .order("order_index", { ascending: false })
+        .limit(1);
+      let orderIndex = (existingCats?.[0]?.order_index ?? -1) + 1;
+
+      const { data: sourceCats } = await supabase
+        .from("categories")
+        .select("*")
+        .eq("unit_id", selectedSourceUnit)
+        .eq("is_active", true)
+        .order("order_index");
+
+      for (const srcCat of sourceCats || []) {
+        const slug = srcCat.name.toLowerCase()
+          .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
+        const { data: newCat, error: catErr } = await supabase
+          .from("categories")
+          .insert({
+            unit_id: unit.id,
+            name: srcCat.name,
+            type: srcCat.type,
+            category_type: srcCat.category_type,
+            section: srcCat.section,
+            is_featured: srcCat.is_featured,
+            is_active: true,
+            order_index: orderIndex++,
+            slug,
+            schedule_enabled: srcCat.schedule_enabled,
+            available_days: srcCat.available_days,
+            start_time: srcCat.start_time,
+            end_time: srcCat.end_time,
+          })
+          .select().single();
+
+        if (catErr || !newCat) { console.error("Erro cat:", catErr); continue; }
+
+        const { data: srcProducts } = await supabase
+          .from("products")
+          .select("*")
+          .eq("category_id", srcCat.id)
+          .eq("is_active", true)
+          .order("order_index");
+
+        if (!srcProducts || srcProducts.length === 0) continue;
+
+        const productInserts = srcProducts.map(p => ({
+          category_id: newCat.id,
+          unit_id: unit.id,
+          name: p.name,
+          description: p.description,
+          base_price: p.base_price,
+          price_type: p.price_type,
+          is_active: true,
+          order_index: p.order_index,
+          allergens: p.allergens,
+          nutrition: p.nutrition,
+          preparation_time: p.preparation_time,
+          product_type: p.product_type,
+          is_alcoholic: p.is_alcoholic,
+          is_age_restricted: p.is_age_restricted,
+        }));
+
+        const { data: newProducts, error: prodErr } = await supabase
+          .from("products")
+          .insert(productInserts)
+          .select();
+
+        if (prodErr) { console.error("Erro prod:", prodErr); continue; }
+
+        if (newProducts) {
+          for (let i = 0; i < srcProducts.length; i++) {
+            const srcProd = srcProducts[i];
+            const newProd = newProducts[i];
+            if (!newProd) continue;
+
+            const { data: srcVars } = await supabase
+              .from("product_variations")
+              .select("*")
+              .eq("product_id", srcProd.id)
+              .order("order_index");
+
+            if (srcVars && srcVars.length > 0) {
+              await supabase.from("product_variations").insert(
+                srcVars.map(v => ({
+                  product_id: newProd.id,
+                  name: v.name,
+                  price: v.price,
+                  order_index: v.order_index,
+                  stock: v.stock,
+                }))
+              );
+            }
+
+            const { data: srcAddons } = await supabase
+              .from("product_addons")
+              .select("*")
+              .eq("product_id", srcProd.id);
+
+            if (srcAddons && srcAddons.length > 0) {
+              await supabase.from("product_addons").insert(
+                srcAddons.map(a => ({
+                  product_id: newProd.id,
+                  name: a.name,
+                  price: a.price,
+                  is_required: a.is_required,
+                  max_select: a.max_select,
+                  group_name: a.group_name,
+                  order_index: a.order_index,
+                  is_active: a.is_active,
+                }))
+              );
+            }
+          }
+        }
+      }
+
+      setShowCopyFromUnit(false);
+      setSourcePreview(null);
+      setSelectedSourceUnit("");
+      router.refresh();
+    } catch (err) {
+      console.error("Erro ao copiar:", err);
+      alert("Erro ao copiar cardápio");
+    } finally {
+      setCopying(false);
+    }
+  }
+
   const productsByCat = orderedCats.reduce<Record<string, Product[]>>((acc, cat) => {
     acc[cat.id] = products.filter((p) => p.category_id === cat.id);
     return acc;
@@ -615,6 +770,14 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
               {generatingAISuggestion ? "Analisando..." : "✨ Sugestão IA"}
             </button>
           )}
+          {otherUnits.length > 0 && (
+            <button type="button" onClick={() => setShowCopyFromUnit(true)} style={{
+              padding: "8px 16px", borderRadius: 10, border: "none", cursor: "pointer",
+              background: "rgba(96,165,250,0.06)", color: "rgba(96,165,250,0.7)",
+              fontSize: 12, fontWeight: 600,
+              boxShadow: "0 1px 0 rgba(96,165,250,0.06) inset, 0 -1px 0 rgba(0,0,0,0.12) inset",
+            }}>📋 Copiar de outra unidade</button>
+          )}
         </div>
 
         {aiSuggestionResult && (
@@ -631,6 +794,92 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
             </div>
           </div>
         )}
+
+      {/* Copy from unit flow */}
+      {showCopyFromUnit && (
+        <div style={{ padding: "0 4px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "var(--dash-text)" }}>Copiar cardápio de outra unidade</div>
+            <button onClick={() => { setShowCopyFromUnit(false); setSourcePreview(null); setSelectedSourceUnit(""); }}
+              style={{ background: "transparent", border: "none", color: "var(--dash-text-muted)", fontSize: 16, cursor: "pointer" }}>✕</button>
+          </div>
+
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: 11, color: "var(--dash-text-muted)", display: "block", marginBottom: 6 }}>Selecione a unidade</label>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {otherUnits.map(u => (
+                <button key={u.id} type="button" onClick={async () => {
+                  setSelectedSourceUnit(u.id);
+                  const supabase = createSupabaseClient();
+                  const { data: cats } = await supabase
+                    .from("categories")
+                    .select("id, name, order_index")
+                    .eq("unit_id", u.id)
+                    .eq("is_active", true)
+                    .order("order_index");
+
+                  let totalProducts = 0;
+                  const catPreviews: any[] = [];
+                  for (const cat of cats || []) {
+                    const { count } = await supabase
+                      .from("products")
+                      .select("id", { count: "exact", head: true })
+                      .eq("category_id", cat.id)
+                      .eq("is_active", true);
+                    catPreviews.push({ ...cat, productCount: count || 0 });
+                    totalProducts += count || 0;
+                  }
+                  setSourcePreview({ categories: catPreviews, totalProducts });
+                }} style={{
+                  padding: "10px 16px", borderRadius: 10, border: "none", cursor: "pointer",
+                  background: selectedSourceUnit === u.id ? "rgba(96,165,250,0.1)" : "var(--dash-card)",
+                  color: selectedSourceUnit === u.id ? "#60a5fa" : "var(--dash-text-secondary)",
+                  fontSize: 13, fontWeight: 600,
+                  boxShadow: "var(--dash-shadow)",
+                }}>{u.name}</button>
+              ))}
+            </div>
+          </div>
+
+          {sourcePreview && (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 12, color: "var(--dash-text-muted)", marginBottom: 8 }}>
+                {sourcePreview.categories.length} categorias · {sourcePreview.totalProducts} produtos
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                {sourcePreview.categories.map((cat: any) => (
+                  <div key={cat.id} style={{
+                    display: "flex", justifyContent: "space-between",
+                    padding: "8px 12px", borderRadius: 10, background: "var(--dash-card)",
+                  }}>
+                    <span style={{ color: "var(--dash-text)", fontSize: 13, fontWeight: 600 }}>{cat.name}</span>
+                    <span style={{ color: "var(--dash-text-muted)", fontSize: 11 }}>{cat.productCount} produtos</span>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{
+                padding: "10px 14px", borderRadius: 10,
+                background: "rgba(251,191,36,0.06)", marginTop: 12,
+                fontSize: 11, color: "rgba(251,191,36,0.7)",
+              }}>
+                ⚠️ Isso vai ADICIONAR categorias e produtos à unidade atual. Produtos existentes não serão alterados.
+                Fotos e vídeos NÃO são copiados — precisam ser adicionados depois.
+              </div>
+
+              <button onClick={handleCopyFromUnit} disabled={copying} style={{
+                width: "100%", padding: 14, borderRadius: 14, marginTop: 12,
+                background: "var(--dash-accent-soft)", border: "none",
+                color: "var(--dash-accent)", fontSize: 14, fontWeight: 800, cursor: "pointer",
+                boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
+                opacity: copying ? 0.5 : 1,
+              }}>
+                {copying ? "Copiando..." : `📋 Copiar ${sourcePreview.totalProducts} produtos`}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Nova categoria */}
       {unit && (
