@@ -1401,52 +1401,65 @@ export default function DashboardClient({
       <Modal open={modal === "equipe"} onClose={close} title="Equipe">
         {unit && <StaffAnalyticsModal unitId={unit.id} plan={restaurant.plan ?? "menu"} />}
       </Modal>
-      <Modal open={modal === "links"} onClose={close} title="Links Rápidos">
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
-          {[
-            { icon: "🍽️", label: "Cardápio Delivery", href: `/delivery/${unit?.slug}` },
-            { icon: "📋", label: "Cardápio Mesa", href: `/menu/${unit?.slug}` },
-            { icon: "📺", label: "Modo TV", href: `/delivery/${unit?.slug}/tv` },
-            { icon: "👨‍🍳", label: "Cozinha", href: `/cozinha` },
-            { icon: "🧑‍🍳", label: "Garçom", href: `/garcom` },
-            { icon: "💳", label: "PDV", href: `/delivery/${unit?.slug}/pdv` },
-            { icon: "🏠", label: "Hub Central", href: `/delivery/${unit?.slug}/hub-central` },
-            { icon: "📊", label: "Operações", href: `/operacoes/${unit?.slug}` },
-            { icon: "🔑", label: "Portal Funcionário", href: `/employee-login` },
-            { icon: "📦", label: "Entregador", href: `/entrega/demo` },
-            { icon: "🧾", label: "Comanda", href: `/comanda/${unit?.slug}/demo` },
-            { icon: "⚙️", label: "Configurações", href: `/configurar` },
-          ].map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-              style={{
-                display: "flex", flexDirection: "column", alignItems: "center",
-                justifyContent: "center", gap: 6, padding: "16px 8px",
-                borderRadius: 16, background: "rgba(255,255,255,0.04)",
-                border: "1px solid rgba(255,255,255,0.08)",
-                textDecoration: "none", transition: "all 0.2s ease", cursor: "pointer",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "rgba(255,255,255,0.08)";
-                e.currentTarget.style.borderColor = "rgba(255,255,255,0.15)";
-                e.currentTarget.style.transform = "translateY(-2px)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "rgba(255,255,255,0.04)";
-                e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)";
-                e.currentTarget.style.transform = "translateY(0)";
-              }}
-            >
-              <span style={{ fontSize: 24 }}>{link.icon}</span>
-              <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.7)", textAlign: "center", lineHeight: 1.2 }}>
-                {link.label}
-              </span>
-            </a>
-          ))}
+      <Modal open={modal === "links"} onClose={close} title="">
+        <div style={{ paddingTop: 4 }}>
+          {/* Header */}
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ fontSize: 16, fontWeight: 800, color: "var(--dash-text)" }}>Acessos rápidos</div>
+          </div>
+
+          {/* Grid simétrico 3 colunas */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+            {[
+              { icon: "🍽️", label: "Cardápio Delivery", href: `/delivery/${unit?.slug}`, color: "rgba(0,255,174,0.06)" },
+              { icon: "📋", label: "Cardápio Mesa", href: `/delivery/${unit?.slug}?mode=mesa`, color: "rgba(0,255,174,0.06)" },
+              { icon: "📺", label: "Modo TV", href: `/delivery/${unit?.slug}/tv`, color: "rgba(255,255,255,0.03)" },
+              { icon: "👨‍🍳", label: "Cozinha", href: `/cozinha/${unit?.slug}`, color: "rgba(251,191,36,0.06)" },
+              { icon: "🧑‍🍳", label: "Garçom", href: `/garcom/${unit?.slug}`, color: "rgba(251,191,36,0.06)" },
+              { icon: "💳", label: "PDV", href: `/pdv/${unit?.slug}`, color: "rgba(96,165,250,0.06)" },
+              { icon: "🏠", label: "Hub Central", href: `/hub/${unit?.slug}`, color: "rgba(168,85,247,0.06)" },
+              { icon: "📊", label: "Operações", href: `/operacoes/${unit?.slug}`, color: "rgba(168,85,247,0.06)" },
+              { icon: "🔑", label: "Portal Funcionário", href: "/funcionario/login", color: "rgba(255,255,255,0.03)" },
+              { icon: "📦", label: "Entregador", href: `/entrega/${unit?.slug}`, color: "rgba(251,191,36,0.06)" },
+              { icon: "📝", label: "Comanda", href: `/comanda/${unit?.slug}/demo`, color: "rgba(96,165,250,0.06)" },
+              { icon: "⚙️", label: "Configurações", href: null, color: "rgba(255,255,255,0.03)" },
+            ].map((item, i) => (
+              <a
+                key={i}
+                href={item.href ?? "#"}
+                target={item.href ? "_blank" : undefined}
+                rel="noopener noreferrer"
+                onClick={(e) => {
+                  if (!item.href) { e.preventDefault(); close(); open("config"); }
+                }}
+                style={{
+                  display: "flex", flexDirection: "column",
+                  alignItems: "center", justifyContent: "center",
+                  gap: 8,
+                  padding: "20px 12px",
+                  borderRadius: 14,
+                  background: item.color,
+                  textDecoration: "none",
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
+                  boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                  e.currentTarget.style.boxShadow = "0 1px 0 rgba(255,255,255,0.04) inset, 0 -1px 0 rgba(0,0,0,0.15) inset, 0 8px 24px rgba(0,0,0,0.2)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow = "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset";
+                }}
+              >
+                <span style={{ fontSize: 28, lineHeight: 1 }}>{item.icon}</span>
+                <span style={{ fontSize: 11, fontWeight: 600, color: "var(--dash-text-muted)", textAlign: "center", lineHeight: 1.2 }}>
+                  {item.label}
+                </span>
+              </a>
+            ))}
+          </div>
         </div>
       </Modal>
       <Modal open={modal === "crm"} onClose={close} title="CRM">
