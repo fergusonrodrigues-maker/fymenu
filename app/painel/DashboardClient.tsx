@@ -435,9 +435,8 @@ export default function DashboardClient({
       { id: "financeiro",  cols: 1, mobileCols: 1 },
       { id: "unidade",     cols: 1, mobileCols: 1 },
       { id: "tv",          cols: 1, mobileCols: 1 },
-      { id: "plano",       cols: 1, mobileCols: 1 },
       { id: "config",      cols: 1, mobileCols: 1 },
-      { id: "impressoras", cols: 1, mobileCols: 1 },
+      { id: "impressoras", cols: 2, mobileCols: 2 },
     ],
     // menupro: analytics full-width + 3 rows of 4
     menupro: [
@@ -450,8 +449,7 @@ export default function DashboardClient({
       { id: "equipe",      cols: 1, mobileCols: 1 },
       { id: "estoque",     cols: 1, mobileCols: 1 },
       { id: "tv",          cols: 1, mobileCols: 1 },
-      { id: "plano",       cols: 1, mobileCols: 1 },
-      { id: "config",      cols: 1, mobileCols: 1 },
+      { id: "config",      cols: 2, mobileCols: 2 },
       { id: "impressoras", cols: 2, mobileCols: 2 },
     ],
     // business: analytics full-width + 3 rows of 4
@@ -466,9 +464,8 @@ export default function DashboardClient({
       { id: "estoque",     cols: 1, mobileCols: 1 },
       { id: "crm",         cols: 1, mobileCols: 1 },
       { id: "tv",          cols: 1, mobileCols: 1 },
-      { id: "plano",       cols: 1, mobileCols: 1 },
       { id: "config",      cols: 1, mobileCols: 1 },
-      { id: "impressoras", cols: 1, mobileCols: 1 },
+      { id: "impressoras", cols: 2, mobileCols: 2 },
     ],
   };
 
@@ -480,7 +477,7 @@ export default function DashboardClient({
     unidade: { icon: "📍", label: "Unidade", sub: () => unit?.is_published ? "Publicado" : "Não publicado", modalKey: "unidade" },
     tv: { icon: "📺", label: "Modo TV", sub: () => `${tvCount} vídeo${tvCount !== 1 ? "s" : ""} ativo${tvCount !== 1 ? "s" : ""}`, modalKey: "tv" },
     plano: { icon: "⭐", label: "Plano", sub: () => isPro ? "Pro" : restaurant.status === "trial" ? `Trial · ${trialDays}d` : restaurant.plan ?? "menu", modalKey: "plano" },
-    config: { icon: "⚙️", label: "Configurações", sub: () => profile.email?.split("@")[0] ?? "", modalKey: "config" },
+    config: { icon: "⚙️", label: "Configurações", sub: () => `Perfil · ${restaurant.plan === "menupro" ? "MenuPro" : restaurant.plan === "business" ? "Business" : "Menu"} · Segurança`, modalKey: "config" },
     estoque: { icon: "📦", label: "Estoque", sub: () => stockStats.out > 0 ? `${stockStats.out} esgotado${stockStats.out !== 1 ? "s" : ""}` : stockStats.low > 0 ? `${stockStats.low} baixo${stockStats.low !== 1 ? "s" : ""}` : "Tudo em ordem", modalKey: "estoque" },
     operacoes: { icon: "🎛️", label: "Operações", sub: "Cozinha · Garçom · Andamento", modalKey: "operacoes" },
     equipe: { icon: "👥", label: "Equipe", sub: "Funcionários · Avaliações", modalKey: "equipe" },
@@ -1379,7 +1376,21 @@ export default function DashboardClient({
                           <div style={{ fontSize: 10, fontWeight: 700, color: "var(--dash-text-muted)", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 4 }}>Últimos 7 dias</div>
                           <div style={{ fontSize: 18, fontWeight: 800, color: "var(--dash-text)" }}>Analytics</div>
                         </div>
-                        <div style={{ width: 40, height: 40, borderRadius: 12, background: "var(--dash-accent-soft)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>📊</div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <span style={{
+                            padding: "3px 10px", borderRadius: 6,
+                            background: restaurant?.plan === "business" ? "rgba(251,191,36,0.08)"
+                              : restaurant?.plan === "menupro" ? "rgba(0,217,255,0.08)"
+                              : "var(--dash-accent-soft)",
+                            color: restaurant?.plan === "business" ? "#fbbf24"
+                              : restaurant?.plan === "menupro" ? "#00d9ff"
+                              : "var(--dash-accent)",
+                            fontSize: 10, fontWeight: 700, textTransform: "capitalize" as const,
+                          }}>
+                            {restaurant?.plan === "menu" ? "Menu" : restaurant?.plan === "menupro" ? "MenuPro" : restaurant?.plan === "business" ? "Business" : restaurant?.plan}
+                          </span>
+                          <div style={{ width: 40, height: 40, borderRadius: 12, background: "var(--dash-accent-soft)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>📊</div>
+                        </div>
                       </div>
                       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
                         {[
@@ -1425,22 +1436,6 @@ export default function DashboardClient({
                         <span style={{ width: 6, height: 6, borderRadius: "50%", background: unit?.is_published ? "var(--dash-accent)" : "var(--dash-text-subtle)", display: "inline-block", animation: unit?.is_published ? "pulse 2s infinite" : "none", flexShrink: 0 }} />
                         <span style={{ color: unit?.is_published ? "var(--dash-accent)" : "var(--dash-text-muted)", fontSize: 12 }}>{unit?.is_published ? "Publicado" : "Não publicado"}</span>
                       </div>
-                    </div>
-                  );
-                }
-
-                // ── Plano — pro gold styling ──────────────────────────────
-                if (item.id === "plano") {
-                  return (
-                    <div key="plano" className="card" onClick={() => open("plano")} style={{
-                      ...baseCard,
-                      gridColumn: `span ${colSpan}`,
-                      background: isPro ? "linear-gradient(135deg, rgba(255,215,0,0.06) 0%, rgba(255,215,0,0.02) 100%)" : "var(--dash-card)",
-                      border: isPro ? "1px solid rgba(255,215,0,0.15)" : "1px solid var(--dash-border)",
-                    }}>
-                      <IconBox id="plano" bg={isPro ? "rgba(251,191,36,0.12)" : undefined} />
-                      <div style={{ color: "var(--dash-text)", fontSize: 14, fontWeight: 700, lineHeight: 1.2 }}>Plano</div>
-                      <div style={{ color: isPro ? "#fbbf24" : "var(--dash-text-secondary)", fontSize: 12, fontWeight: isPro ? 700 : 400 }}>{subText}</div>
                     </div>
                   );
                 }
