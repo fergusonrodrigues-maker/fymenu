@@ -36,7 +36,7 @@ function CopyLinkRow({ label, url }: { label: string; url: string }) {
   );
 }
 
-export default function UnidadeModal({ unit, isPro, onClose }: { unit: Unit | null; isPro: boolean; onClose: () => void }) {
+export default function UnidadeModal({ unit, isPro, onClose, onOpenPlans }: { unit: Unit | null; isPro: boolean; onClose: () => void; onOpenPlans?: () => void }) {
   const [isPublished, setIsPublished] = useState(unit?.is_published ?? false);
   const [showNewUnit, setShowNewUnit] = useState(false);
 
@@ -486,7 +486,7 @@ export default function UnidadeModal({ unit, isPro, onClose }: { unit: Unit | nu
             <div style={{ color: "var(--dash-text-muted)", fontSize: 13, marginBottom: 14, lineHeight: 1.5 }}>
               Múltiplas unidades estão disponíveis no Plano Pro. Faça upgrade para adicionar novas unidades.
             </div>
-            <button onClick={() => { setShowNewUnit(false); onClose(); }} style={{ width: "100%", padding: "12px", borderRadius: 12, border: "none", background: "var(--dash-accent-soft)", color: "var(--dash-accent)", fontSize: 14, fontWeight: 800, cursor: "pointer", boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+            <button onClick={() => { setShowNewUnit(false); onClose(); onOpenPlans?.(); }} style={{ width: "100%", padding: "12px", borderRadius: 12, border: "none", background: "var(--dash-accent-soft)", color: "var(--dash-accent)", fontSize: 14, fontWeight: 800, cursor: "pointer", boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
               Ver Planos →
             </button>
           </div>
