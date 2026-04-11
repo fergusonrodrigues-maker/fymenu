@@ -356,9 +356,8 @@ export default function ProductRow({
                 formData.set("thumbnail_url", thumbnailUrl);
                 formData.set("video_url", videoUrl);
                 formData.set("is_alcoholic", isAlcoholic ? "on" : "off");
-                if (priceType === "variable") {
-                  await updateProductVariations(product.id, variations);
-                }
+                // Always sync variations: passes [] when fixed to delete stale variation rows
+                await updateProductVariations(product.id, priceType === "variable" ? variations : []);
                 startTransition(() => updateProduct(formData));
                 onClose();
               }}

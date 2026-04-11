@@ -443,6 +443,12 @@ export async function updateProductVariations(
     if (error) throw new Error(error.message);
   }
 
+  // Sync price_type on the product based on actual variation count
+  const effectivePriceType = variations.length > 0 ? "variable" : "fixed";
+  const productSync: Record<string, any> = { price_type: effectivePriceType };
+  if (effectivePriceType === "variable") productSync.base_price = 0;
+  await supabase.from("products").update(productSync).eq("id", productId);
+
   revalidatePath("/painel");
   revalidatePath("/u");
 }
