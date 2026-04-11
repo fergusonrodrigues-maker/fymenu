@@ -86,7 +86,7 @@ function AdjustModal({ product, unitId, onClose }: { product: StockProduct; unit
             <input name="notes" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Ex: NF 1234, fornecedor X..." style={inp} />
           </div>
 
-          <button type="submit" disabled={isPending || !qty} style={{ padding: "14px", borderRadius: 14, border: "none", background: "rgba(0,255,174,0.15)", color: "#00ffae", fontSize: 15, fontWeight: 700, cursor: isPending || !qty ? "not-allowed" : "pointer", opacity: isPending || !qty ? 0.5 : 1, marginTop: 4 }}>
+          <button type="submit" disabled={isPending || !qty} style={{ padding: "14px", borderRadius: 14, border: "none", background: "var(--dash-accent-soft)", color: "var(--dash-accent)", fontSize: 15, fontWeight: 700, cursor: isPending || !qty ? "not-allowed" : "pointer", opacity: isPending || !qty ? 0.5 : 1, marginTop: 4, boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset", transition: "all 0.2s" }}>
             {isPending ? "Salvando…" : "Confirmar ajuste"}
           </button>
         </form>
@@ -137,7 +137,7 @@ export default function EstoqueClient({ unitId, unitName, products }: Props) {
         {/* Filters */}
         <div style={{ display: "flex", gap: 8 }}>
           {([["all", "Todos"], ["low", "Estoque baixo"], ["out", "Esgotados"]] as const).map(([v, label]) => (
-            <button key={v} onClick={() => setFilter(v)} style={{ flex: 1, padding: "8px 0", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, background: filter === v ? "rgba(0,255,174,0.15)" : "rgba(255,255,255,0.05)", color: filter === v ? "#00ffae" : "rgba(255,255,255,0.4)" }}>
+            <button key={v} onClick={() => setFilter(v)} style={{ flex: 1, padding: "8px 0", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, background: filter === v ? "var(--dash-accent-soft)" : "rgba(255,255,255,0.05)", color: filter === v ? "var(--dash-accent)" : "rgba(255,255,255,0.4)" }}>
               {label}
             </button>
           ))}

@@ -195,9 +195,11 @@ export default function DominioSection({
               disabled={saving}
               style={{
                 flex: 1, padding: "11px", borderRadius: 10, border: "none",
-                background: "rgba(0,255,174,0.15)", color: "#00ffae",
+                background: "var(--dash-accent-soft)", color: "var(--dash-accent)",
                 fontSize: 13, fontWeight: 700, cursor: saving ? "not-allowed" : "pointer",
                 opacity: saving ? 0.6 : 1,
+                boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
+                transition: "all 0.2s",
               }}
             >
               {saving ? "Salvando..." : "✓ Salvar domínio"}

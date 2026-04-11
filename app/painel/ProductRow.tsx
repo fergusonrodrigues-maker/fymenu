@@ -573,7 +573,7 @@ export default function ProductRow({
                   <div style={{ color: "#fff", fontSize: 13, fontWeight: 600 }}>Estoque ilimitado</div>
                   <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 11 }}>Sem controle de quantidade</div>
                 </div>
-                <button type="button" onClick={() => setUnlimitedStock(!unlimitedStock)} style={{ width: 44, height: 26, borderRadius: 13, background: unlimitedStock ? "#00ffae" : "rgba(255,255,255,0.15)", border: "none", cursor: "pointer", position: "relative", transition: "background 0.2s", flexShrink: 0 }}>
+                <button type="button" onClick={() => setUnlimitedStock(!unlimitedStock)} style={{ width: 44, height: 26, borderRadius: 13, background: unlimitedStock ? "var(--dash-accent)" : "rgba(255,255,255,0.15)", border: "none", cursor: "pointer", position: "relative", transition: "background 0.2s", flexShrink: 0 }}>
                   <span style={{ display: "block", width: 20, height: 20, borderRadius: "50%", background: "#fff", position: "absolute", top: 3, left: 3, transition: "transform 0.2s", transform: unlimitedStock ? "translateX(18px)" : "translateX(0)" }} />
                 </button>
               </div>
@@ -591,7 +591,7 @@ export default function ProductRow({
                 </div>
               )}
 
-              <button type="submit" disabled={isPending} style={{ padding: "10px 0", background: "rgba(0,255,174,0.15)", color: "#00ffae", border: "none", borderRadius: 8, fontWeight: 700, fontSize: 14, cursor: isPending ? "not-allowed" : "pointer", opacity: isPending ? 0.6 : 1 }}>
+              <button type="submit" disabled={isPending} style={{ padding: "10px 0", background: "var(--dash-accent-soft)", color: "var(--dash-accent)", border: "none", borderRadius: 8, fontWeight: 700, fontSize: 14, cursor: isPending ? "not-allowed" : "pointer", opacity: isPending ? 0.6 : 1, boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset", transition: "all 0.2s" }}>
                 {isPending ? "Salvando…" : "Salvar estoque"}
               </button>
             </form>
@@ -663,7 +663,7 @@ export default function ProductRow({
                 <label style={labelStyle}>Alérgenos (separados por vírgula)</label>
                 <input name="allergens" defaultValue={(product.allergens ?? []).join(", ")} placeholder="Ex: glúten, lactose, amendoim" style={inputStyle} />
               </div>
-              <button type="submit" disabled={isPending} style={{ padding: "10px 0", background: "rgba(0,255,174,0.15)", color: "#00ffae", border: "none", borderRadius: 8, fontWeight: 700, fontSize: 14, cursor: isPending ? "not-allowed" : "pointer", opacity: isPending ? 0.6 : 1 }}>
+              <button type="submit" disabled={isPending} style={{ padding: "10px 0", background: "var(--dash-accent-soft)", color: "var(--dash-accent)", border: "none", borderRadius: 8, fontWeight: 700, fontSize: 14, cursor: isPending ? "not-allowed" : "pointer", opacity: isPending ? 0.6 : 1, boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset", transition: "all 0.2s" }}>
                 {isPending ? "Salvando…" : "Salvar ficha técnica"}
               </button>
             </form>

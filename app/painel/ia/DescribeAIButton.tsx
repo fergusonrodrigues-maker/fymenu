@@ -75,8 +75,8 @@ export function DescribeAIButton({
       type="button"
       style={{
         padding: "5px 12px", borderRadius: 20,
-        background: generating ? "rgba(0,217,184,0.1)" : "linear-gradient(135deg, #00d9b8, #00ffae)",
-        border: "none", color: generating ? "#00ffae" : "#000",
+        background: "var(--dash-accent-soft)",
+        border: "none", color: "var(--dash-accent)",
         fontSize: 12, fontWeight: 700, cursor: generating ? "not-allowed" : "pointer",
         display: "flex", alignItems: "center", gap: 5,
         opacity: generating ? 0.7 : 1,

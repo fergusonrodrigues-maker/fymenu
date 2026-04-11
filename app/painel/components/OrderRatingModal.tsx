@@ -130,7 +130,7 @@ export default function OrderRatingModal({ orderId, employees, onClose }: OrderR
             <div style={{ color: "#888", fontSize: 14, marginBottom: 24 }}>Sua avaliação foi enviada com sucesso.</div>
             <button
               onClick={onClose}
-              style={{ padding: "12px 28px", borderRadius: 12, border: "none", background: "linear-gradient(135deg, #00d9b8, #00ffae)", color: "#000", fontSize: 15, fontWeight: 800, cursor: "pointer" }}
+              style={{ padding: "12px 28px", borderRadius: 12, border: "none", background: "var(--dash-accent-soft)", color: "var(--dash-accent)", fontSize: 15, fontWeight: 800, cursor: "pointer", boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset", transition: "all 0.2s" }}
             >
               Fechar
             </button>
@@ -195,7 +195,7 @@ export default function OrderRatingModal({ orderId, employees, onClose }: OrderR
               <button
                 onClick={handleSubmit}
                 disabled={submitting}
-                style={{ flex: 2, padding: "12px", borderRadius: 12, border: "none", background: submitting ? "rgba(0,255,174,0.1)" : "linear-gradient(135deg, #00d9b8, #00ffae)", color: submitting ? "#00ffae" : "#000", fontSize: 14, fontWeight: 800, cursor: submitting ? "not-allowed" : "pointer" }}
+                style={{ flex: 2, padding: "12px", borderRadius: 12, border: "none", background: "var(--dash-accent-soft)", color: "var(--dash-accent)", fontSize: 14, fontWeight: 800, cursor: submitting ? "not-allowed" : "pointer", boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset", transition: "all 0.2s" }}
               >
                 {submitting ? "Enviando..." : "Enviar avaliação"}
               </button>

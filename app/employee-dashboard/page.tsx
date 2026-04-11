@@ -232,10 +232,11 @@ export default function EmployeeDashboard() {
                   disabled={clocking}
                   style={{
                     width: "100%", padding: "16px", borderRadius: 16, border: "none",
-                    background: clocking ? "rgba(0,255,174,0.08)" : "linear-gradient(135deg, #00d9b8, #00ffae)",
-                    color: clocking ? "#00ffae" : "#000",
+                    background: "var(--dash-accent-soft)",
+                    color: "var(--dash-accent)",
                     fontSize: 16, fontWeight: 900, cursor: clocking ? "not-allowed" : "pointer",
                     letterSpacing: "-0.3px",
+                    boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset", transition: "all 0.2s",
                   }}
                 >
                   {clocking ? "Registrando..." : stateConfig.next}

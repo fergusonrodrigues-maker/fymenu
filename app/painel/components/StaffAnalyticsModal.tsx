@@ -611,7 +611,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                 <button
                   onClick={saveEmployee}
                   disabled={saving || !newEmployee.name.trim()}
-                  style={{ padding: "11px", borderRadius: 10, border: "none", background: saving ? "rgba(0,255,174,0.1)" : "linear-gradient(135deg, #00d9b8, #00ffae)", color: "#000", fontSize: 14, fontWeight: 800, cursor: saving ? "not-allowed" : "pointer", marginTop: 8 }}
+                  style={{ padding: "11px", borderRadius: 10, border: "none", background: "var(--dash-accent-soft)", color: "var(--dash-accent)", fontSize: 14, fontWeight: 800, cursor: saving ? "not-allowed" : "pointer", marginTop: 8, boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset", transition: "all 0.2s" }}
                 >
                   {saving ? "Salvando..." : "Salvar funcionário"}
                 </button>

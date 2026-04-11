@@ -97,9 +97,10 @@ export default function FuncionarioLoginPage() {
             disabled={loading || !cpf || !password}
             style={{
               width: "100%", padding: 16, borderRadius: 14, border: "none",
-              background: "linear-gradient(135deg, #00ffae, #00d9ff)", color: "#000",
+              background: "var(--dash-accent-soft)", color: "var(--dash-accent)",
               fontSize: 16, fontWeight: 800, cursor: "pointer",
               opacity: loading || !cpf || !password ? 0.5 : 1, marginTop: 4,
+              boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset", transition: "all 0.2s",
             }}
           >
             {loading ? "Entrando..." : "Entrar"}

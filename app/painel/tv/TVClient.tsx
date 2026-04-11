@@ -126,7 +126,7 @@ export default function TVClient({ unitId, unitName, slug, initialMedia }: Props
             </div>
           </div>
           {error && <div style={{ borderRadius: 12, padding: "12px 14px", background: "rgba(255,80,80,0.08)", border: "1px solid rgba(255,80,80,0.2)", color: "#f87171", fontSize: 13 }}>{error}</div>}
-          <button type="submit" disabled={uploading} style={{ padding: "14px", borderRadius: 14, border: "none", background: uploading ? "rgba(0,255,174,0.08)" : "rgba(0,255,174,0.15)", color: "#00ffae", fontSize: 15, fontWeight: 700, cursor: uploading ? "not-allowed" : "pointer", opacity: uploading ? 0.7 : 1 }}>
+          <button type="submit" disabled={uploading} style={{ padding: "14px", borderRadius: 14, border: "none", background: "var(--dash-accent-soft)", color: "var(--dash-accent)", fontSize: 15, fontWeight: 700, cursor: uploading ? "not-allowed" : "pointer", opacity: uploading ? 0.7 : 1, boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset", transition: "all 0.2s" }}>
             {uploading ? "Enviando..." : "Enviar vídeo"}
           </button>
         </form>

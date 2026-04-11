@@ -376,7 +376,7 @@ export default function PedidosModal({ unitId, unit }: { unitId: string; unit?: 
                 <div style={{ display: "flex", gap: 8 }}>
                   <button
                     onClick={() => { navigator.clipboard.writeText(waLink); setWaCopied(true); setTimeout(() => setWaCopied(false), 1800); }}
-                    style={{ flex: 1, padding: "9px", borderRadius: 9, border: "none", background: waCopied ? "rgba(0,255,174,0.15)" : "rgba(22,163,74,0.15)", color: waCopied ? "#00ffae" : "#4ade80", fontSize: 12, fontWeight: 700, cursor: "pointer" }}
+                    style={{ flex: 1, padding: "9px", borderRadius: 9, border: "none", background: waCopied ? "var(--dash-accent-soft)" : "rgba(22,163,74,0.10)", color: waCopied ? "var(--dash-accent)" : "#4ade80", fontSize: 12, fontWeight: 700, cursor: "pointer" }}
                   >
                     {waCopied ? "✓ Copiado!" : "Copiar link"}
                   </button>
@@ -422,8 +422,8 @@ export default function PedidosModal({ unitId, unit }: { unitId: string; unit?: 
               disabled={deliverySaving || !deliveryLink.trim()}
               style={{
                 width: "100%", padding: "10px", borderRadius: 9, border: "none", marginTop: 8,
-                background: deliverySaved ? "rgba(0,255,174,0.15)" : "rgba(234,88,12,0.15)",
-                color: deliverySaved ? "#00ffae" : "#fb923c",
+                background: deliverySaved ? "var(--dash-accent-soft)" : "rgba(234,88,12,0.15)",
+                color: deliverySaved ? "var(--dash-accent)" : "#fb923c",
                 fontSize: 13, fontWeight: 700, cursor: deliverySaving ? "not-allowed" : "pointer",
                 opacity: deliverySaving ? 0.6 : 1,
               }}

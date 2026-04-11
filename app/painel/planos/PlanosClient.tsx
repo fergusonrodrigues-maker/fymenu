@@ -281,9 +281,9 @@ export default function PlanosClient({ currentPlan, currentStatus, freeAccess, a
                     background: isActive
                       ? "rgba(0,255,174,0.08)"
                       : plan.highlight
-                        ? "linear-gradient(135deg, #00ffae, #00d9ff)"
+                        ? "var(--dash-accent-soft)"
                         : "rgba(255,255,255,0.08)",
-                    color: isActive ? "#00ffae" : plan.highlight ? "#000" : "#fff",
+                    color: isActive ? "#00ffae" : plan.highlight ? "var(--dash-accent)" : "#fff",
                     opacity: loading === plan.key ? 0.6 : 1,
                     transition: "all 0.2s",
                   }}
@@ -359,10 +359,12 @@ export default function PlanosClient({ currentPlan, currentStatus, freeAccess, a
                     disabled={!!loading}
                     style={{
                       padding: "14px", borderRadius: 12, border: "none",
-                      background: "linear-gradient(135deg, #00ffae, #00d9ff)",
-                      color: "#000", fontWeight: 800, fontSize: 15, cursor: "pointer", fontFamily: "inherit",
+                      background: "var(--dash-accent-soft)",
+                      color: "var(--dash-accent)", fontWeight: 800, fontSize: 15, cursor: "pointer", fontFamily: "inherit",
                       display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                       opacity: loading ? 0.6 : 1,
+                      boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
+                      transition: "all 0.2s",
                     }}
                   >
                     💳 Cartão de crédito

@@ -65,7 +65,7 @@ export default function PartnerLoginClient() {
           <button
             type="submit"
             disabled={loading}
-            style={{ width: "100%", padding: "14px", borderRadius: 12, border: "none", cursor: loading ? "not-allowed" : "pointer", background: loading ? "rgba(0,255,174,0.2)" : "linear-gradient(135deg, #00ffae, #00d9ff)", color: "#000", fontSize: 15, fontWeight: 700, opacity: loading ? 0.6 : 1 }}
+            style={{ width: "100%", padding: "14px", borderRadius: 12, border: "none", cursor: loading ? "not-allowed" : "pointer", background: "var(--dash-accent-soft)", color: "var(--dash-accent)", fontSize: 15, fontWeight: 700, opacity: loading ? 0.6 : 1, boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset", transition: "all 0.2s" }}
           >
             {loading ? "Entrando..." : "Entrar"}
           </button>
