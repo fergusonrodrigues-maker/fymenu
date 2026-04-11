@@ -1336,6 +1336,7 @@ export default function DashboardClient({
             gap: 4,
             position: "relative",
             overflow: "hidden",
+            transition: "all 0.2s ease",
           };
 
           const IconBox = ({ id, bg }: { id: string; bg?: string }) => (

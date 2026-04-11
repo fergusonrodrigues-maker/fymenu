@@ -635,6 +635,40 @@ html.dark .ui-switch input:checked + .slider:hover {
   50% { opacity: 0.5; }
 }
 
+/* ===== BUTTON PRESS EFFECTS ===== */
+/* Base transform transition — applies when no inline transition overrides it */
+button {
+  transition: transform 0.1s ease;
+}
+
+/* Press effect — scale down slightly when clicked */
+button:active:not(:disabled) {
+  transform: scale(0.97) !important;
+  transition: transform 0.1s ease !important;
+}
+
+/* Subtle brightness boost on hover for all enabled buttons */
+button:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+
+/* Bento grid cards and clickable divs */
+.card {
+  transition: all 0.2s ease;
+}
+.card:active {
+  transform: scale(0.98) !important;
+}
+.card:hover {
+  filter: brightness(1.03);
+}
+
+/* Clickable links */
+a:active {
+  transform: scale(0.98);
+  transition: transform 0.1s ease;
+}
+
 /* ===== SELECT / DROPDOWN STYLES ===== */
 /* Remove native browser arrow, add custom SVG arrow */
 select {
