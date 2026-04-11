@@ -263,7 +263,7 @@ export default function UnidadeModal({ unit, isPro, onClose, onOpenPlans }: { un
               }}
               style={{
                 padding: "10px 12px", borderRadius: 12,
-                background: "var(--dash-card-hover)", border: "none",
+                backgroundColor: "var(--dash-card-hover)", border: "none",
                 color: "var(--dash-text)", fontSize: 13, outline: "none", width: 120,
               }}
             >

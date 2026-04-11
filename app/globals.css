@@ -635,6 +635,32 @@ html.dark .ui-switch input:checked + .slider:hover {
   50% { opacity: 0.5; }
 }
 
+/* ===== SELECT / DROPDOWN STYLES ===== */
+/* Remove native browser arrow, add custom SVG arrow */
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M3 5l3 3 3-3'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 28px !important;
+  cursor: pointer;
+}
+
+/* Option list — solid colors required (CSS vars unreliable inside native OS picker) */
+/* Dark mode (default — .dark class on html) */
+select option {
+  background-color: #1c1c1c;
+  color: #ffffff;
+}
+
+/* Light mode */
+html:not(.dark) select option {
+  background-color: #ffffff;
+  color: #1a1a1a;
+}
+
 /* Modal desktop scrollbar */
 @media (min-width: 768px) {
   .modal-desktop-scroll::-webkit-scrollbar {

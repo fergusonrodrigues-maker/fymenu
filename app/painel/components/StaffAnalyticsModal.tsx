@@ -452,7 +452,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                   onChange={(e) => setNewEmployee((p) => ({ ...p, name: e.target.value }))}
                 />
                 <select
-                  style={inp}
+                  style={{ ...inp, background: undefined as any, backgroundColor: "rgba(255,255,255,0.05)" }}
                   value={newEmployee.role}
                   onChange={(e) => setNewEmployee((p) => ({ ...p, role: e.target.value }))}
                 >
@@ -519,7 +519,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                 />
                 {categories.length > 0 && (
                   <select
-                    style={inp}
+                    style={{ ...inp, background: undefined as any, backgroundColor: "rgba(255,255,255,0.05)" }}
                     value={newEmployee.category_id}
                     onChange={(e) => setNewEmployee((p) => ({ ...p, category_id: e.target.value }))}
                   >
@@ -696,7 +696,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                         }}
                         style={{
                           marginTop: 6, padding: "3px 8px", borderRadius: 6,
-                          background: "rgba(255,255,255,0.04)", border: "none",
+                          backgroundColor: "var(--dash-card)", border: "none",
                           color: "var(--dash-text)", fontSize: 10, outline: "none",
                         }}
                       >

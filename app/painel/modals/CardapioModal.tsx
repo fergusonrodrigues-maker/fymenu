@@ -77,7 +77,7 @@ function NewProductFormInline({ categoryId, section, customSections, anyProductE
       <input name="name" placeholder="Nome do produto" required style={inp} />
       <textarea name="description" placeholder="Descrição (opcional)" rows={2} style={{ ...inp, resize: "vertical" }} />
       <div style={{ display: "flex", gap: 8 }}>
-        <select name="price_type" value={priceType} onChange={(e) => setPriceType(e.target.value)} style={{ ...inp, flex: 1, cursor: "pointer" }}>
+        <select name="price_type" value={priceType} onChange={(e) => setPriceType(e.target.value)} style={{ ...inp, background: undefined as any, backgroundColor: "var(--dash-card-hover)", flex: 1, cursor: "pointer" }}>
           <option value="fixed">Preço fixo</option>
           <option value="variable">Preço variável</option>
         </select>

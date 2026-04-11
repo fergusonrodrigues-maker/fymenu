@@ -359,7 +359,7 @@ export default function CrmModal({ unit, restaurant }: { unit: any; restaurant: 
                   onChange={e => setSortBy(e.target.value as any)}
                   style={{
                     padding: "8px 10px", borderRadius: 10,
-                    background: "var(--dash-card-hover)", border: "none",
+                    backgroundColor: "var(--dash-card-hover)", border: "none",
                     color: "var(--dash-text)", fontSize: 11, outline: "none",
                   }}
                 >

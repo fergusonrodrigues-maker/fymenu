@@ -487,7 +487,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
                   const updated = { ...importFinanceData, items: [...importFinanceData.items] };
                   updated.items[i] = { ...updated.items[i], category: e.target.value };
                   setImportFinanceData(updated);
-                }} style={{ padding: "4px 8px", borderRadius: 6, background: "var(--dash-card-hover)", border: "none", color: "var(--dash-text)", fontSize: 11, outline: "none" }}>
+                }} style={{ padding: "4px 8px", borderRadius: 6, backgroundColor: "var(--dash-card-hover)", border: "none", color: "var(--dash-text)", fontSize: 11, outline: "none" }}>
                   {CATS.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
                 <input value={item.name} onChange={(e) => {
@@ -994,7 +994,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
                 <input type="number" placeholder="Valor (R$)" value={expenseAmount} onChange={e => setExpenseAmount(e.target.value)}
                   style={{ flex: 1, padding: "10px 14px", borderRadius: 10, background: "var(--dash-card-hover)", border: "1px solid var(--dash-border)", color: "var(--dash-text)", fontSize: 13, outline: "none" }} />
                 <select value={expenseCategory} onChange={e => setExpenseCategory(e.target.value)}
-                  style={{ padding: "10px 14px", borderRadius: 10, background: "var(--dash-card-hover)", border: "1px solid var(--dash-border)", color: "var(--dash-text)", fontSize: 13, outline: "none" }}>
+                  style={{ padding: "10px 14px", borderRadius: 10, backgroundColor: "var(--dash-card-hover)", border: "1px solid var(--dash-border)", color: "var(--dash-text)", fontSize: 13, outline: "none" }}>
                   <option value="aluguel">Aluguel</option>
                   <option value="salarios">Salários</option>
                   <option value="fornecedores">Fornecedores</option>

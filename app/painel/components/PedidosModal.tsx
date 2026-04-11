@@ -402,7 +402,7 @@ export default function PedidosModal({ unitId, unit }: { unitId: string; unit?: 
             <select
               value={deliveryPlatform}
               onChange={(e) => setDeliveryPlatform(e.target.value)}
-              style={inp}
+              style={{ ...inp, background: undefined as any, backgroundColor: "var(--dash-input-bg)" }}
             >
               <option value="">Selecionar plataforma...</option>
               <option value="ifood">iFood</option>

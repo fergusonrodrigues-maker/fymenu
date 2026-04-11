@@ -175,7 +175,7 @@ export default function PrinterModal({ unitId, categories }: PrinterModalProps) 
     select: {
       flex: 1, padding: "9px 12px", borderRadius: 10,
       border: "1px solid var(--dash-border)",
-      background: "var(--dash-card-hover)",
+      backgroundColor: "var(--dash-card-hover)",
       color: "var(--dash-text)", fontSize: 13,
     } as React.CSSProperties,
     removeX: {

@@ -113,7 +113,7 @@ export default function TVClient({ unitId, unitName, slug, initialMedia }: Props
           </div>
           <div>
             <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, marginBottom: 6, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.4px" }}>Orientação</div>
-            <select value={orientation} onChange={(e) => setOrientation(e.target.value as "vertical" | "horizontal")} style={{ ...inp, cursor: "pointer" }}>
+            <select value={orientation} onChange={(e) => setOrientation(e.target.value as "vertical" | "horizontal")} style={{ ...inp, background: undefined as any, backgroundColor: "rgba(255,255,255,0.05)", cursor: "pointer" }}>
               <option value="horizontal">Horizontal (paisagem)</option>
               <option value="vertical">Vertical (retrato)</option>
             </select>

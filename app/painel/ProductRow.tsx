@@ -149,7 +149,7 @@ function RecipeSection({ productId, unitId, basePrice }: { productId: string; un
       {showAdd && (
         <div style={{ display: "flex", gap: 6, marginBottom: 10, flexWrap: "wrap" }}>
           <select value={selectedItem} onChange={e => setSelectedItem(e.target.value)}
-            style={{ flex: 2, minWidth: 120, padding: "8px 10px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "none", color: "var(--dash-text)", fontSize: 12, outline: "none" }}>
+            style={{ flex: 2, minWidth: 120, padding: "8px 10px", borderRadius: 10, backgroundColor: "var(--dash-card)", border: "none", color: "var(--dash-text)", fontSize: 12, outline: "none" }}>
             <option value="">Selecionar ingrediente...</option>
             {available.map(i => (
               <option key={i.id} value={i.id}>{i.name} ({i.unit_measure})</option>
@@ -415,7 +415,7 @@ export default function ProductRow({
                   name="price_type"
                   value={priceType}
                   onChange={(e) => { setPriceType(e.target.value); setVariationsLoaded(false); }}
-                  style={{ ...inputStyle, flex: 1 }}
+                  style={{ ...inputStyle, background: undefined as any, backgroundColor: "rgba(255,255,255,0.05)", flex: 1 }}
                 >
                   <option value="fixed">Preço fixo</option>
                   <option value="variable">Preço variável</option>

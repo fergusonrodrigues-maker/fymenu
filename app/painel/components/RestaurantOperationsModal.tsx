@@ -315,7 +315,7 @@ function GarcomTab({
           onChange={(e) => setViewAs(e.target.value)}
           style={{
             width: "100%", padding: "8px 10px", borderRadius: 9,
-            border: "1px solid var(--dash-input-border)", background: "var(--dash-input-bg)",
+            border: "1px solid var(--dash-input-border)", backgroundColor: "var(--dash-input-bg)",
             color: "var(--dash-text)", fontSize: 13, outline: "none",
           }}
         >

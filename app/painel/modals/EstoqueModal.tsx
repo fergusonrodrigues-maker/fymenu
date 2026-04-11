@@ -483,7 +483,7 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
                 }}>
                   <select value={item.category || "geral"} onChange={(e) => {
                     const u = { ...importStockData, items: [...importStockData.items] }; u.items[i] = { ...u.items[i], category: e.target.value }; setImportStockData(u);
-                  }} style={{ padding: "4px 6px", borderRadius: 6, background: "var(--dash-card-hover)", border: "none", color: "var(--dash-text)", fontSize: 10, outline: "none", width: 80, fontFamily: "inherit" }}>
+                  }} style={{ padding: "4px 6px", borderRadius: 6, backgroundColor: "var(--dash-card-hover)", border: "none", color: "var(--dash-text)", fontSize: 10, outline: "none", width: 80, fontFamily: "inherit" }}>
                     {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.icon} {c.label}</option>)}
                   </select>
                   <input value={item.name} onChange={(e) => {
@@ -494,7 +494,7 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
                   }} style={{ width: 55, padding: "4px 6px", borderRadius: 6, background: "var(--dash-card-hover)", border: "none", color: "var(--dash-text)", fontSize: 11, outline: "none", textAlign: "right" as const }} />
                   <select value={item.unit_measure || "kg"} onChange={(e) => {
                     const u = { ...importStockData, items: [...importStockData.items] }; u.items[i] = { ...u.items[i], unit_measure: e.target.value }; setImportStockData(u);
-                  }} style={{ padding: "4px 4px", borderRadius: 6, background: "var(--dash-card-hover)", border: "none", color: "var(--dash-text)", fontSize: 10, outline: "none", width: 40, fontFamily: "inherit" }}>
+                  }} style={{ padding: "4px 4px", borderRadius: 6, backgroundColor: "var(--dash-card-hover)", border: "none", color: "var(--dash-text)", fontSize: 10, outline: "none", width: 40, fontFamily: "inherit" }}>
                     {UNITS.map(u => <option key={u.value} value={u.value}>{u.value}</option>)}
                   </select>
                   <input type="number" step="0.01" value={item.cost_per_unit} onChange={(e) => {
@@ -582,7 +582,7 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
               style={{ flex: 1, padding: "8px 12px", borderRadius: 10, background: "var(--dash-card-hover)", border: "1px solid var(--dash-border)", color: "var(--dash-text)", fontSize: 13, outline: "none", transition: "border-color 0.2s" }}
             />
             <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)}
-              style={{ padding: "8px 10px", borderRadius: 10, background: "var(--dash-card-hover)", border: "1px solid var(--dash-border)", color: "var(--dash-text)", fontSize: 12, outline: "none" }}>
+              style={{ padding: "8px 10px", borderRadius: 10, backgroundColor: "var(--dash-card-hover)", border: "1px solid var(--dash-border)", color: "var(--dash-text)", fontSize: 12, outline: "none" }}>
               <option value="all">Todas</option>
               {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.icon} {c.label}</option>)}
             </select>
@@ -611,10 +611,10 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
                 style={{ ...inputStyle, fontSize: 14 }}
               />
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                <select value={formCategory} onChange={e => setFormCategory(e.target.value)} style={inputStyle}>
+                <select value={formCategory} onChange={e => setFormCategory(e.target.value)} style={{ ...inputStyle, background: undefined as any, backgroundColor: "var(--dash-card-hover)" }}>
                   {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.icon} {c.label}</option>)}
                 </select>
-                <select value={formUnit} onChange={e => setFormUnit(e.target.value)} style={inputStyle}>
+                <select value={formUnit} onChange={e => setFormUnit(e.target.value)} style={{ ...inputStyle, background: undefined as any, backgroundColor: "var(--dash-card-hover)" }}>
                   {UNITS.map(u => <option key={u.value} value={u.value}>{u.label}</option>)}
                 </select>
               </div>

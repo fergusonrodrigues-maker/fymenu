@@ -71,7 +71,7 @@ function AdjustModal({ product, unitId, onClose }: { product: StockProduct; unit
 
           <div>
             <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, marginBottom: 6, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.4px" }}>Motivo</div>
-            <select name="reason" value={reason} onChange={(e) => setReason(e.target.value)} style={{ ...inp, cursor: "pointer" }}>
+            <select name="reason" value={reason} onChange={(e) => setReason(e.target.value)} style={{ ...inp, background: undefined as any, backgroundColor: "rgba(255,255,255,0.05)", cursor: "pointer" }}>
               <option value="manual">Ajuste manual</option>
               <option value="compra">Compra / Recebimento</option>
               <option value="venda">Venda</option>
