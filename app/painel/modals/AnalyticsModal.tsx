@@ -67,7 +67,7 @@ export default function AnalyticsModal({
       .from("menu_events")
       .select("product_id, products(name, thumbnail_url)")
       .eq("unit_id", unit.id)
-      .eq("event_type", "product_click")
+      .eq("event", "product_click")
       .order("created_at", { ascending: false })
       .limit(500)
       .then(({ data }) => {
@@ -444,25 +444,45 @@ export default function AnalyticsModal({
               Nenhum dado de cliques ainda. Os produtos aparecem aqui conforme os clientes interagem com o cardápio.
             </div>
           ) : (
-            topProducts.map((p, i) => (
-              <div key={i} style={{
-                display: "flex", alignItems: "center", gap: 12, padding: "10px 0",
-                borderBottom: "1px solid var(--dash-card-border)",
-              }}>
-                <div style={{
-                  width: 28, height: 28, borderRadius: "50%", flexShrink: 0,
-                  background: i < 3 ? "rgba(0,255,174,0.1)" : "var(--dash-card)",
-                  color: i < 3 ? "#00ffae" : "var(--dash-text-muted)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 12, fontWeight: 800,
-                }}>{i + 1}</div>
-                {p.thumb && <img src={p.thumb} alt="" style={{ width: 36, height: 36, borderRadius: 8, objectFit: "cover", flexShrink: 0 }} />}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ color: "var(--dash-text)", fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
-                </div>
-                <div style={{ color: "#00ffae", fontSize: 14, fontWeight: 700, flexShrink: 0 }}>{p.count}</div>
-              </div>
-            ))
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {topProducts.map((p, i) => {
+                const maxClicks = topProducts[0]?.count || 1;
+                const barWidth = (p.count / maxClicks) * 100;
+                return (
+                  <div key={i} style={{
+                    display: "flex", alignItems: "center", gap: 10,
+                    padding: "10px 14px", borderRadius: 12,
+                    background: "var(--dash-card)",
+                    border: "1px solid var(--dash-card-border)",
+                    position: "relative", overflow: "hidden",
+                  }}>
+                    <div style={{
+                      position: "absolute", left: 0, top: 0, bottom: 0,
+                      width: `${barWidth}%`,
+                      background: i < 3 ? "var(--dash-accent-soft)" : "rgba(255,255,255,0.02)",
+                      transition: "width 0.5s ease",
+                    }} />
+                    <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 10, flex: 1 }}>
+                      <span style={{
+                        width: 24, height: 24, borderRadius: "50%", flexShrink: 0,
+                        background: i < 3 ? "var(--dash-accent-soft)" : "var(--dash-card)",
+                        color: i < 3 ? "var(--dash-accent)" : "var(--dash-text-muted)",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: 10, fontWeight: 800,
+                      }}>{i + 1}</span>
+                      {p.thumb && <img src={p.thumb} alt="" style={{ width: 32, height: 32, borderRadius: 8, objectFit: "cover", flexShrink: 0 }} />}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ color: "var(--dash-text)", fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
+                      </div>
+                      <div style={{ textAlign: "right", flexShrink: 0 }}>
+                        <div style={{ fontSize: 15, fontWeight: 800, color: i < 3 ? "var(--dash-accent)" : "var(--dash-text)" }}>{p.count}</div>
+                        <div style={{ fontSize: 9, color: "var(--dash-text-muted)" }}>cliques</div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           )}
 
           {/* Product Attention Time */}
