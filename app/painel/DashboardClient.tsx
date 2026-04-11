@@ -1194,7 +1194,7 @@ export default function DashboardClient({
                 style={{
                   width: 36, height: 36, borderRadius: 12,
                   background: notifications.length > 0 ? "var(--dash-danger-soft)" : "var(--dash-card)",
-                  border: "none", cursor: "pointer",
+                  border: "1px solid var(--dash-border)", cursor: "pointer",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: 18, position: "relative",
                 }}
@@ -1204,7 +1204,7 @@ export default function DashboardClient({
                   <div style={{
                     position: "absolute", top: -2, right: -2,
                     width: 18, height: 18, borderRadius: "50%",
-                    background: "var(--dash-danger)", color: "var(--dash-text)",
+                    background: "var(--dash-danger)", color: "#fff",
                     fontSize: 10, fontWeight: 800,
                     display: "flex", alignItems: "center", justifyContent: "center",
                   }}>
@@ -1218,14 +1218,14 @@ export default function DashboardClient({
                   position: "absolute", top: 44, right: 0,
                   width: 320, maxHeight: 400,
                   borderRadius: 18, overflow: "hidden",
-                  background: "rgba(15,15,15,0.95)",
-                  backdropFilter: "blur(40px)",
-                  boxShadow: "0 1px 0 rgba(255,255,255,0.04) inset, 0 -1px 0 rgba(0,0,0,0.3) inset, 0 20px 60px rgba(0,0,0,0.5)",
+                  background: "var(--dash-modal-bg)",
+                  border: "1px solid var(--dash-border)",
+                  boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
                   zIndex: 9999,
                 }}>
                   <div style={{
                     display: "flex", justifyContent: "space-between", alignItems: "center",
-                    padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.04)",
+                    padding: "14px 16px", borderBottom: "1px solid var(--dash-section-border)",
                   }}>
                     <span style={{ fontSize: 14, fontWeight: 800, color: "var(--dash-text)" }}>Notificações</span>
                     <button onClick={() => setShowNotifications(false)} style={{
