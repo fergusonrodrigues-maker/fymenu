@@ -41,7 +41,12 @@ export default function PDVModal({ order, onClose, onPaid }: Props) {
             <h2 className="text-white font-bold">💳 Pagamento</h2>
             <p className="text-slate-400 text-sm">{tableLabel}</p>
           </div>
-          <button onClick={onClose} className="text-slate-400 w-8 h-8 rounded-full bg-slate-800 text-sm flex items-center justify-center">✕</button>
+          <button onClick={onClose} style={{
+            width: 32, height: 32, borderRadius: 10, border: "none", cursor: "pointer",
+            background: "rgba(220,38,38,0.12)", color: "#ffffff",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 14, fontWeight: 600, transition: "all 0.2s", flexShrink: 0,
+          }}>✕</button>
         </div>
 
         <div className="px-5 py-6">

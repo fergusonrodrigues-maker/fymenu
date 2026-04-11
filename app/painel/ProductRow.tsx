@@ -163,8 +163,10 @@ function RecipeSection({ productId, unitId, basePrice }: { productId: string; un
             opacity: !selectedItem || !quantity ? 0.4 : 1,
           }}>✓</button>
           <button onClick={() => setShowAdd(false)} style={{
-            padding: "8px 10px", borderRadius: 10, border: "none", cursor: "pointer",
-            background: "rgba(255,255,255,0.04)", color: "var(--dash-text-muted)", fontSize: 11,
+            width: 24, height: 24, borderRadius: 6, border: "none", cursor: "pointer",
+            background: "rgba(220,38,38,0.10)", color: "#ffffff",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 11, transition: "all 0.2s",
           }}>✕</button>
         </div>
       )}
@@ -201,7 +203,10 @@ function RecipeSection({ productId, unitId, basePrice }: { productId: string; un
                 <span style={{ fontSize: 10, color: "var(--dash-text-muted)", width: 24 }}>{item?.unit_measure}</span>
                 <span style={{ fontSize: 11, color: "#f87171", fontWeight: 600, width: 60, textAlign: "right" }}>{fmtBRL(Math.round(itemCost))}</span>
                 <button onClick={() => handleRemoveRecipe(r.id)} style={{
-                  background: "transparent", border: "none", color: "rgba(255,255,255,0.15)", fontSize: 12, cursor: "pointer",
+                  width: 24, height: 24, borderRadius: 6, border: "none", cursor: "pointer",
+                  background: "rgba(220,38,38,0.10)", color: "#ffffff",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 11, transition: "all 0.2s",
                 }}>✕</button>
               </div>
             );
@@ -453,7 +458,12 @@ export default function ProductRow({
                       <button
                         type="button"
                         onClick={() => setVariations(variations.filter((_, j) => j !== i))}
-                        style={{ padding: "8px 10px", background: "rgba(239,68,68,0.15)", color: "#f87171", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 6, cursor: "pointer", fontSize: 13, fontWeight: 700, flexShrink: 0 }}
+                        style={{
+                          width: 24, height: 24, borderRadius: 6, border: "none", cursor: "pointer",
+                          background: "rgba(220,38,38,0.10)", color: "#ffffff",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontSize: 11, transition: "all 0.2s", flexShrink: 0,
+                        }}
                       >✕</button>
                     </div>
                   ))}

@@ -1,7 +1,14 @@
 {
   "permissions": {
     "allow": [
-      "Bash(grep -E \"\\\\.tsx?$\")"
+      "Bash(grep -E \"\\\\.tsx?$\")",
+      "Bash(npm list:*)",
+      "Bash(ls app/parceiro)",
+      "Bash(ls app/api/parceiro)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\Ferguson\\Documents\\fymenu\\app\\funcionario\\[slug]",
+      "c:\\Users\\Ferguson\\Documents\\fymenu\\app\\funcionario\\[slug]"
     ]
   }
 }

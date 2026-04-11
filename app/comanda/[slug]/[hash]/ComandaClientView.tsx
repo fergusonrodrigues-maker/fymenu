@@ -235,9 +235,10 @@ export default function ComandaClientView({ comanda: initialComanda, initialItem
           <div style={{ fontSize: 13, fontWeight: 600, marginTop: 4, opacity: 0.8 }}>{latestReadyItem}</div>
           <button onClick={() => setShowReadyNotification(false)} style={{
             position: "absolute", top: 12, right: 12,
-            background: "rgba(0,0,0,0.1)", border: "none",
-            color: "#000", borderRadius: 8, padding: "4px 8px",
-            fontSize: 12, cursor: "pointer",
+            width: 28, height: 28, borderRadius: 8, border: "none", cursor: "pointer",
+            background: "rgba(220,38,38,0.15)", color: "#ffffff",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 12, transition: "all 0.2s",
           }}>✕</button>
         </div>
       )}

@@ -146,21 +146,18 @@ function Modal({ open, onClose, children, title }: { open: boolean; onClose: () 
             style={{
               position: "sticky", top: 16, float: "right", zIndex: 10,
               width: 36, height: 36, borderRadius: 12,
-              background: "var(--dash-close-btn)",
-              boxShadow: isDark ? "0 1px 0 rgba(255,255,255,0.05) inset, 0 -1px 0 rgba(0,0,0,0.2) inset" : "0 1px 0 rgba(255,255,255,0.6) inset, 0 -1px 0 rgba(0,0,0,0.06) inset",
+              background: "rgba(220,38,38,0.12)",
               border: "none",
-              color: "var(--dash-close-color)",
+              color: "#ffffff",
               display: "flex", alignItems: "center", justifyContent: "center",
               cursor: "pointer", fontSize: 16, marginRight: 16, marginTop: 16,
-              transition: "all 0.2s",
+              transition: "all 0.2s", flexShrink: 0,
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = isDark ? "var(--dash-card-hover)" : "rgba(0,0,0,0.1)";
-              e.currentTarget.style.color = isDark ? "rgba(255,255,255,0.7)" : "rgba(0,0,0,0.7)";
+              e.currentTarget.style.background = "rgba(220,38,38,0.22)";
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = "var(--dash-close-btn)";
-              e.currentTarget.style.color = "var(--dash-close-color)";
+              e.currentTarget.style.background = "rgba(220,38,38,0.12)";
             }}
           >✕</button>
           <div style={{ padding: "8px 28px 28px" }}>
@@ -225,10 +222,10 @@ function Modal({ open, onClose, children, title }: { open: boolean; onClose: () 
             <button
               onClick={onClose}
               style={{
-                background: "var(--dash-close-btn)", border: "none",
-                borderRadius: 10, width: 32, height: 32,
+                width: 32, height: 32, borderRadius: 10, border: "none", cursor: "pointer",
+                background: "rgba(220,38,38,0.12)", color: "#ffffff",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                cursor: "pointer", color: "var(--dash-close-color)", fontSize: 16,
+                fontSize: 14, fontWeight: 600, transition: "all 0.2s", flexShrink: 0,
               }}
             >✕</button>
           </div>
@@ -1229,8 +1226,10 @@ export default function DashboardClient({
                   }}>
                     <span style={{ fontSize: 14, fontWeight: 800, color: "var(--dash-text)" }}>Notificações</span>
                     <button onClick={() => setShowNotifications(false)} style={{
-                      background: "transparent", border: "none", color: "var(--dash-text-muted)",
-                      fontSize: 14, cursor: "pointer",
+                      width: 28, height: 28, borderRadius: 8, border: "none", cursor: "pointer",
+                      background: "rgba(220,38,38,0.12)", color: "#ffffff",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 12, transition: "all 0.2s", flexShrink: 0,
                     }}>✕</button>
                   </div>
 

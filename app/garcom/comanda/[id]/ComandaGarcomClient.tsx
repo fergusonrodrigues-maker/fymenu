@@ -479,7 +479,12 @@ export default function ComandaGarcomClient({
           <div className="w-full sm:max-w-sm bg-slate-900 border border-slate-700 rounded-t-2xl sm:rounded-2xl p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-white font-bold text-base">Remover item</h2>
-              <button onClick={() => setRemovingItem(null)} className="text-slate-400 hover:text-white text-xl">✕</button>
+              <button onClick={() => setRemovingItem(null)} style={{
+                width: 32, height: 32, borderRadius: 10, border: "none", cursor: "pointer",
+                background: "rgba(220,38,38,0.12)", color: "#ffffff",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 14, fontWeight: 600, transition: "all 0.2s", flexShrink: 0,
+              }}>✕</button>
             </div>
             <p className="text-slate-300 text-sm mb-4">
               Remover <strong>{removingItem.quantity}× {removingItem.product_name}</strong>?
@@ -567,7 +572,12 @@ function AddItemModal({
                 : "Categorias"}
             </h2>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-white text-xl">✕</button>
+          <button onClick={onClose} style={{
+            width: 32, height: 32, borderRadius: 10, border: "none", cursor: "pointer",
+            background: "rgba(220,38,38,0.12)", color: "#ffffff",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 14, fontWeight: 600, transition: "all 0.2s", flexShrink: 0,
+          }}>✕</button>
         </div>
 
         <div className="overflow-y-auto flex-1 p-4">
@@ -718,7 +728,12 @@ function QRModal({
       <div className="w-full sm:max-w-sm bg-slate-900 border border-slate-700 rounded-t-2xl sm:rounded-2xl p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-white font-bold text-base">QR Code — Mesa {tableNumber ?? "S/N"}</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-white text-xl">✕</button>
+          <button onClick={onClose} style={{
+            width: 32, height: 32, borderRadius: 10, border: "none", cursor: "pointer",
+            background: "rgba(220,38,38,0.12)", color: "#ffffff",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 14, fontWeight: 600, transition: "all 0.2s", flexShrink: 0,
+          }}>✕</button>
         </div>
         <div className="flex flex-col items-center gap-4">
           <div className="bg-white p-4 rounded-xl">
@@ -779,7 +794,12 @@ function CloseModal({
       <div className="w-full sm:max-w-sm bg-slate-900 border border-slate-700 rounded-t-2xl sm:rounded-2xl p-6">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-white font-bold text-base">Fechar comanda</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-white text-xl">✕</button>
+          <button onClick={onClose} style={{
+            width: 32, height: 32, borderRadius: 10, border: "none", cursor: "pointer",
+            background: "rgba(220,38,38,0.12)", color: "#ffffff",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 14, fontWeight: 600, transition: "all 0.2s", flexShrink: 0,
+          }}>✕</button>
         </div>
         <p className="text-slate-400 text-sm mb-4">
           Total:{" "}

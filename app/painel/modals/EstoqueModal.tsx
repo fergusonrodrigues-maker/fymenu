@@ -405,8 +405,12 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
         <div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
             <div style={{ fontSize: 15, fontWeight: 800, color: "var(--dash-text)" }}>Importar estoque</div>
-            <button onClick={() => { setShowImportStock(false); setImportStockStep("upload"); setImportStockData(null); setStockText(""); }}
-              style={{ background: "transparent", border: "none", color: "var(--dash-text-muted)", fontSize: 16, cursor: "pointer", fontFamily: "inherit" }}>✕</button>
+            <button onClick={() => { setShowImportStock(false); setImportStockStep("upload"); setImportStockData(null); setStockText(""); }} style={{
+              width: 32, height: 32, borderRadius: 10, border: "none", cursor: "pointer",
+              background: "rgba(220,38,38,0.12)", color: "#ffffff",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 14, fontWeight: 600, transition: "all 0.2s", flexShrink: 0,
+            }}>✕</button>
           </div>
 
           {/* Upload */}
@@ -503,7 +507,12 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
                   <button onClick={() => {
                     const newItems = importStockData.items.filter((_: any, idx: number) => idx !== i);
                     setImportStockData({ ...importStockData, items: newItems });
-                  }} style={{ background: "transparent", border: "none", color: "var(--dash-text-subtle)", cursor: "pointer", fontSize: 12, fontFamily: "inherit" }}>✕</button>
+                  }} style={{
+                    width: 24, height: 24, borderRadius: 6, border: "none", cursor: "pointer",
+                    background: "rgba(220,38,38,0.10)", color: "#ffffff",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 11, transition: "all 0.2s",
+                  }}>✕</button>
                 </div>
               ))}
               <button onClick={handleConfirmStockImport} disabled={importingStock} style={{
@@ -727,8 +736,10 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
                           color: "var(--dash-text-muted)", fontSize: 11, cursor: "pointer", fontFamily: "inherit",
                         }}>✏️</button>
                         <button onClick={() => handleDelete(item.id)} style={{
-                          padding: "4px 8px", borderRadius: 6, background: "var(--dash-danger-soft)", border: "none",
-                          color: "var(--dash-danger)", fontSize: 11, cursor: "pointer", fontFamily: "inherit",
+                          width: 24, height: 24, borderRadius: 6, border: "none", cursor: "pointer",
+                          background: "rgba(220,38,38,0.10)", color: "#ffffff",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontSize: 11, transition: "all 0.2s",
                         }}>✕</button>
                       </div>
                     </div>

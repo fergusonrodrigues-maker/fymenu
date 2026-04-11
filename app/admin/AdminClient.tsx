@@ -264,7 +264,12 @@ function ManagePanel({
             <h2 className="font-black text-white text-lg">{restaurant.name}</h2>
             <p className="text-gray-500 text-xs mt-0.5">{restaurant.id}</p>
           </div>
-          <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors text-xl leading-none">✕</button>
+          <button onClick={onClose} style={{
+            width: 32, height: 32, borderRadius: 10, border: "none", cursor: "pointer",
+            background: "rgba(220,38,38,0.12)", color: "#ffffff",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 14, fontWeight: 600, transition: "all 0.2s", flexShrink: 0,
+          }}>✕</button>
         </div>
 
         <div className="p-6 space-y-6 flex-1">

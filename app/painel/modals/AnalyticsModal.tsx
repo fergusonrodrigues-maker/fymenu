@@ -748,8 +748,12 @@ export default function AnalyticsModal({
             <div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                 <div style={{ fontSize: 15, fontWeight: 800, color: "var(--dash-text)" }}>Importar dados de analytics</div>
-                <button onClick={resetImport}
-                  style={{ background: "transparent", border: "none", color: "var(--dash-text-muted)", fontSize: 16, cursor: "pointer" }}>✕</button>
+                <button onClick={resetImport} style={{
+                  width: 32, height: 32, borderRadius: 10, border: "none", cursor: "pointer",
+                  background: "rgba(220,38,38,0.12)", color: "#ffffff",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 14, fontWeight: 600, transition: "all 0.2s", flexShrink: 0,
+                }}>✕</button>
               </div>
 
               {/* UPLOAD */}

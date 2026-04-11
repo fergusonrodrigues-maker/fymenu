@@ -91,7 +91,12 @@ export default function EditOrderModal({ order, unitId, operatorName, onClose, o
           <h2 className="text-white font-bold">
             ✏️ Editar Pedido — {order.table_number != null ? `Mesa ${order.table_number}` : "S/ Mesa"}
           </h2>
-          <button onClick={onClose} className="text-slate-400 w-8 h-8 rounded-full bg-slate-800 text-sm flex items-center justify-center">✕</button>
+          <button onClick={onClose} style={{
+            width: 32, height: 32, borderRadius: 10, border: "none", cursor: "pointer",
+            background: "rgba(220,38,38,0.12)", color: "#ffffff",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 14, fontWeight: 600, transition: "all 0.2s", flexShrink: 0,
+          }}>✕</button>
         </div>
 
         <div className="overflow-y-auto px-5 pb-6" style={{ maxHeight: "75dvh" }}>

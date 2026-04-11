@@ -391,7 +391,12 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
           <div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
               <div style={{ fontSize: 16, fontWeight: 800, color: "var(--dash-text)" }}>Importar dados financeiros</div>
-              <button onClick={() => setShowImportFinance(false)} style={{ background: "transparent", border: "none", color: "var(--dash-text-muted)", fontSize: 16, cursor: "pointer" }}>✕</button>
+              <button onClick={() => setShowImportFinance(false)} style={{
+                width: 32, height: 32, borderRadius: 10, border: "none", cursor: "pointer",
+                background: "rgba(220,38,38,0.12)", color: "#ffffff",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 14, fontWeight: 600, transition: "all 0.2s", flexShrink: 0,
+              }}>✕</button>
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 20 }}>
@@ -504,7 +509,12 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
                 <button onClick={() => {
                   const items = importFinanceData.items.filter((_: any, idx: number) => idx !== i);
                   setImportFinanceData({ ...importFinanceData, items, total: items.reduce((s: number, it: any) => s + (it.amount || 0), 0) });
-                }} style={{ background: "transparent", border: "none", color: "var(--dash-text-subtle)", cursor: "pointer", fontSize: 16 }}>✕</button>
+                }} style={{
+                  width: 24, height: 24, borderRadius: 6, border: "none", cursor: "pointer",
+                  background: "rgba(220,38,38,0.10)", color: "#ffffff",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 11, transition: "all 0.2s",
+                }}>✕</button>
               </div>
             ))}
 
@@ -1041,7 +1051,10 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <span style={{ color: "var(--dash-danger)", fontSize: 14, fontWeight: 700 }}>{formatBRL(exp.amount)}</span>
                     <button onClick={() => handleDeleteExpense(exp.id)} style={{
-                      background: "transparent", border: "none", color: "var(--dash-text-subtle)", fontSize: 14, cursor: "pointer",
+                      width: 24, height: 24, borderRadius: 6, border: "none", cursor: "pointer",
+                      background: "rgba(220,38,38,0.10)", color: "#ffffff",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 11, transition: "all 0.2s",
                     }}>✕</button>
                   </div>
                 </div>

@@ -702,7 +702,12 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                       }} style={{ width: 75, padding: "4px 8px", borderRadius: 6, background: "var(--dash-card)", border: "none", color: "var(--dash-accent)", fontSize: 13, fontWeight: 700, outline: "none", textAlign: "right" as const }} />
                       <button onClick={() => {
                         const u = structuredClone(importData); u.categories[ci].products.splice(pi, 1); setImportData(u);
-                      }} style={{ background: "transparent", border: "none", color: "var(--dash-text-subtle)", cursor: "pointer", fontSize: 14, fontFamily: "inherit" }}>✕</button>
+                      }} style={{
+                        width: 24, height: 24, borderRadius: 6, border: "none", cursor: "pointer",
+                        background: "rgba(220,38,38,0.10)", color: "#ffffff",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: 11, transition: "all 0.2s",
+                      }}>✕</button>
                     </div>
                   ))}
                 </div>
@@ -787,7 +792,12 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
           }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: "var(--dash-text)" }}>✨ Sugestões da IA</div>
-              <button onClick={() => setAiSuggestionResult(null)} style={{ background: "transparent", border: "none", color: "var(--dash-text-muted)", fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>✕</button>
+              <button onClick={() => setAiSuggestionResult(null)} style={{
+                width: 24, height: 24, borderRadius: 6, border: "none", cursor: "pointer",
+                background: "rgba(220,38,38,0.10)", color: "#ffffff",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 11, transition: "all 0.2s",
+              }}>✕</button>
             </div>
             <div style={{ whiteSpace: "pre-wrap", fontSize: 12, color: "var(--dash-text-secondary)", lineHeight: 1.7 }}>
               {aiSuggestionResult}
@@ -800,8 +810,12 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
         <div style={{ padding: "0 4px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
             <div style={{ fontSize: 15, fontWeight: 800, color: "var(--dash-text)" }}>Copiar cardápio de outra unidade</div>
-            <button onClick={() => { setShowCopyFromUnit(false); setSourcePreview(null); setSelectedSourceUnit(""); }}
-              style={{ background: "transparent", border: "none", color: "var(--dash-text-muted)", fontSize: 16, cursor: "pointer" }}>✕</button>
+            <button onClick={() => { setShowCopyFromUnit(false); setSourcePreview(null); setSelectedSourceUnit(""); }} style={{
+              width: 32, height: 32, borderRadius: 10, border: "none", cursor: "pointer",
+              background: "rgba(220,38,38,0.12)", color: "#ffffff",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 14, fontWeight: 600, transition: "all 0.2s", flexShrink: 0,
+            }}>✕</button>
           </div>
 
           <div style={{ marginBottom: 16 }}>
@@ -1105,8 +1119,9 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                   {/* Cancel edit */}
                   <button type="button" onClick={() => { setExpandedCat(null); setShowAllProducts(prev => ({ ...prev, [cat.id]: false })); }} style={{
                     width: 28, height: 28, borderRadius: 8, border: "none", cursor: "pointer",
-                    background: "var(--dash-danger-soft)", color: "var(--dash-danger)",
+                    background: "rgba(220,38,38,0.12)", color: "#ffffff",
                     display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, flexShrink: 0,
+                    transition: "all 0.2s",
                   }}>✕</button>
                   {/* Active toggle */}
                   <label className="switch-toggle">

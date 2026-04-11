@@ -560,7 +560,12 @@ function QRMesaModal({ unitSlug, onClose }: { unitSlug: string; onClose: () => v
       <div className="w-full sm:max-w-sm bg-slate-900 border border-slate-700 rounded-t-2xl sm:rounded-2xl p-6">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-white font-bold text-lg">QR Code da Mesa</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-white text-xl leading-none">✕</button>
+          <button onClick={onClose} style={{
+            width: 32, height: 32, borderRadius: 10, border: "none", cursor: "pointer",
+            background: "rgba(220,38,38,0.12)", color: "#ffffff",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 14, fontWeight: 600, transition: "all 0.2s", flexShrink: 0,
+          }}>✕</button>
         </div>
 
         <div className="flex gap-3 mb-5">
@@ -804,7 +809,12 @@ function AbrirComandaModal({
       <div className="w-full sm:max-w-sm bg-slate-900 border border-slate-700 rounded-t-2xl sm:rounded-2xl p-6">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-white font-bold text-lg">Abrir Comanda</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-white text-xl leading-none">✕</button>
+          <button onClick={onClose} style={{
+            width: 32, height: 32, borderRadius: 10, border: "none", cursor: "pointer",
+            background: "rgba(220,38,38,0.12)", color: "#ffffff",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 14, fontWeight: 600, transition: "all 0.2s", flexShrink: 0,
+          }}>✕</button>
         </div>
 
         <div className="mb-5">

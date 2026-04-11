@@ -38,7 +38,8 @@
       "Bash(ls -la /c/Users/Ferguson/Documents/fymenu/app/delivery/[slug]/)",
       "Bash(ls app/garcom/comanda/[id]/)",
       "Bash(git log:*)",
-      "Bash(ls \"c:\\\\Users\\\\Ferguson\\\\Documents\\\\fymenu\\\\app\\\\garcom\\\\comanda\\\\[id]\"\" 2>/dev/null || echo \"dir not found \")"
+      "Bash(ls \"c:\\\\Users\\\\Ferguson\\\\Documents\\\\fymenu\\\\app\\\\garcom\\\\comanda\\\\[id]\"\" 2>/dev/null || echo \"dir not found \")",
+      "Read(//c/Users/Ferguson/.claude/projects/c--Users-Ferguson-Documents-fymenu/2f4e9688-5000-4107-bca6-fc7e6dfc57c1/tool-results/**)"
     ],
     "additionalDirectories": [
       "C:\\Users\\Ferguson\\Documents\\fymenu\\app\\u\\[slug]\\hub-central",
