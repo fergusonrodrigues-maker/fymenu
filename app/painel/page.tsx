@@ -65,7 +65,7 @@ function getDayStats(ordersList: OrderRow[], days: number, now: Date) {
   return Object.entries(dayMap).map(([date, s]) => ({ date, ...s }));
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({ searchParams }: { searchParams?: Promise<{ unit_id?: string }> }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/entrar");
@@ -79,11 +79,29 @@ export default async function DashboardPage() {
   if (!restaurant) redirect("/entrar");
   if (!restaurant.onboarding_completed) redirect("/configurar");
 
-  const { data: unit } = await supabase
+  const sp = searchParams ? await searchParams : {};
+  const requestedUnitId = sp.unit_id;
+
+  // Load the requested unit (if it belongs to this restaurant), else fall back to first
+  let unitQuery = supabase
+    .from("units")
+    .select("id, name, slug, custom_domain, address, city, neighborhood, whatsapp, instagram, logo_url, cover_url, description, maps_url, delivery_link, is_published, comanda_close_permission")
+    .eq("restaurant_id", restaurant.id);
+
+  if (requestedUnitId) {
+    unitQuery = unitQuery.eq("id", requestedUnitId);
+  }
+
+  const { data: unitData } = await unitQuery.limit(1).maybeSingle();
+
+  // If the requested unit didn't match (wrong id), fall back to first unit
+  const unit = unitData ?? (await supabase
     .from("units")
     .select("id, name, slug, custom_domain, address, city, neighborhood, whatsapp, instagram, logo_url, cover_url, description, maps_url, delivery_link, is_published, comanda_close_permission")
     .eq("restaurant_id", restaurant.id)
-    .single();
+    .limit(1)
+    .maybeSingle()
+  ).data;
 
   const { data: categories } = await supabase
     .from("categories")

@@ -279,6 +279,10 @@ export default function DashboardClient({
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
 
+  // Unit selector
+  const [allUnits, setAllUnits] = useState<any[]>([]);
+  const [showUnitSelector, setShowUnitSelector] = useState(false);
+
   useEffect(() => {
     async function loadNotifications() {
       const supabase = createClient();
@@ -399,6 +403,29 @@ export default function DashboardClient({
     return () => document.removeEventListener("click", handler);
   }, [showNotifications]);
 
+  // Fetch all units for the restaurant
+  useEffect(() => {
+    if (!restaurant?.id) return;
+    const supabase = createClient();
+    supabase
+      .from("units")
+      .select("id, name, slug, is_published")
+      .eq("restaurant_id", restaurant.id)
+      .order("name")
+      .then(({ data }) => { if (data) setAllUnits(data); });
+  }, [restaurant.id]);
+
+  // Close unit selector on outside click
+  useEffect(() => {
+    if (!showUnitSelector) return;
+    const handler = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest("[data-unit-selector]")) setShowUnitSelector(false);
+    };
+    document.addEventListener("click", handler);
+    return () => document.removeEventListener("click", handler);
+  }, [showUnitSelector]);
+
   const GRID_LAYOUTS: Record<string, Array<{ id: string; cols: number; mobileCols: number }>> = {
     // menu: analytics full-width + 2 rows of 4
     menu: [
@@ -469,6 +496,7 @@ export default function DashboardClient({
         * { box-sizing: border-box; }
         body { margin: 0; background: var(--dash-bg); }
         @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:0.5 } }
+        @keyframes fadeIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
         .card { transition: transform 0.25s cubic-bezier(0.16,1,0.3,1), background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease; }
         .card:active { transform: scale(0.97) !important; }
         .dark .card:hover { background: rgba(0,255,174,0.03) !important; border-color: rgba(0,255,174,0.15) !important; box-shadow: 0 8px 32px rgba(0,0,0,0.25) !important; transform: translateY(-2px) !important; }
@@ -1066,8 +1094,89 @@ export default function DashboardClient({
                 <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(0,255,174,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>🍽</div>
               )}
               <div>
-                <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.5px", lineHeight: 1.1, color: "var(--dash-text)" }}>{unit?.name ?? restaurant.name}</div>
-                <div style={{ color: "var(--dash-text-muted)", fontSize: 12 }}>{unit?.is_published ? "● Publicado" : "○ Não publicado"}</div>
+                {/* Unit selector dropdown */}
+                <div style={{ position: "relative" }} data-unit-selector>
+                  <button
+                    onClick={() => allUnits.length > 1 && setShowUnitSelector((v) => !v)}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 6,
+                      background: "transparent", border: "none", cursor: allUnits.length > 1 ? "pointer" : "default",
+                      padding: 0,
+                    }}
+                  >
+                    <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.5px", lineHeight: 1.1, color: "var(--dash-text)" }}>
+                      {unit?.name ?? restaurant.name}
+                    </span>
+                    {allUnits.length > 1 && (
+                      <span style={{
+                        fontSize: 9, color: "var(--dash-text-muted)",
+                        display: "inline-block",
+                        transform: showUnitSelector ? "rotate(180deg)" : "none",
+                        transition: "transform 0.2s",
+                        marginTop: 2,
+                      }}>▼</span>
+                    )}
+                  </button>
+                  <div style={{ color: "var(--dash-text-muted)", fontSize: 12 }}>
+                    {unit?.is_published ? "● Publicado" : "○ Não publicado"}
+                  </div>
+
+                  {showUnitSelector && allUnits.length > 1 && (
+                    <div style={{
+                      position: "absolute", top: 48, left: 0,
+                      minWidth: 230, borderRadius: 14,
+                      background: "var(--dash-surface, rgba(12,12,12,0.97))",
+                      border: "1px solid var(--dash-border)",
+                      boxShadow: "0 8px 32px rgba(0,0,0,0.35)",
+                      zIndex: 9999, overflow: "hidden",
+                      animation: "fadeIn 0.15s ease",
+                    }}>
+                      <div style={{ padding: "10px 14px", borderBottom: "1px solid var(--dash-border)" }}>
+                        <span style={{ fontSize: 11, fontWeight: 600, color: "var(--dash-text-muted)", textTransform: "uppercase", letterSpacing: "0.5px" }}>Suas unidades</span>
+                      </div>
+                      {allUnits.map((u) => (
+                        <button key={u.id} onClick={() => {
+                          localStorage.setItem("fy_active_unit_id", u.id);
+                          window.location.href = `/painel?unit_id=${u.id}`;
+                        }} style={{
+                          display: "flex", alignItems: "center", gap: 10,
+                          width: "100%", padding: "11px 14px",
+                          background: u.id === unit?.id ? "var(--dash-accent-soft)" : "transparent",
+                          border: "none", cursor: "pointer",
+                          borderBottom: "1px solid var(--dash-border)",
+                          transition: "background 0.15s",
+                          textAlign: "left",
+                        }}
+                          onMouseEnter={(e) => { if (u.id !== unit?.id) e.currentTarget.style.background = "var(--dash-card-hover)"; }}
+                          onMouseLeave={(e) => { if (u.id !== unit?.id) e.currentTarget.style.background = "transparent"; }}
+                        >
+                          <div style={{
+                            width: 8, height: 8, borderRadius: "50%", flexShrink: 0,
+                            background: u.is_published ? "var(--dash-accent)" : "var(--dash-text-muted)",
+                          }} />
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ color: u.id === unit?.id ? "var(--dash-accent)" : "var(--dash-text)", fontSize: 13, fontWeight: 600 }}>{u.name}</div>
+                            <div style={{ color: "var(--dash-text-muted)", fontSize: 10 }}>/{u.slug}</div>
+                          </div>
+                          {u.id === unit?.id && (
+                            <span style={{ color: "var(--dash-accent)", fontSize: 12, flexShrink: 0 }}>✓</span>
+                          )}
+                        </button>
+                      ))}
+                      <button onClick={() => {
+                        setShowUnitSelector(false);
+                        open("unidade");
+                      }} style={{
+                        display: "flex", alignItems: "center", gap: 8,
+                        width: "100%", padding: "11px 14px",
+                        background: "transparent", border: "none", cursor: "pointer",
+                        color: "var(--dash-text-muted)", fontSize: 12,
+                      }}>
+                        <span>+</span> Nova unidade
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
