@@ -50,6 +50,18 @@ export default function UnidadeModal({ unit, isPro, onClose }: { unit: Unit | nu
   const [ifoodUrl, setIfoodUrl] = useState(unit?.ifood_url || "");
   const [ifoodPlatform, setIfoodPlatform] = useState(unit?.ifood_platform || "ifood");
   const [googleReviewUrl, setGoogleReviewUrl] = useState((unit as any)?.google_review_url || "");
+  const [businessHours, setBusinessHours] = useState<any[]>(
+    unit?.business_hours || [
+      { day: "seg", open: "11:00", close: "23:00", enabled: true },
+      { day: "ter", open: "11:00", close: "23:00", enabled: true },
+      { day: "qua", open: "11:00", close: "23:00", enabled: true },
+      { day: "qui", open: "11:00", close: "23:00", enabled: true },
+      { day: "sex", open: "11:00", close: "00:00", enabled: true },
+      { day: "sab", open: "11:00", close: "00:00", enabled: true },
+      { day: "dom", open: "11:00", close: "22:00", enabled: true },
+    ]
+  );
+  const [forceStatus, setForceStatus] = useState(unit?.force_status || "auto");
 
   if (!unit) return <div style={{ color: "var(--dash-text-muted)", paddingTop: 16 }}>Nenhuma unidade encontrada.</div>;
   const origin = typeof window !== "undefined" ? window.location.origin : "";
@@ -323,6 +335,95 @@ export default function UnidadeModal({ unit, isPro, onClose }: { unit: Unit | nu
             <input name={f.name} defaultValue={f.value} style={inp} />
           </div>
         ))}
+
+        {/* Horário de funcionamento */}
+        <div style={{ marginTop: 20 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "var(--dash-text)", marginBottom: 12 }}>Horário de funcionamento</div>
+
+          {/* Override manual */}
+          <div style={{ display: "flex", gap: 4, marginBottom: 14 }}>
+            {[
+              { key: "auto", label: "Automático", icon: "🕐" },
+              { key: "open", label: "Forçar aberto", icon: "🟢" },
+              { key: "closed", label: "Forçar fechado", icon: "🔴" },
+            ].map(opt => (
+              <button key={opt.key} type="button" onClick={() => {
+                setForceStatus(opt.key);
+                const supabase = createClient();
+                supabase.from("units").update({ force_status: opt.key }).eq("id", unit.id);
+              }} style={{
+                flex: 1, padding: "8px 10px", borderRadius: 10, border: "none", cursor: "pointer",
+                background: forceStatus === opt.key ? "var(--dash-accent-soft)" : "var(--dash-card)",
+                color: forceStatus === opt.key ? "var(--dash-accent)" : "var(--dash-text-muted)",
+                fontSize: 11, fontWeight: 600,
+                boxShadow: "var(--dash-shadow)",
+              }}>{opt.icon} {opt.label}</button>
+            ))}
+          </div>
+
+          {/* Grid de dias */}
+          {forceStatus === "auto" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {businessHours.map((h, i) => (
+                <div key={h.day} style={{
+                  display: "flex", alignItems: "center", gap: 8,
+                  padding: "8px 12px", borderRadius: 10,
+                  background: h.enabled ? "var(--dash-card)" : "transparent",
+                  opacity: h.enabled ? 1 : 0.4,
+                }}>
+                  {/* Toggle dia */}
+                  <button type="button" onClick={() => {
+                    const updated = [...businessHours];
+                    updated[i] = { ...updated[i], enabled: !updated[i].enabled };
+                    setBusinessHours(updated);
+                    const supabase = createClient();
+                    supabase.from("units").update({ business_hours: updated }).eq("id", unit.id);
+                  }} style={{
+                    width: 20, height: 20, borderRadius: 6, border: "none", cursor: "pointer",
+                    background: h.enabled ? "var(--dash-accent-soft)" : "var(--dash-card)",
+                    color: h.enabled ? "var(--dash-accent)" : "var(--dash-text-muted)",
+                    fontSize: 10, fontWeight: 800,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}>{h.enabled ? "✓" : ""}</button>
+
+                  {/* Nome do dia */}
+                  <span style={{
+                    width: 32, fontSize: 11, fontWeight: 700,
+                    color: h.enabled ? "var(--dash-text)" : "var(--dash-text-muted)",
+                    textTransform: "capitalize",
+                  }}>{h.day}</span>
+
+                  {/* Horários */}
+                  {h.enabled ? (
+                    <>
+                      <input type="time" value={h.open} onChange={(e) => {
+                        const updated = [...businessHours];
+                        updated[i] = { ...updated[i], open: e.target.value };
+                        setBusinessHours(updated);
+                      }} onBlur={() => {
+                        const supabase = createClient();
+                        supabase.from("units").update({ business_hours: businessHours }).eq("id", unit.id);
+                      }}
+                        style={{ padding: "4px 6px", borderRadius: 6, background: "var(--dash-card-hover)", border: "none", color: "var(--dash-text)", fontSize: 11, outline: "none" }} />
+                      <span style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>até</span>
+                      <input type="time" value={h.close} onChange={(e) => {
+                        const updated = [...businessHours];
+                        updated[i] = { ...updated[i], close: e.target.value };
+                        setBusinessHours(updated);
+                      }} onBlur={() => {
+                        const supabase = createClient();
+                        supabase.from("units").update({ business_hours: businessHours }).eq("id", unit.id);
+                      }}
+                        style={{ padding: "4px 6px", borderRadius: 6, background: "var(--dash-card-hover)", border: "none", color: "var(--dash-text)", fontSize: 11, outline: "none" }} />
+                    </>
+                  ) : (
+                    <span style={{ fontSize: 11, color: "var(--dash-text-muted)" }}>Fechado</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 0 4px" }}>
           <div>

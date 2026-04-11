@@ -16,6 +16,8 @@ export type Unit = {
   facebook_pixel_id?: string | null;
   ifood_url?: string | null;
   ifood_platform?: string | null;
+  business_hours?: any[] | null;
+  force_status?: string | null;
 };
 export type Category = {
   id: string;

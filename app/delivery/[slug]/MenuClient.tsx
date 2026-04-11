@@ -22,6 +22,60 @@ interface MenuClientProps {
   initialTable?: number | null;
 }
 
+function isUnitOpen(unit: any): { isOpen: boolean; label: string; nextChange: string } {
+  if (unit.force_status === "open") return { isOpen: true, label: "Aberto agora", nextChange: "" };
+  if (unit.force_status === "closed") return { isOpen: false, label: "Fechado", nextChange: "" };
+
+  const hours = unit.business_hours || [];
+  if (hours.length === 0) return { isOpen: true, label: "", nextChange: "" };
+
+  const now = new Date();
+  const dayNames = ["dom", "seg", "ter", "qua", "qui", "sex", "sab"];
+  const currentDay = dayNames[now.getDay()];
+  const currentTime = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+
+  const todayHours = hours.find((h: any) => h.day === currentDay);
+
+  if (!todayHours || !todayHours.enabled) {
+    for (let i = 1; i <= 7; i++) {
+      const nextDayIdx = (now.getDay() + i) % 7;
+      const nextDay = hours.find((h: any) => h.day === dayNames[nextDayIdx]);
+      if (nextDay?.enabled) {
+        return { isOpen: false, label: "Fechado hoje", nextChange: `Abre ${nextDay.day} às ${nextDay.open}` };
+      }
+    }
+    return { isOpen: false, label: "Fechado", nextChange: "" };
+  }
+
+  const openTime = todayHours.open;
+  const closeTime = todayHours.close;
+
+  if (closeTime <= openTime) {
+    // Cruza meia-noite
+    if (currentTime >= openTime || currentTime < closeTime) {
+      return { isOpen: true, label: "Aberto agora", nextChange: `Fecha às ${closeTime}` };
+    }
+  } else {
+    if (currentTime >= openTime && currentTime < closeTime) {
+      return { isOpen: true, label: "Aberto agora", nextChange: `Fecha às ${closeTime}` };
+    }
+  }
+
+  if (currentTime < openTime) {
+    return { isOpen: false, label: "Fechado", nextChange: `Abre hoje às ${openTime}` };
+  }
+
+  for (let i = 1; i <= 7; i++) {
+    const nextDayIdx = (now.getDay() + i) % 7;
+    const nextDay = hours.find((h: any) => h.day === dayNames[nextDayIdx]);
+    if (nextDay?.enabled) {
+      return { isOpen: false, label: "Fechado", nextChange: `Abre ${nextDay.day} às ${nextDay.open}` };
+    }
+  }
+
+  return { isOpen: false, label: "Fechado", nextChange: "" };
+}
+
 export default function MenuClient({
   unit,
   categories,
@@ -519,6 +573,30 @@ export default function MenuClient({
                 {unit.description}
               </div>
             )}
+            {(() => {
+              const openStatus = isUnitOpen(unit);
+              return openStatus.label ? (
+                <div style={{
+                  display: "inline-flex", alignItems: "center", gap: 6,
+                  padding: "4px 12px", borderRadius: 20,
+                  background: openStatus.isOpen ? "rgba(0,255,174,0.08)" : "rgba(248,113,113,0.08)",
+                  marginTop: 8,
+                }}>
+                  <div style={{
+                    width: 6, height: 6, borderRadius: "50%",
+                    background: openStatus.isOpen ? "#00ffae" : "#f87171",
+                    boxShadow: openStatus.isOpen ? "0 0 6px rgba(0,255,174,0.4)" : "none",
+                  }} />
+                  <span style={{
+                    fontSize: 11, fontWeight: 600,
+                    color: openStatus.isOpen ? "#00ffae" : "#f87171",
+                  }}>{openStatus.label}</span>
+                  {openStatus.nextChange && (
+                    <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>· {openStatus.nextChange}</span>
+                  )}
+                </div>
+              ) : null;
+            })()}
             <div
               style={{
                 fontSize: 12,
