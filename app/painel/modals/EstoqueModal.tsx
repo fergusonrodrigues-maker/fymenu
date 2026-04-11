@@ -202,11 +202,11 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
     const diffDays = Math.floor((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
     const alertDays = item.expiry_alert_days || 7;
     if (diffDays < 0) {
-      return { label: `Vencido há ${Math.abs(diffDays)}d`, color: "#f87171", icon: "🔴", priority: 0 };
+      return { label: `Vencido há ${Math.abs(diffDays)}d`, color: "var(--dash-danger)", icon: "🔴", priority: 0 };
     } else if (diffDays === 0) {
-      return { label: "Vence hoje!", color: "#f87171", icon: "🔴", priority: 1 };
+      return { label: "Vence hoje!", color: "var(--dash-danger)", icon: "🔴", priority: 1 };
     } else if (diffDays <= alertDays) {
-      return { label: `Vence em ${diffDays}d`, color: "#fbbf24", icon: "🟡", priority: 2 };
+      return { label: `Vence em ${diffDays}d`, color: "var(--dash-warning)", icon: "🟡", priority: 2 };
     } else {
       return { label: `Válido (${diffDays}d)`, color: "var(--dash-accent)", icon: "🟢", priority: 3 };
     }
@@ -417,7 +417,7 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
               </div>
               <div
                 onClick={() => stockFileRef.current?.click()}
-                onDragOver={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = "rgba(0,255,174,0.3)"; }}
+                onDragOver={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = "var(--dash-accent)"; }}
                 onDragLeave={(e) => { e.currentTarget.style.borderColor = "var(--dash-border)"; }}
                 onDrop={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = "var(--dash-border)"; handleStockFile(e.dataTransfer.files[0]); }}
                 style={{
@@ -453,7 +453,7 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
               {stockText.trim() && (
                 <button onClick={() => handleStockText(stockText)} style={{
                   marginTop: 10, width: "100%", padding: 12, borderRadius: 14,
-                  background: "rgba(0,255,174,0.1)", border: "none", color: "var(--dash-accent)",
+                  background: "var(--dash-accent-soft)", border: "none", color: "var(--dash-accent)",
                   fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
                   boxShadow: "0 1px 0 rgba(0,255,174,0.12) inset, 0 -1px 0 rgba(0,0,0,0.2) inset",
                 }}>✨ Analisar com IA</button>
@@ -508,7 +508,7 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
               ))}
               <button onClick={handleConfirmStockImport} disabled={importingStock} style={{
                 width: "100%", padding: 14, borderRadius: 14, marginTop: 14,
-                background: "rgba(0,255,174,0.1)", border: "none", color: "var(--dash-accent)",
+                background: "var(--dash-accent-soft)", border: "none", color: "var(--dash-accent)",
                 fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
                 boxShadow: "0 1px 0 rgba(0,255,174,0.12) inset, 0 -1px 0 rgba(0,0,0,0.2) inset",
                 opacity: importingStock ? 0.5 : 1,
@@ -526,7 +526,7 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
               <div style={{ color: "var(--dash-text-muted)", fontSize: 12, marginTop: 6 }}>Ingredientes adicionados ao inventário.</div>
               <button onClick={() => { setShowImportStock(false); setImportStockStep("upload"); setImportStockData(null); setStockText(""); loadData(); }} style={{
                 marginTop: 16, padding: "10px 20px", borderRadius: 12,
-                background: "rgba(0,255,174,0.1)", border: "none", color: "var(--dash-accent)",
+                background: "var(--dash-accent-soft)", border: "none", color: "var(--dash-accent)",
                 fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
               }}>Fechar</button>
             </div>
@@ -539,20 +539,20 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
 
       {/* Summary cards */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 20 }}>
-        <div style={{ padding: 14, borderRadius: 14, background: "var(--dash-card)", textAlign: "center", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+        <div style={{ padding: 14, borderRadius: 14, background: "var(--dash-card)", textAlign: "center", boxShadow: "var(--dash-shadow)" }}>
           <div style={{ fontSize: 20, fontWeight: 800, color: "var(--dash-text)" }}>{items.length}</div>
           <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>Ingredientes</div>
         </div>
-        <div style={{ padding: 14, borderRadius: 14, background: totalAlerts > 0 ? "rgba(248,113,113,0.06)" : "var(--dash-card)", textAlign: "center", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
-          <div style={{ fontSize: 20, fontWeight: 800, color: totalAlerts > 0 ? "#f87171" : "var(--dash-text)" }}>{totalAlerts}</div>
+        <div style={{ padding: 14, borderRadius: 14, background: totalAlerts > 0 ? "var(--dash-danger-soft)" : "var(--dash-card)", textAlign: "center", boxShadow: "var(--dash-shadow)" }}>
+          <div style={{ fontSize: 20, fontWeight: 800, color: totalAlerts > 0 ? "var(--dash-danger)" : "var(--dash-text)" }}>{totalAlerts}</div>
           <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>Alertas</div>
           {expiryItems.filter(e => e.expiryStatus.priority === 0).length > 0 && (
-            <div style={{ fontSize: 9, color: "#f87171", fontWeight: 700, marginTop: 2 }}>
+            <div style={{ fontSize: 9, color: "var(--dash-danger)", fontWeight: 700, marginTop: 2 }}>
               {expiryItems.filter(e => e.expiryStatus.priority === 0).length} vencido(s)!
             </div>
           )}
         </div>
-        <div style={{ padding: 14, borderRadius: 14, background: "var(--dash-card)", textAlign: "center", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+        <div style={{ padding: 14, borderRadius: 14, background: "var(--dash-card)", textAlign: "center", boxShadow: "var(--dash-shadow)" }}>
           <div style={{ fontSize: 16, fontWeight: 800, color: "var(--dash-text)" }}>{fmtBRL(Math.round(totalStockValue))}</div>
           <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>Valor em estoque</div>
         </div>
@@ -563,7 +563,7 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
         {TABS.map(t => (
           <button key={t.key} onClick={() => setTab(t.key as any)} style={{
             flex: 1, padding: "8px 10px", borderRadius: 10, border: "none", cursor: "pointer",
-            background: tab === t.key ? "rgba(0,255,174,0.1)" : "transparent",
+            background: tab === t.key ? "var(--dash-accent-soft)" : "transparent",
             color: tab === t.key ? "var(--dash-accent)" : "var(--dash-text-muted)",
             fontSize: 12, fontWeight: 600, transition: "all 0.2s", fontFamily: "inherit",
           }}>{t.label}</button>
@@ -588,21 +588,21 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
             </select>
             <button onClick={() => { resetForm(); setShowForm(true); }} style={{
               padding: "8px 14px", borderRadius: 10, border: "none", cursor: "pointer",
-              background: "rgba(0,255,174,0.1)", color: "var(--dash-accent)", fontSize: 12, fontWeight: 700,
+              background: "var(--dash-accent-soft)", color: "var(--dash-accent)", fontSize: 12, fontWeight: 700,
               boxShadow: "0 1px 0 rgba(0,255,174,0.12) inset, 0 -1px 0 rgba(0,0,0,0.2) inset", whiteSpace: "nowrap",
               fontFamily: "inherit",
             }}>+ Adicionar</button>
             <button onClick={() => { setShowImportStock(true); setImportStockStep("upload"); }} style={{
               padding: "8px 14px", borderRadius: 10, border: "none", cursor: "pointer",
               background: "var(--dash-card-hover)", color: "var(--dash-text-muted)", fontSize: 12,
-              boxShadow: "0 1px 0 rgba(255,255,255,0.03) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
+              boxShadow: "var(--dash-shadow)",
               whiteSpace: "nowrap", fontFamily: "inherit",
             }}>📥 Importar</button>
           </div>
 
           {/* Inline form */}
           {showForm && (
-            <div style={{ padding: 16, borderRadius: 14, background: "var(--dash-card)", marginBottom: 16, display: "flex", flexDirection: "column", gap: 10, boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+            <div style={{ padding: 16, borderRadius: 14, background: "var(--dash-card)", marginBottom: 16, display: "flex", flexDirection: "column", gap: 10, boxShadow: "var(--dash-shadow)" }}>
               <input
                 placeholder="Nome do ingrediente"
                 value={formName}
@@ -685,7 +685,7 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
                     <div style={{
                       display: "flex", alignItems: "center", gap: 10,
                       padding: "12px 14px", borderRadius: 14,
-                      background: isLow ? "rgba(248,113,113,0.04)" : "var(--dash-card)",
+                      background: isLow ? "var(--dash-danger-soft)" : "var(--dash-card)",
                       boxShadow: isLow
                         ? "0 1px 0 rgba(248,113,113,0.06) inset, 0 -1px 0 rgba(0,0,0,0.15) inset"
                         : "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
@@ -712,14 +712,14 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
                           {item.supplier && ` · ${item.supplier}`}
                         </div>
                         {isLow && (
-                          <div style={{ color: "#f87171", fontSize: 10, fontWeight: 700, marginTop: 2 }}>
+                          <div style={{ color: "var(--dash-danger)", fontSize: 10, fontWeight: 700, marginTop: 2 }}>
                             ⚠️ Estoque baixo (mín: {item.min_stock} {item.unit_measure})
                           </div>
                         )}
                       </div>
                       <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
                         <button onClick={() => { setShowMovement(showMovement === item.id ? null : item.id); setMovType("purchase"); setMovQty(""); setMovCost(""); setMovNotes(""); }} style={{
-                          padding: "4px 8px", borderRadius: 6, background: "rgba(0,255,174,0.08)", border: "none",
+                          padding: "4px 8px", borderRadius: 6, background: "var(--dash-accent-soft)", border: "none",
                           color: "var(--dash-accent)", fontSize: 11, cursor: "pointer", fontWeight: 700, fontFamily: "inherit",
                         }}>±</button>
                         <button onClick={() => startEdit(item)} style={{
@@ -727,8 +727,8 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
                           color: "var(--dash-text-muted)", fontSize: 11, cursor: "pointer", fontFamily: "inherit",
                         }}>✏️</button>
                         <button onClick={() => handleDelete(item.id)} style={{
-                          padding: "4px 8px", borderRadius: 6, background: "rgba(248,113,113,0.06)", border: "none",
-                          color: "rgba(248,113,113,0.6)", fontSize: 11, cursor: "pointer", fontFamily: "inherit",
+                          padding: "4px 8px", borderRadius: 6, background: "var(--dash-danger-soft)", border: "none",
+                          color: "var(--dash-danger)", fontSize: 11, cursor: "pointer", fontFamily: "inherit",
                         }}>✕</button>
                       </div>
                     </div>
@@ -740,8 +740,8 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
                         <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                           {[
                             { value: "purchase", label: "Compra", color: "var(--dash-accent)" },
-                            { value: "usage", label: "Uso", color: "#fbbf24" },
-                            { value: "waste", label: "Perda", color: "#f87171" },
+                            { value: "usage", label: "Uso", color: "var(--dash-warning)" },
+                            { value: "waste", label: "Perda", color: "var(--dash-danger)" },
                             { value: "adjustment", label: "Ajuste", color: "var(--dash-text-muted)" },
                           ].map(t => (
                             <button key={t.value} onClick={() => setMovType(t.value)} style={{
@@ -791,9 +791,9 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
                   <div key={item.id} style={{
                     display: "flex", alignItems: "center", gap: 10,
                     padding: "12px 14px", borderRadius: 14, marginBottom: 6,
-                    background: item.expiryStatus.priority === 0 ? "rgba(248,113,113,0.06)"
-                      : item.expiryStatus.priority === 1 ? "rgba(248,113,113,0.04)"
-                      : "rgba(251,191,36,0.04)",
+                    background: item.expiryStatus.priority === 0 ? "var(--dash-danger-soft)"
+                      : item.expiryStatus.priority === 1 ? "var(--dash-danger-soft)"
+                      : "var(--dash-warning-soft)",
                     boxShadow: `0 1px 0 ${item.expiryStatus.color}10 inset, 0 -1px 0 rgba(0,0,0,0.15) inset`,
                   }}>
                     <span style={{ fontSize: 20 }}>{catInfo?.icon || "📋"}</span>
@@ -810,8 +810,8 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
                     {item.expiryStatus.priority === 0 && (
                       <button onClick={() => handleDelete(item.id)} style={{
                         padding: "6px 12px", borderRadius: 8,
-                        background: "rgba(248,113,113,0.1)", border: "none",
-                        color: "#f87171", fontSize: 10, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+                        background: "var(--dash-danger-soft)", border: "none",
+                        color: "var(--dash-danger)", fontSize: 10, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
                       }}>Descartar</button>
                     )}
                   </div>
@@ -838,13 +838,13 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
                     <div key={item.id} style={{
                       display: "flex", alignItems: "center", gap: 10,
                       padding: "14px 16px", borderRadius: 14,
-                      background: "rgba(248,113,113,0.04)",
+                      background: "var(--dash-danger-soft)",
                       boxShadow: "0 1px 0 rgba(248,113,113,0.06) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
                     }}>
                       <span style={{ fontSize: 20 }}>{catInfo?.icon || "📋"}</span>
                       <div style={{ flex: 1 }}>
                         <div style={{ color: "var(--dash-text)", fontSize: 14, fontWeight: 600 }}>{item.name}</div>
-                        <div style={{ color: "#f87171", fontSize: 12, marginTop: 2 }}>
+                        <div style={{ color: "var(--dash-danger)", fontSize: 12, marginTop: 2 }}>
                           Atual: {item.current_stock} {item.unit_measure} · Mínimo: {item.min_stock} {item.unit_measure}
                         </div>
                         {item.supplier && (
@@ -852,7 +852,7 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
                         )}
                       </div>
                       <button onClick={() => { setShowMovement(item.id); setMovType("purchase"); setTab("lista"); }} style={{
-                        padding: "6px 12px", borderRadius: 8, background: "rgba(0,255,174,0.1)", border: "none",
+                        padding: "6px 12px", borderRadius: 8, background: "var(--dash-accent-soft)", border: "none",
                         color: "var(--dash-accent)", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
                       }}>Repor</button>
                     </div>
@@ -910,18 +910,18 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
         <div>
           {/* Summary cards */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 20 }}>
-            <div style={{ padding: 14, borderRadius: 14, background: "rgba(0,255,174,0.06)", boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset", textAlign: "center" }}>
+            <div style={{ padding: 14, borderRadius: 14, background: "var(--dash-accent-soft)", boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset", textAlign: "center" }}>
               <div style={{ fontSize: 18, fontWeight: 800, color: "var(--dash-accent)" }}>{fmtBRL(totalPotentialRevenue)}</div>
               <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>Faturamento potencial</div>
             </div>
-            <div style={{ padding: 14, borderRadius: 14, background: "rgba(0,255,174,0.04)", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset", textAlign: "center" }}>
+            <div style={{ padding: 14, borderRadius: 14, background: "var(--dash-accent-soft)", boxShadow: "var(--dash-shadow)", textAlign: "center" }}>
               <div style={{ fontSize: 18, fontWeight: 800, color: "var(--dash-accent)" }}>{fmtBRL(totalPotentialProfit)}</div>
               <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>Lucro bruto potencial</div>
             </div>
           </div>
 
           {productsWithoutRecipe > 0 && (
-            <div style={{ padding: 10, borderRadius: 10, background: "rgba(251,191,36,0.06)", marginBottom: 16, fontSize: 11, color: "#fbbf24" }}>
+            <div style={{ padding: 10, borderRadius: 10, background: "var(--dash-warning-soft)", marginBottom: 16, fontSize: 11, color: "var(--dash-warning)" }}>
               ⚠️ {productsWithoutRecipe} produto{productsWithoutRecipe > 1 ? "s" : ""} sem ficha técnica — adicione ingredientes no Cardápio pra previsão completa.
             </div>
           )}
@@ -938,7 +938,7 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
               {productCapacity.map(p => (
                 <div key={p.productId} style={{
                   padding: "12px 14px", borderRadius: 14, background: "var(--dash-card)",
-                  boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
+                  boxShadow: "var(--dash-shadow)",
                 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                     <div style={{ color: "var(--dash-text)", fontSize: 13, fontWeight: 700 }}>{p.productName}</div>
@@ -947,7 +947,7 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
                   <div style={{ display: "flex", gap: 12, fontSize: 11, color: "var(--dash-text-muted)" }}>
                     <span>Preço: {fmtBRL(p.basePrice)}</span>
                     <span>CMV: {fmtBRL(p.cmv)}</span>
-                    <span style={{ color: parseFloat(p.marginPercent) >= 60 ? "var(--dash-accent)" : parseFloat(p.marginPercent) >= 30 ? "#fbbf24" : "#f87171" }}>
+                    <span style={{ color: parseFloat(p.marginPercent) >= 60 ? "var(--dash-accent)" : parseFloat(p.marginPercent) >= 30 ? "var(--dash-warning)" : "var(--dash-danger)" }}>
                       Margem: {p.marginPercent}%
                     </span>
                   </div>
@@ -955,7 +955,7 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
                     Faturamento: {fmtBRL(p.potentialRevenue)} · Lucro: {fmtBRL(p.potentialProfit)}
                   </div>
                   {p.bottleneck && (
-                    <div style={{ fontSize: 10, color: "#fbbf24", marginTop: 3 }}>
+                    <div style={{ fontSize: 10, color: "var(--dash-warning)", marginTop: 3 }}>
                       ⚠️ Gargalo: {p.bottleneck} (limita produção)
                     </div>
                   )}
@@ -972,7 +972,7 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
                 {dailyConsumption.filter(d => d.dailyUsage > 0).map((d, i) => (
                   <div key={i} style={{
                     display: "flex", alignItems: "center", gap: 10, padding: "8px 12px",
-                    borderRadius: 10, background: d.daysRemaining <= 3 ? "rgba(248,113,113,0.04)" : d.daysRemaining <= 7 ? "rgba(251,191,36,0.04)" : "var(--dash-card)",
+                    borderRadius: 10, background: d.daysRemaining <= 3 ? "var(--dash-danger-soft)" : d.daysRemaining <= 7 ? "var(--dash-warning-soft)" : "var(--dash-card)",
                   }}>
                     <div style={{ flex: 1 }}>
                       <span style={{ fontSize: 12, color: "var(--dash-text)", fontWeight: 600 }}>{d.name}</span>
@@ -982,8 +982,8 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
                     </div>
                     <div style={{
                       padding: "3px 10px", borderRadius: 8, fontSize: 11, fontWeight: 700,
-                      background: d.daysRemaining <= 3 ? "rgba(248,113,113,0.1)" : d.daysRemaining <= 7 ? "rgba(251,191,36,0.1)" : "rgba(0,255,174,0.08)",
-                      color: d.daysRemaining <= 3 ? "#f87171" : d.daysRemaining <= 7 ? "#fbbf24" : "var(--dash-accent)",
+                      background: d.daysRemaining <= 3 ? "var(--dash-danger-soft)" : d.daysRemaining <= 7 ? "var(--dash-warning-soft)" : "var(--dash-accent-soft)",
+                      color: d.daysRemaining <= 3 ? "var(--dash-danger)" : d.daysRemaining <= 7 ? "var(--dash-warning)" : "var(--dash-accent)",
                     }}>
                       {d.daysRemaining >= 999 ? "∞" : `${d.daysRemaining}d`}
                     </div>
@@ -994,7 +994,7 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
           )}
 
           {/* Sugestão IA de compras */}
-          <div style={{ padding: 16, borderRadius: 14, background: "var(--dash-card)", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+          <div style={{ padding: 16, borderRadius: 14, background: "var(--dash-card)", boxShadow: "var(--dash-shadow)" }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: "var(--dash-text)", marginBottom: 4 }}>Sugestão de compras com IA</div>
             <div style={{ fontSize: 11, color: "var(--dash-text-muted)", marginBottom: 14 }}>
               Baseada no estoque atual, consumo médio e margens.
@@ -1002,7 +1002,7 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
             {!purchaseAI ? (
               <button onClick={handlePurchaseAI} disabled={generatingPurchaseAI} style={{
                 width: "100%", padding: 14, borderRadius: 14, border: "none", cursor: "pointer",
-                background: "rgba(0,255,174,0.1)", color: "var(--dash-accent)", fontSize: 14, fontWeight: 800,
+                background: "var(--dash-accent-soft)", color: "var(--dash-accent)", fontSize: 14, fontWeight: 800,
                 boxShadow: "0 1px 0 rgba(0,255,174,0.12) inset, 0 -1px 0 rgba(0,0,0,0.2) inset",
                 opacity: generatingPurchaseAI ? 0.5 : 1, fontFamily: "inherit",
               }}>

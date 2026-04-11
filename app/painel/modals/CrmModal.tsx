@@ -74,7 +74,7 @@ function CrmMessagesTab({ unit, clients }: { unit: any; clients: any[] }) {
           ].map(g => (
             <button key={g.key} onClick={() => setTargetGroup(g.key)} style={{
               padding: "5px 12px", borderRadius: 8, border: "none", cursor: "pointer",
-              background: targetGroup === g.key ? "rgba(0,255,174,0.1)" : "var(--dash-card-hover)",
+              background: targetGroup === g.key ? "var(--dash-accent-soft)" : "var(--dash-card-hover)",
               color: targetGroup === g.key ? "var(--dash-accent)" : "var(--dash-text-muted)",
               fontSize: 11, fontWeight: 600,
             }}>{g.label}</button>
@@ -112,7 +112,7 @@ function CrmMessagesTab({ unit, clients }: { unit: any; clients: any[] }) {
         {sending ? "Preparando..." : `📱 Preparar ${targetClients.length} mensagens`}
       </button>
 
-      <div style={{ fontSize: 10, color: "rgba(251,191,36,0.6)", marginTop: 6 }}>
+      <div style={{ fontSize: 10, color: "var(--dash-warning)", marginTop: 6 }}>
         ⚠️ As mensagens serão preparadas pra envio via WhatsApp Web. Integração direta com WhatsApp Business API em breve.
       </div>
 
@@ -130,8 +130,8 @@ function CrmMessagesTab({ unit, clients }: { unit: any; clients: any[] }) {
               </div>
               <span style={{
                 padding: "2px 8px", borderRadius: 4, fontSize: 9, fontWeight: 700,
-                background: m.status === "sent" ? "rgba(0,255,174,0.1)" : m.status === "failed" ? "rgba(248,113,113,0.1)" : "rgba(251,191,36,0.1)",
-                color: m.status === "sent" ? "var(--dash-accent)" : m.status === "failed" ? "#f87171" : "#fbbf24",
+                background: m.status === "sent" ? "var(--dash-accent-soft)" : m.status === "failed" ? "var(--dash-danger-soft)" : "var(--dash-warning-soft)",
+                color: m.status === "sent" ? "var(--dash-accent)" : m.status === "failed" ? "var(--dash-danger)" : "var(--dash-warning)",
               }}>
                 {m.status === "sent" ? "Enviado" : m.status === "failed" ? "Falhou" : "Pendente"}
               </span>
@@ -294,7 +294,7 @@ export default function CrmModal({ unit, restaurant }: { unit: any; restaurant: 
 
   const cardStyle: React.CSSProperties = {
     padding: 12, borderRadius: 14, background: "var(--dash-card)", textAlign: "center",
-    boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
+    boxShadow: "var(--dash-shadow)",
   };
 
   return (
@@ -315,9 +315,9 @@ export default function CrmModal({ unit, restaurant }: { unit: any; restaurant: 
         </div>
         <div style={{
           ...cardStyle,
-          background: inactiveClients.length > 0 ? "rgba(248,113,113,0.06)" : "var(--dash-card)",
+          background: inactiveClients.length > 0 ? "var(--dash-danger-soft)" : "var(--dash-card)",
         }}>
-          <div style={{ fontSize: 18, fontWeight: 800, color: inactiveClients.length > 0 ? "#f87171" : "var(--dash-text)" }}>
+          <div style={{ fontSize: 18, fontWeight: 800, color: inactiveClients.length > 0 ? "var(--dash-danger)" : "var(--dash-text)" }}>
             {inactiveClients.length}
           </div>
           <div style={{ fontSize: 9, color: "var(--dash-text-muted)" }}>Inativos (30d+)</div>
@@ -329,7 +329,7 @@ export default function CrmModal({ unit, restaurant }: { unit: any; restaurant: 
         {TABS.map(t => (
           <button key={t.key} onClick={() => setTab(t.key as any)} style={{
             flex: 1, padding: "8px 10px", borderRadius: 10, border: "none", cursor: "pointer",
-            background: tab === t.key ? "rgba(0,255,174,0.1)" : "transparent",
+            background: tab === t.key ? "var(--dash-accent-soft)" : "transparent",
             color: tab === t.key ? "var(--dash-accent)" : "var(--dash-text-muted)",
             fontSize: 12, fontWeight: 600,
           }}>{t.label}</button>
@@ -377,7 +377,7 @@ export default function CrmModal({ unit, restaurant }: { unit: any; restaurant: 
                 filtered.slice(0, 50).map((c, i) => (
                   <div key={i} style={{
                     padding: "12px 14px", borderRadius: 14, background: "var(--dash-card)", marginBottom: 6,
-                    boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
+                    boxShadow: "var(--dash-shadow)",
                   }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <div>
@@ -386,8 +386,8 @@ export default function CrmModal({ unit, restaurant }: { unit: any; restaurant: 
                           {c.sources.map((s: string) => (
                             <span key={s} style={{
                               padding: "1px 6px", borderRadius: 4, fontSize: 8,
-                              background: s === "whatsapp" ? "rgba(37,211,102,0.1)" : s === "mesa" ? "rgba(96,165,250,0.1)" : "var(--dash-card-hover)",
-                              color: s === "whatsapp" ? "#25d366" : s === "mesa" ? "#60a5fa" : "var(--dash-text-muted)",
+                              background: s === "whatsapp" ? "rgba(37,211,102,0.1)" : s === "mesa" ? "var(--dash-info-soft)" : "var(--dash-card-hover)",
+                              color: s === "whatsapp" ? "#25d366" : s === "mesa" ? "var(--dash-info)" : "var(--dash-text-muted)",
                             }}>{s}</span>
                           ))}
                         </div>
@@ -417,9 +417,9 @@ export default function CrmModal({ unit, restaurant }: { unit: any; restaurant: 
               <div style={{ fontSize: 13, fontWeight: 700, color: "var(--dash-text)", marginBottom: 12 }}>Segmentação por frequência</div>
               {[
                 { label: "Fiéis (5+ pedidos)", filter: (c: any) => c.orders >= 5, color: "var(--dash-accent)", icon: "💎" },
-                { label: "Recorrentes (2-4 pedidos)", filter: (c: any) => c.orders >= 2 && c.orders < 5, color: "#60a5fa", icon: "🔄" },
-                { label: "Novos (1 pedido)", filter: (c: any) => c.orders === 1, color: "#fbbf24", icon: "🆕" },
-                { label: "Inativos (30d+ sem pedir)", filter: (c: any) => c.daysSinceLastOrder > 30, color: "#f87171", icon: "💤" },
+                { label: "Recorrentes (2-4 pedidos)", filter: (c: any) => c.orders >= 2 && c.orders < 5, color: "var(--dash-info)", icon: "🔄" },
+                { label: "Novos (1 pedido)", filter: (c: any) => c.orders === 1, color: "var(--dash-warning)", icon: "🆕" },
+                { label: "Inativos (30d+ sem pedir)", filter: (c: any) => c.daysSinceLastOrder > 30, color: "var(--dash-danger)", icon: "💤" },
                 { label: "Perdidos (90d+ sem pedir)", filter: (c: any) => c.daysSinceLastOrder > 90, color: "var(--dash-text-muted)", icon: "👋" },
               ].map(segment => {
                 const segClients = clients.filter(segment.filter);
@@ -428,7 +428,7 @@ export default function CrmModal({ unit, restaurant }: { unit: any; restaurant: 
                   <div key={segment.label} style={{
                     display: "flex", alignItems: "center", gap: 10, padding: "12px 14px",
                     borderRadius: 14, background: "var(--dash-card)", marginBottom: 6,
-                    boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
+                    boxShadow: "var(--dash-shadow)",
                   }}>
                     <span style={{ fontSize: 20 }}>{segment.icon}</span>
                     <div style={{ flex: 1 }}>
@@ -460,7 +460,7 @@ export default function CrmModal({ unit, restaurant }: { unit: any; restaurant: 
                   }}>
                     <span style={{
                       width: 22, height: 22, borderRadius: "50%",
-                      background: i < 3 ? "rgba(0,255,174,0.1)" : "var(--dash-card-hover)",
+                      background: i < 3 ? "var(--dash-accent-soft)" : "var(--dash-card-hover)",
                       color: i < 3 ? "var(--dash-accent)" : "var(--dash-text-muted)",
                       display: "flex", alignItems: "center", justifyContent: "center",
                       fontSize: 10, fontWeight: 800,

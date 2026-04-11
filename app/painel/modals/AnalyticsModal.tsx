@@ -53,8 +53,8 @@ export default function AnalyticsModal({
   }, [unit]);
 
   const stats = [
-    { label: "Visitas ao cardápio", value: analytics.views, icon: "👁", color: "#00ffae", desc: "últimos 7 dias" },
-    { label: "Cliques em produtos", value: analytics.clicks, icon: "👆", color: "#60a5fa", desc: "últimos 7 dias" },
+    { label: "Visitas ao cardápio", value: analytics.views, icon: "👁", color: "var(--dash-accent)", desc: "últimos 7 dias" },
+    { label: "Cliques em produtos", value: analytics.clicks, icon: "👆", color: "var(--dash-info)", desc: "últimos 7 dias" },
     { label: "Pedidos enviados", value: analytics.orders, icon: "✅", color: "#f472b6", desc: "últimos 7 dias" },
   ];
   const conversion = analytics.views > 0 ? ((analytics.orders / analytics.views) * 100).toFixed(1) : "0.0";
@@ -388,7 +388,7 @@ export default function AnalyticsModal({
             style={{
               padding: "8px 14px", borderRadius: 10, border: "none", cursor: "pointer",
               background: "var(--dash-card-hover)", color: "var(--dash-text-muted)", fontSize: 12,
-              boxShadow: "0 1px 0 rgba(255,255,255,0.03) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
+              boxShadow: "var(--dash-shadow)",
               opacity: generatingPDF ? 0.5 : 1,
             }}
           >
@@ -459,7 +459,7 @@ export default function AnalyticsModal({
                     <div style={{
                       position: "absolute", left: 0, top: 0, bottom: 0,
                       width: `${barWidth}%`,
-                      background: i < 3 ? "var(--dash-accent-soft)" : "rgba(255,255,255,0.02)",
+                      background: i < 3 ? "var(--dash-accent-soft)" : "var(--dash-card-subtle)",
                       transition: "width 0.5s ease",
                     }} />
                     <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 10, flex: 1 }}>
@@ -508,20 +508,20 @@ export default function AnalyticsModal({
                       <div key={p.productId} style={{
                         padding: "10px 14px", borderRadius: 12,
                         background: "var(--dash-card)",
-                        boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
+                        boxShadow: "var(--dash-shadow)",
                         position: "relative", overflow: "hidden",
                       }}>
                         <div style={{
                           position: "absolute", left: 0, top: 0, bottom: 0,
                           width: `${barWidth}%`,
-                          background: i < 3 ? "rgba(0,255,174,0.04)" : "var(--dash-card)",
+                          background: i < 3 ? "var(--dash-accent-soft)" : "var(--dash-card)",
                           transition: "width 0.5s ease",
                         }} />
                         <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                             <span style={{
                               width: 22, height: 22, borderRadius: "50%",
-                              background: i < 3 ? "rgba(0,255,174,0.1)" : "var(--dash-card-hover)",
+                              background: i < 3 ? "var(--dash-accent-soft)" : "var(--dash-card-hover)",
                               color: i < 3 ? "var(--dash-accent)" : "var(--dash-text-muted)",
                               display: "flex", alignItems: "center", justifyContent: "center",
                               fontSize: 10, fontWeight: 800,
@@ -572,7 +572,7 @@ export default function AnalyticsModal({
                   { value: String(totalReviews), label: "Avaliações", color: "var(--dash-text)" },
                   { value: String(googleRedirects), label: "→ Google", color: "#4285f4" },
                 ].map((card) => (
-                  <div key={card.label} style={{ padding: 14, borderRadius: 14, background: "var(--dash-card)", textAlign: "center", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+                  <div key={card.label} style={{ padding: 14, borderRadius: 14, background: "var(--dash-card)", textAlign: "center", boxShadow: "var(--dash-shadow)" }}>
                     <div style={{ fontSize: 22, fontWeight: 800, color: card.color }}>{card.value}</div>
                     <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>{card.label}</div>
                   </div>
@@ -580,7 +580,7 @@ export default function AnalyticsModal({
               </div>
 
               {/* Distribuição de estrelas */}
-              <div style={{ padding: 16, borderRadius: 14, background: "var(--dash-card)", marginBottom: 16, boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+              <div style={{ padding: 16, borderRadius: 14, background: "var(--dash-card)", marginBottom: 16, boxShadow: "var(--dash-shadow)" }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: "var(--dash-text)", marginBottom: 12 }}>Distribuição (Restaurante)</div>
                 {[5, 4, 3, 2, 1].map(star => {
                   const count = starDist[star - 1];
@@ -591,7 +591,7 @@ export default function AnalyticsModal({
                       <div style={{ flex: 1, height: 8, borderRadius: 4, background: "var(--dash-card-hover)", overflow: "hidden" }}>
                         <div style={{
                           height: "100%", borderRadius: 4, width: `${pct}%`,
-                          background: star >= 4 ? "var(--dash-accent)" : star === 3 ? "#fbbf24" : "#f87171",
+                          background: star >= 4 ? "var(--dash-accent)" : star === 3 ? "var(--dash-warning)" : "var(--dash-danger)",
                           transition: "width 0.5s ease",
                         }} />
                       </div>
@@ -603,16 +603,16 @@ export default function AnalyticsModal({
 
               {/* Ranking de garçons */}
               {waiterRanking.length > 0 && (
-                <div style={{ padding: 16, borderRadius: 14, background: "var(--dash-card)", marginBottom: 16, boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+                <div style={{ padding: 16, borderRadius: 14, background: "var(--dash-card)", marginBottom: 16, boxShadow: "var(--dash-shadow)" }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: "var(--dash-text)", marginBottom: 12 }}>Ranking de Garçons</div>
                   {waiterRanking.map((w, i) => (
                     <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: i < waiterRanking.length - 1 ? "1px solid var(--dash-separator)" : "none" }}>
-                      <div style={{ width: 26, height: 26, borderRadius: "50%", background: i === 0 ? "rgba(0,255,174,0.1)" : "var(--dash-card-hover)", color: i === 0 ? "var(--dash-accent)" : "var(--dash-text-muted)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800 }}>{i + 1}</div>
+                      <div style={{ width: 26, height: 26, borderRadius: "50%", background: i === 0 ? "var(--dash-accent-soft)" : "var(--dash-card-hover)", color: i === 0 ? "var(--dash-accent)" : "var(--dash-text-muted)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800 }}>{i + 1}</div>
                       <div style={{ flex: 1 }}>
                         <div style={{ color: "var(--dash-text)", fontSize: 13, fontWeight: 600 }}>{w.name}</div>
                         <div style={{ color: "var(--dash-text-muted)", fontSize: 10 }}>{w.count} avaliações</div>
                       </div>
-                      <div style={{ fontSize: 16, fontWeight: 800, color: parseFloat(w.avg) >= 4 ? "var(--dash-accent)" : parseFloat(w.avg) >= 3 ? "#fbbf24" : "#f87171" }}>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: parseFloat(w.avg) >= 4 ? "var(--dash-accent)" : parseFloat(w.avg) >= 3 ? "var(--dash-warning)" : "var(--dash-danger)" }}>
                         {w.avg} ⭐
                       </div>
                     </div>
@@ -622,7 +622,7 @@ export default function AnalyticsModal({
 
               {/* Feedbacks com comentário */}
               {withComments.length > 0 && (
-                <div style={{ padding: 16, borderRadius: 14, background: "var(--dash-card)", marginBottom: 16, boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+                <div style={{ padding: 16, borderRadius: 14, background: "var(--dash-card)", marginBottom: 16, boxShadow: "var(--dash-shadow)" }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: "var(--dash-text)", marginBottom: 12 }}>
                     Feedbacks dos clientes ({withComments.length})
                   </div>
@@ -630,7 +630,7 @@ export default function AnalyticsModal({
                     <div key={r.id} style={{ padding: "10px 12px", borderRadius: 12, background: "var(--dash-card)", marginBottom: 6 }}>
                       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
                         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                          <span style={{ fontSize: 11, fontWeight: 700, color: r.restaurant_rating >= 4 ? "var(--dash-accent)" : r.restaurant_rating >= 3 ? "#fbbf24" : "#f87171" }}>
+                          <span style={{ fontSize: 11, fontWeight: 700, color: r.restaurant_rating >= 4 ? "var(--dash-accent)" : r.restaurant_rating >= 3 ? "var(--dash-warning)" : "var(--dash-danger)" }}>
                             {r.restaurant_rating}⭐
                           </span>
                           {r.waiter_name && <span style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>Garçom: {r.waiter_name}</span>}
@@ -645,13 +645,13 @@ export default function AnalyticsModal({
 
               {/* Tendência 7d vs 30d */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 16 }}>
-                <div style={{ padding: 14, borderRadius: 14, background: "var(--dash-card)", textAlign: "center", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+                <div style={{ padding: 14, borderRadius: 14, background: "var(--dash-card)", textAlign: "center", boxShadow: "var(--dash-shadow)" }}>
                   <div style={{ fontSize: 16, fontWeight: 800, color: "var(--dash-text)" }}>
                     {reviewsLast7.length > 0 ? (reviewsLast7.reduce((s, r) => s + (r.restaurant_rating || 0), 0) / reviewsLast7.length).toFixed(1) : "-"}
                   </div>
                   <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>Média 7 dias ({reviewsLast7.length})</div>
                 </div>
-                <div style={{ padding: 14, borderRadius: 14, background: "var(--dash-card)", textAlign: "center", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+                <div style={{ padding: 14, borderRadius: 14, background: "var(--dash-card)", textAlign: "center", boxShadow: "var(--dash-shadow)" }}>
                   <div style={{ fontSize: 16, fontWeight: 800, color: "var(--dash-text)" }}>
                     {reviewsLast30.length > 0 ? (reviewsLast30.reduce((s, r) => s + (r.restaurant_rating || 0), 0) / reviewsLast30.length).toFixed(1) : "-"}
                   </div>
@@ -660,7 +660,7 @@ export default function AnalyticsModal({
               </div>
 
               {/* Análise IA */}
-              <div style={{ padding: 16, borderRadius: 14, background: "var(--dash-card)", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+              <div style={{ padding: 16, borderRadius: 14, background: "var(--dash-card)", boxShadow: "var(--dash-shadow)" }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: "var(--dash-text)", marginBottom: 4 }}>Análise das avaliações com IA</div>
                 <div style={{ fontSize: 11, color: "var(--dash-text-muted)", marginBottom: 14 }}>
                   Padrões, pontos de melhoria e insights dos feedbacks.
@@ -669,7 +669,7 @@ export default function AnalyticsModal({
                   <button
                     onClick={() => handleReviewsAI(totalReviews, avgRestaurant, avgWaiter, starDist, googleRedirects, waiterRanking, withComments, reviewsLast7, reviewsLast30)}
                     disabled={generatingReviewsAI}
-                    style={{ width: "100%", padding: 12, borderRadius: 14, border: "none", cursor: "pointer", background: "rgba(0,255,174,0.1)", color: "var(--dash-accent)", fontSize: 13, fontWeight: 800, boxShadow: "0 1px 0 rgba(0,255,174,0.12) inset, 0 -1px 0 rgba(0,0,0,0.2) inset", opacity: generatingReviewsAI ? 0.5 : 1 }}
+                    style={{ width: "100%", padding: 12, borderRadius: 14, border: "none", cursor: "pointer", background: "var(--dash-accent-soft)", color: "var(--dash-accent)", fontSize: 13, fontWeight: 800, boxShadow: "0 1px 0 rgba(0,255,174,0.12) inset, 0 -1px 0 rgba(0,0,0,0.2) inset", opacity: generatingReviewsAI ? 0.5 : 1 }}
                   >
                     {generatingReviewsAI ? "Analisando..." : "✨ Analisar avaliações com IA"}
                   </button>
@@ -698,7 +698,7 @@ export default function AnalyticsModal({
                   <button onClick={() => setShowImportAnalytics(true)} style={{
                     padding: "8px 14px", borderRadius: 10, border: "none", cursor: "pointer",
                     background: "var(--dash-card-hover)", color: "var(--dash-text-muted)", fontSize: 12,
-                    boxShadow: "0 1px 0 rgba(255,255,255,0.03) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
+                    boxShadow: "var(--dash-shadow)",
                   }}>📥 Importar dados</button>
                 )}
               </div>
@@ -712,9 +712,9 @@ export default function AnalyticsModal({
                     disabled={generatingAI}
                     style={{
                       padding: "12px 24px", borderRadius: 14, border: "none", cursor: "pointer",
-                      background: "rgba(0,255,174,0.1)",
+                      background: "var(--dash-accent-soft)",
                       boxShadow: "0 1px 0 rgba(0,255,174,0.12) inset, 0 -1px 0 rgba(0,0,0,0.2) inset",
-                      color: "#00ffae", fontSize: 14, fontWeight: 700,
+                      color: "var(--dash-accent)", fontSize: 14, fontWeight: 700,
                       opacity: generatingAI ? 0.5 : 1,
                     }}
                   >
@@ -726,7 +726,7 @@ export default function AnalyticsModal({
                   <div style={{
                     padding: 20, borderRadius: 16,
                     background: "var(--dash-card)",
-                    boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
+                    boxShadow: "var(--dash-shadow)",
                     whiteSpace: "pre-wrap", fontSize: 13, color: "var(--dash-text-secondary)", lineHeight: 1.7,
                   }}>
                     {aiSuggestions}
@@ -761,7 +761,7 @@ export default function AnalyticsModal({
 
                   <div
                     onClick={() => analyticsFileRef.current?.click()}
-                    onDragOver={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = "rgba(0,255,174,0.3)"; }}
+                    onDragOver={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = "var(--dash-accent)"; }}
                     onDragLeave={(e) => { e.currentTarget.style.borderColor = "var(--dash-border)"; }}
                     onDrop={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = "var(--dash-border)"; handleAnalyticsFile(e.dataTransfer.files[0]); }}
                     style={{
@@ -796,7 +796,7 @@ export default function AnalyticsModal({
                   {analyticsText.trim() && (
                     <button onClick={() => handleAnalyticsText(analyticsText)} style={{
                       marginTop: 10, width: "100%", padding: 12, borderRadius: 14,
-                      background: "rgba(0,255,174,0.1)", border: "none", color: "var(--dash-accent)",
+                      background: "var(--dash-accent-soft)", border: "none", color: "var(--dash-accent)",
                       fontSize: 13, fontWeight: 800, cursor: "pointer",
                       boxShadow: "0 1px 0 rgba(0,255,174,0.12) inset, 0 -1px 0 rgba(0,0,0,0.2) inset",
                     }}>✨ Analisar com IA</button>
@@ -855,7 +855,7 @@ export default function AnalyticsModal({
 
                   <button onClick={handleConfirmAnalyticsImport} disabled={importingAnalytics} style={{
                     width: "100%", padding: 14, borderRadius: 14,
-                    background: "rgba(0,255,174,0.1)", border: "none", color: "var(--dash-accent)",
+                    background: "var(--dash-accent-soft)", border: "none", color: "var(--dash-accent)",
                     fontSize: 14, fontWeight: 800, cursor: "pointer",
                     boxShadow: "0 1px 0 rgba(0,255,174,0.12) inset, 0 -1px 0 rgba(0,0,0,0.2) inset",
                     opacity: importingAnalytics ? 0.5 : 1,
@@ -873,7 +873,7 @@ export default function AnalyticsModal({
                   <div style={{ color: "var(--dash-text-muted)", fontSize: 12, marginTop: 6 }}>Os dados históricos já aparecem nos gráficos.</div>
                   <button onClick={resetImport} style={{
                     marginTop: 16, padding: "10px 20px", borderRadius: 12,
-                    background: "rgba(0,255,174,0.1)", border: "none", color: "var(--dash-accent)",
+                    background: "var(--dash-accent-soft)", border: "none", color: "var(--dash-accent)",
                     fontSize: 13, fontWeight: 700, cursor: "pointer",
                   }}>Fechar</button>
                 </div>

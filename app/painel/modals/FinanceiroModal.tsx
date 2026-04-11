@@ -104,8 +104,8 @@ function ReportGrowthBadge({ value }: { value: number | null }) {
   return (
     <span style={{
       fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 20,
-      background: up ? "rgba(0,255,174,0.1)" : "rgba(248,113,113,0.1)",
-      color: up ? "#00ffae" : "#f87171",
+      background: up ? "var(--dash-accent-soft)" : "var(--dash-danger-soft)",
+      color: up ? "var(--dash-accent)" : "var(--dash-danger)",
     }}>
       {up ? "+" : ""}{value}%
     </span>
@@ -404,7 +404,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
                 <div key={i} onClick={() => financeFileRef.current?.click()} style={{
                   padding: "16px 14px", borderRadius: 14, cursor: "pointer",
                   background: "var(--dash-card)",
-                  boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
+                  boxShadow: "var(--dash-shadow)",
                 }}>
                   <div style={{ fontSize: 24, marginBottom: 6 }}>{t.icon}</div>
                   <div style={{ color: "var(--dash-text)", fontSize: 13, fontWeight: 700 }}>{t.label}</div>
@@ -415,7 +415,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
 
             <div
               onClick={() => financeFileRef.current?.click()}
-              onDragOver={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = "rgba(0,255,174,0.3)"; }}
+              onDragOver={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = "var(--dash-accent)"; }}
               onDragLeave={(e) => { e.currentTarget.style.borderColor = "var(--dash-border)"; }}
               onDrop={(e) => { e.preventDefault(); handleFinanceFile(e.dataTransfer.files[0]); }}
               style={{
@@ -448,7 +448,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
               {financeText.trim() && (
                 <button onClick={() => handleFinanceText(financeText)} style={{
                   marginTop: 8, padding: "10px 20px", borderRadius: 12,
-                  background: "rgba(0,255,174,0.1)", border: "none", color: "var(--dash-accent)",
+                  background: "var(--dash-accent-soft)", border: "none", color: "var(--dash-accent)",
                   fontSize: 13, fontWeight: 700, cursor: "pointer",
                 }}>✨ Analisar com IA</button>
               )}
@@ -500,7 +500,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
                   updated.items[i] = { ...updated.items[i], amount: parseFloat(e.target.value) || 0 };
                   updated.total = updated.items.reduce((s: number, it: any) => s + (it.amount || 0), 0);
                   setImportFinanceData(updated);
-                }} style={{ width: 80, padding: "4px 8px", borderRadius: 6, background: "var(--dash-card-hover)", border: "none", color: "#f87171", fontSize: 13, fontWeight: 700, outline: "none", textAlign: "right" }} />
+                }} style={{ width: 80, padding: "4px 8px", borderRadius: 6, background: "var(--dash-card-hover)", border: "none", color: "var(--dash-danger)", fontSize: 13, fontWeight: 700, outline: "none", textAlign: "right" }} />
                 <button onClick={() => {
                   const items = importFinanceData.items.filter((_: any, idx: number) => idx !== i);
                   setImportFinanceData({ ...importFinanceData, items, total: items.reduce((s: number, it: any) => s + (it.amount || 0), 0) });
@@ -510,7 +510,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
 
             <button onClick={handleConfirmFinanceImport} disabled={importingFinance} style={{
               width: "100%", padding: 14, borderRadius: 14, marginTop: 16,
-              background: "rgba(0,255,174,0.1)", border: "none", color: "var(--dash-accent)",
+              background: "var(--dash-accent-soft)", border: "none", color: "var(--dash-accent)",
               fontSize: 14, fontWeight: 800, cursor: "pointer",
               boxShadow: "0 1px 0 rgba(0,255,174,0.12) inset, 0 -1px 0 rgba(0,0,0,0.2) inset",
               opacity: importingFinance ? 0.5 : 1,
@@ -528,7 +528,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
             <div style={{ color: "var(--dash-text-muted)", fontSize: 12, marginTop: 6 }}>Os custos foram adicionados ao financeiro.</div>
             <button onClick={() => { setShowImportFinance(false); setImportFinanceStep("upload"); setImportFinanceData(null); setFinanceText(""); }} style={{
               marginTop: 16, padding: "10px 20px", borderRadius: 12,
-              background: "rgba(0,255,174,0.1)", border: "none", color: "var(--dash-accent)",
+              background: "var(--dash-accent-soft)", border: "none", color: "var(--dash-accent)",
               fontSize: 13, fontWeight: 700, cursor: "pointer",
             }}>Fechar</button>
           </div>
@@ -579,7 +579,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
           <div style={{ fontSize: 14, fontWeight: 700, color: "var(--dash-text)", marginBottom: 12 }}>Receita do mês</div>
 
           {/* Card receita total */}
-          <div style={{ padding: 16, borderRadius: 14, background: "rgba(0,255,174,0.06)", marginBottom: 12, boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+          <div style={{ padding: 16, borderRadius: 14, background: "var(--dash-accent-soft)", marginBottom: 12, boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
             <div style={{ fontSize: 11, color: "var(--dash-text-muted)" }}>Receita total</div>
             <div style={{ fontSize: 28, fontWeight: 800, color: "var(--dash-accent)", marginTop: 4 }}>{formatBRL(totalRevenue)}</div>
             <div style={{ fontSize: 11, color: "var(--dash-text-muted)", marginTop: 4 }}>{totalOrders} pedidos</div>
@@ -588,7 +588,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
           {/* Breakdown por fonte */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 20 }}>
             {/* WhatsApp — sempre visível */}
-            <div style={{ padding: 12, borderRadius: 12, background: "var(--dash-card)", textAlign: "center", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+            <div style={{ padding: 12, borderRadius: 12, background: "var(--dash-card)", textAlign: "center", boxShadow: "var(--dash-shadow)" }}>
               <div style={{ fontSize: 18, marginBottom: 4 }}>💬</div>
               <div style={{ fontSize: 16, fontWeight: 800, color: "var(--dash-text)" }}>{formatBRL(revenueBySource.whatsapp)}</div>
               <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>WhatsApp</div>
@@ -597,7 +597,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
 
             {/* Mesa — menupro+ */}
             {hasFeature("mesa_revenue") ? (
-              <div style={{ padding: 12, borderRadius: 12, background: "var(--dash-card)", textAlign: "center", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+              <div style={{ padding: 12, borderRadius: 12, background: "var(--dash-card)", textAlign: "center", boxShadow: "var(--dash-shadow)" }}>
                 <div style={{ fontSize: 18, marginBottom: 4 }}>🍽️</div>
                 <div style={{ fontSize: 16, fontWeight: 800, color: "var(--dash-text)" }}>{formatBRL(revenueBySource.mesa)}</div>
                 <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>Mesa</div>
@@ -613,7 +613,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
 
             {/* Delivery — menupro+ */}
             {hasFeature("delivery_revenue") ? (
-              <div style={{ padding: 12, borderRadius: 12, background: "var(--dash-card)", textAlign: "center", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+              <div style={{ padding: 12, borderRadius: 12, background: "var(--dash-card)", textAlign: "center", boxShadow: "var(--dash-shadow)" }}>
                 <div style={{ fontSize: 18, marginBottom: 4 }}>🛵</div>
                 <div style={{ fontSize: 16, fontWeight: 800, color: "var(--dash-text)" }}>{formatBRL(revenueBySource.delivery)}</div>
                 <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>Delivery</div>
@@ -630,7 +630,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
 
           {/* Meta diária — business only */}
           {hasFeature("daily_goal") && (
-            <div style={{ padding: 16, borderRadius: 14, background: "var(--dash-card)", marginBottom: 16, boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+            <div style={{ padding: 16, borderRadius: 14, background: "var(--dash-card)", marginBottom: 16, boxShadow: "var(--dash-shadow)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                 <span style={{ fontSize: 12, color: "var(--dash-text-muted)" }}>Meta de hoje</span>
                 <span style={{ fontSize: 12, color: "var(--dash-text-muted)" }}>{formatBRL(todayRevenue)} / {dailyGoal > 0 ? formatBRL(dailyGoal) : "—"}</span>
@@ -674,7 +674,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
 
           {/* Balanço — business only */}
           {hasFeature("balance") && (
-            <div style={{ padding: 16, borderRadius: 14, background: profit >= 0 ? "rgba(0,255,174,0.04)" : "rgba(248,113,113,0.04)", marginBottom: 16, boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+            <div style={{ padding: 16, borderRadius: 14, background: profit >= 0 ? "var(--dash-accent-soft)" : "var(--dash-danger-soft)", marginBottom: 16, boxShadow: "var(--dash-shadow)" }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: "var(--dash-text)", marginBottom: 10 }}>Balanço do mês</div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
                 <div style={{ textAlign: "center" }}>
@@ -682,11 +682,11 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
                   <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>Receita</div>
                 </div>
                 <div style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: 16, fontWeight: 800, color: "#f87171" }}>{formatBRL(totalCosts)}</div>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: "var(--dash-danger)" }}>{formatBRL(totalCosts)}</div>
                   <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>Custos</div>
                 </div>
                 <div style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: 16, fontWeight: 800, color: profit >= 0 ? "var(--dash-accent)" : "#f87171" }}>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: profit >= 0 ? "var(--dash-accent)" : "var(--dash-danger)" }}>
                     {profit >= 0 ? "+" : ""}{formatBRL(profit)}
                   </div>
                   <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>{profit >= 0 ? "Lucro" : "Prejuízo"}</div>
@@ -731,7 +731,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
             <button onClick={() => setShowImportFinance(true)} style={{
               width: "100%", padding: 12, borderRadius: 12, border: "none", cursor: "pointer",
               background: "var(--dash-card-hover)", color: "var(--dash-text-muted)", fontSize: 13,
-              boxShadow: "0 1px 0 rgba(255,255,255,0.03) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
+              boxShadow: "var(--dash-shadow)",
             }}>
               📥 Importar dados financeiros
             </button>
@@ -747,9 +747,9 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
             {[
-              { icon: "📦", label: "Pedidos", value: String(reportData.today.orders), color: "#00ffae" },
-              { icon: "✅", label: "Entregues", value: String(reportData.today.completed), color: "#60a5fa" },
-              { icon: "💰", label: "Receita", value: formatBRL(reportData.today.revenue), color: "#fbbf24" },
+              { icon: "📦", label: "Pedidos", value: String(reportData.today.orders), color: "var(--dash-accent)" },
+              { icon: "✅", label: "Entregues", value: String(reportData.today.completed), color: "var(--dash-info)" },
+              { icon: "💰", label: "Receita", value: formatBRL(reportData.today.revenue), color: "var(--dash-warning)" },
               { icon: "🎯", label: "Ticket Médio", value: formatBRL(reportData.today.avgTicket), color: "#f472b6" },
             ].map((s) => (
               <div key={s.label} className="modal-neon-card" style={{ borderRadius: 14, padding: "14px 16px", background: "var(--dash-card)" }}>
@@ -784,9 +784,9 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
           <div style={{ color: "var(--dash-text-muted)", fontSize: 11 }}>📈 Últimos 7 Dias</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
             {[
-              { icon: "📦", label: "Pedidos", value: String(reportData.weekly.orders), color: "#00ffae" },
-              { icon: "✅", label: "Entregues", value: String(reportData.weekly.completed), color: "#60a5fa" },
-              { icon: "💰", label: "Receita", value: formatBRL(reportData.weekly.revenue), color: "#fbbf24" },
+              { icon: "📦", label: "Pedidos", value: String(reportData.weekly.orders), color: "var(--dash-accent)" },
+              { icon: "✅", label: "Entregues", value: String(reportData.weekly.completed), color: "var(--dash-info)" },
+              { icon: "💰", label: "Receita", value: formatBRL(reportData.weekly.revenue), color: "var(--dash-warning)" },
               { icon: "🎯", label: "Ticket Médio", value: formatBRL(reportData.weekly.avgTicket), color: "#f472b6" },
             ].map((s) => (
               <div key={s.label} className="modal-neon-card" style={{ borderRadius: 14, padding: "14px 16px", background: "var(--dash-card)" }}>
@@ -798,7 +798,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
           </div>
           <div className="modal-neon-card" style={{ borderRadius: 14, padding: "14px 16px", background: "var(--dash-card)" }}>
             <div style={{ color: "var(--dash-text-dim)", fontSize: 11, fontWeight: 600, marginBottom: 8 }}>📦 Pedidos por Dia</div>
-            <ReportBarChart data={reportData.weekly.byDay} valueKey="orders" color="#60a5fa" formatter={String} />
+            <ReportBarChart data={reportData.weekly.byDay} valueKey="orders" color="var(--dash-info)" formatter={String} />
           </div>
           <div className="modal-neon-card" style={{ borderRadius: 14, padding: "14px 16px", background: "var(--dash-card)" }}>
             <div style={{ color: "var(--dash-text-dim)", fontSize: 11, fontWeight: 600, marginBottom: 8 }}>💰 Receita por Dia</div>
@@ -831,7 +831,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
             <div className="modal-neon-card" style={{ borderRadius: 14, padding: "14px 16px", background: "var(--dash-card)" }}>
               <div style={{ fontSize: 18, marginBottom: 4 }}>📦</div>
               <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                <span style={{ color: "#00ffae", fontSize: 20, fontWeight: 900, lineHeight: 1 }}>{reportData.monthly.orders}</span>
+                <span style={{ color: "var(--dash-accent)", fontSize: 20, fontWeight: 900, lineHeight: 1 }}>{reportData.monthly.orders}</span>
                 <ReportGrowthBadge value={reportData.monthly.growthOrders} />
               </div>
               <div style={{ color: "var(--dash-text-muted)", fontSize: 10, marginTop: 4 }}>Pedidos</div>
@@ -839,14 +839,14 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
             <div className="modal-neon-card" style={{ borderRadius: 14, padding: "14px 16px", background: "var(--dash-card)" }}>
               <div style={{ fontSize: 18, marginBottom: 4 }}>💰</div>
               <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                <span style={{ color: "#fbbf24", fontSize: 20, fontWeight: 900, lineHeight: 1 }}>{formatBRL(reportData.monthly.revenue)}</span>
+                <span style={{ color: "var(--dash-warning)", fontSize: 20, fontWeight: 900, lineHeight: 1 }}>{formatBRL(reportData.monthly.revenue)}</span>
                 <ReportGrowthBadge value={reportData.monthly.growthRevenue} />
               </div>
               <div style={{ color: "var(--dash-text-muted)", fontSize: 10, marginTop: 4 }}>Receita</div>
             </div>
             <div className="modal-neon-card" style={{ borderRadius: 14, padding: "14px 16px", background: "var(--dash-card)" }}>
               <div style={{ fontSize: 18, marginBottom: 4 }}>✅</div>
-              <div style={{ color: "#60a5fa", fontSize: 20, fontWeight: 900, lineHeight: 1 }}>{reportData.monthly.completed}</div>
+              <div style={{ color: "var(--dash-info)", fontSize: 20, fontWeight: 900, lineHeight: 1 }}>{reportData.monthly.completed}</div>
               <div style={{ color: "var(--dash-text-muted)", fontSize: 10, marginTop: 4 }}>Entregues</div>
             </div>
             <div className="modal-neon-card" style={{ borderRadius: 14, padding: "14px 16px", background: "var(--dash-card)" }}>
@@ -945,29 +945,29 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
         <div>
           {/* Resumo */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 20 }}>
-            <div style={{ padding: 16, borderRadius: 14, background: "rgba(248,113,113,0.06)", boxShadow: "0 1px 0 rgba(248,113,113,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+            <div style={{ padding: 16, borderRadius: 14, background: "var(--dash-danger-soft)", boxShadow: "0 1px 0 rgba(248,113,113,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
               <div style={{ fontSize: 11, color: "var(--dash-text-muted)" }}>Custos este mês</div>
-              <div style={{ fontSize: 22, fontWeight: 800, color: "#f87171", marginTop: 4 }}>{formatBRL(totalCosts)}</div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: "var(--dash-danger)", marginTop: 4 }}>{formatBRL(totalCosts)}</div>
               {employeeCosts > 0 && (
                 <div style={{ fontSize: 10, color: "var(--dash-text-muted)", marginTop: 4 }}>
                   Equipe: {formatBRL(employeeCosts)} · Despesas: {formatBRL(totalExpensesThisMonth)}
                 </div>
               )}
             </div>
-            <div style={{ padding: 16, borderRadius: 14, background: "rgba(0,255,174,0.06)", boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+            <div style={{ padding: 16, borderRadius: 14, background: "var(--dash-accent-soft)", boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
               <div style={{ fontSize: 11, color: "var(--dash-text-muted)" }}>Receita este mês</div>
-              <div style={{ fontSize: 22, fontWeight: 800, color: "#00ffae", marginTop: 4 }}>{formatBRL(totalRevenueThisMonth)}</div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: "var(--dash-accent)", marginTop: 4 }}>{formatBRL(totalRevenueThisMonth)}</div>
             </div>
           </div>
 
           {/* Resultado */}
           <div style={{
             padding: 16, borderRadius: 14, marginBottom: 20,
-            background: profit >= 0 ? "rgba(0,255,174,0.04)" : "rgba(248,113,113,0.04)",
-            boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
+            background: profit >= 0 ? "var(--dash-accent-soft)" : "var(--dash-danger-soft)",
+            boxShadow: "var(--dash-shadow)",
           }}>
             <div style={{ fontSize: 11, color: "var(--dash-text-muted)" }}>Resultado do mês</div>
-            <div style={{ fontSize: 22, fontWeight: 800, color: profit >= 0 ? "#00ffae" : "#f87171", marginTop: 4 }}>
+            <div style={{ fontSize: 22, fontWeight: 800, color: profit >= 0 ? "var(--dash-accent)" : "var(--dash-danger)", marginTop: 4 }}>
               {profit >= 0 ? "+" : ""}{formatBRL(profit)}
             </div>
             <div style={{ fontSize: 11, color: "var(--dash-text-muted)", marginTop: 4 }}>
@@ -1007,7 +1007,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
               </div>
               <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                 <label style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--dash-text-dim)", fontSize: 12, cursor: "pointer" }}>
-                  <input type="checkbox" checked={expenseRecurring} onChange={e => setExpenseRecurring(e.target.checked)} style={{ accentColor: "#00ffae" }} />
+                  <input type="checkbox" checked={expenseRecurring} onChange={e => setExpenseRecurring(e.target.checked)} style={{ accentColor: "var(--dash-accent)" }} />
                   Recorrente (mensal)
                 </label>
                 <input type="date" value={expenseDate} onChange={e => setExpenseDate(e.target.value)}
@@ -1039,7 +1039,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
                     </div>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ color: "#f87171", fontSize: 14, fontWeight: 700 }}>{formatBRL(exp.amount)}</span>
+                    <span style={{ color: "var(--dash-danger)", fontSize: 14, fontWeight: 700 }}>{formatBRL(exp.amount)}</span>
                     <button onClick={() => handleDeleteExpense(exp.id)} style={{
                       background: "transparent", border: "none", color: "var(--dash-text-subtle)", fontSize: 14, cursor: "pointer",
                     }}>✕</button>
@@ -1061,7 +1061,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
       {tab === "analise" && (
         <div>
           {/* Seção 1: Break-even */}
-          <div style={{ padding: 16, borderRadius: 14, background: "var(--dash-card)", marginBottom: 16, boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+          <div style={{ padding: 16, borderRadius: 14, background: "var(--dash-card)", marginBottom: 16, boxShadow: "var(--dash-shadow)" }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: "var(--dash-text)", marginBottom: 10 }}>Ponto de Equilíbrio</div>
             <div style={{ position: "relative", height: 20, borderRadius: 10, background: "var(--dash-card-hover)", overflow: "hidden", marginBottom: 8 }}>
               <div style={{
@@ -1077,7 +1077,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
               <span>Faturado: {formatBRL(totalRevenue)}</span>
               <span>Custos: {formatBRL(totalCosts)}</span>
             </div>
-            <div style={{ marginTop: 8, fontSize: 13, fontWeight: 700, color: totalRevenue >= totalCosts ? "var(--dash-accent)" : "#fbbf24" }}>
+            <div style={{ marginTop: 8, fontSize: 13, fontWeight: 700, color: totalRevenue >= totalCosts ? "var(--dash-accent)" : "var(--dash-warning)" }}>
               {totalRevenue >= totalCosts
                 ? `Break-even atingido! Lucro: ${formatBRL(profit)}`
                 : `Faltam ${formatBRL(totalCosts - totalRevenue)} para break-even`}
@@ -1085,23 +1085,23 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
           </div>
 
           {/* Seção 2: Composição dos custos */}
-          <div style={{ padding: 16, borderRadius: 14, background: "var(--dash-card)", marginBottom: 16, boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+          <div style={{ padding: 16, borderRadius: 14, background: "var(--dash-card)", marginBottom: 16, boxShadow: "var(--dash-shadow)" }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: "var(--dash-text)", marginBottom: 12 }}>Composição dos custos</div>
             <div style={{ display: "flex", height: 12, borderRadius: 6, overflow: "hidden", marginBottom: 10, background: "var(--dash-card-hover)" }}>
               {totalCosts > 0 && employeeCosts > 0 && (
-                <div style={{ width: `${(employeeCosts / totalCosts) * 100}%`, background: "rgba(168,85,247,0.5)", transition: "width 0.3s" }} />
+                <div style={{ width: `${(employeeCosts / totalCosts) * 100}%`, background: "var(--dash-purple-soft)", transition: "width 0.3s" }} />
               )}
               {totalCosts > 0 && totalExpensesThisMonth > 0 && (
-                <div style={{ width: `${(totalExpensesThisMonth / totalCosts) * 100}%`, background: "rgba(248,113,113,0.5)", transition: "width 0.3s" }} />
+                <div style={{ width: `${(totalExpensesThisMonth / totalCosts) * 100}%`, background: "var(--dash-danger-soft)", transition: "width 0.3s" }} />
               )}
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <div style={{ width: 10, height: 10, borderRadius: 3, background: "rgba(168,85,247,0.5)", flexShrink: 0 }} />
+                <div style={{ width: 10, height: 10, borderRadius: 3, background: "var(--dash-purple-soft)", flexShrink: 0 }} />
                 <span style={{ fontSize: 11, color: "var(--dash-text-muted)" }}>Equipe: {formatBRL(employeeCosts)}</span>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <div style={{ width: 10, height: 10, borderRadius: 3, background: "rgba(248,113,113,0.5)", flexShrink: 0 }} />
+                <div style={{ width: 10, height: 10, borderRadius: 3, background: "var(--dash-danger-soft)", flexShrink: 0 }} />
                 <span style={{ fontSize: 11, color: "var(--dash-text-muted)" }}>Despesas: {formatBRL(totalExpensesThisMonth)}</span>
               </div>
             </div>
@@ -1113,14 +1113,14 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
                     <span style={{ fontSize: 11, color: "var(--dash-text-muted)", textTransform: "capitalize" }}>
                       {cat === "salarios" ? "Salários" : cat === "manutencao" ? "Manutenção" : cat}
                     </span>
-                    <span style={{ fontSize: 11, color: "#f87171", fontWeight: 600 }}>{formatBRL(catTotal)}</span>
+                    <span style={{ fontSize: 11, color: "var(--dash-danger)", fontWeight: 600 }}>{formatBRL(catTotal)}</span>
                   </div>
                 );
               })}
               {employeeCosts > 0 && (
                 <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0" }}>
                   <span style={{ fontSize: 11, color: "var(--dash-text-muted)" }}>Equipe ({employeeCount} funcionários)</span>
-                  <span style={{ fontSize: 11, color: "rgba(168,85,247,0.8)", fontWeight: 600 }}>{formatBRL(employeeCosts)}</span>
+                  <span style={{ fontSize: 11, color: "var(--dash-purple)", fontWeight: 600 }}>{formatBRL(employeeCosts)}</span>
                 </div>
               )}
             </div>
@@ -1128,19 +1128,19 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
 
           {/* Seção 3: Indicadores */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 16 }}>
-            <div style={{ padding: 12, borderRadius: 12, background: "var(--dash-card)", textAlign: "center", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+            <div style={{ padding: 12, borderRadius: 12, background: "var(--dash-card)", textAlign: "center", boxShadow: "var(--dash-shadow)" }}>
               <div style={{ fontSize: 16, fontWeight: 800, color: "var(--dash-text)" }}>
                 {totalRevenue > 0 ? ((profit / totalRevenue) * 100).toFixed(1) : 0}%
               </div>
               <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>Margem líquida</div>
             </div>
-            <div style={{ padding: 12, borderRadius: 12, background: "var(--dash-card)", textAlign: "center", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+            <div style={{ padding: 12, borderRadius: 12, background: "var(--dash-card)", textAlign: "center", boxShadow: "var(--dash-shadow)" }}>
               <div style={{ fontSize: 16, fontWeight: 800, color: "var(--dash-text)" }}>
                 {formatBRL(totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0)}
               </div>
               <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>Ticket médio</div>
             </div>
-            <div style={{ padding: 12, borderRadius: 12, background: "var(--dash-card)", textAlign: "center", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+            <div style={{ padding: 12, borderRadius: 12, background: "var(--dash-card)", textAlign: "center", boxShadow: "var(--dash-shadow)" }}>
               <div style={{ fontSize: 16, fontWeight: 800, color: "var(--dash-text)" }}>
                 {formatBRL(Math.round(totalCosts / 30))}
               </div>
@@ -1150,7 +1150,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
 
           {/* Seção 4: Sugestão de pró-labore */}
           {profit > 0 && (
-            <div style={{ padding: 16, borderRadius: 14, background: "rgba(0,255,174,0.04)", marginBottom: 16, boxShadow: "0 1px 0 rgba(0,255,174,0.06) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+            <div style={{ padding: 16, borderRadius: 14, background: "var(--dash-accent-soft)", marginBottom: 16, boxShadow: "0 1px 0 rgba(0,255,174,0.06) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: "var(--dash-text)", marginBottom: 8 }}>Sugestão de pró-labore</div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
                 <div style={{ textAlign: "center" }}>
@@ -1162,7 +1162,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
                   <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>Moderado (50%)</div>
                 </div>
                 <div style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: "#fbbf24" }}>{formatBRL(Math.round(profit * 0.7))}</div>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: "var(--dash-warning)" }}>{formatBRL(Math.round(profit * 0.7))}</div>
                   <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>Agressivo (70%)</div>
                 </div>
               </div>
@@ -1173,7 +1173,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
           )}
 
           {/* Seção 5: Relatório IA completo */}
-          <div style={{ padding: 16, borderRadius: 14, background: "var(--dash-card)", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+          <div style={{ padding: 16, borderRadius: 14, background: "var(--dash-card)", boxShadow: "var(--dash-shadow)" }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: "var(--dash-text)", marginBottom: 4 }}>Relatório Financeiro com IA</div>
             <div style={{ fontSize: 11, color: "var(--dash-text-muted)", marginBottom: 14 }}>
               Análise completa cruzando receita, custos, equipe e desempenho.
@@ -1181,7 +1181,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
             {!financeAI ? (
               <button onClick={handleFullFinanceAI} disabled={generatingFinanceAI} style={{
                 width: "100%", padding: 14, borderRadius: 14, border: "none", cursor: "pointer",
-                background: "rgba(0,255,174,0.1)", color: "var(--dash-accent)",
+                background: "var(--dash-accent-soft)", color: "var(--dash-accent)",
                 fontSize: 14, fontWeight: 800,
                 boxShadow: "0 1px 0 rgba(0,255,174,0.12) inset, 0 -1px 0 rgba(0,0,0,0.2) inset",
                 opacity: generatingFinanceAI ? 0.5 : 1,

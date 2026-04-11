@@ -601,7 +601,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
               </div>
               <div
                 onClick={() => importFileRef.current?.click()}
-                onDragOver={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = "rgba(0,255,174,0.3)"; }}
+                onDragOver={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = "var(--dash-accent)"; }}
                 onDragLeave={(e) => { e.currentTarget.style.borderColor = "var(--dash-border)"; }}
                 onDrop={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = "var(--dash-border)"; handleImportFile(e.dataTransfer.files[0]); }}
                 style={{
@@ -615,7 +615,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                 <div style={{ color: "var(--dash-text-muted)", fontSize: 12, marginBottom: 12 }}>ou clique para selecionar</div>
                 <div style={{ display: "flex", justifyContent: "center", gap: 6, flexWrap: "wrap" }}>
                   {["CSV", "Excel", "PDF", "Foto", "JSON"].map(f => (
-                    <span key={f} style={{ padding: "3px 10px", borderRadius: 6, background: "rgba(255,255,255,0.04)", fontSize: 10, color: "var(--dash-text-muted)" }}>{f}</span>
+                    <span key={f} style={{ padding: "3px 10px", borderRadius: 6, background: "var(--dash-card)", fontSize: 10, color: "var(--dash-text-muted)" }}>{f}</span>
                   ))}
                 </div>
               </div>
@@ -623,9 +623,9 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                 onChange={(e) => handleImportFile(e.target.files?.[0])} />
 
               <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "16px 0" }}>
-                <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.06)" }} />
+                <div style={{ flex: 1, height: 1, background: "var(--dash-card-hover)" }} />
                 <span style={{ fontSize: 11, color: "var(--dash-text-muted)" }}>ou cole o cardápio</span>
-                <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.06)" }} />
+                <div style={{ flex: 1, height: 1, background: "var(--dash-card-hover)" }} />
               </div>
 
               <textarea
@@ -643,7 +643,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
               {pastedText.trim() && (
                 <button onClick={() => handleImportText(pastedText)} style={{
                   marginTop: 10, width: "100%", padding: 14, borderRadius: 14,
-                  background: "rgba(0,255,174,0.1)", border: "none", color: "var(--dash-accent)",
+                  background: "var(--dash-accent-soft)", border: "none", color: "var(--dash-accent)",
                   fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
                   boxShadow: "0 1px 0 rgba(0,255,174,0.12) inset, 0 -1px 0 rgba(0,0,0,0.2) inset",
                 }}>✨ Analisar com IA</button>
@@ -699,7 +699,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                       </div>
                       <input type="number" value={prod.price} onChange={(e) => {
                         const u = structuredClone(importData); u.categories[ci].products[pi].price = parseFloat(e.target.value) || 0; setImportData(u);
-                      }} style={{ width: 75, padding: "4px 8px", borderRadius: 6, background: "rgba(255,255,255,0.04)", border: "none", color: "var(--dash-accent)", fontSize: 13, fontWeight: 700, outline: "none", textAlign: "right" as const }} />
+                      }} style={{ width: 75, padding: "4px 8px", borderRadius: 6, background: "var(--dash-card)", border: "none", color: "var(--dash-accent)", fontSize: 13, fontWeight: 700, outline: "none", textAlign: "right" as const }} />
                       <button onClick={() => {
                         const u = structuredClone(importData); u.categories[ci].products.splice(pi, 1); setImportData(u);
                       }} style={{ background: "transparent", border: "none", color: "var(--dash-text-subtle)", cursor: "pointer", fontSize: 14, fontFamily: "inherit" }}>✕</button>
@@ -710,7 +710,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
 
               <button onClick={handleConfirmImport} disabled={importing} style={{
                 width: "100%", padding: 14, borderRadius: 14, marginTop: 12,
-                background: "rgba(0,255,174,0.1)", border: "none",
+                background: "var(--dash-accent-soft)", border: "none",
                 color: "var(--dash-accent)", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
                 boxShadow: "0 1px 0 rgba(0,255,174,0.12) inset, 0 -1px 0 rgba(0,0,0,0.2) inset",
                 opacity: importing ? 0.5 : 1,
@@ -730,7 +730,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
               </div>
               <button onClick={() => { setImportStep("idle"); setImportData(null); setPastedText(""); router.refresh(); }} style={{
                 marginTop: 20, padding: "12px 24px", borderRadius: 14,
-                background: "rgba(0,255,174,0.1)", border: "none", color: "var(--dash-accent)",
+                background: "var(--dash-accent-soft)", border: "none", color: "var(--dash-accent)",
                 fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
               }}>Voltar ao cardápio</button>
             </div>
@@ -746,8 +746,8 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
           {unit && (
             <a href={`/delivery/${unit.slug}`} target="_blank" rel="noreferrer" style={{
               padding: "8px 16px", borderRadius: 10, border: "none", cursor: "pointer",
-              background: "rgba(255,255,255,0.04)", color: "var(--dash-text-muted)", fontSize: 12, fontWeight: 600,
-              boxShadow: "0 1px 0 rgba(255,255,255,0.03) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
+              background: "var(--dash-card)", color: "var(--dash-text-muted)", fontSize: 12, fontWeight: 600,
+              boxShadow: "var(--dash-shadow)",
               textDecoration: "none",
             }}>
               Ver cardápio ↗
@@ -755,7 +755,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
           )}
           <button type="button" onClick={() => setImportStep("upload")} style={{
             padding: "8px 16px", borderRadius: 10, border: "none", cursor: "pointer",
-            background: "rgba(168,85,247,0.08)", color: "rgba(168,85,247,0.8)", fontSize: 12, fontWeight: 600,
+            background: "var(--dash-purple-soft)", color: "var(--dash-purple)", fontSize: 12, fontWeight: 600,
             boxShadow: "0 1px 0 rgba(168,85,247,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
           }}>
             ✨ Importar com IA
@@ -763,7 +763,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
           {(restaurant?.plan === "menupro" || restaurant?.plan === "business") && (
             <button type="button" onClick={handleAISuggestion} disabled={generatingAISuggestion} style={{
               padding: "8px 16px", borderRadius: 10, border: "none", cursor: "pointer",
-              background: "rgba(168,85,247,0.06)", color: "rgba(168,85,247,0.6)", fontSize: 12, fontWeight: 600,
+              background: "var(--dash-purple-soft)", color: "var(--dash-purple)", fontSize: 12, fontWeight: 600,
               boxShadow: "0 1px 0 rgba(168,85,247,0.06) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
               opacity: generatingAISuggestion ? 0.5 : 1,
             }}>
@@ -773,7 +773,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
           {otherUnits.length > 0 && (
             <button type="button" onClick={() => setShowCopyFromUnit(true)} style={{
               padding: "8px 16px", borderRadius: 10, border: "none", cursor: "pointer",
-              background: "rgba(96,165,250,0.06)", color: "rgba(96,165,250,0.7)",
+              background: "var(--dash-info-soft)", color: "var(--dash-info)",
               fontSize: 12, fontWeight: 600,
               boxShadow: "0 1px 0 rgba(96,165,250,0.06) inset, 0 -1px 0 rgba(0,0,0,0.12) inset",
             }}>📋 Copiar de outra unidade</button>
@@ -782,7 +782,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
 
         {aiSuggestionResult && (
           <div style={{
-            padding: 16, borderRadius: 14, background: "rgba(168,85,247,0.04)",
+            padding: 16, borderRadius: 14, background: "var(--dash-purple-soft)",
             boxShadow: "0 1px 0 rgba(168,85,247,0.06) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
           }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
@@ -832,8 +832,8 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                   setSourcePreview({ categories: catPreviews, totalProducts });
                 }} style={{
                   padding: "10px 16px", borderRadius: 10, border: "none", cursor: "pointer",
-                  background: selectedSourceUnit === u.id ? "rgba(96,165,250,0.1)" : "var(--dash-card)",
-                  color: selectedSourceUnit === u.id ? "#60a5fa" : "var(--dash-text-secondary)",
+                  background: selectedSourceUnit === u.id ? "var(--dash-info-soft)" : "var(--dash-card)",
+                  color: selectedSourceUnit === u.id ? "var(--dash-info)" : "var(--dash-text-secondary)",
                   fontSize: 13, fontWeight: 600,
                   boxShadow: "var(--dash-shadow)",
                 }}>{u.name}</button>
@@ -860,8 +860,8 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
 
               <div style={{
                 padding: "10px 14px", borderRadius: 10,
-                background: "rgba(251,191,36,0.06)", marginTop: 12,
-                fontSize: 11, color: "rgba(251,191,36,0.7)",
+                background: "var(--dash-warning-soft)", marginTop: 12,
+                fontSize: 11, color: "var(--dash-warning)",
               }}>
                 ⚠️ Isso vai ADICIONAR categorias e produtos à unidade atual. Produtos existentes não serão alterados.
                 Fotos e vídeos NÃO são copiados — precisam ser adicionados depois.
@@ -936,11 +936,11 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                 </div>
                 <div style={{ display: "flex", gap: 12, marginBottom: 8 }}>
                   <label style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--dash-text-dim)", fontSize: 12, cursor: "pointer" }}>
-                    <input type="checkbox" checked={newSectionVideo} onChange={e => setNewSectionVideo(e.target.checked)} style={{ accentColor: "#00ffae" }} />
+                    <input type="checkbox" checked={newSectionVideo} onChange={e => setNewSectionVideo(e.target.checked)} style={{ accentColor: "var(--dash-accent)" }} />
                     Permite vídeo
                   </label>
                   <label style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--dash-text-dim)", fontSize: 12, cursor: "pointer" }}>
-                    <input type="checkbox" checked={newSectionAlcoholic} onChange={e => setNewSectionAlcoholic(e.target.checked)} style={{ accentColor: "#00ffae" }} />
+                    <input type="checkbox" checked={newSectionAlcoholic} onChange={e => setNewSectionAlcoholic(e.target.checked)} style={{ accentColor: "var(--dash-accent)" }} />
                     Toggle alcoólico
                   </label>
                 </div>
@@ -991,8 +991,8 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                 style={{
                   display: "flex", alignItems: "center", gap: 10,
                   padding: "12px 14px", borderRadius: 14,
-                  background: "rgba(255,255,255,0.03)",
-                  boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
+                  background: "var(--dash-card)",
+                  boxShadow: "var(--dash-shadow)",
                   cursor: "pointer",
                 }}
                 onClick={() => {
@@ -1015,7 +1015,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                 <span style={{ color: "var(--dash-text-muted)", fontSize: 10, flexShrink: 0 }}>▼</span>
                 <span style={{ flex: 1, color: "var(--dash-text)", fontSize: 14, fontWeight: 700 }}>{cat.name}</span>
                 {cat.schedule_enabled && (
-                  <span style={{ fontSize: 9, padding: "2px 6px", borderRadius: 4, background: "rgba(251,191,36,0.1)", color: "#fbbf24", whiteSpace: "nowrap", flexShrink: 0 }}>
+                  <span style={{ fontSize: 9, padding: "2px 6px", borderRadius: 4, background: "var(--dash-warning-soft)", color: "var(--dash-warning)", whiteSpace: "nowrap", flexShrink: 0 }}>
                     🕐 {cat.start_time?.slice(0,5)}-{cat.end_time?.slice(0,5)}
                   </span>
                 )}
@@ -1045,7 +1045,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
             {isOpen && (
               <form action={updateCategory} style={{
                 padding: "16px", borderRadius: 14,
-                background: "rgba(0,255,174,0.02)",
+                background: "var(--dash-accent-soft)",
                 border: "1px solid rgba(0,255,174,0.06)",
               }}>
                 <input type="hidden" name="id" value={cat.id} />
@@ -1059,12 +1059,12 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                 <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 12 }}>
                   <input name="name" defaultValue={cat.name} style={{
                     flex: 1, padding: "10px 14px", borderRadius: 10,
-                    background: "rgba(255,255,255,0.06)", border: "none",
+                    background: "var(--dash-card-hover)", border: "none",
                     color: "var(--dash-text)", fontSize: 14, fontWeight: 700, outline: "none",
                   }} />
                   <button type="submit" style={{
                     padding: "8px 16px", borderRadius: 10, border: "none", cursor: "pointer",
-                    background: "rgba(0,255,174,0.08)", color: "var(--dash-accent)",
+                    background: "var(--dash-accent-soft)", color: "var(--dash-accent)",
                     fontSize: 12, fontWeight: 700, flexShrink: 0,
                     boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
                   }}>Salvar</button>
@@ -1091,7 +1091,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                         <button key={s.value} type="button" onClick={() => setEditCatSection(prev => ({ ...prev, [cat.id]: s.value }))}
                           style={{
                             padding: "4px 10px", borderRadius: 6, border: "none", cursor: "pointer",
-                            background: isActive ? "rgba(0,255,174,0.1)" : "rgba(255,255,255,0.04)",
+                            background: isActive ? "var(--dash-accent-soft)" : "var(--dash-card)",
                             color: isActive ? "var(--dash-accent)" : "var(--dash-text-muted)",
                             fontSize: 10, fontWeight: 600,
                           }}>{s.label}</button>
@@ -1105,7 +1105,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                   {/* Cancel edit */}
                   <button type="button" onClick={() => { setExpandedCat(null); setShowAllProducts(prev => ({ ...prev, [cat.id]: false })); }} style={{
                     width: 28, height: 28, borderRadius: 8, border: "none", cursor: "pointer",
-                    background: "rgba(248,113,113,0.08)", color: "#f87171",
+                    background: "var(--dash-danger-soft)", color: "var(--dash-danger)",
                     display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, flexShrink: 0,
                   }}>✕</button>
                   {/* Active toggle */}
@@ -1144,7 +1144,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                           <button key={day} type="button" onClick={() => setEditDays(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day])}
                             style={{
                               padding: "3px 7px", borderRadius: 5, border: "none", cursor: "pointer",
-                              background: editDays.includes(day) ? "rgba(0,255,174,0.1)" : "rgba(255,255,255,0.04)",
+                              background: editDays.includes(day) ? "var(--dash-accent-soft)" : "var(--dash-card)",
                               color: editDays.includes(day) ? "var(--dash-accent)" : "var(--dash-text-subtle)",
                               fontSize: 9, fontWeight: 600,
                             }}>{day}</button>
@@ -1173,7 +1173,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                   <input type="hidden" name="id" value={cat.id} />
                   <button type="submit" style={{
                     background: "transparent", border: "none", cursor: "pointer",
-                    color: "rgba(248,113,113,0.3)", fontSize: 10, padding: "4px 8px",
+                    color: "var(--dash-danger)", fontSize: 10, padding: "4px 8px",
                   }}>Excluir categoria</button>
                 </form>
               </div>

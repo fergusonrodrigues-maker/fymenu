@@ -157,12 +157,12 @@ export default function PrinterModal({ unitId, categories }: PrinterModalProps) 
     warn: {
       display: "inline-flex", alignItems: "center", gap: 4,
       padding: "3px 10px", borderRadius: 20, fontSize: 12, fontWeight: 600,
-      background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.2)",
-      color: "#fbbf24",
+      background: "var(--dash-warning-soft)", border: "1px solid rgba(251,191,36,0.2)",
+      color: "var(--dash-warning)",
     } as React.CSSProperties,
     deleteBtn: {
       padding: "5px 10px", borderRadius: 8, border: "none",
-      background: "rgba(248,113,113,0.1)", color: "#f87171",
+      background: "var(--dash-danger-soft)", color: "var(--dash-danger)",
       fontSize: 12, cursor: "pointer", fontWeight: 600,
     } as React.CSSProperties,
     addBtn: {
@@ -180,7 +180,7 @@ export default function PrinterModal({ unitId, categories }: PrinterModalProps) 
     } as React.CSSProperties,
     removeX: {
       marginLeft: 2, background: "none", border: "none",
-      color: "rgba(0,255,174,0.6)", cursor: "pointer",
+      color: "var(--dash-accent)", cursor: "pointer",
       padding: "0 2px", fontSize: 13, lineHeight: 1,
     } as React.CSSProperties,
   };
@@ -191,8 +191,8 @@ export default function PrinterModal({ unitId, categories }: PrinterModalProps) 
       {hookError && (
         <div style={{
           padding: "10px 14px", borderRadius: 12,
-          background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.25)",
-          fontSize: 12, color: "#f87171",
+          background: "var(--dash-danger-soft)", border: "1px solid rgba(248,113,113,0.25)",
+          fontSize: 12, color: "var(--dash-danger)",
         }}>
           ⚠️ {hookError}
         </div>
@@ -220,8 +220,8 @@ export default function PrinterModal({ unitId, categories }: PrinterModalProps) 
       {unassignedCats.length > 0 && printers.length > 0 && (
         <div style={{
           padding: "10px 14px", borderRadius: 12,
-          background: "rgba(251,191,36,0.06)", border: "1px solid rgba(251,191,36,0.2)",
-          fontSize: 12, color: "#fbbf24",
+          background: "var(--dash-warning-soft)", border: "1px solid rgba(251,191,36,0.2)",
+          fontSize: 12, color: "var(--dash-warning)",
         }}>
           <strong>⚠️ Sem impressora:</strong>{" "}
           {unassignedCats.map((c) => c.name).join(", ")}

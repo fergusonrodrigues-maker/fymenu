@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import dynamic from "next/dynamic";
 import type { Restaurant, Unit, StockStats, Category, Product, Profile, ReportData } from "./types";
 
-const loadingFallback = <div style={{padding:40,textAlign:"center",color:"rgba(255,255,255,0.3)"}}>Carregando...</div>;
+const loadingFallback = <div style={{padding:40,textAlign:"center",color:"var(--dash-text-muted)"}}>Carregando...</div>;
 
 const RestaurantOperationsModal = dynamic(() => import("./components/RestaurantOperationsModal"), { ssr: false, loading: () => loadingFallback });
 const PedidosModal = dynamic(() => import("./components/PedidosModal"), { ssr: false, loading: () => loadingFallback });
@@ -155,7 +155,7 @@ function Modal({ open, onClose, children, title }: { open: boolean; onClose: () 
               transition: "all 0.2s",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.1)";
+              e.currentTarget.style.background = isDark ? "var(--dash-card-hover)" : "rgba(0,0,0,0.1)";
               e.currentTarget.style.color = isDark ? "rgba(255,255,255,0.7)" : "rgba(0,0,0,0.7)";
             }}
             onMouseLeave={(e) => {
@@ -305,7 +305,7 @@ export default function DashboardClient({
               icon: "📦",
               title: `${item.name} com estoque baixo`,
               desc: `${item.current_stock} ${item.unit_measure} (mín: ${item.min_stock})`,
-              color: "#f87171",
+              color: "var(--dash-danger)",
               priority: 1,
             });
           }
@@ -326,9 +326,9 @@ export default function DashboardClient({
           const diffDays = Math.floor((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
           const alertDays = item.expiry_alert_days || 7;
           if (diffDays < 0) {
-            notifs.push({ type: "expired", icon: "🔴", title: `${item.name} VENCIDO`, desc: `Venceu há ${Math.abs(diffDays)} dias`, color: "#f87171", priority: 0 });
+            notifs.push({ type: "expired", icon: "🔴", title: `${item.name} VENCIDO`, desc: `Venceu há ${Math.abs(diffDays)} dias`, color: "var(--dash-danger)", priority: 0 });
           } else if (diffDays <= alertDays) {
-            notifs.push({ type: "expiring", icon: "🟡", title: `${item.name} vencendo`, desc: `Vence em ${diffDays} dia${diffDays !== 1 ? "s" : ""}`, color: "#fbbf24", priority: 2 });
+            notifs.push({ type: "expiring", icon: "🟡", title: `${item.name} vencendo`, desc: `Vence em ${diffDays} dia${diffDays !== 1 ? "s" : ""}`, color: "var(--dash-warning)", priority: 2 });
           }
         }
       }
@@ -348,7 +348,7 @@ export default function DashboardClient({
         if (todayRevenue < goal) {
           const falta = goal - todayRevenue;
           const fmtVal = goal > 1000 ? `R$ ${(falta / 100).toFixed(2).replace(".", ",")}` : `R$ ${falta.toFixed(2).replace(".", ",")}`;
-          notifs.push({ type: "daily_goal", icon: "🎯", title: "Meta diária não atingida", desc: `Faltam ${fmtVal}`, color: "#fbbf24", priority: 3 });
+          notifs.push({ type: "daily_goal", icon: "🎯", title: "Meta diária não atingida", desc: `Faltam ${fmtVal}`, color: "var(--dash-warning)", priority: 3 });
         }
       }
 
@@ -368,7 +368,7 @@ export default function DashboardClient({
             icon: "⭐",
             title: `Avaliação ${r.restaurant_rating}★`,
             desc: r.comment ? `"${r.comment.slice(0, 50)}..."` : `Garçom: ${r.waiter_name || "N/A"}`,
-            color: "#f87171",
+            color: "var(--dash-danger)",
             priority: 2,
           });
         }
@@ -381,7 +381,7 @@ export default function DashboardClient({
           icon: "💳",
           title: restaurant.status === "overdue" ? "Pagamento atrasado" : "Conta suspensa",
           desc: "Ative um plano pra manter o cardápio publicado",
-          color: "#f87171",
+          color: "var(--dash-danger)",
           priority: 0,
         });
       }
@@ -1088,7 +1088,7 @@ export default function DashboardClient({
               {unit?.logo_url ? (
                 <img src={unit.logo_url} alt="" style={{ width: 36, height: 36, borderRadius: 10, objectFit: "cover" }} />
               ) : (
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(0,255,174,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>🍽</div>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: "var(--dash-accent-soft)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>🍽</div>
               )}
               <div>
                 {/* Unit selector dropdown */}
@@ -1193,7 +1193,7 @@ export default function DashboardClient({
                 onClick={() => setShowNotifications(!showNotifications)}
                 style={{
                   width: 36, height: 36, borderRadius: 12,
-                  background: notifications.length > 0 ? "rgba(248,113,113,0.08)" : "rgba(255,255,255,0.04)",
+                  background: notifications.length > 0 ? "var(--dash-danger-soft)" : "var(--dash-card)",
                   border: "none", cursor: "pointer",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: 18, position: "relative",
@@ -1204,7 +1204,7 @@ export default function DashboardClient({
                   <div style={{
                     position: "absolute", top: -2, right: -2,
                     width: 18, height: 18, borderRadius: "50%",
-                    background: "#f87171", color: "#fff",
+                    background: "var(--dash-danger)", color: "var(--dash-text)",
                     fontSize: 10, fontWeight: 800,
                     display: "flex", alignItems: "center", justifyContent: "center",
                   }}>
@@ -1244,7 +1244,7 @@ export default function DashboardClient({
                         <div key={i} style={{
                           display: "flex", gap: 10, padding: "10px 12px",
                           borderRadius: 12, marginBottom: 4,
-                          background: "rgba(255,255,255,0.02)",
+                          background: "var(--dash-card-subtle)",
                           cursor: "pointer",
                           transition: "background 0.2s",
                         }}
@@ -1255,8 +1255,8 @@ export default function DashboardClient({
                             else if (n.type === "payment") open("plano");
                             setShowNotifications(false);
                           }}
-                          onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
-                          onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.02)"; }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = "var(--dash-card)"; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = "var(--dash-card-subtle)"; }}
                         >
                           <span style={{ fontSize: 18, flexShrink: 0 }}>{n.icon}</span>
                           <div style={{ flex: 1, minWidth: 0 }}>
@@ -1286,20 +1286,20 @@ export default function DashboardClient({
         {/* Trial banner */}
         {restaurant.status === "trial" && trialDays <= 5 && (
           <div style={{ margin: "12px 24px", padding: "12px 16px", borderRadius: 14, background: "rgba(255,180,0,0.08)", border: "1px solid rgba(255,180,0,0.2)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ color: "#fbbf24", fontSize: 13, fontWeight: 600 }}>
+            <div style={{ color: "var(--dash-warning)", fontSize: 13, fontWeight: 600 }}>
               ⏳ {trialDays} dia{trialDays !== 1 ? "s" : ""} de trial restante{trialDays !== 1 ? "s" : ""}
             </div>
-            <button onClick={() => open("plano")} style={{ padding: "6px 12px", borderRadius: 8, border: "none", background: "rgba(255,180,0,0.2)", color: "#fbbf24", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Ver planos</button>
+            <button onClick={() => open("plano")} style={{ padding: "6px 12px", borderRadius: 8, border: "none", background: "rgba(255,180,0,0.2)", color: "var(--dash-warning)", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Ver planos</button>
           </div>
         )}
 
         {/* Offline banner: sem assinatura ativa */}
         {restaurant.status !== "active" && restaurant.status !== "trial" && !restaurant.free_access && (
           <div style={{ margin: "12px 24px", padding: "12px 16px", borderRadius: 14, background: "rgba(255,80,80,0.06)", border: "1px solid rgba(255,80,80,0.18)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-            <div style={{ color: "#f87171", fontSize: 13, fontWeight: 600 }}>
+            <div style={{ color: "var(--dash-danger)", fontSize: 13, fontWeight: 600 }}>
               🔒 Seu cardápio está offline. Assine um plano para publicar.
             </div>
-            <button onClick={() => router.push("/painel/planos")} style={{ padding: "6px 14px", borderRadius: 8, border: "none", background: "rgba(255,80,80,0.15)", color: "#f87171", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>Ver planos</button>
+            <button onClick={() => router.push("/painel/planos")} style={{ padding: "6px 14px", borderRadius: 8, border: "none", background: "var(--dash-danger-soft)", color: "var(--dash-danger)", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>Ver planos</button>
           </div>
         )}
 
@@ -1311,18 +1311,18 @@ export default function DashboardClient({
 
           // Icon container color per card category
           const ICON_COLORS: Record<string, string> = {
-            cardapio:    "rgba(0,255,174,0.08)",
-            pedidos:     "rgba(0,255,174,0.08)",
-            financeiro:  "rgba(251,191,36,0.08)",
-            operacoes:   "rgba(96,165,250,0.08)",
-            unidade:     "rgba(248,113,113,0.08)",
-            equipe:      "rgba(168,85,247,0.08)",
-            estoque:     "rgba(168,85,247,0.08)",
+            cardapio:    "var(--dash-accent-soft)",
+            pedidos:     "var(--dash-accent-soft)",
+            financeiro:  "var(--dash-warning-soft)",
+            operacoes:   "var(--dash-info-soft)",
+            unidade:     "var(--dash-danger-soft)",
+            equipe:      "var(--dash-purple-soft)",
+            estoque:     "var(--dash-purple-soft)",
             crm:         "rgba(0,217,255,0.08)",
-            tv:          "rgba(255,255,255,0.06)",
-            plano:       "rgba(251,191,36,0.08)",
-            config:      "rgba(255,255,255,0.06)",
-            impressoras: "rgba(255,255,255,0.06)",
+            tv:          "var(--dash-card-hover)",
+            plano:       "var(--dash-warning-soft)",
+            config:      "var(--dash-card-hover)",
+            impressoras: "var(--dash-card-hover)",
           };
 
           const baseCard: React.CSSProperties = {
@@ -1342,7 +1342,7 @@ export default function DashboardClient({
           const IconBox = ({ id, bg }: { id: string; bg?: string }) => (
             <div style={{
               width: 40, height: 40, borderRadius: 12,
-              background: bg ?? ICON_COLORS[id] ?? "rgba(255,255,255,0.06)",
+              background: bg ?? ICON_COLORS[id] ?? "var(--dash-card-hover)",
               display: "flex", alignItems: "center", justifyContent: "center",
               fontSize: 20, marginBottom: 8, flexShrink: 0,
             }}>{CARD_CONFIGS[id]?.icon}</div>
@@ -1379,10 +1379,10 @@ export default function DashboardClient({
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                           <span style={{
                             padding: "3px 10px", borderRadius: 6,
-                            background: restaurant?.plan === "business" ? "rgba(251,191,36,0.08)"
+                            background: restaurant?.plan === "business" ? "var(--dash-warning-soft)"
                               : restaurant?.plan === "menupro" ? "rgba(0,217,255,0.08)"
                               : "var(--dash-accent-soft)",
-                            color: restaurant?.plan === "business" ? "#fbbf24"
+                            color: restaurant?.plan === "business" ? "var(--dash-warning)"
                               : restaurant?.plan === "menupro" ? "#00d9ff"
                               : "var(--dash-accent)",
                             fontSize: 10, fontWeight: 700, textTransform: "capitalize" as const,
@@ -1448,14 +1448,14 @@ export default function DashboardClient({
                     <div key="estoque" className="card" onClick={() => open("estoque")} style={{
                       ...baseCard,
                       gridColumn: `span ${colSpan}`,
-                      background: hasOut ? "rgba(248,113,113,0.04)" : hasLow ? "rgba(251,191,36,0.04)" : "var(--dash-card)",
+                      background: hasOut ? "var(--dash-danger-soft)" : hasLow ? "var(--dash-warning-soft)" : "var(--dash-card)",
                       border: hasOut ? "1px solid rgba(248,113,113,0.15)" : hasLow ? "1px solid rgba(251,191,36,0.15)" : "1px solid var(--dash-border)",
                     }}>
                       <IconBox id="estoque" />
                       <div style={{ color: "var(--dash-text)", fontSize: 14, fontWeight: 700, lineHeight: 1.2 }}>Estoque</div>
                       <div style={{ fontSize: 12 }}>
-                        {hasOut && <span style={{ color: "#f87171" }}>{stockStats.out} esgotado{stockStats.out !== 1 ? "s" : ""}</span>}
-                        {hasLow && <span style={{ color: "#fbbf24" }}>{stockStats.low} baixo{stockStats.low !== 1 ? "s" : ""}</span>}
+                        {hasOut && <span style={{ color: "var(--dash-danger)" }}>{stockStats.out} esgotado{stockStats.out !== 1 ? "s" : ""}</span>}
+                        {hasLow && <span style={{ color: "var(--dash-warning)" }}>{stockStats.low} baixo{stockStats.low !== 1 ? "s" : ""}</span>}
                         {!hasOut && !hasLow && <span style={{ color: "var(--dash-text-secondary)" }}>Tudo em ordem</span>}
                       </div>
                     </div>
@@ -1522,18 +1522,18 @@ export default function DashboardClient({
           {/* Grid simétrico 3 colunas */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
             {[
-              { icon: "🍽️", label: "Cardápio Delivery", href: `/delivery/${unit?.slug}`, color: "rgba(0,255,174,0.06)" },
-              { icon: "📋", label: "Cardápio Mesa", href: `/delivery/${unit?.slug}?mode=mesa`, color: "rgba(0,255,174,0.06)" },
-              { icon: "📺", label: "Modo TV", href: `/delivery/${unit?.slug}/tv`, color: "rgba(255,255,255,0.03)" },
-              { icon: "👨‍🍳", label: "Cozinha", href: `/cozinha/${unit?.slug}`, color: "rgba(251,191,36,0.06)" },
-              { icon: "🧑‍🍳", label: "Garçom", href: `/garcom/${unit?.slug}`, color: "rgba(251,191,36,0.06)" },
-              { icon: "💳", label: "PDV", href: `/pdv/${unit?.slug}`, color: "rgba(96,165,250,0.06)" },
-              { icon: "🏠", label: "Hub Central", href: `/hub/${unit?.slug}`, color: "rgba(168,85,247,0.06)" },
-              { icon: "📊", label: "Operações", href: `/operacoes/${unit?.slug}`, color: "rgba(168,85,247,0.06)" },
-              { icon: "🔑", label: "Portal Funcionário", href: "/funcionario/login", color: "rgba(255,255,255,0.03)" },
-              { icon: "📦", label: "Entregador", href: `/entrega/${unit?.slug}`, color: "rgba(251,191,36,0.06)" },
-              { icon: "📝", label: "Comanda", href: `/comanda/${unit?.slug}/demo`, color: "rgba(96,165,250,0.06)" },
-              { icon: "⚙️", label: "Configurações", href: null, color: "rgba(255,255,255,0.03)" },
+              { icon: "🍽️", label: "Cardápio Delivery", href: `/delivery/${unit?.slug}`, color: "var(--dash-accent-soft)" },
+              { icon: "📋", label: "Cardápio Mesa", href: `/delivery/${unit?.slug}?mode=mesa`, color: "var(--dash-accent-soft)" },
+              { icon: "📺", label: "Modo TV", href: `/delivery/${unit?.slug}/tv`, color: "var(--dash-card)" },
+              { icon: "👨‍🍳", label: "Cozinha", href: `/cozinha/${unit?.slug}`, color: "var(--dash-warning-soft)" },
+              { icon: "🧑‍🍳", label: "Garçom", href: `/garcom/${unit?.slug}`, color: "var(--dash-warning-soft)" },
+              { icon: "💳", label: "PDV", href: `/pdv/${unit?.slug}`, color: "var(--dash-info-soft)" },
+              { icon: "🏠", label: "Hub Central", href: `/hub/${unit?.slug}`, color: "var(--dash-purple-soft)" },
+              { icon: "📊", label: "Operações", href: `/operacoes/${unit?.slug}`, color: "var(--dash-purple-soft)" },
+              { icon: "🔑", label: "Portal Funcionário", href: "/funcionario/login", color: "var(--dash-card)" },
+              { icon: "📦", label: "Entregador", href: `/entrega/${unit?.slug}`, color: "var(--dash-warning-soft)" },
+              { icon: "📝", label: "Comanda", href: `/comanda/${unit?.slug}/demo`, color: "var(--dash-info-soft)" },
+              { icon: "⚙️", label: "Configurações", href: null, color: "var(--dash-card)" },
             ].map((item, i) => (
               <a
                 key={i}
@@ -1553,7 +1553,7 @@ export default function DashboardClient({
                   textDecoration: "none",
                   cursor: "pointer",
                   transition: "all 0.2s ease",
-                  boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
+                  boxShadow: "var(--dash-shadow)",
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.transform = "translateY(-2px)";

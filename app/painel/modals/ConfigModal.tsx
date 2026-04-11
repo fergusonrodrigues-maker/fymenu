@@ -136,7 +136,7 @@ export default function ConfigModal({ profile, restaurant }: { profile: Profile;
         {TABS.map(t => (
           <button key={t.key} onClick={() => setTab(t.key)} style={{
             flex: 1, padding: "8px 10px", borderRadius: 10, border: "none", cursor: "pointer",
-            background: tab === t.key ? "rgba(0,255,174,0.1)" : "transparent",
+            background: tab === t.key ? "var(--dash-accent-soft)" : "transparent",
             color: tab === t.key ? "var(--dash-accent)" : "var(--dash-text-muted)",
             fontSize: 12, fontWeight: 600, fontFamily: "inherit",
           }}>{t.label}</button>
@@ -202,7 +202,7 @@ export default function ConfigModal({ profile, restaurant }: { profile: Profile;
           <form action="/api/auth/signout" method="post">
             <button type="submit" style={{
               width: "100%", padding: "12px 20px", borderRadius: 14, border: "none",
-              background: "rgba(255,80,80,0.08)", color: "#f87171",
+              background: "var(--dash-danger-soft)", color: "var(--dash-danger)",
               fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
             }}>
               🚪 Sair da conta
@@ -215,13 +215,13 @@ export default function ConfigModal({ profile, restaurant }: { profile: Profile;
       {tab === "plano" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {/* Plano atual */}
-          <div style={{ padding: 16, borderRadius: 14, background: "rgba(0,255,174,0.06)", boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+          <div style={{ padding: 16, borderRadius: 14, background: "var(--dash-accent-soft)", boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
             <div style={{ fontSize: 11, color: "var(--dash-text-muted)" }}>Plano atual</div>
             <div style={{ fontSize: 20, fontWeight: 800, color: "var(--dash-text)", marginTop: 4 }}>
               {currentPlan === "menu" ? "Menu" : currentPlan === "menupro" ? "MenuPro" : currentPlan === "business" ? "Business" : currentPlan}
             </div>
             {restaurant?.free_access && <div style={{ fontSize: 11, color: "var(--dash-accent)", marginTop: 4 }}>Acesso gratuito ativo</div>}
-            {restaurant?.status === "trial" && <div style={{ fontSize: 11, color: "#fbbf24", marginTop: 4 }}>Período de teste</div>}
+            {restaurant?.status === "trial" && <div style={{ fontSize: 11, color: "var(--dash-warning)", marginTop: 4 }}>Período de teste</div>}
           </div>
 
           {/* Lista de planos */}
@@ -236,7 +236,7 @@ export default function ConfigModal({ profile, restaurant }: { profile: Profile;
               <div key={plan.key} style={{
                 display: "flex", alignItems: "center", justifyContent: "space-between",
                 padding: "14px 16px", borderRadius: 14,
-                background: isCurrent ? "rgba(0,255,174,0.04)" : "var(--dash-card)",
+                background: isCurrent ? "var(--dash-accent-soft)" : "var(--dash-card)",
                 boxShadow: isCurrent
                   ? "0 1px 0 rgba(0,255,174,0.06) inset, 0 -1px 0 rgba(0,0,0,0.15) inset"
                   : "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
@@ -246,11 +246,11 @@ export default function ConfigModal({ profile, restaurant }: { profile: Profile;
                   <div style={{ color: "var(--dash-text-muted)", fontSize: 12, marginTop: 2 }}>{plan.price}</div>
                 </div>
                 {isCurrent ? (
-                  <span style={{ padding: "4px 12px", borderRadius: 8, background: "rgba(0,255,174,0.1)", color: "var(--dash-accent)", fontSize: 11, fontWeight: 700 }}>Atual</span>
+                  <span style={{ padding: "4px 12px", borderRadius: 8, background: "var(--dash-accent-soft)", color: "var(--dash-accent)", fontSize: 11, fontWeight: 700 }}>Atual</span>
                 ) : isUpgrade ? (
                   <button onClick={() => handleChangePlan(plan.key)} style={{
                     padding: "8px 16px", borderRadius: 10, border: "none", cursor: "pointer",
-                    background: "rgba(0,255,174,0.1)", color: "var(--dash-accent)",
+                    background: "var(--dash-accent-soft)", color: "var(--dash-accent)",
                     fontSize: 12, fontWeight: 700, fontFamily: "inherit",
                     boxShadow: "0 1px 0 rgba(0,255,174,0.12) inset, 0 -1px 0 rgba(0,0,0,0.2) inset",
                   }}>⬆️ Upgrade</button>
@@ -270,14 +270,14 @@ export default function ConfigModal({ profile, restaurant }: { profile: Profile;
             {!showCancelConfirm ? (
               <button onClick={() => setShowCancelConfirm(true)} style={{
                 width: "100%", padding: 12, borderRadius: 14, border: "none", cursor: "pointer",
-                background: "rgba(248,113,113,0.06)", color: "rgba(248,113,113,0.5)",
+                background: "var(--dash-danger-soft)", color: "var(--dash-danger-soft)",
                 fontSize: 12, fontWeight: 600, fontFamily: "inherit",
               }}>
                 Cancelar plano
               </button>
             ) : (
-              <div style={{ padding: 16, borderRadius: 14, background: "rgba(248,113,113,0.06)", boxShadow: "0 1px 0 rgba(248,113,113,0.06) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#f87171", marginBottom: 8 }}>Tem certeza?</div>
+              <div style={{ padding: 16, borderRadius: 14, background: "var(--dash-danger-soft)", boxShadow: "0 1px 0 rgba(248,113,113,0.06) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--dash-danger)", marginBottom: 8 }}>Tem certeza?</div>
                 <div style={{ fontSize: 11, color: "var(--dash-text-muted)", marginBottom: 12, lineHeight: 1.5 }}>
                   Ao cancelar, seu cardápio será desativado ao fim do período pago. Seus dados ficam guardados por 30 dias.
                 </div>
@@ -289,7 +289,7 @@ export default function ConfigModal({ profile, restaurant }: { profile: Profile;
                   }}>Manter plano</button>
                   <button onClick={handleCancelPlan} disabled={canceling} style={{
                     flex: 1, padding: 10, borderRadius: 12, border: "none", cursor: "pointer",
-                    background: "rgba(248,113,113,0.1)", color: "#f87171",
+                    background: "var(--dash-danger-soft)", color: "var(--dash-danger)",
                     fontSize: 12, fontWeight: 700, fontFamily: "inherit",
                     opacity: canceling ? 0.5 : 1,
                   }}>{canceling ? "Cancelando..." : "Confirmar cancelamento"}</button>
@@ -318,20 +318,20 @@ export default function ConfigModal({ profile, restaurant }: { profile: Profile;
           </div>
 
           {passwordError && (
-            <div style={{ padding: "8px 12px", borderRadius: 10, background: "rgba(248,113,113,0.06)", color: "#f87171", fontSize: 12 }}>
+            <div style={{ padding: "8px 12px", borderRadius: 10, background: "var(--dash-danger-soft)", color: "var(--dash-danger)", fontSize: 12 }}>
               {passwordError}
             </div>
           )}
 
           {passwordSuccess && (
-            <div style={{ padding: "8px 12px", borderRadius: 10, background: "rgba(0,255,174,0.06)", color: "var(--dash-accent)", fontSize: 12 }}>
+            <div style={{ padding: "8px 12px", borderRadius: 10, background: "var(--dash-accent-soft)", color: "var(--dash-accent)", fontSize: 12 }}>
               ✅ Senha alterada com sucesso!
             </div>
           )}
 
           <button onClick={handleChangePassword} disabled={changingPassword || !newPassword} style={{
             width: "100%", padding: 12, borderRadius: 14, border: "none", cursor: "pointer",
-            background: "rgba(0,255,174,0.1)", color: "var(--dash-accent)",
+            background: "var(--dash-accent-soft)", color: "var(--dash-accent)",
             fontSize: 13, fontWeight: 800, fontFamily: "inherit",
             boxShadow: "0 1px 0 rgba(0,255,174,0.12) inset, 0 -1px 0 rgba(0,0,0,0.2) inset",
             opacity: changingPassword || !newPassword ? 0.5 : 1,

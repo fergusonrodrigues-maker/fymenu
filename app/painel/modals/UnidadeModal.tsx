@@ -174,7 +174,7 @@ export default function UnidadeModal({ unit, isPro, onClose, onOpenPlans }: { un
               position: "absolute", inset: 0,
               background: "rgba(0,0,0,0.6)",
               display: "flex", alignItems: "center", justifyContent: "center",
-              color: "#fff", fontSize: 13,
+              color: "var(--dash-text)", fontSize: 13,
             }}>
               Enviando...
             </div>
@@ -196,9 +196,9 @@ export default function UnidadeModal({ unit, isPro, onClose, onOpenPlans }: { un
             style={{
               padding: "6px 14px",
               borderRadius: 8,
-              background: "rgba(248,113,113,0.08)",
+              background: "var(--dash-danger-soft)",
               border: "none",
-              color: "rgba(248,113,113,0.7)",
+              color: "var(--dash-danger)",
               fontSize: 12,
               cursor: "pointer",
             }}
@@ -481,8 +481,8 @@ export default function UnidadeModal({ unit, isPro, onClose, onOpenPlans }: { un
             </form>
           </div>
         ) : (
-          <div style={{ borderRadius: 14, padding: "16px", border: "1px solid rgba(250,204,21,0.2)", background: "rgba(250,204,21,0.04)" }}>
-            <div style={{ color: "#fbbf24", fontSize: 14, fontWeight: 700, marginBottom: 6 }}>⭐ Recurso Pro</div>
+          <div style={{ borderRadius: 14, padding: "16px", border: "1px solid rgba(250,204,21,0.2)", background: "var(--dash-warning-soft)" }}>
+            <div style={{ color: "var(--dash-warning)", fontSize: 14, fontWeight: 700, marginBottom: 6 }}>⭐ Recurso Pro</div>
             <div style={{ color: "var(--dash-text-muted)", fontSize: 13, marginBottom: 14, lineHeight: 1.5 }}>
               Múltiplas unidades estão disponíveis no Plano Pro. Faça upgrade para adicionar novas unidades.
             </div>
