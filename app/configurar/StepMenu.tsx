@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import type { OnboardingData } from "./OnboardingClient";
 
 export default function StepMenu({
@@ -21,73 +20,29 @@ export default function StepMenu({
   async function finish() {
     setSaving(true);
     setError(null);
-    const supabase = createClient();
 
-    // 1. Salva dados pessoais na tabela profiles
-    const { error: profileError } = await supabase
-      .from("profiles")
-      .upsert({
-        id: userId,
-        first_name: data.first_name,
-        last_name: data.last_name,
+    const res = await fetch("/api/onboarding/complete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        restaurantId,
+        firstName: data.first_name,
+        lastName: data.last_name,
         phone: data.phone,
         document: data.document,
-      }, { onConflict: "id" });
-
-    if (profileError) {
-      setError("Erro ao salvar dados pessoais. Tente novamente.");
-      setSaving(false);
-      return;
-    }
-
-    // 2. Atualiza restaurant (sem onboarding_completed ainda)
-    const { error: restError } = await supabase
-      .from("restaurants")
-      .update({
-        name: data.restaurant_name,
+        restaurantName: data.restaurant_name,
         whatsapp: data.whatsapp,
         instagram: data.instagram,
-      })
-      .eq("id", restaurantId);
+      }),
+    });
 
-    if (restError) {
-      setError("Erro ao salvar dados do restaurante. Tente novamente.");
+    if (!res.ok) {
+      const json = await res.json().catch(() => ({}));
+      setError(json.error || "Erro ao finalizar configuração. Tente novamente.");
       setSaving(false);
       return;
     }
 
-    // 3. Cria unit de preview
-    const slug = `preview-${restaurantId.slice(0, 8)}`;
-    const { error: unitError } = await supabase
-      .from("units")
-      .insert({
-        restaurant_id: restaurantId,
-        name: data.restaurant_name,
-        slug,
-        whatsapp: data.whatsapp,
-        instagram: data.instagram,
-        is_published: false,
-      });
-
-    if (unitError) {
-      setError("Erro ao criar cardápio de preview. Tente novamente.");
-      setSaving(false);
-      return;
-    }
-
-    // 4. Marca onboarding como completo apenas após a unit ser criada com sucesso
-    const { error: completeError } = await supabase
-      .from("restaurants")
-      .update({ onboarding_completed: true })
-      .eq("id", restaurantId);
-
-    if (completeError) {
-      setError("Erro ao finalizar configuração. Tente novamente.");
-      setSaving(false);
-      return;
-    }
-
-    // 5. Redireciona via router (sem quebrar a SPA)
     router.push("/painel");
   }
 
