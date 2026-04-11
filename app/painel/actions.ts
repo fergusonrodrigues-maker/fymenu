@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { invalidateMenuCache } from "@/lib/cache/invalidateMenuCache";
+import { uploadToR2, generateMediaKey, isR2Configured } from "@/lib/r2";
 
 function normalizeName(name: string) {
   return name.trim();
@@ -121,22 +122,23 @@ export async function uploadLogoAction(
       return { ok: false, message: "Envie uma imagem." };
     }
 
-    const ext = file.name.split(".").pop()?.toLowerCase() || "png";
-    const safeExt = ["png", "jpg", "jpeg", "webp"].includes(ext) ? ext : "png";
-    const filePath = `units/${unitId}/logo-${Date.now()}.${safeExt}`;
+    let publicUrl = "";
 
-    const { error: uploadError } = await supabase.storage
-      .from("logos")
-      .upload(filePath, file, {
-        upsert: true,
-        cacheControl: "3600",
-        contentType: file.type,
-      });
-
-    if (uploadError) return { ok: false, message: uploadError.message };
-
-    const { data: pub } = supabase.storage.from("logos").getPublicUrl(filePath);
-    const publicUrl = pub?.publicUrl ?? "";
+    if (isR2Configured()) {
+      const key = generateMediaKey(unitId, "logo", file.name);
+      const buffer = Buffer.from(await file.arrayBuffer());
+      publicUrl = await uploadToR2(buffer, key, file.type);
+    } else {
+      const ext = file.name.split(".").pop()?.toLowerCase() || "png";
+      const safeExt = ["png", "jpg", "jpeg", "webp"].includes(ext) ? ext : "png";
+      const filePath = `units/${unitId}/logo-${Date.now()}.${safeExt}`;
+      const { error: uploadError } = await supabase.storage
+        .from("logos")
+        .upload(filePath, file, { upsert: true, cacheControl: "3600", contentType: file.type });
+      if (uploadError) return { ok: false, message: uploadError.message };
+      const { data: pub } = supabase.storage.from("logos").getPublicUrl(filePath);
+      publicUrl = pub?.publicUrl ?? "";
+    }
 
     const { error: updateError } = await supabase
       .from("units")
@@ -173,22 +175,23 @@ export async function uploadCoverAction(
       return { ok: false, message: "Envie uma imagem." };
     }
 
-    const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-    const safeExt = ["png", "jpg", "jpeg", "webp"].includes(ext) ? ext : "jpg";
-    const filePath = `covers/${unitId}/cover-${Date.now()}.${safeExt}`;
+    let publicUrl = "";
 
-    const { error: uploadError } = await supabase.storage
-      .from("logos")
-      .upload(filePath, file, {
-        upsert: true,
-        cacheControl: "3600",
-        contentType: file.type,
-      });
-
-    if (uploadError) return { ok: false, message: uploadError.message };
-
-    const { data: pub } = supabase.storage.from("logos").getPublicUrl(filePath);
-    const publicUrl = pub?.publicUrl ?? "";
+    if (isR2Configured()) {
+      const key = generateMediaKey(unitId, "cover", file.name);
+      const buffer = Buffer.from(await file.arrayBuffer());
+      publicUrl = await uploadToR2(buffer, key, file.type);
+    } else {
+      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const safeExt = ["png", "jpg", "jpeg", "webp"].includes(ext) ? ext : "jpg";
+      const filePath = `covers/${unitId}/cover-${Date.now()}.${safeExt}`;
+      const { error: uploadError } = await supabase.storage
+        .from("logos")
+        .upload(filePath, file, { upsert: true, cacheControl: "3600", contentType: file.type });
+      if (uploadError) return { ok: false, message: uploadError.message };
+      const { data: pub } = supabase.storage.from("logos").getPublicUrl(filePath);
+      publicUrl = pub?.publicUrl ?? "";
+    }
 
     const { error: updateError } = await supabase
       .from("units")
@@ -258,9 +261,20 @@ export async function updateCategory(formData: FormData): Promise<void> {
 
   const updatePayload: Record<string, unknown> = { name };
   const sectionRaw = normalizeText(String(formData.get("section") ?? ""));
-  if (sectionRaw && ["pratos", "drinks", "bebidas"].includes(sectionRaw)) {
-    updatePayload.section = sectionRaw;
+  if (sectionRaw) updatePayload.section = sectionRaw;
+
+  const scheduleEnabled = formData.get("schedule_enabled") === "true";
+  updatePayload.schedule_enabled = scheduleEnabled;
+
+  const availableDaysRaw = String(formData.get("available_days") ?? "");
+  if (availableDaysRaw) {
+    try { updatePayload.available_days = JSON.parse(availableDaysRaw); } catch { /* ignore */ }
   }
+
+  const startTime = String(formData.get("start_time") ?? "").trim() || null;
+  const endTime = String(formData.get("end_time") ?? "").trim() || null;
+  updatePayload.start_time = scheduleEnabled ? startTime : null;
+  updatePayload.end_time = scheduleEnabled ? endTime : null;
 
   const { error } = await supabase.from("categories").update(updatePayload).eq("id", id);
   if (error) throw new Error(error.message);

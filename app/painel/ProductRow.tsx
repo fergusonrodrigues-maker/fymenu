@@ -4,6 +4,7 @@ import { useState, useRef, useTransition, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { updateProduct, deleteProduct, updateProductStock, updateProductNutrition, updateProductVariations } from "./actions";
 import { useGenerateProductDescription } from "@/lib/hooks/useGenerateProductDescription";
+import { uploadMedia } from "@/lib/upload";
 
 type Product = {
   id: string;
@@ -26,7 +27,6 @@ type Product = {
   is_active?: boolean | null;
 };
 
-const BUCKET = "products";
 
 function getSectionConfig(sectionValue: string | undefined, customSections?: Array<{ name: string; allows_video: boolean; allows_alcoholic_toggle: boolean }>) {
   const defaults: Record<string, { allows_video: boolean; allows_alcoholic: boolean }> = {
@@ -284,13 +284,10 @@ export default function ProductRow({
   async function handleFileUpload(file: File, type: "thumb" | "video"): Promise<string | null> {
     setUploading(type);
     setUploadError(null);
-    const ext = file.name.split(".").pop();
-    const path = `products/${product.id}/${type}-${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from(BUCKET).upload(path, file, { upsert: true });
-    if (error) { setUploadError(`Erro ao enviar: ${error.message}`); setUploading(null); return null; }
-    const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
+    const url = await uploadMedia(file, product.id, type);
+    if (!url) { setUploadError("Erro ao enviar arquivo. Tente novamente."); }
     setUploading(null);
-    return data.publicUrl;
+    return url;
   }
 
   return (
