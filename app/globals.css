@@ -654,13 +654,14 @@ button:hover:not(:disabled) {
 
 /* Bento grid cards and clickable divs */
 .card {
-  transition: all 0.2s ease;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .card:active {
-  transform: scale(0.98) !important;
+  transform: scale(0.97) !important;
 }
 .card:hover {
-  filter: brightness(1.03);
+  transform: translateY(-2px);
+  box-shadow: var(--dash-shadow-hover);
 }
 
 /* Clickable links */
@@ -694,6 +695,9 @@ html:not(.dark) select option {
   background-color: #ffffff;
   color: #1a1a1a;
 }
+
+/* Hide scrollbar for horizontal tab rows */
+.tabs-scroll::-webkit-scrollbar { display: none; }
 
 /* Modal desktop scrollbar */
 @media (min-width: 768px) {

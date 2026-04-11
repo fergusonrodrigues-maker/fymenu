@@ -325,13 +325,14 @@ export default function CrmModal({ unit, restaurant }: { unit: any; restaurant: 
       </div>
 
       {/* Tabs */}
-      <div style={{ display: "flex", gap: 4, marginBottom: 16, background: "var(--dash-card-hover)", borderRadius: 12, padding: 4 }}>
+      <div className="tabs-scroll" style={{ display: "flex", gap: 2, padding: 3, background: "var(--dash-card)", borderRadius: 12, marginBottom: 16, overflowX: "auto", scrollbarWidth: "none" as any }}>
         {TABS.map(t => (
           <button key={t.key} onClick={() => setTab(t.key as any)} style={{
-            flex: 1, padding: "8px 10px", borderRadius: 10, border: "none", cursor: "pointer",
+            padding: "8px 14px", borderRadius: 10, border: "none", cursor: "pointer",
             background: tab === t.key ? "var(--dash-accent-soft)" : "transparent",
             color: tab === t.key ? "var(--dash-accent)" : "var(--dash-text-muted)",
-            fontSize: 12, fontWeight: 600,
+            fontSize: 12, fontWeight: 600, whiteSpace: "nowrap", flexShrink: 0,
+            transition: "all 0.2s",
           }}>{t.label}</button>
         ))}
       </div>

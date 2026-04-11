@@ -552,29 +552,17 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
     <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingTop: 8 }}>
 
       {/* ── Tab Bar ── */}
-      <div style={{
-        display: "flex", gap: 3, padding: 3,
-        background: "var(--dash-card)",
-        borderRadius: 14,
-        border: "1px solid var(--dash-card-border)",
-        overflowX: "auto",
-        WebkitOverflowScrolling: "touch",
-      }}>
+      <div className="tabs-scroll" style={{ display: "flex", gap: 2, padding: 3, background: "var(--dash-card)", borderRadius: 12, marginBottom: 0, overflowX: "auto", scrollbarWidth: "none" as any }}>
         {TABS.map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
             style={{
-              flex: 1, padding: "8px 0", borderRadius: 11,
-              border: "none", cursor: "pointer",
-              fontSize: 11, fontWeight: tab === t.key ? 700 : 500,
-              fontFamily: "inherit",
-              whiteSpace: "nowrap",
-              minWidth: 0,
+              padding: "8px 14px", borderRadius: 10, border: "none", cursor: "pointer",
+              fontSize: 12, fontWeight: 600, whiteSpace: "nowrap", flexShrink: 0,
               color: tab === t.key ? "var(--dash-accent)" : "var(--dash-text-muted)",
               background: tab === t.key ? "var(--dash-accent-soft)" : "transparent",
-              transition: "all 0.25s ease",
-              textShadow: tab === t.key ? "0 1px 2px rgba(0,0,0,0.15)" : "none",
+              transition: "all 0.2s",
             }}
           >
             {t.label}

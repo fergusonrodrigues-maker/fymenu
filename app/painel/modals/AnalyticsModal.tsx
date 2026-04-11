@@ -355,23 +355,17 @@ export default function AnalyticsModal({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingTop: 8 }}>
       {/* Tab bar */}
-      <div style={{
-        display: "flex", gap: 3, padding: 3,
-        background: "var(--dash-card)", borderRadius: 14,
-        border: "1px solid var(--dash-card-border)",
-      }}>
+      <div className="tabs-scroll" style={{ display: "flex", gap: 2, padding: 3, background: "var(--dash-card)", borderRadius: 12, marginBottom: 0, overflowX: "auto", scrollbarWidth: "none" as any }}>
         {visibleTabs.map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
             style={{
-              flex: 1, padding: "8px 0", borderRadius: 11, border: "none", cursor: "pointer",
-              fontSize: 11, fontWeight: tab === t ? 700 : 500,
-              fontFamily: "inherit",
+              padding: "8px 14px", borderRadius: 10, border: "none", cursor: "pointer",
+              fontSize: 12, fontWeight: 600, whiteSpace: "nowrap", flexShrink: 0,
               color: tab === t ? "var(--dash-accent)" : "var(--dash-text-muted)",
               background: tab === t ? "var(--dash-accent-soft)" : "transparent",
-              transition: "all 0.25s ease",
-              textShadow: tab === t ? "0 1px 2px rgba(0,0,0,0.15)" : "none",
+              transition: "all 0.2s",
             }}
           >
             {t}
