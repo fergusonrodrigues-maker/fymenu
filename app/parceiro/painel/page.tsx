@@ -1,3 +1,4 @@
+"use client";
 import dynamic from "next/dynamic";
 
 const PartnerDashboard = dynamic(() => import("../PartnerDashboard"), { ssr: false });
