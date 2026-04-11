@@ -137,6 +137,17 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
   const [importing, setImporting] = useState(false);
   const [pastedText, setPastedText] = useState("");
   const importFileRef = useRef<HTMLInputElement>(null);
+
+  // Schedule states (scalar — safe because only one cat expanded at a time)
+  const [editScheduleEnabled, setEditScheduleEnabled] = useState(false);
+  const [editDays, setEditDays] = useState<string[]>(["seg","ter","qua","qui","sex","sab","dom"]);
+  const [editStartTime, setEditStartTime] = useState("11:00");
+  const [editEndTime, setEditEndTime] = useState("23:00");
+
+  // AI suggestion states
+  const [generatingAISuggestion, setGeneratingAISuggestion] = useState(false);
+  const [aiSuggestionResult, setAiSuggestionResult] = useState<string | null>(null);
+
   const [orderedCats, setOrderedCats] = useState(categories);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [overIdx, setOverIdx] = useState<number | null>(null);
@@ -344,6 +355,63 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
     }
   }
 
+  async function handleAISuggestion() {
+    if (!unit) return;
+    setGeneratingAISuggestion(true);
+    try {
+      const supabase = createSupabaseClient();
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      const { data: events } = await supabase
+        .from("menu_events")
+        .select("product_id")
+        .eq("unit_id", unit.id)
+        .eq("event", "product_click")
+        .gte("created_at", thirtyDaysAgo);
+
+      const clickCounts: Record<string, number> = {};
+      for (const e of events || []) {
+        if (e.product_id) clickCounts[e.product_id] = (clickCounts[e.product_id] || 0) + 1;
+      }
+
+      const { data: orders } = await supabase
+        .from("order_intents")
+        .select("items")
+        .eq("unit_id", unit.id)
+        .eq("status", "confirmed")
+        .gte("created_at", thirtyDaysAgo);
+
+      const salesCounts: Record<string, number> = {};
+      for (const o of orders || []) {
+        const items = Array.isArray(o.items) ? o.items : [];
+        for (const item of items) {
+          const name = item.name || "";
+          salesCounts[name] = (salesCounts[name] || 0) + (item.qty || 1);
+        }
+      }
+
+      const productData = orderedCats.flatMap(cat =>
+        (productsByCat[cat.id] || []).map((p: any) => ({
+          name: p.name,
+          category: cat.name,
+          price: p.base_price,
+          clicks: clickCounts[p.id] || 0,
+          sales: salesCounts[p.name] || 0,
+          hasVideo: !!p.video_url,
+          hasThumb: !!p.thumbnail_url,
+        }))
+      );
+
+      const res = await fetch("/api/ia/suggest-highlights", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ products: productData }),
+      });
+      const json = await res.json();
+      if (res.ok) setAiSuggestionResult(json.suggestions);
+    } catch (err) { console.error(err); }
+    finally { setGeneratingAISuggestion(false); }
+  }
+
   const productsByCat = orderedCats.reduce<Record<string, Product[]>>((acc, cat) => {
     acc[cat.id] = products.filter((p) => p.category_id === cat.id);
     return acc;
@@ -517,7 +585,33 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
           <button type="button" className="btn-ai" style={{ flex: 1 }} onClick={() => setImportStep("upload")}>
             ✨ Importar com IA
           </button>
+          {(restaurant?.plan === "menupro" || restaurant?.plan === "business") && (
+            <button type="button" onClick={handleAISuggestion} disabled={generatingAISuggestion} style={{
+              padding: "6px 14px", borderRadius: 10, border: "none", cursor: "pointer",
+              background: "rgba(168,85,247,0.1)", color: "rgba(168,85,247,0.8)",
+              fontSize: 12, fontWeight: 600,
+              opacity: generatingAISuggestion ? 0.5 : 1,
+              whiteSpace: "nowrap", flexShrink: 0,
+            }}>
+              {generatingAISuggestion ? "Analisando..." : "✨ Sugestão IA"}
+            </button>
+          )}
         </div>
+
+        {aiSuggestionResult && (
+          <div style={{
+            padding: 16, borderRadius: 14, background: "rgba(168,85,247,0.04)",
+            boxShadow: "0 1px 0 rgba(168,85,247,0.06) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--dash-text)" }}>✨ Sugestões da IA</div>
+              <button onClick={() => setAiSuggestionResult(null)} style={{ background: "transparent", border: "none", color: "var(--dash-text-muted)", fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>✕</button>
+            </div>
+            <div style={{ whiteSpace: "pre-wrap", fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.7 }}>
+              {aiSuggestionResult}
+            </div>
+          </div>
+        )}
 
       {/* Nova categoria */}
       {unit && (
@@ -619,7 +713,17 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
               transform: overIdx === catIdx && dragIdx !== catIdx ? "scale(1.02)" : "none",
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", padding: "10px 12px", gap: 6, cursor: "pointer" }} onClick={() => { setExpandedCat(isOpen ? null : cat.id); if (isOpen) setShowAllProducts(prev => ({ ...prev, [cat.id]: false })); }}>
+            <div style={{ display: "flex", alignItems: "center", padding: "10px 12px", gap: 6, cursor: "pointer" }} onClick={() => {
+              const willOpen = !isOpen;
+              setExpandedCat(willOpen ? cat.id : null);
+              if (willOpen) {
+                setEditScheduleEnabled(cat.schedule_enabled || false);
+                setEditDays((cat.available_days as string[]) || ["seg","ter","qua","qui","sex","sab","dom"]);
+                setEditStartTime(cat.start_time?.slice(0,5) || "11:00");
+                setEditEndTime(cat.end_time?.slice(0,5) || "23:00");
+              }
+              if (isOpen) setShowAllProducts(prev => ({ ...prev, [cat.id]: false }));
+            }}>
               <span
                 style={{ cursor: "grab", fontSize: 16, color: "var(--dash-text-muted)", opacity: 0.5, userSelect: "none", WebkitUserSelect: "none", touchAction: "none", WebkitTouchCallout: "none", padding: "0 2px", lineHeight: 1, flexShrink: 0, width: 18, textAlign: "center" }}
                 onMouseDown={(e) => e.stopPropagation()}
@@ -634,13 +738,27 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
               <form action={updateCategory} onClick={(e) => e.stopPropagation()} style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
                 <input type="hidden" name="id" value={cat.id} />
                 <input type="hidden" name="section" value={editCatSection[cat.id] ?? cat.section ?? 'pratos'} />
+                {isOpen && <>
+                  <input type="hidden" name="schedule_enabled" value={String(editScheduleEnabled)} />
+                  <input type="hidden" name="available_days" value={JSON.stringify(editDays)} />
+                  <input type="hidden" name="start_time" value={editStartTime} />
+                  <input type="hidden" name="end_time" value={editEndTime} />
+                </>}
                 <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                  <input name="name" defaultValue={cat.name} style={{ ...inp, flex: 1, fontSize: 14, fontWeight: 800, height: 38, padding: "0 12px" }} />
+                  <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+                    <input name="name" defaultValue={cat.name} style={{ ...inp, flex: 1, fontSize: 14, fontWeight: 800, height: 38, padding: "0 12px" }} />
+                    {cat.schedule_enabled && (
+                      <span style={{ fontSize: 9, padding: "2px 6px", borderRadius: 4, background: "rgba(251,191,36,0.1)", color: "#fbbf24", whiteSpace: "nowrap", flexShrink: 0 }}>
+                        🕐 {cat.start_time?.slice(0,5)}-{cat.end_time?.slice(0,5)}
+                      </span>
+                    )}
+                  </div>
                   <button type="submit" className="btn-gradient" style={{ padding: "0 10px", height: 30, fontSize: 11, minWidth: 50, borderRadius: 7, flexShrink: 0 }}>
                     Salvar
                   </button>
                 </div>
                 {isOpen && (
+                  <>
                   <div style={{ display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap", marginTop: 4 }}>
                     <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 10, marginRight: 2, flexShrink: 0 }}>Sessão:</span>
                     {allSections.map((s, i) => {
@@ -666,6 +784,39 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                       + Criar
                     </button>
                   </div>
+                  {/* Schedule */}
+                  <div style={{ marginTop: 6 }}>
+                    <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", marginBottom: 6 }}>
+                      <input type="checkbox" checked={editScheduleEnabled} onChange={e => setEditScheduleEnabled(e.target.checked)} style={{ accentColor: "var(--dash-accent)" }} />
+                      <span style={{ fontSize: 11, color: "var(--dash-text-muted)" }}>Ativar por horário</span>
+                    </label>
+                    {editScheduleEnabled && (
+                      <>
+                        <div style={{ display: "flex", gap: 3, marginBottom: 6, flexWrap: "wrap" }}>
+                          {["seg","ter","qua","qui","sex","sab","dom"].map(day => (
+                            <button key={day} type="button" onClick={() => setEditDays(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day])}
+                              style={{
+                                padding: "3px 8px", borderRadius: 6, border: "none", cursor: "pointer",
+                                background: editDays.includes(day) ? "rgba(0,255,174,0.1)" : "rgba(255,255,255,0.04)",
+                                color: editDays.includes(day) ? "var(--dash-accent)" : "rgba(255,255,255,0.25)",
+                                fontSize: 10, fontWeight: 600,
+                              }}>{day}</button>
+                          ))}
+                        </div>
+                        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                          <input type="time" value={editStartTime} onChange={e => setEditStartTime(e.target.value)}
+                            style={{ padding: "4px 8px", borderRadius: 8, background: "rgba(255,255,255,0.04)", border: "none", color: "var(--dash-text)", fontSize: 11, outline: "none" }} />
+                          <span style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>até</span>
+                          <input type="time" value={editEndTime} onChange={e => setEditEndTime(e.target.value)}
+                            style={{ padding: "4px 8px", borderRadius: 8, background: "rgba(255,255,255,0.04)", border: "none", color: "var(--dash-text)", fontSize: 11, outline: "none" }} />
+                        </div>
+                        <div style={{ fontSize: 9, color: "rgba(255,255,255,0.2)", marginTop: 4 }}>
+                          Categoria visível apenas nos dias e horários selecionados.
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  </>
                 )}
               </form>
               <form action={deleteCategory} onClick={(e) => e.stopPropagation()} onSubmit={(e) => { if (!confirm("Excluir categoria e todos os produtos?")) e.preventDefault(); }}>
