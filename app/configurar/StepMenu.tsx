@@ -118,19 +118,22 @@ export default function StepMenu({
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
           <PlanCard
             name="Menu"
-            price="R$199,90/mês"
+            price="R$ 199,90/mês"
             features={["1 unidade", "WhatsApp", "Modo TV"]}
+            accent="#00ffae"
           />
           <PlanCard
             name="MenuPro"
-            price="R$399,90/mês"
+            price="R$ 399,90/mês"
             features={["Até 3 unidades", "Comanda Digital", "CRM"]}
             highlight
+            accent="#00d9ff"
           />
           <PlanCard
             name="Business"
-            price="R$1.599/mês"
+            price="R$ 1.599/mês"
             features={["Até 4 unidades", "Equipe completa", "Estoque + IA"]}
+            accent="#fbbf24"
           />
         </div>
         <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 11, margin: 0 }}>
@@ -189,19 +192,19 @@ export default function StepMenu({
 }
 
 function PlanCard({
-  name, price, features, highlight = false,
+  name, price, features, highlight = false, accent = "rgba(255,255,255,0.4)",
 }: {
-  name: string; price: string; features: string[]; highlight?: boolean;
+  name: string; price: string; features: string[]; highlight?: boolean; accent?: string;
 }) {
   return (
     <div style={{
       borderRadius: 12, padding: 14,
       border: highlight
-        ? "1px solid rgba(255,255,255,0.3)"
+        ? `1px solid ${accent}50`
         : "1px solid rgba(255,255,255,0.08)",
-      background: highlight ? "rgba(255,255,255,0.08)" : "transparent",
+      background: highlight ? `${accent}10` : "transparent",
     }}>
-      <div style={{ color: "#fff", fontWeight: 900, fontSize: 15 }}>{name}</div>
+      <div style={{ color: accent, fontWeight: 900, fontSize: 15 }}>{name}</div>
       <div style={{
         color: highlight ? "#fff" : "rgba(255,255,255,0.5)",
         fontWeight: 800, fontSize: 13, marginTop: 2,
