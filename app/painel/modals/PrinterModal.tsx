@@ -136,11 +136,11 @@ export default function PrinterModal({ unitId, categories }: PrinterModalProps) 
   const s = {
     label: { color: "var(--dash-text-muted)", fontSize: 11, marginBottom: 4 } as React.CSSProperties,
     input: {
-      width: "100%", padding: "11px 14px", borderRadius: 12,
-      border: "1px solid var(--dash-input-border)",
-      background: "var(--dash-input-bg)",
-      color: "var(--dash-text)", fontSize: 14, boxSizing: "border-box" as const,
-      outline: "none",
+      width: "100%", padding: "10px 14px", borderRadius: 10,
+      border: "1px solid var(--dash-border)",
+      background: "var(--dash-card-hover)",
+      color: "var(--dash-text)", fontSize: 13, fontWeight: 500, boxSizing: "border-box" as const,
+      outline: "none", transition: "border-color 0.2s",
     } as React.CSSProperties,
     card: {
       borderRadius: 14, padding: "14px 16px",
@@ -151,8 +151,8 @@ export default function PrinterModal({ unitId, categories }: PrinterModalProps) 
     chip: {
       display: "inline-flex", alignItems: "center", gap: 4,
       padding: "3px 10px", borderRadius: 20, fontSize: 12, fontWeight: 600,
-      background: "rgba(0,255,174,0.1)", border: "1px solid rgba(0,255,174,0.2)",
-      color: "#00ffae",
+      background: "var(--dash-accent-soft)", border: "1px solid rgba(0,255,174,0.15)",
+      color: "var(--dash-accent)",
     } as React.CSSProperties,
     warn: {
       display: "inline-flex", alignItems: "center", gap: 4,
@@ -167,14 +167,15 @@ export default function PrinterModal({ unitId, categories }: PrinterModalProps) 
     } as React.CSSProperties,
     addBtn: {
       padding: "9px 14px", borderRadius: 10, border: "none",
-      background: "rgba(0,255,174,0.12)", color: "#00ffae",
+      background: "var(--dash-accent-soft)", color: "var(--dash-accent)",
       fontSize: 13, cursor: "pointer", fontWeight: 700,
       flexShrink: 0,
+      boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
     } as React.CSSProperties,
     select: {
       flex: 1, padding: "9px 12px", borderRadius: 10,
-      border: "1px solid var(--dash-input-border)",
-      background: "var(--dash-input-bg)",
+      border: "1px solid var(--dash-border)",
+      background: "var(--dash-card-hover)",
       color: "var(--dash-text)", fontSize: 13,
     } as React.CSSProperties,
     removeX: {

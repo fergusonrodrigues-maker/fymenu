@@ -392,9 +392,10 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
   ];
 
   const inputStyle: React.CSSProperties = {
-    padding: "10px 14px", borderRadius: 12,
-    background: "var(--dash-card-hover)", border: "none",
-    color: "var(--dash-text)", fontSize: 13, outline: "none",
+    padding: "10px 14px", borderRadius: 10,
+    background: "var(--dash-card-hover)", border: "1px solid var(--dash-border)",
+    color: "var(--dash-text)", fontSize: 13, fontWeight: 500, outline: "none",
+    transition: "border-color 0.2s",
   };
 
   return (
@@ -444,8 +445,9 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
                 onChange={(e) => setStockText(e.target.value)}
                 style={{
                   width: "100%", minHeight: 100, padding: 14, borderRadius: 14,
-                  background: "var(--dash-card-hover)", border: "none", color: "var(--dash-text)",
+                  background: "var(--dash-card-hover)", border: "1px solid var(--dash-border)", color: "var(--dash-text)",
                   fontSize: 12, outline: "none", resize: "vertical", boxSizing: "border-box", lineHeight: 1.6, fontFamily: "inherit",
+                  transition: "border-color 0.2s",
                 }}
               />
               {stockText.trim() && (
@@ -577,10 +579,10 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
               placeholder="Buscar ingrediente..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              style={{ flex: 1, padding: "8px 12px", borderRadius: 10, background: "var(--dash-card-hover)", border: "none", color: "var(--dash-text)", fontSize: 13, outline: "none" }}
+              style={{ flex: 1, padding: "8px 12px", borderRadius: 10, background: "var(--dash-card-hover)", border: "1px solid var(--dash-border)", color: "var(--dash-text)", fontSize: 13, outline: "none", transition: "border-color 0.2s" }}
             />
             <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)}
-              style={{ padding: "8px 10px", borderRadius: 10, background: "var(--dash-card-hover)", border: "none", color: "var(--dash-text)", fontSize: 12, outline: "none" }}>
+              style={{ padding: "8px 10px", borderRadius: 10, background: "var(--dash-card-hover)", border: "1px solid var(--dash-border)", color: "var(--dash-text)", fontSize: 12, outline: "none" }}>
               <option value="all">Todas</option>
               {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.icon} {c.label}</option>)}
             </select>
@@ -620,17 +622,17 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
                 <div>
                   <label style={{ fontSize: 10, color: "var(--dash-text-muted)", display: "block", marginBottom: 4 }}>Estoque atual</label>
                   <input type="number" step="0.01" placeholder="0" value={formStock} onChange={e => setFormStock(e.target.value)}
-                    style={{ width: "100%", padding: "8px 10px", borderRadius: 10, background: "var(--dash-card-hover)", border: "none", color: "var(--dash-text)", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
+                    style={{ width: "100%", padding: "8px 10px", borderRadius: 10, background: "var(--dash-card-hover)", border: "1px solid var(--dash-border)", color: "var(--dash-text)", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
                 </div>
                 <div>
                   <label style={{ fontSize: 10, color: "var(--dash-text-muted)", display: "block", marginBottom: 4 }}>Estoque mínimo</label>
                   <input type="number" step="0.01" placeholder="0" value={formMinStock} onChange={e => setFormMinStock(e.target.value)}
-                    style={{ width: "100%", padding: "8px 10px", borderRadius: 10, background: "var(--dash-card-hover)", border: "none", color: "var(--dash-text)", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
+                    style={{ width: "100%", padding: "8px 10px", borderRadius: 10, background: "var(--dash-card-hover)", border: "1px solid var(--dash-border)", color: "var(--dash-text)", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
                 </div>
                 <div>
                   <label style={{ fontSize: 10, color: "var(--dash-text-muted)", display: "block", marginBottom: 4 }}>Custo/{formUnit} (R$)</label>
                   <input type="number" step="0.01" placeholder="0.00" value={formCost} onChange={e => setFormCost(e.target.value)}
-                    style={{ width: "100%", padding: "8px 10px", borderRadius: 10, background: "var(--dash-card-hover)", border: "none", color: "var(--dash-text)", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
+                    style={{ width: "100%", padding: "8px 10px", borderRadius: 10, background: "var(--dash-card-hover)", border: "1px solid var(--dash-border)", color: "var(--dash-text)", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
                 </div>
               </div>
               <input placeholder="Fornecedor (opcional)" value={formSupplier} onChange={e => setFormSupplier(e.target.value)} style={inputStyle} />
@@ -642,7 +644,7 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
                       type="date"
                       value={formExpiry}
                       onChange={(e) => setFormExpiry(e.target.value)}
-                      style={{ width: "100%", padding: "8px 10px", borderRadius: 10, background: "var(--dash-card-hover)", border: "none", color: "var(--dash-text)", fontSize: 12, outline: "none", boxSizing: "border-box" as const }}
+                      style={{ width: "100%", padding: "8px 10px", borderRadius: 10, background: "var(--dash-card-hover)", border: "1px solid var(--dash-border)", color: "var(--dash-text)", fontSize: 12, outline: "none", boxSizing: "border-box" as const }}
                     />
                   </div>
                   <div>
@@ -652,14 +654,14 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
                       value={formExpiryAlert}
                       onChange={(e) => setFormExpiryAlert(e.target.value)}
                       placeholder="7"
-                      style={{ width: "100%", padding: "8px 10px", borderRadius: 10, background: "var(--dash-card-hover)", border: "none", color: "var(--dash-text)", fontSize: 12, outline: "none", boxSizing: "border-box" as const }}
+                      style={{ width: "100%", padding: "8px 10px", borderRadius: 10, background: "var(--dash-card-hover)", border: "1px solid var(--dash-border)", color: "var(--dash-text)", fontSize: 12, outline: "none", boxSizing: "border-box" as const }}
                     />
                   </div>
                 </div>
               )}
               <div style={{ display: "flex", gap: 8 }}>
                 <button onClick={resetForm} style={{ flex: 1, padding: 10, borderRadius: 12, background: "var(--dash-card-hover)", border: "none", color: "var(--dash-text-muted)", fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>Cancelar</button>
-                <button onClick={handleSave} style={{ flex: 1, padding: 10, borderRadius: 12, background: "rgba(0,255,174,0.1)", border: "none", color: "var(--dash-accent)", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+                <button onClick={handleSave} style={{ flex: 1, padding: 10, borderRadius: 12, background: "var(--dash-accent-soft)", border: "none", color: "var(--dash-accent)", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
                   {editingItem ? "Atualizar" : "Salvar"}
                 </button>
               </div>
@@ -752,17 +754,17 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
                         </div>
                         <div style={{ display: "flex", gap: 8 }}>
                           <input type="number" step="0.01" placeholder={`Qtd (${item.unit_measure})`} value={movQty} onChange={e => setMovQty(e.target.value)}
-                            style={{ flex: 1, padding: "8px 10px", borderRadius: 10, background: "var(--dash-card-hover)", border: "none", color: "var(--dash-text)", fontSize: 13, outline: "none" }} />
+                            style={{ flex: 1, padding: "8px 10px", borderRadius: 10, background: "var(--dash-card-hover)", border: "1px solid var(--dash-border)", color: "var(--dash-text)", fontSize: 13, outline: "none" }} />
                           {movType === "purchase" && (
                             <input type="number" step="0.01" placeholder="Custo total (R$)" value={movCost} onChange={e => setMovCost(e.target.value)}
-                              style={{ flex: 1, padding: "8px 10px", borderRadius: 10, background: "var(--dash-card-hover)", border: "none", color: "var(--dash-text)", fontSize: 13, outline: "none" }} />
+                              style={{ flex: 1, padding: "8px 10px", borderRadius: 10, background: "var(--dash-card-hover)", border: "1px solid var(--dash-border)", color: "var(--dash-text)", fontSize: 13, outline: "none" }} />
                           )}
                         </div>
                         <input placeholder="Observação (opcional)" value={movNotes} onChange={e => setMovNotes(e.target.value)}
-                          style={{ padding: "8px 10px", borderRadius: 10, background: "var(--dash-card-hover)", border: "none", color: "var(--dash-text)", fontSize: 12, outline: "none" }} />
+                          style={{ padding: "8px 10px", borderRadius: 10, background: "var(--dash-card-hover)", border: "1px solid var(--dash-border)", color: "var(--dash-text)", fontSize: 12, outline: "none" }} />
                         <div style={{ display: "flex", gap: 8 }}>
                           <button onClick={() => { setShowMovement(null); setMovQty(""); setMovCost(""); setMovNotes(""); }} style={{ flex: 1, padding: 8, borderRadius: 10, background: "var(--dash-card-hover)", border: "none", color: "var(--dash-text-muted)", fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>Cancelar</button>
-                          <button onClick={() => handleMovement(item.id)} style={{ flex: 1, padding: 8, borderRadius: 10, background: "rgba(0,255,174,0.1)", border: "none", color: "var(--dash-accent)", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Registrar</button>
+                          <button onClick={() => handleMovement(item.id)} style={{ flex: 1, padding: 8, borderRadius: 10, background: "var(--dash-accent-soft)", border: "none", color: "var(--dash-accent)", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>Registrar</button>
                         </div>
                       </div>
                     )}

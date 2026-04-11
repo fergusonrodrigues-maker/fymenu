@@ -8,11 +8,11 @@ import { Unit } from "../types";
 import { createClient } from "@/lib/supabase/client";
 
 const inp: React.CSSProperties = {
-  width: "100%", padding: "11px 14px", borderRadius: 12,
-  border: "1px solid var(--dash-input-border)",
-  background: "var(--dash-input-bg)",
-  color: "var(--dash-text)", fontSize: 16, boxSizing: "border-box",
-  outline: "none",
+  width: "100%", padding: "10px 14px", borderRadius: 10,
+  border: "1px solid var(--dash-border)",
+  background: "var(--dash-card-hover)",
+  color: "var(--dash-text)", fontSize: 13, fontWeight: 500, boxSizing: "border-box",
+  outline: "none", transition: "border-color 0.2s",
 };
 
 function CopyLinkRow({ label, url }: { label: string; url: string }) {
@@ -28,7 +28,7 @@ function CopyLinkRow({ label, url }: { label: string; url: string }) {
       <div style={{ color: "var(--dash-text-muted)", fontSize: 11, marginBottom: 4, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.4px" }}>{label}</div>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <span style={{ flex: 1, color: "var(--dash-text-secondary)", fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{url}</span>
-        <button type="button" onClick={copy} style={{ padding: "5px 10px", borderRadius: 8, border: "1px solid var(--dash-btn-border)", background: copied ? "rgba(0,255,174,0.15)" : "var(--dash-link-bg)", color: copied ? "#00ffae" : "var(--dash-text-secondary)", fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>
+        <button type="button" onClick={copy} style={{ padding: "5px 10px", borderRadius: 8, border: "none", background: copied ? "var(--dash-accent-soft)" : "var(--dash-card-hover)", color: copied ? "var(--dash-accent)" : "var(--dash-text-muted)", fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0, boxShadow: "var(--dash-shadow)" }}>
           {copied ? "Copiado ✓" : "Copiar"}
         </button>
       </div>
@@ -334,7 +334,7 @@ export default function UnidadeModal({ unit, isPro, onClose }: { unit: Unit | nu
             onClick={() => setIsPublished((v) => !v)}
             style={{
               width: 44, height: 26, borderRadius: 13, border: "none",
-              background: isPublished ? "#00ffae" : "var(--dash-card-border)",
+              background: isPublished ? "var(--dash-accent)" : "var(--dash-card-hover)",
               position: "relative", transition: "background 0.2s",
               cursor: "pointer", flexShrink: 0,
             }}
@@ -348,17 +348,17 @@ export default function UnidadeModal({ unit, isPro, onClose }: { unit: Unit | nu
           </button>
         </div>
 
-        <button type="submit" style={{ marginTop: 8, padding: "14px", borderRadius: 14, border: "none", background: "rgba(0,255,174,0.15)", color: "#00ffae", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>Salvar unidade</button>
+        <button type="submit" style={{ marginTop: 8, padding: "14px", borderRadius: 14, border: "none", background: "var(--dash-accent-soft)", color: "var(--dash-accent)", fontSize: 15, fontWeight: 700, cursor: "pointer", boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>Salvar unidade</button>
       </form>
 
       {/* ── Nova Unidade ── */}
       <div style={{ marginTop: 8, borderTop: "1px solid var(--dash-separator)", paddingTop: 16 }}>
         {!showNewUnit ? (
-          <button onClick={() => setShowNewUnit(true)} style={{ width: "100%", padding: "13px", borderRadius: 14, border: "1px dashed var(--dash-btn-border)", background: "transparent", color: "var(--dash-text-muted)", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
+          <button onClick={() => setShowNewUnit(true)} style={{ width: "100%", padding: "13px", borderRadius: 14, border: "1px dashed var(--dash-border)", background: "transparent", color: "var(--dash-text-muted)", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
             + Nova Unidade
           </button>
         ) : isPro ? (
-          <div style={{ borderRadius: 14, padding: "16px", border: "1px solid var(--dash-input-border)", background: "var(--dash-card)" }}>
+          <div style={{ borderRadius: 14, padding: "16px", border: "1px solid var(--dash-border)", background: "var(--dash-card)" }}>
             <div style={{ color: "var(--dash-text)", fontSize: 14, fontWeight: 700, marginBottom: 12 }}>Nova Unidade</div>
             <form action={async (fd) => {
               const { createClient: cc } = await import("@/lib/supabase/client");
@@ -374,8 +374,8 @@ export default function UnidadeModal({ unit, isPro, onClose }: { unit: Unit | nu
               <input name="name" placeholder="Nome da unidade" required style={inp} />
               <input name="slug" placeholder="slug (ex: unidade-centro)" required style={inp} />
               <div style={{ display: "flex", gap: 8 }}>
-                <button type="button" onClick={() => setShowNewUnit(false)} style={{ flex: 1, padding: "11px", borderRadius: 12, border: "1px solid var(--dash-btn-border)", background: "transparent", color: "var(--dash-text-dim)", fontSize: 13, cursor: "pointer" }}>Cancelar</button>
-                <button type="submit" style={{ flex: 1, padding: "11px", borderRadius: 12, border: "none", background: "rgba(0,255,174,0.15)", color: "#00ffae", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Criar</button>
+                <button type="button" onClick={() => setShowNewUnit(false)} style={{ flex: 1, padding: "11px", borderRadius: 12, border: "none", background: "var(--dash-card-hover)", color: "var(--dash-text-muted)", fontSize: 13, cursor: "pointer" }}>Cancelar</button>
+                <button type="submit" style={{ flex: 1, padding: "11px", borderRadius: 12, border: "none", background: "var(--dash-accent-soft)", color: "var(--dash-accent)", fontSize: 13, fontWeight: 700, cursor: "pointer", boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>Criar</button>
               </div>
             </form>
           </div>
@@ -385,7 +385,7 @@ export default function UnidadeModal({ unit, isPro, onClose }: { unit: Unit | nu
             <div style={{ color: "var(--dash-text-muted)", fontSize: 13, marginBottom: 14, lineHeight: 1.5 }}>
               Múltiplas unidades estão disponíveis no Plano Pro. Faça upgrade para adicionar novas unidades.
             </div>
-            <button onClick={() => { setShowNewUnit(false); onClose(); }} style={{ width: "100%", padding: "12px", borderRadius: 12, border: "none", background: "linear-gradient(135deg, #00ffae, #00d9b8)", color: "#000", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>
+            <button onClick={() => { setShowNewUnit(false); onClose(); }} style={{ width: "100%", padding: "12px", borderRadius: 12, border: "none", background: "var(--dash-accent-soft)", color: "var(--dash-accent)", fontSize: 14, fontWeight: 800, cursor: "pointer", boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
               Ver Planos →
             </button>
           </div>

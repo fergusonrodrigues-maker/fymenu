@@ -15,9 +15,20 @@ const PLANS = [
 ];
 
 const inp: React.CSSProperties = {
-  width: "100%", padding: "10px 14px", borderRadius: 12,
-  background: "var(--dash-card-hover)", border: "none",
-  color: "var(--dash-text)", fontSize: 14, outline: "none", boxSizing: "border-box",
+  width: "100%", padding: "10px 14px", borderRadius: 10,
+  background: "var(--dash-card-hover)", border: "1px solid var(--dash-border)",
+  color: "var(--dash-text)", fontSize: 13, fontWeight: 500, outline: "none", boxSizing: "border-box",
+  transition: "border-color 0.2s",
+};
+const inputFocusHandlers = {
+  onFocus: (e: React.FocusEvent<HTMLInputElement>) => {
+    e.currentTarget.style.borderColor = "var(--dash-accent)";
+    e.currentTarget.style.boxShadow = "0 0 0 2px rgba(0,255,174,0.08)";
+  },
+  onBlur: (e: React.FocusEvent<HTMLInputElement>) => {
+    e.currentTarget.style.borderColor = "var(--dash-border)";
+    e.currentTarget.style.boxShadow = "none";
+  },
 };
 
 export default function ConfigModal({ profile, restaurant }: { profile: Profile; restaurant: Restaurant }) {
@@ -140,17 +151,17 @@ export default function ConfigModal({ profile, restaurant }: { profile: Profile;
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             <div>
               <label style={{ fontSize: 10, color: "var(--dash-text-muted)", display: "block", marginBottom: 4 }}>Nome</label>
-              <input value={firstName} onChange={e => setFirstName(e.target.value)} style={inp} />
+              <input value={firstName} onChange={e => setFirstName(e.target.value)} style={inp} {...inputFocusHandlers} />
             </div>
             <div>
               <label style={{ fontSize: 10, color: "var(--dash-text-muted)", display: "block", marginBottom: 4 }}>Sobrenome</label>
-              <input value={lastName} onChange={e => setLastName(e.target.value)} style={inp} />
+              <input value={lastName} onChange={e => setLastName(e.target.value)} style={inp} {...inputFocusHandlers} />
             </div>
           </div>
 
           <div>
             <label style={{ fontSize: 10, color: "var(--dash-text-muted)", display: "block", marginBottom: 4 }}>Telefone</label>
-            <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="(62) 99999-9999" style={inp} />
+            <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="(62) 99999-9999" style={inp} {...inputFocusHandlers} />
           </div>
 
           <div>
@@ -161,9 +172,10 @@ export default function ConfigModal({ profile, restaurant }: { profile: Profile;
           </div>
 
           <button onClick={handleSaveProfile} disabled={saving} style={{
-            width: "100%", padding: 12, borderRadius: 14, border: "none", cursor: "pointer",
-            background: saved ? "rgba(0,255,174,0.15)" : "rgba(0,255,174,0.1)",
-            color: "var(--dash-accent)", fontSize: 13, fontWeight: 800, fontFamily: "inherit",
+            width: "100%", padding: 12, borderRadius: 12, border: "none", cursor: "pointer",
+            background: "var(--dash-accent-soft)", color: "var(--dash-accent)",
+            fontSize: 13, fontWeight: 800, fontFamily: "inherit",
+            boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
             opacity: saving ? 0.5 : 1,
           }}>
             {saved ? "✅ Salvo!" : saving ? "Salvando..." : "Salvar"}
@@ -296,13 +308,13 @@ export default function ConfigModal({ profile, restaurant }: { profile: Profile;
           <div>
             <label style={{ fontSize: 10, color: "var(--dash-text-muted)", display: "block", marginBottom: 4 }}>Nova senha</label>
             <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)}
-              placeholder="Mínimo 6 caracteres" style={inp} />
+              placeholder="Mínimo 6 caracteres" style={inp} {...inputFocusHandlers} />
           </div>
 
           <div>
             <label style={{ fontSize: 10, color: "var(--dash-text-muted)", display: "block", marginBottom: 4 }}>Confirmar senha</label>
             <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
-              placeholder="Repita a senha" style={inp} />
+              placeholder="Repita a senha" style={inp} {...inputFocusHandlers} />
           </div>
 
           {passwordError && (

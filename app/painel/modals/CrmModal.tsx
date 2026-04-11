@@ -91,8 +91,9 @@ function CrmMessagesTab({ unit, clients }: { unit: any; clients: any[] }) {
         onChange={e => setMessageText(e.target.value)}
         style={{
           width: "100%", minHeight: 80, padding: 14, borderRadius: 14,
-          background: "var(--dash-card-hover)", border: "none", color: "var(--dash-text)",
+          background: "var(--dash-card-hover)", border: "1px solid var(--dash-border)", color: "var(--dash-text)",
           fontSize: 13, outline: "none", resize: "vertical", boxSizing: "border-box",
+          transition: "border-color 0.2s",
         }}
       />
       <div style={{ fontSize: 9, color: "var(--dash-text-muted)", marginTop: 4 }}>
@@ -349,8 +350,8 @@ export default function CrmModal({ unit, restaurant }: { unit: any; restaurant: 
                   onChange={e => setSearchQuery(e.target.value)}
                   style={{
                     flex: 1, padding: "8px 12px", borderRadius: 10,
-                    background: "var(--dash-card-hover)", border: "none",
-                    color: "var(--dash-text)", fontSize: 12, outline: "none",
+                    background: "var(--dash-card-hover)", border: "1px solid var(--dash-border)",
+                    color: "var(--dash-text)", fontSize: 12, outline: "none", transition: "border-color 0.2s",
                   }}
                 />
                 <select

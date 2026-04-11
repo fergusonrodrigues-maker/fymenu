@@ -22,11 +22,19 @@ function getSectionConfig(sectionValue: string, customSections: CustomSection[])
 }
 
 const inp: React.CSSProperties = {
-  width: "100%", padding: "11px 14px", borderRadius: 12,
-  border: "1px solid var(--dash-input-border)",
-  background: "var(--dash-input-bg)",
-  color: "var(--dash-text)", fontSize: 16, boxSizing: "border-box",
-  outline: "none",
+  width: "100%", padding: "10px 14px", borderRadius: 10,
+  border: "1px solid var(--dash-border)",
+  background: "var(--dash-card-hover)",
+  color: "var(--dash-text)", fontSize: 13, fontWeight: 500, boxSizing: "border-box",
+  outline: "none", transition: "border-color 0.2s",
+};
+const inpFocus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  e.currentTarget.style.borderColor = "var(--dash-accent)";
+  e.currentTarget.style.boxShadow = "0 0 0 2px rgba(0,255,174,0.08)";
+};
+const inpBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  e.currentTarget.style.borderColor = "var(--dash-border)";
+  e.currentTarget.style.boxShadow = "none";
 };
 
 function NewProductFormInline({ categoryId, section, customSections, anyProductExpanded, onOpen }: { categoryId: string; section: string; customSections: CustomSection[]; anyProductExpanded: boolean; onOpen: () => void }) {
@@ -53,7 +61,7 @@ function NewProductFormInline({ categoryId, section, customSections, anyProductE
   }
 
   if (!open) return (
-    <button onClick={handleOpen} style={{ padding: "10px", borderRadius: 10, width: "100%", background: "transparent", border: "1px dashed var(--dash-btn-border)", color: "var(--dash-text-muted)", fontSize: 13, cursor: "pointer" }}>
+    <button onClick={handleOpen} style={{ padding: "10px", borderRadius: 10, width: "100%", background: "transparent", border: "1px dashed var(--dash-border)", color: "var(--dash-text-muted)", fontSize: 13, cursor: "pointer" }}>
       + Adicionar produto
     </button>
   );
@@ -63,7 +71,7 @@ function NewProductFormInline({ categoryId, section, customSections, anyProductE
         await createProduct(formData);
         handleClose();
       }}
-      style={{ display: "flex", flexDirection: "column", gap: 8, padding: 12, borderRadius: 12, border: "1px solid var(--dash-input-border)", background: "var(--dash-card)" }}
+      style={{ display: "flex", flexDirection: "column", gap: 8, padding: 12, borderRadius: 12, border: "1px solid var(--dash-border)", background: "var(--dash-card)" }}
     >
       <input type="hidden" name="category_id" value={categoryId} />
       <input name="name" placeholder="Nome do produto" required style={inp} />
@@ -83,11 +91,11 @@ function NewProductFormInline({ categoryId, section, customSections, anyProductE
         </p>
       )}
       {showAlcoholic && (
-        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", borderRadius: 8, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", borderRadius: 8, background: "var(--dash-card)", border: "1px solid var(--dash-border)" }}>
           <button
             type="button"
             onClick={() => setIsAlcoholic(!isAlcoholic)}
-            style={{ width: 44, height: 26, borderRadius: 13, background: isAlcoholic ? "#00ffae" : "rgba(255,255,255,0.15)", border: "none", cursor: "pointer", position: "relative", transition: "background 0.2s", flexShrink: 0 }}
+            style={{ width: 44, height: 26, borderRadius: 13, background: isAlcoholic ? "var(--dash-accent)" : "var(--dash-card-hover)", border: "none", cursor: "pointer", position: "relative", transition: "background 0.2s", flexShrink: 0 }}
           >
             <span style={{ display: "block", width: 20, height: 20, borderRadius: "50%", background: "#fff", position: "absolute", top: 3, left: 3, transition: "transform 0.2s", transform: isAlcoholic ? "translateX(18px)" : "translateX(0)" }} />
           </button>
@@ -96,8 +104,8 @@ function NewProductFormInline({ categoryId, section, customSections, anyProductE
         </div>
       )}
       <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-        <button type="button" onClick={handleClose} style={{ padding: "9px 14px", borderRadius: 10, border: "1px solid var(--dash-btn-border)", background: "transparent", color: "var(--dash-text-dim)", fontSize: 12, cursor: "pointer" }}>Cancelar</button>
-        <button type="submit" style={{ padding: "9px 16px", borderRadius: 10, border: "none", background: "rgba(0,255,174,0.15)", color: "#00ffae", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Criar</button>
+        <button type="button" onClick={handleClose} style={{ padding: "8px 14px", borderRadius: 10, border: "none", background: "var(--dash-card)", color: "var(--dash-text-muted)", fontSize: 12, fontWeight: 600, cursor: "pointer", boxShadow: "var(--dash-shadow)" }}>Cancelar</button>
+        <button type="submit" style={{ padding: "8px 16px", borderRadius: 10, border: "none", background: "var(--dash-accent-soft)", color: "var(--dash-accent)", fontSize: 12, fontWeight: 700, cursor: "pointer", boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>Criar</button>
       </div>
     </form>
   );
@@ -424,8 +432,9 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
       {importStep !== "idle" && (
         <div style={{ padding: "0 4px" }}>
           <button onClick={() => { setImportStep("idle"); setImportData(null); setPastedText(""); }} style={{
-            padding: "6px 14px", borderRadius: 8, background: "rgba(255,255,255,0.06)",
+            padding: "6px 14px", borderRadius: 8, background: "var(--dash-card)",
             border: "none", color: "var(--dash-text-muted)", fontSize: 12, cursor: "pointer", marginBottom: 16, fontFamily: "inherit",
+            boxShadow: "var(--dash-shadow)",
           }}>← Voltar ao cardápio</button>
 
           {/* Upload */}
@@ -438,10 +447,10 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
               <div
                 onClick={() => importFileRef.current?.click()}
                 onDragOver={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = "rgba(0,255,174,0.3)"; }}
-                onDragLeave={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; }}
-                onDrop={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; handleImportFile(e.dataTransfer.files[0]); }}
+                onDragLeave={(e) => { e.currentTarget.style.borderColor = "var(--dash-border)"; }}
+                onDrop={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = "var(--dash-border)"; handleImportFile(e.dataTransfer.files[0]); }}
                 style={{
-                  border: "2px dashed rgba(255,255,255,0.08)", borderRadius: 20,
+                  border: "2px dashed var(--dash-border)", borderRadius: 20,
                   padding: "40px 20px", textAlign: "center", cursor: "pointer",
                   transition: "border-color 0.3s", marginBottom: 16,
                 }}
@@ -470,9 +479,11 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                 onChange={(e) => setPastedText(e.target.value)}
                 style={{
                   width: "100%", minHeight: 100, padding: 14, borderRadius: 14,
-                  background: "rgba(255,255,255,0.04)", border: "none", color: "var(--dash-text)",
+                  background: "var(--dash-card-hover)", border: "1px solid var(--dash-border)", color: "var(--dash-text)",
                   fontSize: 13, outline: "none", resize: "vertical", boxSizing: "border-box", fontFamily: "inherit",
+                  transition: "border-color 0.2s",
                 }}
+                onFocus={inpFocus} onBlur={inpBlur}
               />
               {pastedText.trim() && (
                 <button onClick={() => handleImportText(pastedText)} style={{
@@ -507,21 +518,21 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
               {importData.categories?.map((cat: any, ci: number) => (
                 <div key={ci} style={{
                   marginBottom: 12, padding: 14, borderRadius: 14,
-                  background: "rgba(255,255,255,0.03)",
-                  boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
+                  background: "var(--dash-card)",
+                  border: "1px solid var(--dash-border)",
                 }}>
                   <input value={cat.name} onChange={(e) => {
                     const u = structuredClone(importData); u.categories[ci].name = e.target.value; setImportData(u);
                   }} style={{
                     width: "100%", padding: "8px 12px", borderRadius: 10,
-                    background: "rgba(255,255,255,0.04)", border: "none",
+                    background: "var(--dash-card-hover)", border: "1px solid var(--dash-border)",
                     color: "var(--dash-text)", fontSize: 14, fontWeight: 700, outline: "none",
                     marginBottom: 8, boxSizing: "border-box" as const, fontFamily: "inherit",
                   }} />
                   {cat.products?.map((prod: any, pi: number) => (
                     <div key={pi} style={{
                       display: "flex", alignItems: "center", gap: 8,
-                      padding: "6px 0", borderBottom: pi < cat.products.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
+                      padding: "6px 0", borderBottom: pi < cat.products.length - 1 ? "1px solid var(--dash-border)" : "none",
                     }}>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <input value={prod.name} onChange={(e) => {
@@ -629,8 +640,14 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
           <input type="hidden" name="is_alcoholic" value="false" />
           <input type="hidden" name="section" value={newCatSection} />
           <div style={{ display: "flex", gap: 8 }}>
-            <input name="name" placeholder="Nome da categoria" required style={{ ...inp, flex: 1, height: 38, padding: "0 12px" }} />
-            <button type="submit" className="btn-gradient" style={{ padding: "0 14px", whiteSpace: "nowrap", minWidth: 60, height: 30, borderRadius: 8 }}>
+            <input name="name" placeholder="Nome da categoria" required style={{ ...inp, flex: 1, height: 38, padding: "0 12px" }} onFocus={inpFocus} onBlur={inpBlur} />
+            <button type="submit" style={{
+              padding: "0 14px", whiteSpace: "nowrap", minWidth: 60, height: 38, borderRadius: 8,
+              border: "none", cursor: "pointer",
+              background: "var(--dash-accent-soft)", color: "var(--dash-accent)",
+              fontSize: 12, fontWeight: 700,
+              boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
+            }}>
               Criar
             </button>
           </div>
@@ -638,22 +655,19 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
           <div style={{ marginBottom: 4 }}>
             <div style={{ fontSize: 12, color: "var(--dash-text-dim)", marginBottom: 8 }}>Sessão</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {allSections.map((s, i) => {
+              {allSections.map((s) => {
                 const isActive = newCatSection === s.value;
-                const gradStart = ["#00ffae", "#60a5fa", "#a855f7", "#f472b6", "#fbbf24"][i % 5];
-                const gradEnd   = ["#00d9ff", "#a855f7", "#f472b6", "#fbbf24", "#00ffae"][i % 5];
                 return (
                   <button key={s.value} type="button" onClick={() => setNewCatSection(s.value)}
                     style={{
-                      padding: "6px 16px", borderRadius: 10, border: "1px solid",
-                      borderColor: isActive ? "transparent" : "rgba(255,255,255,0.1)",
-                      background: isActive ? `linear-gradient(135deg, ${gradStart}, ${gradEnd})` : "transparent",
-                      color: isActive ? "#000" : "var(--dash-text-dim)",
-                      cursor: "pointer", fontSize: 12, fontWeight: isActive ? 800 : 600,
-                      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                      transform: isActive ? "scale(1.05)" : "scale(1)",
+                      padding: "5px 14px", borderRadius: 8, border: "none",
+                      background: isActive ? "var(--dash-accent-soft)" : "var(--dash-card)",
+                      color: isActive ? "var(--dash-accent)" : "var(--dash-text-muted)",
+                      cursor: "pointer", fontSize: 11, fontWeight: 600,
+                      transition: "all 0.15s",
+                      boxShadow: isActive ? "none" : "var(--dash-shadow)",
                     }}>
-                    {s.label}
+                    {s.icon} {s.label}
                   </button>
                 );
               })}
@@ -663,12 +677,13 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
               </button>
             </div>
             {showCreateSection && (
-              <div style={{ marginTop: 8, padding: 12, borderRadius: 12, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <div style={{ marginTop: 8, padding: 12, borderRadius: 12, background: "var(--dash-card)", border: "1px solid var(--dash-border)" }}>
                 <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
                   <input type="text" placeholder="Nome da sessão" value={newSectionName} onChange={e => setNewSectionName(e.target.value)}
-                    style={{ flex: 1, padding: "8px 12px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.05)", color: "#fff", fontSize: 13, outline: "none" }} />
+                    style={{ flex: 1, padding: "8px 12px", borderRadius: 8, border: "1px solid var(--dash-border)", background: "var(--dash-card-hover)", color: "var(--dash-text)", fontSize: 13, outline: "none" }}
+                    onFocus={inpFocus} onBlur={inpBlur} />
                   <input type="text" placeholder="🗂" value={newSectionIcon} onChange={e => setNewSectionIcon(e.target.value)} maxLength={2}
-                    style={{ width: 50, padding: "8px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.05)", color: "#fff", fontSize: 18, textAlign: "center", outline: "none" }} />
+                    style={{ width: 50, padding: "8px", borderRadius: 8, border: "1px solid var(--dash-border)", background: "var(--dash-card-hover)", color: "var(--dash-text)", fontSize: 18, textAlign: "center", outline: "none" }} />
                 </div>
                 <div style={{ display: "flex", gap: 12, marginBottom: 8 }}>
                   <label style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--dash-text-dim)", fontSize: 12, cursor: "pointer" }}>
@@ -682,9 +697,9 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                 </div>
                 <div style={{ display: "flex", gap: 6 }}>
                   <button type="button" onClick={() => setShowCreateSection(false)}
-                    style={{ padding: "6px 14px", borderRadius: 8, border: "1px solid var(--dash-border)", background: "transparent", color: "var(--dash-text-muted)", fontSize: 12, cursor: "pointer" }}>Cancelar</button>
+                    style={{ padding: "6px 14px", borderRadius: 8, border: "none", background: "var(--dash-card-hover)", color: "var(--dash-text-muted)", fontSize: 12, cursor: "pointer" }}>Cancelar</button>
                   <button type="button" onClick={handleCreateSection}
-                    style={{ padding: "6px 14px", borderRadius: 8, border: "none", background: "#00ffae", color: "#000", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Criar</button>
+                    style={{ padding: "6px 14px", borderRadius: 8, border: "none", background: "var(--dash-accent-soft)", color: "var(--dash-accent)", fontSize: 12, fontWeight: 700, cursor: "pointer", boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>Criar</button>
                 </div>
               </div>
             )}
@@ -888,10 +903,10 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                       </div>
                       <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
                         <input type="time" value={editStartTime} onChange={e => setEditStartTime(e.target.value)}
-                          style={{ padding: "3px 6px", borderRadius: 6, background: "rgba(255,255,255,0.04)", border: "none", color: "var(--dash-text)", fontSize: 11, outline: "none" }} />
+                          style={{ padding: "3px 6px", borderRadius: 6, background: "var(--dash-card-hover)", border: "1px solid var(--dash-border)", color: "var(--dash-text)", fontSize: 11, outline: "none" }} />
                         <span style={{ fontSize: 9, color: "var(--dash-text-muted)" }}>até</span>
                         <input type="time" value={editEndTime} onChange={e => setEditEndTime(e.target.value)}
-                          style={{ padding: "3px 6px", borderRadius: 6, background: "rgba(255,255,255,0.04)", border: "none", color: "var(--dash-text)", fontSize: 11, outline: "none" }} />
+                          style={{ padding: "3px 6px", borderRadius: 6, background: "var(--dash-card-hover)", border: "1px solid var(--dash-border)", color: "var(--dash-text)", fontSize: 11, outline: "none" }} />
                       </div>
                       <div style={{ fontSize: 9, color: "var(--dash-text-subtle)", marginTop: 4 }}>
                         Categoria visível apenas nos dias e horários selecionados.
@@ -940,10 +955,10 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                           style={{
                             width: "100%",
                             padding: "10px 0",
-                            background: "rgba(255,255,255,0.04)",
-                            border: "1px solid rgba(255,255,255,0.08)",
+                            background: "var(--dash-card)",
+                            border: "1px solid var(--dash-border)",
                             borderRadius: 8,
-                            color: "#00ffae",
+                            color: "var(--dash-accent)",
                             fontSize: 13,
                             fontWeight: 600,
                             cursor: "pointer",

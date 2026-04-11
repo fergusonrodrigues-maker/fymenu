@@ -40,7 +40,7 @@ export default function PlanoModal({ restaurant }: { restaurant: Restaurant; tri
         <div style={{ fontSize: 18, fontWeight: 800, color: "var(--dash-text)", marginTop: 4 }}>
           {restaurant.plan === "menu" ? "Menu" : restaurant.plan === "menupro" ? "MenuPro" : restaurant.plan === "business" ? "Business" : restaurant.plan ?? "Nenhum"}
         </div>
-        {restaurant.free_access && <span style={{ fontSize: 11, color: "#00ffae", marginTop: 2, display: "block" }}>Acesso gratuito ativo</span>}
+        {restaurant.free_access && <span style={{ fontSize: 11, color: "var(--dash-accent)", marginTop: 2, display: "block" }}>Acesso gratuito ativo</span>}
         {restaurant.status === "trial" && <span style={{ fontSize: 11, color: "#fbbf24", marginTop: 2, display: "block" }}>Período de teste</span>}
       </div>
 
@@ -76,14 +76,14 @@ export default function PlanoModal({ restaurant }: { restaurant: Restaurant; tri
               </div>
             </div>
             {restaurant.plan === plan.key ? (
-              <span style={{ padding: "4px 12px", borderRadius: 8, background: "rgba(0,255,174,0.1)", color: "#00ffae", fontSize: 11, fontWeight: 700 }}>Atual</span>
+              <span style={{ padding: "4px 12px", borderRadius: 8, background: "var(--dash-accent-soft)", color: "var(--dash-accent)", fontSize: 11, fontWeight: 700 }}>Atual</span>
             ) : (
               <button
                 onClick={() => window.location.href = "/painel/planos"}
                 style={{
                   padding: "8px 16px", borderRadius: 10, border: "none", cursor: "pointer",
                   background: plan.highlight ? "rgba(0,255,174,0.1)" : "var(--dash-card-hover)",
-                  color: plan.highlight ? "#00ffae" : "var(--dash-text-dim)",
+                  color: plan.highlight ? "var(--dash-accent)" : "var(--dash-text-muted)",
                   fontSize: 12, fontWeight: 700,
                   boxShadow: "0 1px 0 rgba(255,255,255,0.04) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
                 }}

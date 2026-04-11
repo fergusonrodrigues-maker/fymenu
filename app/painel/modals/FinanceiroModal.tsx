@@ -440,8 +440,9 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
                 onChange={(e) => setFinanceText(e.target.value)}
                 style={{
                   width: "100%", minHeight: 80, padding: 14, borderRadius: 14,
-                  background: "var(--dash-card-hover)", border: "none", color: "var(--dash-text)",
+                  background: "var(--dash-card-hover)", border: "1px solid var(--dash-border)", color: "var(--dash-text)",
                   fontSize: 13, outline: "none", resize: "vertical", boxSizing: "border-box",
+                  transition: "border-color 0.2s",
                 }}
               />
               {financeText.trim() && (
@@ -988,12 +989,12 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
           {showExpenseForm && (
             <div style={{ padding: 16, borderRadius: 16, background: "var(--dash-card)", marginBottom: 20, display: "flex", flexDirection: "column", gap: 10 }}>
               <input type="text" placeholder="Nome do custo (ex: Aluguel)" value={expenseName} onChange={e => setExpenseName(e.target.value)}
-                style={{ padding: "10px 14px", borderRadius: 12, background: "var(--dash-card-hover)", border: "none", color: "var(--dash-text)", fontSize: 14, outline: "none" }} />
+                style={{ padding: "10px 14px", borderRadius: 10, background: "var(--dash-card-hover)", border: "1px solid var(--dash-border)", color: "var(--dash-text)", fontSize: 13, fontWeight: 500, outline: "none", transition: "border-color 0.2s" }} />
               <div style={{ display: "flex", gap: 8 }}>
                 <input type="number" placeholder="Valor (R$)" value={expenseAmount} onChange={e => setExpenseAmount(e.target.value)}
-                  style={{ flex: 1, padding: "10px 14px", borderRadius: 12, background: "var(--dash-card-hover)", border: "none", color: "var(--dash-text)", fontSize: 14, outline: "none" }} />
+                  style={{ flex: 1, padding: "10px 14px", borderRadius: 10, background: "var(--dash-card-hover)", border: "1px solid var(--dash-border)", color: "var(--dash-text)", fontSize: 13, outline: "none" }} />
                 <select value={expenseCategory} onChange={e => setExpenseCategory(e.target.value)}
-                  style={{ padding: "10px 14px", borderRadius: 12, background: "var(--dash-card-hover)", border: "none", color: "var(--dash-text)", fontSize: 13, outline: "none" }}>
+                  style={{ padding: "10px 14px", borderRadius: 10, background: "var(--dash-card-hover)", border: "1px solid var(--dash-border)", color: "var(--dash-text)", fontSize: 13, outline: "none" }}>
                   <option value="aluguel">Aluguel</option>
                   <option value="salarios">Salários</option>
                   <option value="fornecedores">Fornecedores</option>
@@ -1010,11 +1011,11 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
                   Recorrente (mensal)
                 </label>
                 <input type="date" value={expenseDate} onChange={e => setExpenseDate(e.target.value)}
-                  style={{ padding: "8px 12px", borderRadius: 10, background: "var(--dash-card-hover)", border: "none", color: "var(--dash-text)", fontSize: 12, outline: "none" }} />
+                  style={{ padding: "8px 12px", borderRadius: 10, background: "var(--dash-card-hover)", border: "1px solid var(--dash-border)", color: "var(--dash-text)", fontSize: 12, outline: "none" }} />
               </div>
               <div style={{ display: "flex", gap: 8 }}>
                 <button onClick={() => setShowExpenseForm(false)} style={{ flex: 1, padding: "10px", borderRadius: 12, background: "var(--dash-card-hover)", border: "none", color: "var(--dash-text-muted)", fontSize: 13, cursor: "pointer" }}>Cancelar</button>
-                <button onClick={handleAddExpense} style={{ flex: 1, padding: "10px", borderRadius: 12, background: "rgba(0,255,174,0.1)", border: "none", color: "#00ffae", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Salvar</button>
+                <button onClick={handleAddExpense} style={{ flex: 1, padding: "10px", borderRadius: 12, background: "var(--dash-accent-soft)", border: "none", color: "var(--dash-accent)", fontSize: 13, fontWeight: 700, cursor: "pointer", boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>Salvar</button>
               </div>
             </div>
           )}

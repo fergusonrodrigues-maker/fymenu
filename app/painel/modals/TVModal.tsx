@@ -14,7 +14,7 @@ export default function TVModal({ unit, tvCount }: { unit: Unit | null; tvCount:
             Abrir display público ↗
           </a>
         )}
-        <a href="/painel/tv" style={{ display: "block", padding: "12px", borderRadius: 12, border: "none", background: "rgba(0,255,174,0.15)", color: "#00ffae", fontSize: 14, fontWeight: 700, textDecoration: "none" }}>
+        <a href="/painel/tv" style={{ display: "block", padding: "12px", borderRadius: 12, border: "none", background: "var(--dash-accent-soft)", color: "var(--dash-accent)", fontSize: 14, fontWeight: 700, textDecoration: "none", boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
           Gerenciar vídeos →
         </a>
       </div>
