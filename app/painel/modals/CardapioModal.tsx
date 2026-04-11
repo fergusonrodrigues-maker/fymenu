@@ -1057,11 +1057,13 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
 
             {/* EXPANDED FORM */}
             {isOpen && (
-              <form action={updateCategory} style={{
-                padding: "16px", borderRadius: 14,
+              <div style={{
+                borderRadius: 14,
                 background: "var(--dash-accent-soft)",
                 border: "1px solid rgba(0,255,174,0.06)",
+                overflow: "hidden",
               }}>
+              <form action={updateCategory} style={{ padding: "16px" }}>
                 <input type="hidden" name="id" value={cat.id} />
                 <input type="hidden" name="section" value={editCatSection[cat.id] ?? cat.section ?? 'pratos'} />
                 <input type="hidden" name="schedule_enabled" value={String(editScheduleEnabled)} />
@@ -1069,7 +1071,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                 <input type="hidden" name="start_time" value={editStartTime} />
                 <input type="hidden" name="end_time" value={editEndTime} />
 
-                {/* Row 1: Name + Salvar */}
+                {/* Row 1: Name + Salvar + X + Toggle */}
                 <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 12 }}>
                   <input name="name" defaultValue={cat.name} style={{
                     flex: 1, padding: "10px 14px", borderRadius: 10,
@@ -1079,12 +1081,39 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                   <button type="submit" style={{
                     padding: "8px 16px", borderRadius: 10, border: "none", cursor: "pointer",
                     background: "var(--dash-accent-soft)", color: "var(--dash-accent)",
-                    fontSize: 12, fontWeight: 700, flexShrink: 0,
+                    fontSize: 12, fontWeight: 700, flexShrink: 0, whiteSpace: "nowrap",
                     boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
                   }}>Salvar</button>
+                  {/* Cancel edit */}
+                  <button type="button" onClick={() => { setExpandedCat(null); setShowAllProducts(prev => ({ ...prev, [cat.id]: false })); }} style={{
+                    width: 32, height: 32, borderRadius: 10, border: "none", cursor: "pointer",
+                    background: "rgba(220,38,38,0.12)", color: "#ffffff",
+                    display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0,
+                    transition: "all 0.2s",
+                  }}>✕</button>
+                  {/* Active toggle */}
+                  <label className="switch-toggle" style={{ flexShrink: 0 }}>
+                    <input
+                      type="checkbox"
+                      checked={isCatActive(cat)}
+                      onChange={async (e) => {
+                        const newActive = e.target.checked;
+                        setCatActiveState(prev => ({ ...prev, [cat.id]: newActive }));
+                        const supabase = createSupabaseClient();
+                        const { error } = await supabase.from("categories").update({ is_active: newActive }).eq("id", cat.id);
+                        if (error) { console.error("Toggle category active error:", error); setCatActiveState(prev => ({ ...prev, [cat.id]: !newActive })); }
+                      }}
+                    />
+                    <div className="sw-slider">
+                      <div className="sw-circle">
+                        <svg className="sw-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                        <svg className="sw-cross" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                      </div>
+                    </div>
+                  </label>
                 </div>
 
-                {/* Row 2: Drag + Arrow + Session + Cancel + Toggle */}
+                {/* Row 2: Drag + Arrow + Session */}
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
                   <span
                     style={{ color: "var(--dash-text-subtle)", cursor: "grab", fontSize: 14, userSelect: "none", WebkitUserSelect: "none", touchAction: "none", flexShrink: 0 }}
@@ -1116,36 +1145,9 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                       + Criar
                     </button>
                   </div>
-                  {/* Cancel edit */}
-                  <button type="button" onClick={() => { setExpandedCat(null); setShowAllProducts(prev => ({ ...prev, [cat.id]: false })); }} style={{
-                    width: 28, height: 28, borderRadius: 8, border: "none", cursor: "pointer",
-                    background: "rgba(220,38,38,0.12)", color: "#ffffff",
-                    display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, flexShrink: 0,
-                    transition: "all 0.2s",
-                  }}>✕</button>
-                  {/* Active toggle */}
-                  <label className="switch-toggle">
-                    <input
-                      type="checkbox"
-                      checked={isCatActive(cat)}
-                      onChange={async (e) => {
-                        const newActive = e.target.checked;
-                        setCatActiveState(prev => ({ ...prev, [cat.id]: newActive }));
-                        const supabase = createSupabaseClient();
-                        const { error } = await supabase.from("categories").update({ is_active: newActive }).eq("id", cat.id);
-                        if (error) { console.error("Toggle category active error:", error); setCatActiveState(prev => ({ ...prev, [cat.id]: !newActive })); }
-                      }}
-                    />
-                    <div className="sw-slider">
-                      <div className="sw-circle">
-                        <svg className="sw-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
-                        <svg className="sw-cross" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-                      </div>
-                    </div>
-                  </label>
                 </div>
 
-                {/* Row 3: Schedule */}
+                {/* Row 3: Ativar por horário */}
                 <div style={{ marginBottom: 4 }}>
                   <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
                     <input type="checkbox" checked={editScheduleEnabled} onChange={e => setEditScheduleEnabled(e.target.checked)}
@@ -1179,18 +1181,16 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                   )}
                 </div>
               </form>
-            )}
-
-            {/* Delete — outside form to avoid nesting */}
-            {isOpen && (
-              <div style={{ padding: "4px 16px 2px", display: "flex", justifyContent: "flex-end" }}>
+              {/* Row 6: Excluir categoria — separate form (no nesting), visually inside section */}
+              <div style={{ paddingInline: 16, paddingBottom: 12, paddingTop: 10, borderTop: "1px solid var(--dash-section-border)", display: "flex", justifyContent: "flex-end" }}>
                 <form action={deleteCategory} onSubmit={(e) => { if (!confirm("Excluir categoria e todos os produtos?")) e.preventDefault(); }}>
                   <input type="hidden" name="id" value={cat.id} />
                   <button type="submit" style={{
                     background: "transparent", border: "none", cursor: "pointer",
-                    color: "var(--dash-danger)", fontSize: 10, padding: "4px 8px",
+                    color: "var(--dash-danger)", fontSize: 11, fontWeight: 600, padding: "6px 14px", borderRadius: 8,
                   }}>Excluir categoria</button>
                 </form>
+              </div>
               </div>
             )}
             <div className="cat-dropdown-content" data-open={isOpen ? "true" : "false"}>
