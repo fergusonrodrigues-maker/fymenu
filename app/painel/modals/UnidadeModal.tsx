@@ -129,8 +129,8 @@ export default function UnidadeModal({ unit, isPro, onClose, onOpenPlans }: { un
       <LogoUploader unitId={unit.id} currentLogoUrl={unit.logo_url} />
 
       {/* ── Foto de Capa ── */}
-      <div style={{ borderRadius: 14, padding: 14, background: "rgba(20,20,20,0.55)", border: "1px solid var(--dash-border)" }}>
-        <div style={{ fontWeight: 900, marginBottom: 10 }}>Foto de Capa</div>
+      <div style={{ borderRadius: 14, padding: 14, background: "var(--dash-card)", border: "1px solid var(--dash-section-border)" }}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: "var(--dash-text)", marginBottom: 10 }}>Foto de Capa</div>
         <p style={{ color: "var(--dash-text-muted)", fontSize: 12, marginBottom: 12, marginTop: 0 }}>
           Aparece no topo do cardápio público. Use uma foto da fachada ou de um prato.
         </p>
@@ -209,8 +209,8 @@ export default function UnidadeModal({ unit, isPro, onClose, onOpenPlans }: { un
       </div>
 
       {/* ── Descrição curta ── */}
-      <div style={{ borderRadius: 14, padding: 14, background: "rgba(20,20,20,0.55)", border: "1px solid var(--dash-border)" }}>
-        <div style={{ fontWeight: 900, marginBottom: 10 }}>Descrição curta</div>
+      <div style={{ borderRadius: 14, padding: 14, background: "var(--dash-card)", border: "1px solid var(--dash-section-border)" }}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: "var(--dash-text)", marginBottom: 10 }}>Descrição curta</div>
         <input
           type="text"
           value={description}
@@ -226,8 +226,8 @@ export default function UnidadeModal({ unit, isPro, onClose, onOpenPlans }: { un
       </div>
 
       {/* ── Facebook Pixel ── */}
-      <div style={{ borderRadius: 14, padding: 14, background: "rgba(20,20,20,0.55)", border: "1px solid var(--dash-border)" }}>
-        <div style={{ fontWeight: 900, marginBottom: 10 }}>Facebook Pixel</div>
+      <div style={{ borderRadius: 14, padding: 14, background: "var(--dash-card)", border: "1px solid var(--dash-section-border)" }}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: "var(--dash-text)", marginBottom: 10 }}>Integrações</div>
         {/* Facebook Pixel */}
         <div style={{ marginTop: 0 }}>
           <label style={{ color: "var(--dash-text-muted)", fontSize: 12, fontWeight: 600, display: "block", marginBottom: 6 }}>Facebook Pixel ID</label>
@@ -449,13 +449,13 @@ export default function UnidadeModal({ unit, isPro, onClose, onOpenPlans }: { un
           </button>
         </div>
 
-        <button type="submit" style={{ marginTop: 8, padding: "14px", borderRadius: 14, border: "none", background: "var(--dash-accent-soft)", color: "var(--dash-accent)", fontSize: 15, fontWeight: 700, cursor: "pointer", boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>Salvar unidade</button>
+        <button type="submit" style={{ marginTop: 8, padding: "14px", borderRadius: 14, border: "none", background: "var(--dash-accent-soft)", color: "var(--dash-accent)", fontSize: 15, fontWeight: 700, cursor: "pointer", boxShadow: "var(--dash-shadow)" }}>Salvar unidade</button>
       </form>
 
       {/* ── Nova Unidade ── */}
       <div style={{ marginTop: 8, borderTop: "1px solid var(--dash-separator)", paddingTop: 16 }}>
         {!showNewUnit ? (
-          <button onClick={() => setShowNewUnit(true)} style={{ width: "100%", padding: "13px", borderRadius: 14, border: "1px dashed var(--dash-border)", background: "transparent", color: "var(--dash-text-muted)", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
+          <button onClick={() => setShowNewUnit(true)} style={{ width: "100%", padding: "13px", borderRadius: 14, border: "1px solid var(--dash-section-border)", background: "transparent", color: "var(--dash-text-muted)", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
             + Nova Unidade
           </button>
         ) : isPro ? (
@@ -476,7 +476,7 @@ export default function UnidadeModal({ unit, isPro, onClose, onOpenPlans }: { un
               <input name="slug" placeholder="slug (ex: unidade-centro)" required style={inp} />
               <div style={{ display: "flex", gap: 8 }}>
                 <button type="button" onClick={() => setShowNewUnit(false)} style={{ flex: 1, padding: "11px", borderRadius: 12, border: "none", background: "var(--dash-card-hover)", color: "var(--dash-text-muted)", fontSize: 13, cursor: "pointer" }}>Cancelar</button>
-                <button type="submit" style={{ flex: 1, padding: "11px", borderRadius: 12, border: "none", background: "var(--dash-accent-soft)", color: "var(--dash-accent)", fontSize: 13, fontWeight: 700, cursor: "pointer", boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>Criar</button>
+                <button type="submit" style={{ flex: 1, padding: "11px", borderRadius: 12, border: "none", background: "var(--dash-accent-soft)", color: "var(--dash-accent)", fontSize: 13, fontWeight: 700, cursor: "pointer", boxShadow: "var(--dash-shadow)" }}>Criar</button>
               </div>
             </form>
           </div>
@@ -486,7 +486,7 @@ export default function UnidadeModal({ unit, isPro, onClose, onOpenPlans }: { un
             <div style={{ color: "var(--dash-text-muted)", fontSize: 13, marginBottom: 14, lineHeight: 1.5 }}>
               Múltiplas unidades estão disponíveis no Plano Pro. Faça upgrade para adicionar novas unidades.
             </div>
-            <button onClick={() => { setShowNewUnit(false); onClose(); onOpenPlans?.(); }} style={{ width: "100%", padding: "12px", borderRadius: 12, border: "none", background: "var(--dash-accent-soft)", color: "var(--dash-accent)", fontSize: 14, fontWeight: 800, cursor: "pointer", boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+            <button onClick={() => { setShowNewUnit(false); onClose(); onOpenPlans?.(); }} style={{ width: "100%", padding: "12px", borderRadius: 12, border: "none", background: "var(--dash-accent-soft)", color: "var(--dash-accent)", fontSize: 14, fontWeight: 800, cursor: "pointer", boxShadow: "var(--dash-shadow)" }}>
               Ver Planos →
             </button>
           </div>
