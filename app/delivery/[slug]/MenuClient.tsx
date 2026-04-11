@@ -99,6 +99,15 @@ export default function MenuClient({
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Re-render a cada 60s para recalcular schedule de categorias
+  const [, forceUpdate] = useState(0);
+  useEffect(() => {
+    const hasScheduled = categories.some((c) => c.schedule_enabled);
+    if (!hasScheduled) return;
+    const interval = setInterval(() => forceUpdate((n) => n + 1), 60000);
+    return () => clearInterval(interval);
+  }, [categories]);
+
   // Tema
   const [isDark, setIsDark] = useState(true);
   useEffect(() => {
@@ -257,29 +266,39 @@ export default function MenuClient({
 
   function isCategoryAvailable(cat: Category): boolean {
     if (!cat.schedule_enabled) return true;
-    const days = cat.available_days ?? [];
-    const start = cat.start_time;
-    const end = cat.end_time;
+
     const now = new Date();
-    const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
-    const todayName = dayNames[now.getDay()];
-    if (days.length > 0 && !days.includes(todayName)) return false;
-    if (start && end) {
-      const [sh, sm] = start.split(":").map(Number);
-      const [eh, em] = end.split(":").map(Number);
-      const nowMinutes = now.getHours() * 60 + now.getMinutes();
-      const startMinutes = sh * 60 + sm;
-      const endMinutes = eh * 60 + em;
-      if (nowMinutes < startMinutes || nowMinutes > endMinutes) return false;
+    const dayNames = ["dom", "seg", "ter", "qua", "qui", "sex", "sab"];
+    const currentDay = dayNames[now.getDay()];
+    const currentTime = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+
+    const days = cat.available_days ?? [];
+    if (days.length > 0 && !days.includes(currentDay)) return false;
+
+    if (cat.start_time && cat.end_time) {
+      const start = cat.start_time.slice(0, 5);
+      const end = cat.end_time.slice(0, 5);
+
+      if (start <= end) {
+        // Horário normal (ex: 11:00 - 23:00)
+        if (currentTime < start || currentTime >= end) return false;
+      } else {
+        // Cruza meia-noite (ex: 22:00 - 04:00)
+        if (currentTime < start && currentTime >= end) return false;
+      }
     }
+
     return true;
   }
 
-  const featuredCategories = categories.filter((c) => c.is_featured);
+  const featuredCategories = categories.filter(
+    (c) => c.is_featured && isCategoryAvailable(c) && products.some((p) => p.category_id === c.id && p.is_active)
+  );
   const regularCategories  = categories.filter((c) => !c.is_featured);
   const visibleRegularCategories = regularCategories.filter(
     (cat) => products.some((p) => p.category_id === cat.id && p.is_active) && isCategoryAvailable(cat)
   );
+  const allCategoriesHidden = featuredCategories.length === 0 && visibleRegularCategories.length === 0;
 
   // ── Snap suave vertical (proximity = só encaixa quando perto, não força) ──
   useEffect(() => {
@@ -753,6 +772,20 @@ export default function MenuClient({
                 </button>
               ))
             )}
+          </div>
+        ) : allCategoriesHidden ? (
+          <div style={{
+            textAlign: "center",
+            padding: "48px 24px",
+            color: "rgba(255,255,255,0.4)",
+          }}>
+            <div style={{ fontSize: 36, marginBottom: 12 }}>🕐</div>
+            <div style={{ fontSize: 15, fontWeight: 600, color: "rgba(255,255,255,0.6)", marginBottom: 6 }}>
+              Cardápio indisponível neste horário
+            </div>
+            <div style={{ fontSize: 13 }}>
+              Volte mais tarde para ver os itens disponíveis
+            </div>
           </div>
         ) : (
           <>
