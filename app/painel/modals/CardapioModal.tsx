@@ -92,7 +92,7 @@ function NewProductFormInline({ categoryId, section, customSections, anyProductE
             <span style={{ display: "block", width: 20, height: 20, borderRadius: "50%", background: "#fff", position: "absolute", top: 3, left: 3, transition: "transform 0.2s", transform: isAlcoholic ? "translateX(18px)" : "translateX(0)" }} />
           </button>
           <input type="hidden" name="is_alcoholic" value={isAlcoholic ? "on" : "off"} />
-          <span style={{ fontSize: 13, color: "rgba(255,255,255,0.7)" }}>{section === 'drinks' ? "Drink alcoólico" : "Bebida alcoólica"}</span>
+          <span style={{ fontSize: 13, color: "var(--dash-text-secondary)" }}>{section === 'drinks' ? "Drink alcoólico" : "Bebida alcoólica"}</span>
         </div>
       )}
       <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
@@ -536,7 +536,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                       }} style={{ width: 75, padding: "4px 8px", borderRadius: 6, background: "rgba(255,255,255,0.04)", border: "none", color: "var(--dash-accent)", fontSize: 13, fontWeight: 700, outline: "none", textAlign: "right" as const }} />
                       <button onClick={() => {
                         const u = structuredClone(importData); u.categories[ci].products.splice(pi, 1); setImportData(u);
-                      }} style={{ background: "transparent", border: "none", color: "rgba(255,255,255,0.2)", cursor: "pointer", fontSize: 14, fontFamily: "inherit" }}>✕</button>
+                      }} style={{ background: "transparent", border: "none", color: "var(--dash-text-subtle)", cursor: "pointer", fontSize: 14, fontFamily: "inherit" }}>✕</button>
                     </div>
                   ))}
                 </div>
@@ -615,7 +615,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
               <div style={{ fontSize: 12, fontWeight: 700, color: "var(--dash-text)" }}>✨ Sugestões da IA</div>
               <button onClick={() => setAiSuggestionResult(null)} style={{ background: "transparent", border: "none", color: "var(--dash-text-muted)", fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>✕</button>
             </div>
-            <div style={{ whiteSpace: "pre-wrap", fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.7 }}>
+            <div style={{ whiteSpace: "pre-wrap", fontSize: 12, color: "var(--dash-text-secondary)", lineHeight: 1.7 }}>
               {aiSuggestionResult}
             </div>
           </div>
@@ -636,7 +636,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
           </div>
           {/* Sessão */}
           <div style={{ marginBottom: 4 }}>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 8 }}>Sessão</div>
+            <div style={{ fontSize: 12, color: "var(--dash-text-dim)", marginBottom: 8 }}>Sessão</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
               {allSections.map((s, i) => {
                 const isActive = newCatSection === s.value;
@@ -648,7 +648,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                       padding: "6px 16px", borderRadius: 10, border: "1px solid",
                       borderColor: isActive ? "transparent" : "rgba(255,255,255,0.1)",
                       background: isActive ? `linear-gradient(135deg, ${gradStart}, ${gradEnd})` : "transparent",
-                      color: isActive ? "#000" : "rgba(255,255,255,0.5)",
+                      color: isActive ? "#000" : "var(--dash-text-dim)",
                       cursor: "pointer", fontSize: 12, fontWeight: isActive ? 800 : 600,
                       transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                       transform: isActive ? "scale(1.05)" : "scale(1)",
@@ -658,7 +658,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                 );
               })}
               <button type="button" onClick={() => setShowCreateSection(v => !v)}
-                style={{ padding: "6px 16px", borderRadius: 10, border: "1px dashed rgba(255,255,255,0.15)", background: "transparent", color: "rgba(255,255,255,0.3)", cursor: "pointer", fontSize: 12, transition: "all 0.3s" }}>
+                style={{ padding: "6px 16px", borderRadius: 10, border: "1px dashed var(--dash-text-subtle)", background: "transparent", color: "var(--dash-text-muted)", cursor: "pointer", fontSize: 12, transition: "all 0.3s" }}>
                 + Criar sessão
               </button>
             </div>
@@ -671,18 +671,18 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                     style={{ width: 50, padding: "8px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.05)", color: "#fff", fontSize: 18, textAlign: "center", outline: "none" }} />
                 </div>
                 <div style={{ display: "flex", gap: 12, marginBottom: 8 }}>
-                  <label style={{ display: "flex", alignItems: "center", gap: 6, color: "rgba(255,255,255,0.5)", fontSize: 12, cursor: "pointer" }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--dash-text-dim)", fontSize: 12, cursor: "pointer" }}>
                     <input type="checkbox" checked={newSectionVideo} onChange={e => setNewSectionVideo(e.target.checked)} style={{ accentColor: "#00ffae" }} />
                     Permite vídeo
                   </label>
-                  <label style={{ display: "flex", alignItems: "center", gap: 6, color: "rgba(255,255,255,0.5)", fontSize: 12, cursor: "pointer" }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--dash-text-dim)", fontSize: 12, cursor: "pointer" }}>
                     <input type="checkbox" checked={newSectionAlcoholic} onChange={e => setNewSectionAlcoholic(e.target.checked)} style={{ accentColor: "#00ffae" }} />
                     Toggle alcoólico
                   </label>
                 </div>
                 <div style={{ display: "flex", gap: 6 }}>
                   <button type="button" onClick={() => setShowCreateSection(false)}
-                    style={{ padding: "6px 14px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)", background: "transparent", color: "rgba(255,255,255,0.4)", fontSize: 12, cursor: "pointer" }}>Cancelar</button>
+                    style={{ padding: "6px 14px", borderRadius: 8, border: "1px solid var(--dash-border)", background: "transparent", color: "var(--dash-text-muted)", fontSize: 12, cursor: "pointer" }}>Cancelar</button>
                   <button type="button" onClick={handleCreateSection}
                     style={{ padding: "6px 14px", borderRadius: 8, border: "none", background: "#00ffae", color: "#000", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Criar</button>
                 </div>
@@ -740,7 +740,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                 }}
               >
                 <span
-                  style={{ color: "rgba(255,255,255,0.15)", cursor: "grab", fontSize: 14, userSelect: "none", WebkitUserSelect: "none", touchAction: "none", flexShrink: 0 }}
+                  style={{ color: "var(--dash-text-subtle)", cursor: "grab", fontSize: 14, userSelect: "none", WebkitUserSelect: "none", touchAction: "none", flexShrink: 0 }}
                   onMouseDown={(e) => e.stopPropagation()}
                   onContextMenu={(e) => e.preventDefault()}
                   onTouchStart={(e) => { e.preventDefault(); onTouchStartDrag(e, catIdx); }}
@@ -748,7 +748,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                   onTouchEnd={() => onTouchEndDrag()}
                   title="Segurar e arrastar para reordenar"
                 >⠿</span>
-                <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 10, flexShrink: 0 }}>▼</span>
+                <span style={{ color: "var(--dash-text-muted)", fontSize: 10, flexShrink: 0 }}>▼</span>
                 <span style={{ flex: 1, color: "var(--dash-text)", fontSize: 14, fontWeight: 700 }}>{cat.name}</span>
                 {cat.schedule_enabled && (
                   <span style={{ fontSize: 9, padding: "2px 6px", borderRadius: 4, background: "rgba(251,191,36,0.1)", color: "#fbbf24", whiteSpace: "nowrap", flexShrink: 0 }}>
@@ -809,7 +809,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                 {/* Row 2: Drag + Arrow + Session + Cancel + Toggle */}
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
                   <span
-                    style={{ color: "rgba(255,255,255,0.15)", cursor: "grab", fontSize: 14, userSelect: "none", WebkitUserSelect: "none", touchAction: "none", flexShrink: 0 }}
+                    style={{ color: "var(--dash-text-subtle)", cursor: "grab", fontSize: 14, userSelect: "none", WebkitUserSelect: "none", touchAction: "none", flexShrink: 0 }}
                     onMouseDown={(e) => e.stopPropagation()}
                     onContextMenu={(e) => e.preventDefault()}
                     onTouchStart={(e) => { e.preventDefault(); onTouchStartDrag(e, catIdx); }}
@@ -817,7 +817,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                     onTouchEnd={() => onTouchEndDrag()}
                     title="Segurar e arrastar para reordenar"
                   >⠿</span>
-                  <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 10, flexShrink: 0 }}>▲</span>
+                  <span style={{ color: "var(--dash-text-muted)", fontSize: 10, flexShrink: 0 }}>▲</span>
                   <div style={{ display: "flex", gap: 4, flex: 1, flexWrap: "wrap", alignItems: "center" }}>
                     <span style={{ fontSize: 10, color: "var(--dash-text-muted)", lineHeight: "24px", flexShrink: 0 }}>Sessão:</span>
                     {allSections.map(s => {
@@ -834,7 +834,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                       );
                     })}
                     <button type="button" onClick={() => setShowCreateSection(v => !v)}
-                      style={{ padding: "4px 8px", borderRadius: 6, border: "1px dashed rgba(255,255,255,0.1)", background: "transparent", color: "rgba(255,255,255,0.2)", cursor: "pointer", fontSize: 10, whiteSpace: "nowrap" }}>
+                      style={{ padding: "4px 8px", borderRadius: 6, border: "1px dashed var(--dash-border)", background: "transparent", color: "var(--dash-text-subtle)", cursor: "pointer", fontSize: 10, whiteSpace: "nowrap" }}>
                       + Criar
                     </button>
                   </div>
@@ -881,7 +881,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                             style={{
                               padding: "3px 7px", borderRadius: 5, border: "none", cursor: "pointer",
                               background: editDays.includes(day) ? "rgba(0,255,174,0.1)" : "rgba(255,255,255,0.04)",
-                              color: editDays.includes(day) ? "var(--dash-accent)" : "rgba(255,255,255,0.2)",
+                              color: editDays.includes(day) ? "var(--dash-accent)" : "var(--dash-text-subtle)",
                               fontSize: 9, fontWeight: 600,
                             }}>{day}</button>
                         ))}
@@ -893,7 +893,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                         <input type="time" value={editEndTime} onChange={e => setEditEndTime(e.target.value)}
                           style={{ padding: "3px 6px", borderRadius: 6, background: "rgba(255,255,255,0.04)", border: "none", color: "var(--dash-text)", fontSize: 11, outline: "none" }} />
                       </div>
-                      <div style={{ fontSize: 9, color: "rgba(255,255,255,0.2)", marginTop: 4 }}>
+                      <div style={{ fontSize: 9, color: "var(--dash-text-subtle)", marginTop: 4 }}>
                         Categoria visível apenas nos dias e horários selecionados.
                       </div>
                     </div>

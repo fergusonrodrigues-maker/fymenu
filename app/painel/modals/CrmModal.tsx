@@ -74,7 +74,7 @@ function CrmMessagesTab({ unit, clients }: { unit: any; clients: any[] }) {
           ].map(g => (
             <button key={g.key} onClick={() => setTargetGroup(g.key)} style={{
               padding: "5px 12px", borderRadius: 8, border: "none", cursor: "pointer",
-              background: targetGroup === g.key ? "rgba(0,255,174,0.1)" : "rgba(255,255,255,0.04)",
+              background: targetGroup === g.key ? "rgba(0,255,174,0.1)" : "var(--dash-card-hover)",
               color: targetGroup === g.key ? "var(--dash-accent)" : "var(--dash-text-muted)",
               fontSize: 11, fontWeight: 600,
             }}>{g.label}</button>
@@ -91,7 +91,7 @@ function CrmMessagesTab({ unit, clients }: { unit: any; clients: any[] }) {
         onChange={e => setMessageText(e.target.value)}
         style={{
           width: "100%", minHeight: 80, padding: 14, borderRadius: 14,
-          background: "rgba(255,255,255,0.04)", border: "none", color: "var(--dash-text)",
+          background: "var(--dash-card-hover)", border: "none", color: "var(--dash-text)",
           fontSize: 13, outline: "none", resize: "vertical", boxSizing: "border-box",
         }}
       />
@@ -120,7 +120,7 @@ function CrmMessagesTab({ unit, clients }: { unit: any; clients: any[] }) {
           <div style={{ fontSize: 12, fontWeight: 700, color: "var(--dash-text)", marginBottom: 8 }}>Histórico</div>
           {sentMessages.slice(0, 20).map(m => (
             <div key={m.id} style={{
-              padding: "8px 12px", borderRadius: 10, background: "rgba(255,255,255,0.02)", marginBottom: 3,
+              padding: "8px 12px", borderRadius: 10, background: "var(--dash-card)", marginBottom: 3,
               display: "flex", justifyContent: "space-between", alignItems: "center",
             }}>
               <div>
@@ -292,7 +292,7 @@ export default function CrmModal({ unit, restaurant }: { unit: any; restaurant: 
   ];
 
   const cardStyle: React.CSSProperties = {
-    padding: 12, borderRadius: 14, background: "rgba(255,255,255,0.03)", textAlign: "center",
+    padding: 12, borderRadius: 14, background: "var(--dash-card)", textAlign: "center",
     boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
   };
 
@@ -314,7 +314,7 @@ export default function CrmModal({ unit, restaurant }: { unit: any; restaurant: 
         </div>
         <div style={{
           ...cardStyle,
-          background: inactiveClients.length > 0 ? "rgba(248,113,113,0.06)" : "rgba(255,255,255,0.03)",
+          background: inactiveClients.length > 0 ? "rgba(248,113,113,0.06)" : "var(--dash-card)",
         }}>
           <div style={{ fontSize: 18, fontWeight: 800, color: inactiveClients.length > 0 ? "#f87171" : "var(--dash-text)" }}>
             {inactiveClients.length}
@@ -324,7 +324,7 @@ export default function CrmModal({ unit, restaurant }: { unit: any; restaurant: 
       </div>
 
       {/* Tabs */}
-      <div style={{ display: "flex", gap: 4, marginBottom: 16, background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: 4 }}>
+      <div style={{ display: "flex", gap: 4, marginBottom: 16, background: "var(--dash-card-hover)", borderRadius: 12, padding: 4 }}>
         {TABS.map(t => (
           <button key={t.key} onClick={() => setTab(t.key as any)} style={{
             flex: 1, padding: "8px 10px", borderRadius: 10, border: "none", cursor: "pointer",
@@ -349,7 +349,7 @@ export default function CrmModal({ unit, restaurant }: { unit: any; restaurant: 
                   onChange={e => setSearchQuery(e.target.value)}
                   style={{
                     flex: 1, padding: "8px 12px", borderRadius: 10,
-                    background: "rgba(255,255,255,0.04)", border: "none",
+                    background: "var(--dash-card-hover)", border: "none",
                     color: "var(--dash-text)", fontSize: 12, outline: "none",
                   }}
                 />
@@ -358,7 +358,7 @@ export default function CrmModal({ unit, restaurant }: { unit: any; restaurant: 
                   onChange={e => setSortBy(e.target.value as any)}
                   style={{
                     padding: "8px 10px", borderRadius: 10,
-                    background: "rgba(255,255,255,0.04)", border: "none",
+                    background: "var(--dash-card-hover)", border: "none",
                     color: "var(--dash-text)", fontSize: 11, outline: "none",
                   }}
                 >
@@ -375,7 +375,7 @@ export default function CrmModal({ unit, restaurant }: { unit: any; restaurant: 
               ) : (
                 filtered.slice(0, 50).map((c, i) => (
                   <div key={i} style={{
-                    padding: "12px 14px", borderRadius: 14, background: "rgba(255,255,255,0.03)", marginBottom: 6,
+                    padding: "12px 14px", borderRadius: 14, background: "var(--dash-card)", marginBottom: 6,
                     boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
                   }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -385,7 +385,7 @@ export default function CrmModal({ unit, restaurant }: { unit: any; restaurant: 
                           {c.sources.map((s: string) => (
                             <span key={s} style={{
                               padding: "1px 6px", borderRadius: 4, fontSize: 8,
-                              background: s === "whatsapp" ? "rgba(37,211,102,0.1)" : s === "mesa" ? "rgba(96,165,250,0.1)" : "rgba(255,255,255,0.04)",
+                              background: s === "whatsapp" ? "rgba(37,211,102,0.1)" : s === "mesa" ? "rgba(96,165,250,0.1)" : "var(--dash-card-hover)",
                               color: s === "whatsapp" ? "#25d366" : s === "mesa" ? "#60a5fa" : "var(--dash-text-muted)",
                             }}>{s}</span>
                           ))}
@@ -394,7 +394,7 @@ export default function CrmModal({ unit, restaurant }: { unit: any; restaurant: 
                           {c.phone || "Sem telefone"} · {c.orders} pedido{c.orders > 1 ? "s" : ""} · último há {c.daysSinceLastOrder}d
                         </div>
                         {c.topItems.length > 0 && (
-                          <div style={{ color: "rgba(255,255,255,0.2)", fontSize: 9, marginTop: 2 }}>
+                          <div style={{ color: "var(--dash-text-subtle)", fontSize: 9, marginTop: 2 }}>
                             Favoritos: {c.topItems.map((it: any) => `${it.name} (${it.qty}x)`).join(", ")}
                           </div>
                         )}
@@ -419,14 +419,14 @@ export default function CrmModal({ unit, restaurant }: { unit: any; restaurant: 
                 { label: "Recorrentes (2-4 pedidos)", filter: (c: any) => c.orders >= 2 && c.orders < 5, color: "#60a5fa", icon: "🔄" },
                 { label: "Novos (1 pedido)", filter: (c: any) => c.orders === 1, color: "#fbbf24", icon: "🆕" },
                 { label: "Inativos (30d+ sem pedir)", filter: (c: any) => c.daysSinceLastOrder > 30, color: "#f87171", icon: "💤" },
-                { label: "Perdidos (90d+ sem pedir)", filter: (c: any) => c.daysSinceLastOrder > 90, color: "rgba(255,255,255,0.3)", icon: "👋" },
+                { label: "Perdidos (90d+ sem pedir)", filter: (c: any) => c.daysSinceLastOrder > 90, color: "var(--dash-text-muted)", icon: "👋" },
               ].map(segment => {
                 const segClients = clients.filter(segment.filter);
                 const segRevenue = segClients.reduce((s, c) => s + c.total, 0);
                 return (
                   <div key={segment.label} style={{
                     display: "flex", alignItems: "center", gap: 10, padding: "12px 14px",
-                    borderRadius: 14, background: "rgba(255,255,255,0.03)", marginBottom: 6,
+                    borderRadius: 14, background: "var(--dash-card)", marginBottom: 6,
                     boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
                   }}>
                     <span style={{ fontSize: 20 }}>{segment.icon}</span>
@@ -455,11 +455,11 @@ export default function CrmModal({ unit, restaurant }: { unit: any; restaurant: 
                 topNeighborhoods.map(([name, data], i) => (
                   <div key={name} style={{
                     display: "flex", alignItems: "center", gap: 10, padding: "10px 14px",
-                    borderRadius: 12, background: "rgba(255,255,255,0.03)", marginBottom: 4,
+                    borderRadius: 12, background: "var(--dash-card)", marginBottom: 4,
                   }}>
                     <span style={{
                       width: 22, height: 22, borderRadius: "50%",
-                      background: i < 3 ? "rgba(0,255,174,0.1)" : "rgba(255,255,255,0.04)",
+                      background: i < 3 ? "rgba(0,255,174,0.1)" : "var(--dash-card-hover)",
                       color: i < 3 ? "var(--dash-accent)" : "var(--dash-text-muted)",
                       display: "flex", alignItems: "center", justifyContent: "center",
                       fontSize: 10, fontWeight: 800,
@@ -477,7 +477,7 @@ export default function CrmModal({ unit, restaurant }: { unit: any; restaurant: 
               {topGlobalItems.map(([name, qty], i) => (
                 <div key={name} style={{
                   display: "flex", alignItems: "center", justifyContent: "space-between",
-                  padding: "8px 12px", borderRadius: 10, background: "rgba(255,255,255,0.02)", marginBottom: 3,
+                  padding: "8px 12px", borderRadius: 10, background: "var(--dash-card)", marginBottom: 3,
                 }}>
                   <span style={{ color: "var(--dash-text)", fontSize: 12 }}>{i + 1}. {name}</span>
                   <span style={{ color: "var(--dash-accent)", fontSize: 12, fontWeight: 700 }}>{qty}x</span>

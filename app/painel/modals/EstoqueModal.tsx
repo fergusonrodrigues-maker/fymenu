@@ -393,7 +393,7 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
 
   const inputStyle: React.CSSProperties = {
     padding: "10px 14px", borderRadius: 12,
-    background: "rgba(255,255,255,0.04)", border: "none",
+    background: "var(--dash-card-hover)", border: "none",
     color: "var(--dash-text)", fontSize: 13, outline: "none",
   };
 
@@ -417,10 +417,10 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
               <div
                 onClick={() => stockFileRef.current?.click()}
                 onDragOver={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = "rgba(0,255,174,0.3)"; }}
-                onDragLeave={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; }}
-                onDrop={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; handleStockFile(e.dataTransfer.files[0]); }}
+                onDragLeave={(e) => { e.currentTarget.style.borderColor = "var(--dash-border)"; }}
+                onDrop={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = "var(--dash-border)"; handleStockFile(e.dataTransfer.files[0]); }}
                 style={{
-                  border: "2px dashed rgba(255,255,255,0.08)", borderRadius: 16,
+                  border: "2px dashed var(--dash-border)", borderRadius: 16,
                   padding: "30px 20px", textAlign: "center", cursor: "pointer",
                   transition: "border-color 0.3s", marginBottom: 14,
                 }}
@@ -433,9 +433,9 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
                 onChange={(e) => handleStockFile(e.target.files?.[0])} />
 
               <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "14px 0" }}>
-                <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.06)" }} />
+                <div style={{ flex: 1, height: 1, background: "var(--dash-separator)" }} />
                 <span style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>ou cole a lista</span>
-                <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.06)" }} />
+                <div style={{ flex: 1, height: 1, background: "var(--dash-separator)" }} />
               </div>
 
               <textarea
@@ -444,7 +444,7 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
                 onChange={(e) => setStockText(e.target.value)}
                 style={{
                   width: "100%", minHeight: 100, padding: 14, borderRadius: 14,
-                  background: "rgba(255,255,255,0.04)", border: "none", color: "var(--dash-text)",
+                  background: "var(--dash-card-hover)", border: "none", color: "var(--dash-text)",
                   fontSize: 12, outline: "none", resize: "vertical", boxSizing: "border-box", lineHeight: 1.6, fontFamily: "inherit",
                 }}
               />
@@ -477,11 +477,11 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
               {importStockData.items?.map((item: any, i: number) => (
                 <div key={i} style={{
                   display: "flex", alignItems: "center", gap: 6, padding: "8px 10px",
-                  borderRadius: 12, background: "rgba(255,255,255,0.03)", marginBottom: 4,
+                  borderRadius: 12, background: "var(--dash-card)", marginBottom: 4,
                 }}>
                   <select value={item.category || "geral"} onChange={(e) => {
                     const u = { ...importStockData, items: [...importStockData.items] }; u.items[i] = { ...u.items[i], category: e.target.value }; setImportStockData(u);
-                  }} style={{ padding: "4px 6px", borderRadius: 6, background: "rgba(255,255,255,0.06)", border: "none", color: "var(--dash-text)", fontSize: 10, outline: "none", width: 80, fontFamily: "inherit" }}>
+                  }} style={{ padding: "4px 6px", borderRadius: 6, background: "var(--dash-card-hover)", border: "none", color: "var(--dash-text)", fontSize: 10, outline: "none", width: 80, fontFamily: "inherit" }}>
                     {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.icon} {c.label}</option>)}
                   </select>
                   <input value={item.name} onChange={(e) => {
@@ -489,19 +489,19 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
                   }} style={{ flex: 1, padding: "4px 8px", borderRadius: 6, background: "transparent", border: "none", color: "var(--dash-text)", fontSize: 12, fontWeight: 600, outline: "none", fontFamily: "inherit" }} />
                   <input type="number" step="0.01" value={item.quantity} onChange={(e) => {
                     const u = { ...importStockData, items: [...importStockData.items] }; u.items[i] = { ...u.items[i], quantity: parseFloat(e.target.value) || 0 }; setImportStockData(u);
-                  }} style={{ width: 55, padding: "4px 6px", borderRadius: 6, background: "rgba(255,255,255,0.04)", border: "none", color: "var(--dash-text)", fontSize: 11, outline: "none", textAlign: "right" as const }} />
+                  }} style={{ width: 55, padding: "4px 6px", borderRadius: 6, background: "var(--dash-card-hover)", border: "none", color: "var(--dash-text)", fontSize: 11, outline: "none", textAlign: "right" as const }} />
                   <select value={item.unit_measure || "kg"} onChange={(e) => {
                     const u = { ...importStockData, items: [...importStockData.items] }; u.items[i] = { ...u.items[i], unit_measure: e.target.value }; setImportStockData(u);
-                  }} style={{ padding: "4px 4px", borderRadius: 6, background: "rgba(255,255,255,0.06)", border: "none", color: "var(--dash-text)", fontSize: 10, outline: "none", width: 40, fontFamily: "inherit" }}>
+                  }} style={{ padding: "4px 4px", borderRadius: 6, background: "var(--dash-card-hover)", border: "none", color: "var(--dash-text)", fontSize: 10, outline: "none", width: 40, fontFamily: "inherit" }}>
                     {UNITS.map(u => <option key={u.value} value={u.value}>{u.value}</option>)}
                   </select>
                   <input type="number" step="0.01" value={item.cost_per_unit} onChange={(e) => {
                     const u = { ...importStockData, items: [...importStockData.items] }; u.items[i] = { ...u.items[i], cost_per_unit: parseFloat(e.target.value) || 0 }; setImportStockData(u);
-                  }} placeholder="R$/un" style={{ width: 60, padding: "4px 6px", borderRadius: 6, background: "rgba(255,255,255,0.04)", border: "none", color: "var(--dash-accent)", fontSize: 11, fontWeight: 600, outline: "none", textAlign: "right" as const }} />
+                  }} placeholder="R$/un" style={{ width: 60, padding: "4px 6px", borderRadius: 6, background: "var(--dash-card-hover)", border: "none", color: "var(--dash-accent)", fontSize: 11, fontWeight: 600, outline: "none", textAlign: "right" as const }} />
                   <button onClick={() => {
                     const newItems = importStockData.items.filter((_: any, idx: number) => idx !== i);
                     setImportStockData({ ...importStockData, items: newItems });
-                  }} style={{ background: "transparent", border: "none", color: "rgba(255,255,255,0.15)", cursor: "pointer", fontSize: 12, fontFamily: "inherit" }}>✕</button>
+                  }} style={{ background: "transparent", border: "none", color: "var(--dash-text-subtle)", cursor: "pointer", fontSize: 12, fontFamily: "inherit" }}>✕</button>
                 </div>
               ))}
               <button onClick={handleConfirmStockImport} disabled={importingStock} style={{
@@ -537,11 +537,11 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
 
       {/* Summary cards */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 20 }}>
-        <div style={{ padding: 14, borderRadius: 14, background: "rgba(255,255,255,0.03)", textAlign: "center", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+        <div style={{ padding: 14, borderRadius: 14, background: "var(--dash-card)", textAlign: "center", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
           <div style={{ fontSize: 20, fontWeight: 800, color: "var(--dash-text)" }}>{items.length}</div>
           <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>Ingredientes</div>
         </div>
-        <div style={{ padding: 14, borderRadius: 14, background: totalAlerts > 0 ? "rgba(248,113,113,0.06)" : "rgba(255,255,255,0.03)", textAlign: "center", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+        <div style={{ padding: 14, borderRadius: 14, background: totalAlerts > 0 ? "rgba(248,113,113,0.06)" : "var(--dash-card)", textAlign: "center", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
           <div style={{ fontSize: 20, fontWeight: 800, color: totalAlerts > 0 ? "#f87171" : "var(--dash-text)" }}>{totalAlerts}</div>
           <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>Alertas</div>
           {expiryItems.filter(e => e.expiryStatus.priority === 0).length > 0 && (
@@ -550,14 +550,14 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
             </div>
           )}
         </div>
-        <div style={{ padding: 14, borderRadius: 14, background: "rgba(255,255,255,0.03)", textAlign: "center", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+        <div style={{ padding: 14, borderRadius: 14, background: "var(--dash-card)", textAlign: "center", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
           <div style={{ fontSize: 16, fontWeight: 800, color: "var(--dash-text)" }}>{fmtBRL(Math.round(totalStockValue))}</div>
           <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>Valor em estoque</div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div style={{ display: "flex", gap: 4, marginBottom: 16, background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: 4 }}>
+      <div style={{ display: "flex", gap: 4, marginBottom: 16, background: "var(--dash-card-hover)", borderRadius: 12, padding: 4 }}>
         {TABS.map(t => (
           <button key={t.key} onClick={() => setTab(t.key as any)} style={{
             flex: 1, padding: "8px 10px", borderRadius: 10, border: "none", cursor: "pointer",
@@ -577,10 +577,10 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
               placeholder="Buscar ingrediente..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              style={{ flex: 1, padding: "8px 12px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "none", color: "var(--dash-text)", fontSize: 13, outline: "none" }}
+              style={{ flex: 1, padding: "8px 12px", borderRadius: 10, background: "var(--dash-card-hover)", border: "none", color: "var(--dash-text)", fontSize: 13, outline: "none" }}
             />
             <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)}
-              style={{ padding: "8px 10px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "none", color: "var(--dash-text)", fontSize: 12, outline: "none" }}>
+              style={{ padding: "8px 10px", borderRadius: 10, background: "var(--dash-card-hover)", border: "none", color: "var(--dash-text)", fontSize: 12, outline: "none" }}>
               <option value="all">Todas</option>
               {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.icon} {c.label}</option>)}
             </select>
@@ -592,7 +592,7 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
             }}>+ Adicionar</button>
             <button onClick={() => { setShowImportStock(true); setImportStockStep("upload"); }} style={{
               padding: "8px 14px", borderRadius: 10, border: "none", cursor: "pointer",
-              background: "rgba(255,255,255,0.04)", color: "var(--dash-text-muted)", fontSize: 12,
+              background: "var(--dash-card-hover)", color: "var(--dash-text-muted)", fontSize: 12,
               boxShadow: "0 1px 0 rgba(255,255,255,0.03) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
               whiteSpace: "nowrap", fontFamily: "inherit",
             }}>📥 Importar</button>
@@ -600,7 +600,7 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
 
           {/* Inline form */}
           {showForm && (
-            <div style={{ padding: 16, borderRadius: 14, background: "rgba(255,255,255,0.03)", marginBottom: 16, display: "flex", flexDirection: "column", gap: 10, boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+            <div style={{ padding: 16, borderRadius: 14, background: "var(--dash-card)", marginBottom: 16, display: "flex", flexDirection: "column", gap: 10, boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
               <input
                 placeholder="Nome do ingrediente"
                 value={formName}
@@ -620,17 +620,17 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
                 <div>
                   <label style={{ fontSize: 10, color: "var(--dash-text-muted)", display: "block", marginBottom: 4 }}>Estoque atual</label>
                   <input type="number" step="0.01" placeholder="0" value={formStock} onChange={e => setFormStock(e.target.value)}
-                    style={{ width: "100%", padding: "8px 10px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "none", color: "var(--dash-text)", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
+                    style={{ width: "100%", padding: "8px 10px", borderRadius: 10, background: "var(--dash-card-hover)", border: "none", color: "var(--dash-text)", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
                 </div>
                 <div>
                   <label style={{ fontSize: 10, color: "var(--dash-text-muted)", display: "block", marginBottom: 4 }}>Estoque mínimo</label>
                   <input type="number" step="0.01" placeholder="0" value={formMinStock} onChange={e => setFormMinStock(e.target.value)}
-                    style={{ width: "100%", padding: "8px 10px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "none", color: "var(--dash-text)", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
+                    style={{ width: "100%", padding: "8px 10px", borderRadius: 10, background: "var(--dash-card-hover)", border: "none", color: "var(--dash-text)", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
                 </div>
                 <div>
                   <label style={{ fontSize: 10, color: "var(--dash-text-muted)", display: "block", marginBottom: 4 }}>Custo/{formUnit} (R$)</label>
                   <input type="number" step="0.01" placeholder="0.00" value={formCost} onChange={e => setFormCost(e.target.value)}
-                    style={{ width: "100%", padding: "8px 10px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "none", color: "var(--dash-text)", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
+                    style={{ width: "100%", padding: "8px 10px", borderRadius: 10, background: "var(--dash-card-hover)", border: "none", color: "var(--dash-text)", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
                 </div>
               </div>
               <input placeholder="Fornecedor (opcional)" value={formSupplier} onChange={e => setFormSupplier(e.target.value)} style={inputStyle} />
@@ -642,7 +642,7 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
                       type="date"
                       value={formExpiry}
                       onChange={(e) => setFormExpiry(e.target.value)}
-                      style={{ width: "100%", padding: "8px 10px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "none", color: "var(--dash-text)", fontSize: 12, outline: "none", boxSizing: "border-box" as const }}
+                      style={{ width: "100%", padding: "8px 10px", borderRadius: 10, background: "var(--dash-card-hover)", border: "none", color: "var(--dash-text)", fontSize: 12, outline: "none", boxSizing: "border-box" as const }}
                     />
                   </div>
                   <div>
@@ -652,13 +652,13 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
                       value={formExpiryAlert}
                       onChange={(e) => setFormExpiryAlert(e.target.value)}
                       placeholder="7"
-                      style={{ width: "100%", padding: "8px 10px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "none", color: "var(--dash-text)", fontSize: 12, outline: "none", boxSizing: "border-box" as const }}
+                      style={{ width: "100%", padding: "8px 10px", borderRadius: 10, background: "var(--dash-card-hover)", border: "none", color: "var(--dash-text)", fontSize: 12, outline: "none", boxSizing: "border-box" as const }}
                     />
                   </div>
                 </div>
               )}
               <div style={{ display: "flex", gap: 8 }}>
-                <button onClick={resetForm} style={{ flex: 1, padding: 10, borderRadius: 12, background: "rgba(255,255,255,0.04)", border: "none", color: "var(--dash-text-muted)", fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>Cancelar</button>
+                <button onClick={resetForm} style={{ flex: 1, padding: 10, borderRadius: 12, background: "var(--dash-card-hover)", border: "none", color: "var(--dash-text-muted)", fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>Cancelar</button>
                 <button onClick={handleSave} style={{ flex: 1, padding: 10, borderRadius: 12, background: "rgba(0,255,174,0.1)", border: "none", color: "var(--dash-accent)", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
                   {editingItem ? "Atualizar" : "Salvar"}
                 </button>
@@ -683,7 +683,7 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
                     <div style={{
                       display: "flex", alignItems: "center", gap: 10,
                       padding: "12px 14px", borderRadius: 14,
-                      background: isLow ? "rgba(248,113,113,0.04)" : "rgba(255,255,255,0.03)",
+                      background: isLow ? "rgba(248,113,113,0.04)" : "var(--dash-card)",
                       boxShadow: isLow
                         ? "0 1px 0 rgba(248,113,113,0.06) inset, 0 -1px 0 rgba(0,0,0,0.15) inset"
                         : "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
@@ -721,7 +721,7 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
                           color: "var(--dash-accent)", fontSize: 11, cursor: "pointer", fontWeight: 700, fontFamily: "inherit",
                         }}>±</button>
                         <button onClick={() => startEdit(item)} style={{
-                          padding: "4px 8px", borderRadius: 6, background: "rgba(255,255,255,0.04)", border: "none",
+                          padding: "4px 8px", borderRadius: 6, background: "var(--dash-card-hover)", border: "none",
                           color: "var(--dash-text-muted)", fontSize: 11, cursor: "pointer", fontFamily: "inherit",
                         }}>✏️</button>
                         <button onClick={() => handleDelete(item.id)} style={{
@@ -733,7 +733,7 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
 
                     {/* Movement panel — expanded below item */}
                     {showMovement === item.id && (
-                      <div style={{ padding: 14, borderRadius: "0 0 14px 14px", background: "rgba(255,255,255,0.04)", marginTop: -4, display: "flex", flexDirection: "column", gap: 8 }}>
+                      <div style={{ padding: 14, borderRadius: "0 0 14px 14px", background: "var(--dash-card-hover)", marginTop: -4, display: "flex", flexDirection: "column", gap: 8 }}>
                         <div style={{ fontSize: 12, fontWeight: 700, color: "var(--dash-text)" }}>Movimentação: {item.name}</div>
                         <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                           {[
@@ -744,7 +744,7 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
                           ].map(t => (
                             <button key={t.value} onClick={() => setMovType(t.value)} style={{
                               padding: "4px 10px", borderRadius: 8, border: "none", cursor: "pointer",
-                              background: movType === t.value ? "rgba(255,255,255,0.08)" : "transparent",
+                              background: movType === t.value ? "var(--dash-card-hover)" : "transparent",
                               color: movType === t.value ? t.color : "var(--dash-text-muted)",
                               fontSize: 11, fontWeight: 600, fontFamily: "inherit",
                             }}>{t.label}</button>
@@ -752,16 +752,16 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
                         </div>
                         <div style={{ display: "flex", gap: 8 }}>
                           <input type="number" step="0.01" placeholder={`Qtd (${item.unit_measure})`} value={movQty} onChange={e => setMovQty(e.target.value)}
-                            style={{ flex: 1, padding: "8px 10px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "none", color: "var(--dash-text)", fontSize: 13, outline: "none" }} />
+                            style={{ flex: 1, padding: "8px 10px", borderRadius: 10, background: "var(--dash-card-hover)", border: "none", color: "var(--dash-text)", fontSize: 13, outline: "none" }} />
                           {movType === "purchase" && (
                             <input type="number" step="0.01" placeholder="Custo total (R$)" value={movCost} onChange={e => setMovCost(e.target.value)}
-                              style={{ flex: 1, padding: "8px 10px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "none", color: "var(--dash-text)", fontSize: 13, outline: "none" }} />
+                              style={{ flex: 1, padding: "8px 10px", borderRadius: 10, background: "var(--dash-card-hover)", border: "none", color: "var(--dash-text)", fontSize: 13, outline: "none" }} />
                           )}
                         </div>
                         <input placeholder="Observação (opcional)" value={movNotes} onChange={e => setMovNotes(e.target.value)}
-                          style={{ padding: "8px 10px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "none", color: "var(--dash-text)", fontSize: 12, outline: "none" }} />
+                          style={{ padding: "8px 10px", borderRadius: 10, background: "var(--dash-card-hover)", border: "none", color: "var(--dash-text)", fontSize: 12, outline: "none" }} />
                         <div style={{ display: "flex", gap: 8 }}>
-                          <button onClick={() => { setShowMovement(null); setMovQty(""); setMovCost(""); setMovNotes(""); }} style={{ flex: 1, padding: 8, borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "none", color: "var(--dash-text-muted)", fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>Cancelar</button>
+                          <button onClick={() => { setShowMovement(null); setMovQty(""); setMovCost(""); setMovNotes(""); }} style={{ flex: 1, padding: 8, borderRadius: 10, background: "var(--dash-card-hover)", border: "none", color: "var(--dash-text-muted)", fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>Cancelar</button>
                           <button onClick={() => handleMovement(item.id)} style={{ flex: 1, padding: 8, borderRadius: 10, background: "rgba(0,255,174,0.1)", border: "none", color: "var(--dash-accent)", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Registrar</button>
                         </div>
                       </div>
@@ -820,7 +820,7 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
 
           {/* Separador */}
           {expiryItems.length > 0 && lowStockItems.length > 0 && (
-            <div style={{ height: 1, background: "rgba(255,255,255,0.04)", margin: "16px 0" }} />
+            <div style={{ height: 1, background: "var(--dash-separator)", margin: "16px 0" }} />
           )}
 
           {/* Seção Estoque Baixo */}
@@ -879,7 +879,7 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
               {movements.map(m => (
                 <div key={m.id} style={{
                   display: "flex", alignItems: "center", gap: 10,
-                  padding: "10px 14px", borderRadius: 12, background: "rgba(255,255,255,0.02)",
+                  padding: "10px 14px", borderRadius: 12, background: "var(--dash-card)",
                 }}>
                   <span style={{ fontSize: 16, flexShrink: 0 }}>
                     {m.type === "purchase" ? "📥" : m.type === "usage" ? "📤" : m.type === "waste" ? "🗑️" : "🔄"}
@@ -935,7 +935,7 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
             <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}>
               {productCapacity.map(p => (
                 <div key={p.productId} style={{
-                  padding: "12px 14px", borderRadius: 14, background: "rgba(255,255,255,0.03)",
+                  padding: "12px 14px", borderRadius: 14, background: "var(--dash-card)",
                   boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
                 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
@@ -970,7 +970,7 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
                 {dailyConsumption.filter(d => d.dailyUsage > 0).map((d, i) => (
                   <div key={i} style={{
                     display: "flex", alignItems: "center", gap: 10, padding: "8px 12px",
-                    borderRadius: 10, background: d.daysRemaining <= 3 ? "rgba(248,113,113,0.04)" : d.daysRemaining <= 7 ? "rgba(251,191,36,0.04)" : "rgba(255,255,255,0.02)",
+                    borderRadius: 10, background: d.daysRemaining <= 3 ? "rgba(248,113,113,0.04)" : d.daysRemaining <= 7 ? "rgba(251,191,36,0.04)" : "var(--dash-card)",
                   }}>
                     <div style={{ flex: 1 }}>
                       <span style={{ fontSize: 12, color: "var(--dash-text)", fontWeight: 600 }}>{d.name}</span>
@@ -992,7 +992,7 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
           )}
 
           {/* Sugestão IA de compras */}
-          <div style={{ padding: 16, borderRadius: 14, background: "rgba(255,255,255,0.03)", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
+          <div style={{ padding: 16, borderRadius: 14, background: "var(--dash-card)", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: "var(--dash-text)", marginBottom: 4 }}>Sugestão de compras com IA</div>
             <div style={{ fontSize: 11, color: "var(--dash-text-muted)", marginBottom: 14 }}>
               Baseada no estoque atual, consumo médio e margens.
@@ -1008,11 +1008,11 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
               </button>
             ) : (
               <>
-                <div style={{ whiteSpace: "pre-wrap", fontSize: 13, color: "rgba(255,255,255,0.7)", lineHeight: 1.7 }}>
+                <div style={{ whiteSpace: "pre-wrap", fontSize: 13, color: "var(--dash-text-secondary)", lineHeight: 1.7 }}>
                   {purchaseAI}
                 </div>
                 <button onClick={() => setPurchaseAI(null)} style={{
-                  marginTop: 10, padding: "6px 14px", borderRadius: 8, background: "rgba(255,255,255,0.04)",
+                  marginTop: 10, padding: "6px 14px", borderRadius: 8, background: "var(--dash-card-hover)",
                   border: "none", color: "var(--dash-text-muted)", fontSize: 11, cursor: "pointer", fontFamily: "inherit",
                 }}>🔄 Gerar novamente</button>
               </>

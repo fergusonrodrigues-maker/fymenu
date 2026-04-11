@@ -16,7 +16,7 @@ const PLANS = [
 
 const inp: React.CSSProperties = {
   width: "100%", padding: "10px 14px", borderRadius: 12,
-  background: "rgba(255,255,255,0.04)", border: "none",
+  background: "var(--dash-card-hover)", border: "none",
   color: "var(--dash-text)", fontSize: 14, outline: "none", boxSizing: "border-box",
 };
 
@@ -121,7 +121,7 @@ export default function ConfigModal({ profile, restaurant }: { profile: Profile;
   return (
     <div style={{ paddingTop: 8 }}>
       {/* Tabs */}
-      <div style={{ display: "flex", gap: 4, marginBottom: 20, background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: 4 }}>
+      <div style={{ display: "flex", gap: 4, marginBottom: 20, background: "var(--dash-card-hover)", borderRadius: 12, padding: 4 }}>
         {TABS.map(t => (
           <button key={t.key} onClick={() => setTab(t.key)} style={{
             flex: 1, padding: "8px 10px", borderRadius: 10, border: "none", cursor: "pointer",
@@ -156,7 +156,7 @@ export default function ConfigModal({ profile, restaurant }: { profile: Profile;
           <div>
             <label style={{ fontSize: 10, color: "var(--dash-text-muted)", display: "block", marginBottom: 4 }}>Email</label>
             <input value={profile?.email || ""} disabled
-              style={{ ...inp, background: "rgba(255,255,255,0.02)", color: "var(--dash-text-muted)" }} />
+              style={{ ...inp, background: "var(--dash-card)", color: "var(--dash-text-muted)" }} />
             <span style={{ fontSize: 9, color: "var(--dash-text-muted)", marginTop: 2, display: "block" }}>Email não pode ser alterado</span>
           </div>
 
@@ -224,7 +224,7 @@ export default function ConfigModal({ profile, restaurant }: { profile: Profile;
               <div key={plan.key} style={{
                 display: "flex", alignItems: "center", justifyContent: "space-between",
                 padding: "14px 16px", borderRadius: 14,
-                background: isCurrent ? "rgba(0,255,174,0.04)" : "rgba(255,255,255,0.03)",
+                background: isCurrent ? "rgba(0,255,174,0.04)" : "var(--dash-card)",
                 boxShadow: isCurrent
                   ? "0 1px 0 rgba(0,255,174,0.06) inset, 0 -1px 0 rgba(0,0,0,0.15) inset"
                   : "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
@@ -245,7 +245,7 @@ export default function ConfigModal({ profile, restaurant }: { profile: Profile;
                 ) : isDowngrade ? (
                   <button onClick={() => handleChangePlan(plan.key)} style={{
                     padding: "8px 16px", borderRadius: 10, border: "none", cursor: "pointer",
-                    background: "rgba(255,255,255,0.04)", color: "var(--dash-text-muted)",
+                    background: "var(--dash-card-hover)", color: "var(--dash-text-muted)",
                     fontSize: 12, fontWeight: 600, fontFamily: "inherit",
                   }}>⬇️ Downgrade</button>
                 ) : null}
@@ -272,7 +272,7 @@ export default function ConfigModal({ profile, restaurant }: { profile: Profile;
                 <div style={{ display: "flex", gap: 8 }}>
                   <button onClick={() => setShowCancelConfirm(false)} style={{
                     flex: 1, padding: 10, borderRadius: 12, border: "none", cursor: "pointer",
-                    background: "rgba(255,255,255,0.04)", color: "var(--dash-text-muted)",
+                    background: "var(--dash-card-hover)", color: "var(--dash-text-muted)",
                     fontSize: 12, fontFamily: "inherit",
                   }}>Manter plano</button>
                   <button onClick={handleCancelPlan} disabled={canceling} style={{

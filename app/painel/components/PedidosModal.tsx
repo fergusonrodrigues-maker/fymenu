@@ -291,13 +291,13 @@ export default function PedidosModal({ unitId, unit }: { unitId: string; unit?: 
                           <div style={{
                             borderTop: "1px solid var(--dash-card-border)",
                             padding: "12px 14px",
-                            background: "rgba(255,255,255,0.02)",
+                            background: "var(--dash-card)",
                           }}>
                             {/* Kitchen status */}
                             <div style={{ marginBottom: 10 }}>
                               <span style={{
                                 fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 20,
-                                background: "rgba(255,255,255,0.05)", color: "var(--dash-text-muted)",
+                                background: "var(--dash-card-hover)", color: "var(--dash-text-muted)",
                                 border: "1px solid var(--dash-card-border)",
                               }}>
                                 🍳 {KITCHEN_LABEL[ks]}
@@ -330,7 +330,7 @@ export default function PedidosModal({ unitId, unit }: { unitId: string; unit?: 
                             {order.notes && (
                               <div style={{
                                 fontSize: 12, color: "var(--dash-text-muted)", fontStyle: "italic",
-                                padding: "8px", background: "rgba(255,255,255,0.03)", borderRadius: 8,
+                                padding: "8px", background: "var(--dash-card)", borderRadius: 8,
                                 marginBottom: 8,
                               }}>
                                 💬 {order.notes}
@@ -370,7 +370,7 @@ export default function PedidosModal({ unitId, unit }: { unitId: string; unit?: 
             {waLink ? (
               <>
                 <div style={{
-                  padding: "8px 12px", borderRadius: 8, background: "rgba(255,255,255,0.04)",
+                  padding: "8px 12px", borderRadius: 8, background: "var(--dash-card-hover)",
                   border: "1px solid var(--dash-card-border)", fontSize: 12, color: "var(--dash-text-muted)",
                   fontFamily: "monospace", marginBottom: 8, wordBreak: "break-all",
                 }}>{waLink}</div>

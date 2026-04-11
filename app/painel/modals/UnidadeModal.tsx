@@ -117,9 +117,9 @@ export default function UnidadeModal({ unit, isPro, onClose }: { unit: Unit | nu
       <LogoUploader unitId={unit.id} currentLogoUrl={unit.logo_url} />
 
       {/* ── Foto de Capa ── */}
-      <div style={{ borderRadius: 14, padding: 14, background: "rgba(20,20,20,0.55)", border: "1px solid rgba(255,255,255,0.12)" }}>
+      <div style={{ borderRadius: 14, padding: 14, background: "rgba(20,20,20,0.55)", border: "1px solid var(--dash-border)" }}>
         <div style={{ fontWeight: 900, marginBottom: 10 }}>Foto de Capa</div>
-        <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, marginBottom: 12, marginTop: 0 }}>
+        <p style={{ color: "var(--dash-text-muted)", fontSize: 12, marginBottom: 12, marginTop: 0 }}>
           Aparece no topo do cardápio público. Use uma foto da fachada ou de um prato.
         </p>
 
@@ -132,8 +132,8 @@ export default function UnidadeModal({ unit, isPro, onClose }: { unit: Unit | nu
             height: 140,
             borderRadius: 12,
             overflow: "hidden",
-            background: "rgba(255,255,255,0.04)",
-            border: "1px solid rgba(255,255,255,0.08)",
+            background: "var(--dash-card-hover)",
+            border: "1px solid var(--dash-border)",
             marginBottom: 10,
             cursor: "pointer",
           }}
@@ -150,7 +150,7 @@ export default function UnidadeModal({ unit, isPro, onClose }: { unit: Unit | nu
               width: "100%", height: "100%",
               display: "flex", flexDirection: "column",
               alignItems: "center", justifyContent: "center",
-              color: "rgba(255,255,255,0.25)",
+              color: "var(--dash-text-subtle)",
             }}>
               <span style={{ fontSize: 28, marginBottom: 6 }}>📷</span>
               <span style={{ fontSize: 12 }}>Toque para adicionar foto de capa</span>
@@ -197,7 +197,7 @@ export default function UnidadeModal({ unit, isPro, onClose }: { unit: Unit | nu
       </div>
 
       {/* ── Descrição curta ── */}
-      <div style={{ borderRadius: 14, padding: 14, background: "rgba(20,20,20,0.55)", border: "1px solid rgba(255,255,255,0.12)" }}>
+      <div style={{ borderRadius: 14, padding: 14, background: "rgba(20,20,20,0.55)", border: "1px solid var(--dash-border)" }}>
         <div style={{ fontWeight: 900, marginBottom: 10 }}>Descrição curta</div>
         <input
           type="text"
@@ -208,13 +208,13 @@ export default function UnidadeModal({ unit, isPro, onClose }: { unit: Unit | nu
           maxLength={100}
           style={inp}
         />
-        <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 11, marginTop: 6, display: "block" }}>
+        <span style={{ color: "var(--dash-text-subtle)", fontSize: 11, marginTop: 6, display: "block" }}>
           {description.length}/100 — Aparece abaixo do nome no cardápio público
         </span>
       </div>
 
       {/* ── Facebook Pixel ── */}
-      <div style={{ borderRadius: 14, padding: 14, background: "rgba(20,20,20,0.55)", border: "1px solid rgba(255,255,255,0.12)" }}>
+      <div style={{ borderRadius: 14, padding: 14, background: "rgba(20,20,20,0.55)", border: "1px solid var(--dash-border)" }}>
         <div style={{ fontWeight: 900, marginBottom: 10 }}>Facebook Pixel</div>
         {/* Facebook Pixel */}
         <div style={{ marginTop: 0 }}>
@@ -230,11 +230,11 @@ export default function UnidadeModal({ unit, isPro, onClose }: { unit: Unit | nu
             }}
             style={{
               width: "100%", padding: "10px 14px", borderRadius: 12,
-              background: "rgba(255,255,255,0.04)", border: "none",
+              background: "var(--dash-card-hover)", border: "none",
               color: "var(--dash-text)", fontSize: 14, outline: "none", boxSizing: "border-box",
             }}
           />
-          <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 10, marginTop: 4, display: "block" }}>
+          <span style={{ color: "var(--dash-text-subtle)", fontSize: 10, marginTop: 4, display: "block" }}>
             Rastreia conversões do cardápio no Facebook/Instagram Ads
           </span>
         </div>
@@ -251,7 +251,7 @@ export default function UnidadeModal({ unit, isPro, onClose }: { unit: Unit | nu
               }}
               style={{
                 padding: "10px 12px", borderRadius: 12,
-                background: "rgba(255,255,255,0.04)", border: "none",
+                background: "var(--dash-card-hover)", border: "none",
                 color: "var(--dash-text)", fontSize: 13, outline: "none", width: 120,
               }}
             >
@@ -272,12 +272,12 @@ export default function UnidadeModal({ unit, isPro, onClose }: { unit: Unit | nu
               }}
               style={{
                 flex: 1, padding: "10px 14px", borderRadius: 12,
-                background: "rgba(255,255,255,0.04)", border: "none",
+                background: "var(--dash-card-hover)", border: "none",
                 color: "var(--dash-text)", fontSize: 13, outline: "none",
               }}
             />
           </div>
-          <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 10, display: "block" }}>
+          <span style={{ color: "var(--dash-text-subtle)", fontSize: 10, display: "block" }}>
             Só contabiliza cliques — vendas são processadas na plataforma externa.
           </span>
         </div>
@@ -295,11 +295,11 @@ export default function UnidadeModal({ unit, isPro, onClose }: { unit: Unit | nu
             }}
             style={{
               width: "100%", padding: "10px 14px", borderRadius: 12,
-              background: "rgba(255,255,255,0.04)", border: "none",
+              background: "var(--dash-card-hover)", border: "none",
               color: "var(--dash-text)", fontSize: 13, outline: "none", boxSizing: "border-box",
             }}
           />
-          <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 10, marginTop: 4, display: "block" }}>
+          <span style={{ color: "var(--dash-text-subtle)", fontSize: 10, marginTop: 4, display: "block" }}>
             Clientes que dão 4-5 estrelas são redirecionados pra avaliar no Google
           </span>
         </div>

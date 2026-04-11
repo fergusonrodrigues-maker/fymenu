@@ -36,8 +36,8 @@ export default function PlanoModal({ restaurant }: { restaurant: Restaurant; tri
     <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingTop: 8 }}>
       {/* Plano atual */}
       <div style={{ padding: "16px 20px", borderRadius: 16, background: "rgba(0,255,174,0.06)", marginBottom: 20 }}>
-        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>Plano atual</div>
-        <div style={{ fontSize: 18, fontWeight: 800, color: "#fff", marginTop: 4 }}>
+        <div style={{ fontSize: 11, color: "var(--dash-text-muted)" }}>Plano atual</div>
+        <div style={{ fontSize: 18, fontWeight: 800, color: "var(--dash-text)", marginTop: 4 }}>
           {restaurant.plan === "menu" ? "Menu" : restaurant.plan === "menupro" ? "MenuPro" : restaurant.plan === "business" ? "Business" : restaurant.plan ?? "Nenhum"}
         </div>
         {restaurant.free_access && <span style={{ fontSize: 11, color: "#00ffae", marginTop: 2, display: "block" }}>Acesso gratuito ativo</span>}
@@ -48,7 +48,7 @@ export default function PlanoModal({ restaurant }: { restaurant: Restaurant; tri
       {PLANS.map(plan => (
         <div key={plan.key} style={{
           borderRadius: 18, padding: "20px 18px", marginBottom: 12,
-          background: plan.highlight ? "rgba(0,255,174,0.04)" : "rgba(255,255,255,0.03)",
+          background: plan.highlight ? "rgba(0,255,174,0.04)" : "var(--dash-card)",
           boxShadow: plan.highlight
             ? "0 1px 0 rgba(0,255,174,0.06) inset, 0 -1px 0 rgba(0,0,0,0.2) inset"
             : "0 1px 0 rgba(255,255,255,0.03) inset, 0 -1px 0 rgba(0,0,0,0.2) inset",
@@ -66,10 +66,10 @@ export default function PlanoModal({ restaurant }: { restaurant: Restaurant; tri
           )}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
-              <div style={{ fontSize: 16, fontWeight: 800, color: "#fff" }}>{plan.name}</div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "var(--dash-text)" }}>{plan.name}</div>
               <div style={{
                 fontSize: 13,
-                color: plan.highlight ? "rgba(0,255,174,0.8)" : "rgba(255,255,255,0.5)",
+                color: plan.highlight ? "rgba(0,255,174,0.8)" : "var(--dash-text-dim)",
                 fontWeight: 700, marginTop: 2,
               }}>
                 {plan.price}<span style={{ fontSize: 11, fontWeight: 400 }}>{plan.suffix}</span>
@@ -82,8 +82,8 @@ export default function PlanoModal({ restaurant }: { restaurant: Restaurant; tri
                 onClick={() => window.location.href = "/painel/planos"}
                 style={{
                   padding: "8px 16px", borderRadius: 10, border: "none", cursor: "pointer",
-                  background: plan.highlight ? "rgba(0,255,174,0.1)" : "rgba(255,255,255,0.06)",
-                  color: plan.highlight ? "#00ffae" : "rgba(255,255,255,0.5)",
+                  background: plan.highlight ? "rgba(0,255,174,0.1)" : "var(--dash-card-hover)",
+                  color: plan.highlight ? "#00ffae" : "var(--dash-text-dim)",
                   fontSize: 12, fontWeight: 700,
                   boxShadow: "0 1px 0 rgba(255,255,255,0.04) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
                 }}
@@ -94,7 +94,7 @@ export default function PlanoModal({ restaurant }: { restaurant: Restaurant; tri
           </div>
           <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 4 }}>
             {plan.features.map(f => (
-              <div key={f} style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", display: "flex", alignItems: "center", gap: 6 }}>
+              <div key={f} style={{ fontSize: 12, color: "var(--dash-text-muted)", display: "flex", alignItems: "center", gap: 6 }}>
                 <span style={{ color: "rgba(0,255,174,0.5)" }}>✓</span> {f}
               </div>
             ))}
