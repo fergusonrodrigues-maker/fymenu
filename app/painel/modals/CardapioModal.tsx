@@ -576,22 +576,30 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
       {importStep === "idle" && (
         <>
         {/* Links rápidos */}
-        <div style={{ display: "flex", gap: 8 }}>
+        <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginBottom: 16 }}>
           {unit && (
-            <a href={`/delivery/${unit.slug}`} target="_blank" rel="noreferrer" style={{ flex: 1, textAlign: "center", padding: "10px", borderRadius: 12, background: "var(--dash-link-bg)", border: "1px solid rgba(255,255,255,0.12)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.15), inset 0 -2px 0 rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.15)", color: "var(--dash-text-secondary)", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>
+            <a href={`/delivery/${unit.slug}`} target="_blank" rel="noreferrer" style={{
+              padding: "8px 16px", borderRadius: 10, border: "none", cursor: "pointer",
+              background: "rgba(255,255,255,0.04)", color: "var(--dash-text-muted)", fontSize: 12, fontWeight: 600,
+              boxShadow: "0 1px 0 rgba(255,255,255,0.03) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
+              textDecoration: "none",
+            }}>
               Ver cardápio ↗
             </a>
           )}
-          <button type="button" className="btn-ai" style={{ flex: 1 }} onClick={() => setImportStep("upload")}>
+          <button type="button" onClick={() => setImportStep("upload")} style={{
+            padding: "8px 16px", borderRadius: 10, border: "none", cursor: "pointer",
+            background: "rgba(168,85,247,0.08)", color: "rgba(168,85,247,0.8)", fontSize: 12, fontWeight: 600,
+            boxShadow: "0 1px 0 rgba(168,85,247,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
+          }}>
             ✨ Importar com IA
           </button>
           {(restaurant?.plan === "menupro" || restaurant?.plan === "business") && (
             <button type="button" onClick={handleAISuggestion} disabled={generatingAISuggestion} style={{
-              padding: "6px 14px", borderRadius: 10, border: "none", cursor: "pointer",
-              background: "rgba(168,85,247,0.1)", color: "rgba(168,85,247,0.8)",
-              fontSize: 12, fontWeight: 600,
+              padding: "8px 16px", borderRadius: 10, border: "none", cursor: "pointer",
+              background: "rgba(168,85,247,0.06)", color: "rgba(168,85,247,0.6)", fontSize: 12, fontWeight: 600,
+              boxShadow: "0 1px 0 rgba(168,85,247,0.06) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
               opacity: generatingAISuggestion ? 0.5 : 1,
-              whiteSpace: "nowrap", flexShrink: 0,
             }}>
               {generatingAISuggestion ? "Analisando..." : "✨ Sugestão IA"}
             </button>
@@ -702,161 +710,210 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
             onDragOver={(e) => { e.preventDefault(); setOverIdx(catIdx); }}
             onDragEnd={() => { if (dragIdx !== null && overIdx !== null) handleReorder(dragIdx, overIdx); setDragIdx(null); setOverIdx(null); }}
             onDrop={() => { if (dragIdx !== null) handleReorder(dragIdx, catIdx); setDragIdx(null); setOverIdx(null); }}
-            className={overIdx === catIdx ? "" : "modal-neon-card"}
             style={{
-              borderRadius: 16,
-              border: overIdx === catIdx ? "2px solid #FF6B00" : undefined,
-              background: dragIdx === catIdx ? "var(--dash-card-hover, rgba(255,255,255,0.08))" : "var(--dash-card-subtle)",
+              borderRadius: 14,
+              border: overIdx === catIdx ? "2px solid #FF6B00" : "none",
+              background: "transparent",
               overflow: "hidden",
               opacity: dragIdx === catIdx ? 0.7 : 1,
               transition: "all 0.2s ease",
               transform: overIdx === catIdx && dragIdx !== catIdx ? "scale(1.02)" : "none",
+              marginBottom: 6,
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", padding: "10px 12px", gap: 6, cursor: "pointer" }} onClick={() => {
-              const willOpen = !isOpen;
-              setExpandedCat(willOpen ? cat.id : null);
-              if (willOpen) {
-                setEditScheduleEnabled(cat.schedule_enabled || false);
-                setEditDays((cat.available_days as string[]) || ["seg","ter","qua","qui","sex","sab","dom"]);
-                setEditStartTime(cat.start_time?.slice(0,5) || "11:00");
-                setEditEndTime(cat.end_time?.slice(0,5) || "23:00");
-              }
-              if (isOpen) setShowAllProducts(prev => ({ ...prev, [cat.id]: false }));
-            }}>
-              <span
-                style={{ cursor: "grab", fontSize: 16, color: "var(--dash-text-muted)", opacity: 0.5, userSelect: "none", WebkitUserSelect: "none", touchAction: "none", WebkitTouchCallout: "none", padding: "0 2px", lineHeight: 1, flexShrink: 0, width: 18, textAlign: "center" }}
-                onMouseDown={(e) => e.stopPropagation()}
-                onContextMenu={(e) => e.preventDefault()}
-                onTouchStart={(e) => { e.preventDefault(); onTouchStartDrag(e, catIdx); }}
-                onTouchMove={(e) => onTouchMoveDrag(e)}
-                onTouchEnd={() => onTouchEndDrag()}
-                title="Segurar e arrastar para reordenar"
-              >⠿</span>
-              <span className="cat-header-arrow" data-open={isOpen ? "true" : "false"} style={{ color: "var(--dash-text-muted)", fontSize: 11, flexShrink: 0, width: 14, textAlign: "center", lineHeight: 1 }}>▼</span>
+            {/* COLLAPSED HEADER */}
+            {!isOpen && (
+              <div
+                style={{
+                  display: "flex", alignItems: "center", gap: 10,
+                  padding: "12px 14px", borderRadius: 14,
+                  background: "rgba(255,255,255,0.03)",
+                  boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
+                  cursor: "pointer",
+                }}
+                onClick={() => {
+                  setExpandedCat(cat.id);
+                  setEditScheduleEnabled(cat.schedule_enabled || false);
+                  setEditDays((cat.available_days as string[]) || ["seg","ter","qua","qui","sex","sab","dom"]);
+                  setEditStartTime(cat.start_time?.slice(0,5) || "11:00");
+                  setEditEndTime(cat.end_time?.slice(0,5) || "23:00");
+                }}
+              >
+                <span
+                  style={{ color: "rgba(255,255,255,0.15)", cursor: "grab", fontSize: 14, userSelect: "none", WebkitUserSelect: "none", touchAction: "none", flexShrink: 0 }}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onContextMenu={(e) => e.preventDefault()}
+                  onTouchStart={(e) => { e.preventDefault(); onTouchStartDrag(e, catIdx); }}
+                  onTouchMove={(e) => onTouchMoveDrag(e)}
+                  onTouchEnd={() => onTouchEndDrag()}
+                  title="Segurar e arrastar para reordenar"
+                >⠿</span>
+                <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 10, flexShrink: 0 }}>▼</span>
+                <span style={{ flex: 1, color: "var(--dash-text)", fontSize: 14, fontWeight: 700 }}>{cat.name}</span>
+                {cat.schedule_enabled && (
+                  <span style={{ fontSize: 9, padding: "2px 6px", borderRadius: 4, background: "rgba(251,191,36,0.1)", color: "#fbbf24", whiteSpace: "nowrap", flexShrink: 0 }}>
+                    🕐 {cat.start_time?.slice(0,5)}-{cat.end_time?.slice(0,5)}
+                  </span>
+                )}
+                <label className="switch-toggle" onClick={(e) => e.stopPropagation()}>
+                  <input
+                    type="checkbox"
+                    checked={isCatActive(cat)}
+                    onChange={async (e) => {
+                      const newActive = e.target.checked;
+                      setCatActiveState(prev => ({ ...prev, [cat.id]: newActive }));
+                      const supabase = createSupabaseClient();
+                      const { error } = await supabase.from("categories").update({ is_active: newActive }).eq("id", cat.id);
+                      if (error) { console.error("Toggle category active error:", error); setCatActiveState(prev => ({ ...prev, [cat.id]: !newActive })); }
+                    }}
+                  />
+                  <div className="sw-slider">
+                    <div className="sw-circle">
+                      <svg className="sw-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                      <svg className="sw-cross" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                    </div>
+                  </div>
+                </label>
+              </div>
+            )}
 
-              <form action={updateCategory} onClick={(e) => e.stopPropagation()} style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
+            {/* EXPANDED FORM */}
+            {isOpen && (
+              <form action={updateCategory} style={{
+                padding: "16px", borderRadius: 14,
+                background: "rgba(0,255,174,0.02)",
+                border: "1px solid rgba(0,255,174,0.06)",
+              }}>
                 <input type="hidden" name="id" value={cat.id} />
                 <input type="hidden" name="section" value={editCatSection[cat.id] ?? cat.section ?? 'pratos'} />
-                {isOpen && <>
-                  <input type="hidden" name="schedule_enabled" value={String(editScheduleEnabled)} />
-                  <input type="hidden" name="available_days" value={JSON.stringify(editDays)} />
-                  <input type="hidden" name="start_time" value={editStartTime} />
-                  <input type="hidden" name="end_time" value={editEndTime} />
-                </>}
-                <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                  <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
-                    <input name="name" defaultValue={cat.name} style={{ ...inp, flex: 1, fontSize: 14, fontWeight: 800, height: 38, padding: "0 12px" }} />
-                    {cat.schedule_enabled && (
-                      <span style={{ fontSize: 9, padding: "2px 6px", borderRadius: 4, background: "rgba(251,191,36,0.1)", color: "#fbbf24", whiteSpace: "nowrap", flexShrink: 0 }}>
-                        🕐 {cat.start_time?.slice(0,5)}-{cat.end_time?.slice(0,5)}
-                      </span>
-                    )}
-                  </div>
-                  <button type="submit" className="btn-gradient" style={{ padding: "0 10px", height: 30, fontSize: 11, minWidth: 50, borderRadius: 7, flexShrink: 0 }}>
-                    Salvar
-                  </button>
+                <input type="hidden" name="schedule_enabled" value={String(editScheduleEnabled)} />
+                <input type="hidden" name="available_days" value={JSON.stringify(editDays)} />
+                <input type="hidden" name="start_time" value={editStartTime} />
+                <input type="hidden" name="end_time" value={editEndTime} />
+
+                {/* Row 1: Name + Salvar */}
+                <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 12 }}>
+                  <input name="name" defaultValue={cat.name} style={{
+                    flex: 1, padding: "10px 14px", borderRadius: 10,
+                    background: "rgba(255,255,255,0.06)", border: "none",
+                    color: "var(--dash-text)", fontSize: 14, fontWeight: 700, outline: "none",
+                  }} />
+                  <button type="submit" style={{
+                    padding: "8px 16px", borderRadius: 10, border: "none", cursor: "pointer",
+                    background: "rgba(0,255,174,0.08)", color: "var(--dash-accent)",
+                    fontSize: 12, fontWeight: 700, flexShrink: 0,
+                    boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
+                  }}>Salvar</button>
                 </div>
-                {isOpen && (
-                  <>
-                  <div style={{ display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap", marginTop: 4 }}>
-                    <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 10, marginRight: 2, flexShrink: 0 }}>Sessão:</span>
-                    {allSections.map((s, i) => {
+
+                {/* Row 2: Drag + Arrow + Session + Cancel + Toggle */}
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                  <span
+                    style={{ color: "rgba(255,255,255,0.15)", cursor: "grab", fontSize: 14, userSelect: "none", WebkitUserSelect: "none", touchAction: "none", flexShrink: 0 }}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onContextMenu={(e) => e.preventDefault()}
+                    onTouchStart={(e) => { e.preventDefault(); onTouchStartDrag(e, catIdx); }}
+                    onTouchMove={(e) => onTouchMoveDrag(e)}
+                    onTouchEnd={() => onTouchEndDrag()}
+                    title="Segurar e arrastar para reordenar"
+                  >⠿</span>
+                  <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 10, flexShrink: 0 }}>▲</span>
+                  <div style={{ display: "flex", gap: 4, flex: 1, flexWrap: "wrap", alignItems: "center" }}>
+                    <span style={{ fontSize: 10, color: "var(--dash-text-muted)", lineHeight: "24px", flexShrink: 0 }}>Sessão:</span>
+                    {allSections.map(s => {
                       const current = editCatSection[cat.id] ?? cat.section ?? 'pratos';
                       const isActive = current === s.value;
-                      const gradStart = ["#00ffae", "#60a5fa", "#a855f7", "#f472b6", "#fbbf24"][i % 5];
-                      const gradEnd   = ["#00d9ff", "#a855f7", "#f472b6", "#fbbf24", "#00ffae"][i % 5];
                       return (
                         <button key={s.value} type="button" onClick={() => setEditCatSection(prev => ({ ...prev, [cat.id]: s.value }))}
                           style={{
-                            padding: "3px 10px", borderRadius: 8, border: "none",
-                            background: isActive ? `linear-gradient(135deg, ${gradStart}, ${gradEnd})` : "rgba(255,255,255,0.06)",
-                            color: isActive ? "#000" : "rgba(255,255,255,0.4)",
-                            cursor: "pointer", fontSize: 10, fontWeight: isActive ? 700 : 500,
-                            transition: "all 0.2s", whiteSpace: "nowrap",
-                          }}>
-                          {s.label}
-                        </button>
+                            padding: "4px 10px", borderRadius: 6, border: "none", cursor: "pointer",
+                            background: isActive ? "rgba(0,255,174,0.1)" : "rgba(255,255,255,0.04)",
+                            color: isActive ? "var(--dash-accent)" : "var(--dash-text-muted)",
+                            fontSize: 10, fontWeight: 600,
+                          }}>{s.label}</button>
                       );
                     })}
                     <button type="button" onClick={() => setShowCreateSection(v => !v)}
-                      style={{ padding: "3px 8px", borderRadius: 8, border: "1px dashed rgba(255,255,255,0.1)", background: "transparent", color: "rgba(255,255,255,0.2)", cursor: "pointer", fontSize: 10, whiteSpace: "nowrap" }}>
+                      style={{ padding: "4px 8px", borderRadius: 6, border: "1px dashed rgba(255,255,255,0.1)", background: "transparent", color: "rgba(255,255,255,0.2)", cursor: "pointer", fontSize: 10, whiteSpace: "nowrap" }}>
                       + Criar
                     </button>
                   </div>
-                  {/* Schedule */}
-                  <div style={{ marginTop: 6 }}>
-                    <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", marginBottom: 6 }}>
-                      <input type="checkbox" checked={editScheduleEnabled} onChange={e => setEditScheduleEnabled(e.target.checked)} style={{ accentColor: "var(--dash-accent)" }} />
-                      <span style={{ fontSize: 11, color: "var(--dash-text-muted)" }}>Ativar por horário</span>
-                    </label>
-                    {editScheduleEnabled && (
-                      <>
-                        <div style={{ display: "flex", gap: 3, marginBottom: 6, flexWrap: "wrap" }}>
-                          {["seg","ter","qua","qui","sex","sab","dom"].map(day => (
-                            <button key={day} type="button" onClick={() => setEditDays(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day])}
-                              style={{
-                                padding: "3px 8px", borderRadius: 6, border: "none", cursor: "pointer",
-                                background: editDays.includes(day) ? "rgba(0,255,174,0.1)" : "rgba(255,255,255,0.04)",
-                                color: editDays.includes(day) ? "var(--dash-accent)" : "rgba(255,255,255,0.25)",
-                                fontSize: 10, fontWeight: 600,
-                              }}>{day}</button>
-                          ))}
-                        </div>
-                        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                          <input type="time" value={editStartTime} onChange={e => setEditStartTime(e.target.value)}
-                            style={{ padding: "4px 8px", borderRadius: 8, background: "rgba(255,255,255,0.04)", border: "none", color: "var(--dash-text)", fontSize: 11, outline: "none" }} />
-                          <span style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>até</span>
-                          <input type="time" value={editEndTime} onChange={e => setEditEndTime(e.target.value)}
-                            style={{ padding: "4px 8px", borderRadius: 8, background: "rgba(255,255,255,0.04)", border: "none", color: "var(--dash-text)", fontSize: 11, outline: "none" }} />
-                        </div>
-                        <div style={{ fontSize: 9, color: "rgba(255,255,255,0.2)", marginTop: 4 }}>
-                          Categoria visível apenas nos dias e horários selecionados.
-                        </div>
-                      </>
-                    )}
-                  </div>
-                  </>
-                )}
-              </form>
-              <form action={deleteCategory} onClick={(e) => e.stopPropagation()} onSubmit={(e) => { if (!confirm("Excluir categoria e todos os produtos?")) e.preventDefault(); }}>
-                <input type="hidden" name="id" value={cat.id} />
-                <button type="submit" className="delete-btn">
-                  <span className="x-line" />
-                  <span className="x-line" />
-                </button>
-              </form>
-              <label className="switch-toggle" onClick={(e) => e.stopPropagation()}>
-                <input
-                  type="checkbox"
-                  checked={isCatActive(cat)}
-                  onChange={async (e) => {
-                    const newActive = e.target.checked;
-                    setCatActiveState(prev => ({ ...prev, [cat.id]: newActive }));
-                    const supabase = createSupabaseClient();
-                    const { error } = await supabase
-                      .from("categories")
-                      .update({ is_active: newActive })
-                      .eq("id", cat.id);
-                    if (error) {
-                      console.error("Toggle category active error:", error);
-                      setCatActiveState(prev => ({ ...prev, [cat.id]: !newActive }));
-                    }
-                  }}
-                />
-                <div className="sw-slider">
-                  <div className="sw-circle">
-                    <svg className="sw-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                    <svg className="sw-cross" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="18" y1="6" x2="6" y2="18" />
-                      <line x1="6" y1="6" x2="18" y2="18" />
-                    </svg>
-                  </div>
+                  {/* Cancel edit */}
+                  <button type="button" onClick={() => { setExpandedCat(null); setShowAllProducts(prev => ({ ...prev, [cat.id]: false })); }} style={{
+                    width: 28, height: 28, borderRadius: 8, border: "none", cursor: "pointer",
+                    background: "rgba(248,113,113,0.08)", color: "#f87171",
+                    display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, flexShrink: 0,
+                  }}>✕</button>
+                  {/* Active toggle */}
+                  <label className="switch-toggle">
+                    <input
+                      type="checkbox"
+                      checked={isCatActive(cat)}
+                      onChange={async (e) => {
+                        const newActive = e.target.checked;
+                        setCatActiveState(prev => ({ ...prev, [cat.id]: newActive }));
+                        const supabase = createSupabaseClient();
+                        const { error } = await supabase.from("categories").update({ is_active: newActive }).eq("id", cat.id);
+                        if (error) { console.error("Toggle category active error:", error); setCatActiveState(prev => ({ ...prev, [cat.id]: !newActive })); }
+                      }}
+                    />
+                    <div className="sw-slider">
+                      <div className="sw-circle">
+                        <svg className="sw-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                        <svg className="sw-cross" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                      </div>
+                    </div>
+                  </label>
                 </div>
-              </label>
-            </div>
+
+                {/* Row 3: Schedule */}
+                <div style={{ marginBottom: 4 }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
+                    <input type="checkbox" checked={editScheduleEnabled} onChange={e => setEditScheduleEnabled(e.target.checked)}
+                      style={{ accentColor: "var(--dash-accent)", width: 14, height: 14 }} />
+                    <span style={{ fontSize: 11, color: "var(--dash-text-muted)" }}>Ativar por horário</span>
+                  </label>
+                  {editScheduleEnabled && (
+                    <div style={{ marginTop: 8, paddingLeft: 20 }}>
+                      <div style={{ display: "flex", gap: 3, marginBottom: 6, flexWrap: "wrap" }}>
+                        {["seg","ter","qua","qui","sex","sab","dom"].map(day => (
+                          <button key={day} type="button" onClick={() => setEditDays(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day])}
+                            style={{
+                              padding: "3px 7px", borderRadius: 5, border: "none", cursor: "pointer",
+                              background: editDays.includes(day) ? "rgba(0,255,174,0.1)" : "rgba(255,255,255,0.04)",
+                              color: editDays.includes(day) ? "var(--dash-accent)" : "rgba(255,255,255,0.2)",
+                              fontSize: 9, fontWeight: 600,
+                            }}>{day}</button>
+                        ))}
+                      </div>
+                      <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                        <input type="time" value={editStartTime} onChange={e => setEditStartTime(e.target.value)}
+                          style={{ padding: "3px 6px", borderRadius: 6, background: "rgba(255,255,255,0.04)", border: "none", color: "var(--dash-text)", fontSize: 11, outline: "none" }} />
+                        <span style={{ fontSize: 9, color: "var(--dash-text-muted)" }}>até</span>
+                        <input type="time" value={editEndTime} onChange={e => setEditEndTime(e.target.value)}
+                          style={{ padding: "3px 6px", borderRadius: 6, background: "rgba(255,255,255,0.04)", border: "none", color: "var(--dash-text)", fontSize: 11, outline: "none" }} />
+                      </div>
+                      <div style={{ fontSize: 9, color: "rgba(255,255,255,0.2)", marginTop: 4 }}>
+                        Categoria visível apenas nos dias e horários selecionados.
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </form>
+            )}
+
+            {/* Delete — outside form to avoid nesting */}
+            {isOpen && (
+              <div style={{ padding: "4px 16px 2px", display: "flex", justifyContent: "flex-end" }}>
+                <form action={deleteCategory} onSubmit={(e) => { if (!confirm("Excluir categoria e todos os produtos?")) e.preventDefault(); }}>
+                  <input type="hidden" name="id" value={cat.id} />
+                  <button type="submit" style={{
+                    background: "transparent", border: "none", cursor: "pointer",
+                    color: "rgba(248,113,113,0.3)", fontSize: 10, padding: "4px 8px",
+                  }}>Excluir categoria</button>
+                </form>
+              </div>
+            )}
             <div className="cat-dropdown-content" data-open={isOpen ? "true" : "false"}>
               <div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: isOpen ? "0 12px 12px" : "0 12px" }}>
