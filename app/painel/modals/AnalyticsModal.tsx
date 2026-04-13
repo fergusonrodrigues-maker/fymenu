@@ -3,8 +3,25 @@
 import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Unit } from "../types";
+import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell } from "recharts";
 
 const supabase = createClient();
+
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (!active || !payload) return null;
+  return (
+    <div style={{ background: "var(--dash-surface)", border: "1px solid var(--dash-border)", borderRadius: 12, padding: "10px 14px", boxShadow: "0 8px 24px rgba(0,0,0,0.3)" }}>
+      <div style={{ fontSize: 10, color: "var(--dash-text-muted)", marginBottom: 4 }}>{label}</div>
+      {payload.map((p: any, i: number) => (
+        <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12 }}>
+          <div style={{ width: 6, height: 6, borderRadius: "50%", background: p.color }} />
+          <span style={{ color: "var(--dash-text-secondary)" }}>{p.name}:</span>
+          <span style={{ color: "var(--dash-text)", fontWeight: 700 }}>{p.value}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
 
 type Tab = "Geral" | "Produtos" | "IA" | "Avaliações";
 
@@ -39,6 +56,7 @@ export default function AnalyticsModal({
   const [importingAnalytics, setImportingAnalytics] = useState(false);
   const [analyticsText, setAnalyticsText] = useState("");
   const analyticsFileRef = useRef<HTMLInputElement>(null);
+  const [chartData, setChartData] = useState<any[]>([]);
 
   useEffect(() => {
     if (!unit) return;
@@ -51,6 +69,50 @@ export default function AnalyticsModal({
       .gte("created_at", sevenDaysAgo)
       .then(({ count }) => setIfoodClicks(count ?? 0));
   }, [unit]);
+
+  async function loadChartData() {
+    if (!unit) return;
+    const daysBack = 30;
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - daysBack);
+
+    const { data: events } = await supabase
+      .from("menu_events")
+      .select("event, created_at, product_id")
+      .eq("unit_id", unit.id)
+      .gte("created_at", startDate.toISOString())
+      .order("created_at");
+
+    if (!events || events.length === 0) { setChartData([]); return; }
+
+    const grouped: Record<string, { date: string; visitas: number; cliques: number; pedidos: number }> = {};
+    for (const e of events) {
+      const day = e.created_at.slice(0, 10);
+      if (!grouped[day]) grouped[day] = { date: day, visitas: 0, cliques: 0, pedidos: 0 };
+      if (e.event === "menu_view") grouped[day].visitas++;
+      else if (e.event === "product_click") grouped[day].cliques++;
+      else if (e.event === "whatsapp_click" || e.event === "product_order_click") grouped[day].pedidos++;
+    }
+
+    const result = [];
+    const current = new Date(startDate);
+    const today = new Date();
+    while (current <= today) {
+      const dayStr = current.toISOString().slice(0, 10);
+      result.push(grouped[dayStr] || { date: dayStr, visitas: 0, cliques: 0, pedidos: 0 });
+      current.setDate(current.getDate() + 1);
+    }
+
+    setChartData(result.map(d => ({
+      ...d,
+      label: `${d.date.slice(8, 10)}/${d.date.slice(5, 7)}`,
+    })));
+  }
+
+  useEffect(() => {
+    if (tab !== "Geral" || !unit) return;
+    loadChartData();
+  }, [tab, unit]);
 
   const stats = [
     { label: "Visitas ao cardápio", value: analytics.views, icon: "👁", color: "var(--dash-accent)", desc: "últimos 7 dias" },
@@ -419,6 +481,72 @@ export default function AnalyticsModal({
               </div>
             </div>
           )}
+          {/* Gráfico de evolução */}
+          {chartData.length > 1 ? (
+            <>
+              <div style={{ padding: 16, borderRadius: 16, background: "var(--dash-card)", border: "1px solid var(--dash-border)" }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--dash-text)", marginBottom: 12 }}>Evolução (últimos 30 dias)</div>
+                <div style={{ width: "100%", height: 220 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+                      <defs>
+                        <linearGradient id="gradVisitas" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="var(--dash-accent)" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="var(--dash-accent)" stopOpacity={0} />
+                        </linearGradient>
+                        <linearGradient id="gradCliques" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#60a5fa" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="#60a5fa" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--dash-section-border)" />
+                      <XAxis dataKey="label" tick={{ fontSize: 10, fill: "var(--dash-text-muted)" }} axisLine={{ stroke: "var(--dash-section-border)" }} tickLine={false} interval={"preserveStartEnd"} />
+                      <YAxis tick={{ fontSize: 10, fill: "var(--dash-text-muted)" }} axisLine={false} tickLine={false} />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Area type="monotone" dataKey="visitas" name="Visitas" stroke="var(--dash-accent)" strokeWidth={2} fill="url(#gradVisitas)" />
+                      <Area type="monotone" dataKey="cliques" name="Cliques" stroke="#60a5fa" strokeWidth={2} fill="url(#gradCliques)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+                <div style={{ display: "flex", gap: 16, marginTop: 8, justifyContent: "center" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--dash-accent)" }} />
+                    <span style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>Visitas</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#60a5fa" }} />
+                    <span style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>Cliques</span>
+                  </div>
+                </div>
+              </div>
+
+              {chartData.some(d => d.pedidos > 0) && (
+                <div style={{ padding: 16, borderRadius: 16, background: "var(--dash-card)", border: "1px solid var(--dash-border)" }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "var(--dash-text)", marginBottom: 12 }}>Pedidos por dia</div>
+                  <div style={{ width: "100%", height: 160 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--dash-section-border)" />
+                        <XAxis dataKey="label" tick={{ fontSize: 10, fill: "var(--dash-text-muted)" }} axisLine={{ stroke: "var(--dash-section-border)" }} tickLine={false} interval={"preserveStartEnd"} />
+                        <YAxis tick={{ fontSize: 10, fill: "var(--dash-text-muted)" }} axisLine={false} tickLine={false} allowDecimals={false} />
+                        <Tooltip content={<CustomTooltip />} />
+                        <Bar dataKey="pedidos" name="Pedidos" fill="var(--dash-accent)" radius={[4, 4, 0, 0]} barSize={20} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <div style={{ padding: 30, borderRadius: 16, background: "var(--dash-card)", border: "1px solid var(--dash-border)", textAlign: "center" }}>
+              <div style={{ fontSize: 28, marginBottom: 8 }}>📊</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "var(--dash-text-secondary)" }}>Dados insuficientes</div>
+              <div style={{ fontSize: 11, color: "var(--dash-text-muted)", marginTop: 4 }}>
+                Os gráficos aparecerão conforme clientes interagirem com o cardápio.
+              </div>
+            </div>
+          )}
+
           {unit && (
             <a href={`/delivery/${unit.slug}`} target="_blank" rel="noreferrer" style={{ display: "block", textAlign: "center", padding: "14px", borderRadius: 14, background: "var(--dash-link-bg)", border: "1px solid var(--dash-card-border)", color: "var(--dash-text-secondary)", fontSize: 14, fontWeight: 600, textDecoration: "none", transition: "all 0.2s" }}>
               Ver cardápio público ↗
@@ -431,6 +559,41 @@ export default function AnalyticsModal({
       {tab === "Produtos" && (
         <div>
           <div style={{ fontSize: 14, fontWeight: 700, color: "var(--dash-text)", marginBottom: 12 }}>Top Produtos (mais clicados)</div>
+          {topProducts.length > 0 && (
+            <div style={{ padding: 16, borderRadius: 16, background: "var(--dash-card)", border: "1px solid var(--dash-border)", marginBottom: 16 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--dash-text)", marginBottom: 12 }}>Distribuição de cliques</div>
+              <div style={{ width: "100%", height: 200 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={topProducts.slice(0, 6).map(p => ({ name: p.name, value: p.count }))}
+                      cx="50%" cy="50%"
+                      innerRadius={50} outerRadius={80}
+                      paddingAngle={3} dataKey="value"
+                    >
+                      {topProducts.slice(0, 6).map((_, i) => {
+                        const colors = ["#00ffae", "#60a5fa", "#fbbf24", "#f87171", "#a78bfa", "#34d399"];
+                        return <Cell key={i} fill={colors[i % colors.length]} />;
+                      })}
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center", marginTop: 8 }}>
+                {topProducts.slice(0, 6).map((p, i) => {
+                  const colors = ["#00ffae", "#60a5fa", "#fbbf24", "#f87171", "#a78bfa", "#34d399"];
+                  return (
+                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                      <div style={{ width: 6, height: 6, borderRadius: "50%", background: colors[i % colors.length] }} />
+                      <span style={{ fontSize: 9, color: "var(--dash-text-muted)", maxWidth: 80, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {loadingProducts ? (
             <div style={{ textAlign: "center", padding: 40, color: "var(--dash-text-muted)" }}>Carregando...</div>
           ) : topProducts.length === 0 ? (
