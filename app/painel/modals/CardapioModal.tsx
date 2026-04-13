@@ -170,6 +170,19 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
   const [sourcePreview, setSourcePreview] = useState<any>(null);
   const [copying, setCopying] = useState(false);
 
+  // View / Combos states
+  const [view, setView] = useState<"categorias" | "combos">("categorias");
+  const [combos, setCombos] = useState<any[]>([]);
+  const [showCreateCombo, setShowCreateCombo] = useState(false);
+  const [editingCombo, setEditingCombo] = useState<any | null>(null);
+  const [comboName, setComboName] = useState("");
+  const [comboDesc, setComboDesc] = useState("");
+  const [comboItems, setComboItems] = useState<{ product_id: string; variation_id: string | null; quantity: number }[]>([]);
+  const [comboPrice, setComboPrice] = useState("");
+  const [comboOriginalPrice, setComboOriginalPrice] = useState(0);
+  const [comboSuggestionProducts, setComboSuggestionProducts] = useState<string[]>([]);
+  const [savingCombo, setSavingCombo] = useState(false);
+
   useEffect(() => { setOrderedCats(categories); }, [categories]);
 
   useEffect(() => {
@@ -575,6 +588,90 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
     }
   }
 
+  // ── Combos helpers ────────────────────────────────────────────────────────────
+  const allProducts = products;
+
+  async function loadCombos() {
+    if (!unit) return;
+    const { data } = await createSupabaseClient()
+      .from("product_combos")
+      .select("*, combo_items(*, products(name, base_price), product_variations(name)), product_combo_suggestions(product_id)")
+      .eq("unit_id", unit.id)
+      .order("order_index");
+    if (data) setCombos(data.map((c: any) => ({ ...c, items: c.combo_items, suggestions: c.product_combo_suggestions })));
+  }
+
+  useEffect(() => { loadCombos(); }, [unit?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function recalcOriginalPrice(items: { product_id: string; quantity: number }[]) {
+    let total = 0;
+    for (const item of items) {
+      const prod = allProducts.find(p => p.id === item.product_id);
+      if (prod) total += ((prod.base_price ?? 0) * (item.quantity || 1));
+    }
+    setComboOriginalPrice(total);
+  }
+
+  function resetComboForm() {
+    setComboName(""); setComboDesc(""); setComboItems([]); setComboPrice("");
+    setComboOriginalPrice(0); setComboSuggestionProducts([]);
+  }
+
+  function openEditCombo(combo: any) {
+    setComboName(combo.name);
+    setComboDesc(combo.description ?? "");
+    setComboPrice(combo.combo_price?.toString() ?? "");
+    setComboOriginalPrice(combo.original_price ?? 0);
+    setComboItems((combo.items ?? []).map((ci: any) => ({
+      product_id: ci.product_id,
+      variation_id: ci.variation_id ?? null,
+      quantity: ci.quantity ?? 1,
+    })));
+    setComboSuggestionProducts((combo.suggestions ?? []).map((s: any) => s.product_id));
+    setEditingCombo(combo);
+  }
+
+  async function handleToggleCombo(comboId: string, isActive: boolean) {
+    await createSupabaseClient().from("product_combos").update({ is_active: isActive }).eq("id", comboId);
+    setCombos(prev => prev.map(c => c.id === comboId ? { ...c, is_active: isActive } : c));
+  }
+
+  async function handleSaveCombo() {
+    if (!unit) return;
+    setSavingCombo(true);
+    const supabase = createSupabaseClient();
+    const comboData = {
+      unit_id: unit.id,
+      name: comboName.trim(),
+      description: comboDesc.trim() || null,
+      combo_price: parseFloat(comboPrice) || 0,
+      original_price: comboOriginalPrice,
+      is_active: true,
+    };
+    let comboId: string;
+    if (editingCombo) {
+      await supabase.from("product_combos").update(comboData).eq("id", editingCombo.id);
+      comboId = editingCombo.id;
+      await supabase.from("combo_items").delete().eq("combo_id", comboId);
+      await supabase.from("product_combo_suggestions").delete().eq("combo_id", comboId);
+    } else {
+      const { data, error } = await supabase.from("product_combos").insert(comboData).select().single();
+      if (error || !data) { setSavingCombo(false); return; }
+      comboId = data.id;
+    }
+    const itemInserts = comboItems
+      .filter(item => item.product_id)
+      .map((item, i) => ({ combo_id: comboId, product_id: item.product_id, variation_id: item.variation_id, quantity: item.quantity || 1, order_index: i }));
+    if (itemInserts.length > 0) await supabase.from("combo_items").insert(itemInserts);
+    const sugInserts = comboSuggestionProducts.map(pid => ({ product_id: pid, combo_id: comboId, is_active: true }));
+    if (sugInserts.length > 0) await supabase.from("product_combo_suggestions").insert(sugInserts);
+    await loadCombos();
+    setShowCreateCombo(false);
+    setEditingCombo(null);
+    resetComboForm();
+    setSavingCombo(false);
+  }
+
   const productsByCat = orderedCats.reduce<Record<string, Product[]>>((acc, cat) => {
     acc[cat.id] = products.filter((p) => p.category_id === cat.id);
     return acc;
@@ -783,6 +880,12 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
               boxShadow: "0 1px 0 rgba(96,165,250,0.06) inset, 0 -1px 0 rgba(0,0,0,0.12) inset",
             }}>📋 Copiar de outra unidade</button>
           )}
+          <button type="button" onClick={() => setView(view === "combos" ? "categorias" : "combos")} style={{
+            padding: "8px 16px", borderRadius: 10, border: "none", cursor: "pointer",
+            background: view === "combos" ? "var(--dash-accent-soft)" : "var(--dash-card)",
+            color: view === "combos" ? "var(--dash-accent)" : "var(--dash-text-muted)",
+            fontSize: 12, fontWeight: 600, boxShadow: "var(--dash-shadow)",
+          }}>🎁 Combos</button>
         </div>
 
         {aiSuggestionResult && (
@@ -895,8 +998,203 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
         </div>
       )}
 
+      {/* ── COMBOS VIEW ── */}
+      {view === "combos" && (
+        <div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: "var(--dash-text)" }}>Combos ({combos.length})</div>
+            <button onClick={() => { resetComboForm(); setShowCreateCombo(true); }} style={{
+              padding: "8px 14px", borderRadius: 10, border: "none", cursor: "pointer",
+              background: "var(--dash-accent-soft)", color: "var(--dash-accent)", fontSize: 12, fontWeight: 700,
+              boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
+            }}>+ Criar combo</button>
+          </div>
+
+          {combos.length === 0 ? (
+            <div style={{ textAlign: "center", padding: 40, borderRadius: 16, background: "var(--dash-card)", border: "1px solid var(--dash-border)" }}>
+              <div style={{ fontSize: 32, marginBottom: 8 }}>🎁</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "var(--dash-text)" }}>Nenhum combo criado</div>
+              <div style={{ fontSize: 11, color: "var(--dash-text-muted)", marginTop: 4 }}>Crie combos pra sugerir ao cliente quando ele pedir um produto.</div>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {combos.map(combo => (
+                <div key={combo.id} style={{ padding: 16, borderRadius: 14, background: "var(--dash-card)", border: "1px solid var(--dash-border)", boxShadow: "var(--dash-shadow)" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: "var(--dash-text)" }}>{combo.name}</div>
+                      {combo.description && <div style={{ fontSize: 11, color: "var(--dash-text-muted)", marginTop: 2 }}>{combo.description}</div>}
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <button onClick={() => handleToggleCombo(combo.id, !combo.is_active)} style={{
+                        width: 28, height: 28, borderRadius: 8, border: "none", cursor: "pointer",
+                        background: combo.is_active ? "rgba(0,200,120,0.15)" : "rgba(128,128,128,0.15)",
+                        color: combo.is_active ? "#00c878" : "rgba(128,128,128,0.5)",
+                        display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700,
+                      }}>{combo.is_active ? "✓" : "○"}</button>
+                      <button onClick={() => openEditCombo(combo)} style={{
+                        padding: "6px 10px", borderRadius: 8, border: "none", cursor: "pointer",
+                        background: "var(--dash-card-hover)", color: "var(--dash-text-muted)", fontSize: 10, fontWeight: 600,
+                      }}>Editar</button>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 8 }}>
+                    {combo.items?.map((item: any, i: number) => (
+                      <span key={i} style={{ padding: "3px 8px", borderRadius: 6, background: "var(--dash-card-hover)", color: "var(--dash-text-muted)", fontSize: 10, fontWeight: 600 }}>
+                        {item.quantity > 1 ? `${item.quantity}× ` : ""}{item.products?.name ?? "Produto"}
+                        {item.product_variations?.name ? ` (${item.product_variations.name})` : ""}
+                      </span>
+                    ))}
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    {combo.original_price > 0 && combo.original_price > combo.combo_price && (
+                      <span style={{ fontSize: 12, color: "var(--dash-text-muted)", textDecoration: "line-through" }}>
+                        R$ {Number(combo.original_price).toFixed(2).replace(".", ",")}
+                      </span>
+                    )}
+                    <span style={{ fontSize: 16, fontWeight: 900, color: "var(--dash-accent)" }}>
+                      R$ {Number(combo.combo_price).toFixed(2).replace(".", ",")}
+                    </span>
+                    {combo.original_price > 0 && combo.original_price > combo.combo_price && (
+                      <span style={{ padding: "2px 6px", borderRadius: 4, background: "var(--dash-accent-soft)", color: "var(--dash-accent)", fontSize: 9, fontWeight: 800 }}>
+                        -{Math.round((1 - combo.combo_price / combo.original_price) * 100)}%
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ marginTop: 8, fontSize: 10, color: "var(--dash-text-muted)" }}>
+                    Aparece em: {combo.suggestions?.length ?? 0} produto{(combo.suggestions?.length ?? 0) !== 1 ? "s" : ""}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Modal criar/editar combo */}
+          {(showCreateCombo || editingCombo) && (
+            <div style={{ position: "fixed", inset: 0, zIndex: 10000, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
+              onClick={() => { setShowCreateCombo(false); setEditingCombo(null); resetComboForm(); }}>
+              <div onClick={e => e.stopPropagation()} style={{
+                width: "100%", maxWidth: 480, maxHeight: "85vh", overflowY: "auto",
+                padding: 24, borderRadius: 20,
+                background: "var(--dash-surface, var(--dash-card))", border: "1px solid var(--dash-border)",
+                boxShadow: "0 20px 60px rgba(0,0,0,0.4)",
+              }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: "var(--dash-text)" }}>{editingCombo ? "Editar combo" : "Criar combo"}</div>
+                  <button onClick={() => { setShowCreateCombo(false); setEditingCombo(null); resetComboForm(); }} style={{
+                    width: 32, height: 32, borderRadius: 10, border: "none", cursor: "pointer",
+                    background: "rgba(220,38,38,0.12)", color: "var(--dash-text)",
+                    display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14,
+                  }}>✕</button>
+                </div>
+
+                {/* Nome */}
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: 11, color: "var(--dash-text-muted)", marginBottom: 6 }}>Nome do combo</div>
+                  <input value={comboName} onChange={e => setComboName(e.target.value)}
+                    placeholder="Ex: Combo Burgão Completo"
+                    style={{ ...inp }} onFocus={inpFocus} onBlur={inpBlur} />
+                </div>
+
+                {/* Descrição */}
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: 11, color: "var(--dash-text-muted)", marginBottom: 6 }}>Descrição (opcional)</div>
+                  <input value={comboDesc} onChange={e => setComboDesc(e.target.value)}
+                    placeholder="Ex: Hambúrguer + Batata + Refrigerante"
+                    style={{ ...inp }} onFocus={inpFocus} onBlur={inpBlur} />
+                </div>
+
+                {/* Itens */}
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: 11, color: "var(--dash-text-muted)", marginBottom: 8 }}>Itens do combo ({comboItems.length})</div>
+                  {comboItems.map((item, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, padding: "8px 10px", borderRadius: 10, background: "var(--dash-card-hover)", border: "1px solid var(--dash-border)" }}>
+                      <select value={item.product_id} onChange={e => {
+                        const updated = comboItems.map((ci, j) => j === i ? { ...ci, product_id: e.target.value, variation_id: null } : ci);
+                        setComboItems(updated);
+                        recalcOriginalPrice(updated);
+                      }} style={{ flex: 1, padding: "6px 8px", borderRadius: 8, background: "var(--dash-input-bg, var(--dash-card))", border: "1px solid var(--dash-border)", color: "var(--dash-text)", fontSize: 11, outline: "none", cursor: "pointer" }}>
+                        <option value="">Selecionar produto</option>
+                        {allProducts.map(p => (
+                          <option key={p.id} value={p.id}>{p.name}{p.base_price != null ? ` — R$${p.base_price.toFixed(2)}` : ""}</option>
+                        ))}
+                      </select>
+                      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                        <button type="button" onClick={() => {
+                          const updated = comboItems.map((ci, j) => j === i ? { ...ci, quantity: Math.max(1, ci.quantity - 1) } : ci);
+                          setComboItems(updated);
+                        }} style={{ width: 24, height: 24, borderRadius: 6, border: "none", cursor: "pointer", background: "var(--dash-card)", color: "var(--dash-text-muted)", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center" }}>−</button>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: "var(--dash-text)", width: 20, textAlign: "center" }}>{item.quantity}</span>
+                        <button type="button" onClick={() => {
+                          const updated = comboItems.map((ci, j) => j === i ? { ...ci, quantity: ci.quantity + 1 } : ci);
+                          setComboItems(updated);
+                        }} style={{ width: 24, height: 24, borderRadius: 6, border: "none", cursor: "pointer", background: "var(--dash-card)", color: "var(--dash-text-muted)", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
+                      </div>
+                      <button type="button" onClick={() => {
+                        const updated = comboItems.filter((_, j) => j !== i);
+                        setComboItems(updated);
+                        recalcOriginalPrice(updated);
+                      }} style={{ width: 24, height: 24, borderRadius: 6, border: "none", cursor: "pointer", background: "rgba(220,38,38,0.1)", color: "var(--dash-danger, #f87171)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11 }}>✕</button>
+                    </div>
+                  ))}
+                  <button type="button" onClick={() => setComboItems([...comboItems, { product_id: "", variation_id: null, quantity: 1 }])} style={{
+                    width: "100%", padding: 8, borderRadius: 8, border: "1px dashed var(--dash-border)",
+                    background: "transparent", color: "var(--dash-text-muted)", fontSize: 11, cursor: "pointer", marginTop: 4,
+                  }}>+ Adicionar item</button>
+                </div>
+
+                {/* Preço */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
+                  <div>
+                    <div style={{ fontSize: 10, color: "var(--dash-text-muted)", marginBottom: 4 }}>Preço original (soma)</div>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: "var(--dash-text-muted)", textDecoration: "line-through", padding: "10px 0" }}>
+                      R$ {comboOriginalPrice.toFixed(2).replace(".", ",")}
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 10, color: "var(--dash-text-muted)", marginBottom: 4 }}>Preço do combo</div>
+                    <div style={{ position: "relative" }}>
+                      <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "var(--dash-text-muted)", fontSize: 12 }}>R$</span>
+                      <input type="number" step="0.01" min="0" value={comboPrice} onChange={e => setComboPrice(e.target.value)}
+                        style={{ ...inp, paddingLeft: 34, color: "var(--dash-accent)", fontSize: 16, fontWeight: 900 }}
+                        onFocus={inpFocus} onBlur={inpBlur} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Vincular a produtos */}
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ fontSize: 11, color: "var(--dash-text-muted)", marginBottom: 8 }}>Sugerir quando o cliente pedir:</div>
+                  <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                    {allProducts.map(p => {
+                      const isLinked = comboSuggestionProducts.includes(p.id);
+                      return (
+                        <button key={p.id} type="button" onClick={() => setComboSuggestionProducts(isLinked ? comboSuggestionProducts.filter(id => id !== p.id) : [...comboSuggestionProducts, p.id])} style={{
+                          padding: "4px 10px", borderRadius: 8, border: "none", cursor: "pointer",
+                          background: isLinked ? "var(--dash-accent-soft)" : "var(--dash-card)",
+                          color: isLinked ? "var(--dash-accent)" : "var(--dash-text-muted)",
+                          fontSize: 10, fontWeight: 600,
+                        }}>{p.name}</button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Salvar */}
+                <button type="button" onClick={handleSaveCombo} disabled={savingCombo || !comboName.trim() || comboItems.length === 0} style={{
+                  width: "100%", padding: 14, borderRadius: 14, border: "none", cursor: "pointer",
+                  background: "var(--dash-accent-soft)", color: "var(--dash-accent)", fontSize: 14, fontWeight: 800,
+                  boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
+                  opacity: savingCombo || !comboName.trim() || comboItems.length === 0 ? 0.4 : 1,
+                }}>{savingCombo ? "Salvando..." : editingCombo ? "Salvar alterações" : "Criar combo"}</button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Nova categoria */}
-      {unit && (
+      {unit && view === "categorias" && (
         <form action={createCategory} className="modal-neon-card" style={{ display: "flex", flexDirection: "column", gap: 8, padding: "12px 14px", borderRadius: 14, background: "var(--dash-card)" }}>
           <input type="hidden" name="unit_id" value={unit.id} />
           <input type="hidden" name="category_type" value={newCatType} />
@@ -974,7 +1272,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
         <div style={{ textAlign: "center", padding: "40px 0", color: "var(--dash-text-subtle)", fontSize: 14 }}>Crie sua primeira categoria acima!</div>
       )}
 
-      {orderedCats.map((cat, catIdx) => {
+      {view === "categorias" && orderedCats.map((cat, catIdx) => {
         const isOpen = expandedCat === cat.id;
         const catProducts = productsByCat[cat.id] ?? [];
         const isDragging = dragIdx === catIdx;
