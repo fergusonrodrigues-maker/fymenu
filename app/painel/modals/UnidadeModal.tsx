@@ -36,7 +36,7 @@ function CopyLinkRow({ label, url }: { label: string; url: string }) {
   );
 }
 
-export default function UnidadeModal({ unit, isPro, onClose, onOpenPlans }: { unit: Unit | null; isPro: boolean; onClose: () => void; onOpenPlans?: () => void }) {
+export default function UnidadeModal({ unit, canAddUnit, plan, onClose, onOpenPlans }: { unit: Unit | null; canAddUnit: boolean; plan: string; onClose: () => void; onOpenPlans?: () => void }) {
   const [isPublished, setIsPublished] = useState(unit?.is_published ?? false);
   const [showNewUnit, setShowNewUnit] = useState(false);
 
@@ -493,7 +493,7 @@ export default function UnidadeModal({ unit, isPro, onClose, onOpenPlans }: { un
           <button onClick={() => setShowNewUnit(true)} style={{ width: "100%", padding: "13px", borderRadius: 14, border: "1px solid var(--dash-section-border)", background: "transparent", color: "var(--dash-text-muted)", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
             + Nova Unidade
           </button>
-        ) : isPro ? (
+        ) : canAddUnit ? (
           <div style={{ borderRadius: 14, padding: "16px", border: "1px solid var(--dash-border)", background: "var(--dash-card)" }}>
             <div style={{ color: "var(--dash-text)", fontSize: 14, fontWeight: 700, marginBottom: 12 }}>Nova Unidade</div>
             <form action={async (fd) => {
@@ -517,13 +517,17 @@ export default function UnidadeModal({ unit, isPro, onClose, onOpenPlans }: { un
           </div>
         ) : (
           <div style={{ borderRadius: 14, padding: "16px", border: "1px solid rgba(250,204,21,0.2)", background: "var(--dash-warning-soft)" }}>
-            <div style={{ color: "var(--dash-warning)", fontSize: 14, fontWeight: 700, marginBottom: 6 }}>⭐ Recurso Pro</div>
+            <div style={{ color: "var(--dash-warning)", fontSize: 14, fontWeight: 700, marginBottom: 6 }}>★ Limite atingido</div>
             <div style={{ color: "var(--dash-text-muted)", fontSize: 13, marginBottom: 14, lineHeight: 1.5 }}>
-              Múltiplas unidades estão disponíveis no Plano Pro. Faça upgrade para adicionar novas unidades.
+              {plan === "business"
+                ? "Você está no plano máximo (Business). Entre em contato para soluções personalizadas."
+                : `Seu plano atual não permite mais unidades. Faça upgrade para adicionar novas unidades.`}
             </div>
-            <button onClick={() => { setShowNewUnit(false); onClose(); onOpenPlans?.(); }} style={{ width: "100%", padding: "12px", borderRadius: 12, border: "none", background: "var(--dash-accent-soft)", color: "var(--dash-accent)", fontSize: 14, fontWeight: 800, cursor: "pointer", boxShadow: "var(--dash-shadow)" }}>
-              Ver Planos →
-            </button>
+            {plan !== "business" && (
+              <button onClick={() => { setShowNewUnit(false); onClose(); onOpenPlans?.(); }} style={{ width: "100%", padding: "12px", borderRadius: 12, border: "none", background: "var(--dash-accent-soft)", color: "var(--dash-accent)", fontSize: 14, fontWeight: 800, cursor: "pointer", boxShadow: "var(--dash-shadow)" }}>
+                Ver Planos →
+              </button>
+            )}
           </div>
         )}
       </div>

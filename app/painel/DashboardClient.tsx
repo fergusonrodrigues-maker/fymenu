@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import dynamic from "next/dynamic";
 import type { Restaurant, Unit, StockStats, Category, Product, Profile, ReportData } from "./types";
 import FyLoader from "@/components/FyLoader";
+import { hasPlanFeature, planLabel, maxUnits as planMaxUnits } from "@/lib/plan";
 
 const loadingFallback = <div style={{padding:40,display:"flex",justifyContent:"center"}}><FyLoader size="sm" /></div>;
 
@@ -256,7 +257,22 @@ export default function DashboardClient({
   const close = () => setModal(null);
 
   const trialDays = Math.max(0, Math.ceil((new Date(restaurant.trial_ends_at).getTime() - Date.now()) / 86400000));
-  const isPro = restaurant.plan === "pro";
+  const [restaurantState, setRestaurantState] = useState<Restaurant>(restaurant);
+
+  // Refresh plan from DB every 5 min so super-admin plan changes propagate
+  useEffect(() => {
+    const supabase = createClient();
+    async function refreshRestaurant() {
+      const { data } = await supabase
+        .from("restaurants")
+        .select("id, name, plan, status, trial_ends_at, whatsapp, instagram, onboarding_completed, free_access")
+        .eq("id", restaurant.id)
+        .single();
+      if (data) setRestaurantState(data as Restaurant);
+    }
+    const interval = setInterval(refreshRestaurant, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [restaurant.id]);
 
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
@@ -281,6 +297,7 @@ export default function DashboardClient({
   // Unit selector
   const [allUnits, setAllUnits] = useState<any[]>([]);
   const [showUnitSelector, setShowUnitSelector] = useState(false);
+  const canAddUnit = allUnits.length < planMaxUnits(restaurantState.plan);
 
   useEffect(() => {
     async function loadNotifications() {
@@ -289,7 +306,7 @@ export default function DashboardClient({
       const now = new Date();
 
       // 1. Estoque baixo (menupro + business)
-      if (restaurant?.plan === "menupro" || restaurant?.plan === "business") {
+      if (hasPlanFeature(restaurantState.plan, "analytics_ai")) {
         const { data: lowStock } = await supabase
           .from("inventory_items")
           .select("id, name, current_stock, min_stock, unit_measure")
@@ -312,7 +329,7 @@ export default function DashboardClient({
       }
 
       // 2. Validade (business only)
-      if (restaurant?.plan === "business") {
+      if (hasPlanFeature(restaurantState.plan, "estoque_completo")) {
         const { data: expiringItems } = await supabase
           .from("inventory_items")
           .select("id, name, expiry_date, expiry_alert_days")
@@ -333,7 +350,7 @@ export default function DashboardClient({
       }
 
       // 3. Meta diária (business only)
-      if (restaurant?.plan === "business" && (unit as any)?.daily_revenue_goal > 0 && now.getHours() >= 18) {
+      if (hasPlanFeature(restaurantState.plan, "financeiro_custos") && (unit as any)?.daily_revenue_goal > 0 && now.getHours() >= 18) {
         const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
         const { data: todayOrders } = await supabase
           .from("order_intents")
@@ -352,7 +369,7 @@ export default function DashboardClient({
       }
 
       // 4. Avaliações negativas últimas 24h (menupro + business)
-      if (restaurant?.plan === "menupro" || restaurant?.plan === "business") {
+      if (hasPlanFeature(restaurantState.plan, "analytics_ai")) {
         const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
         const { data: badReviews } = await supabase
           .from("reviews")
@@ -374,7 +391,7 @@ export default function DashboardClient({
       }
 
       // 5. Pagamento
-      if (restaurant?.status === "overdue" || restaurant?.status === "suspended") {
+      if (restaurantState?.status === "overdue" || restaurantState?.status === "suspended") {
         notifs.push({
           type: "payment",
           icon: "💳",
@@ -390,7 +407,7 @@ export default function DashboardClient({
     }
 
     if (unit?.id) loadNotifications();
-  }, [unit?.id, restaurant]);
+  }, [unit?.id, restaurantState]);
 
   useEffect(() => {
     if (!showNotifications) return;
@@ -475,8 +492,8 @@ export default function DashboardClient({
     financeiro: { icon: "💰", label: "Financeiro", sub: "Relatórios e receita", modalKey: "financeiro" },
     unidade: { icon: "📍", label: "Unidade", sub: () => unit?.is_published ? "Publicado" : "Não publicado", modalKey: "unidade" },
     tv: { icon: "📺", label: "Modo TV", sub: () => `${tvCount} vídeo${tvCount !== 1 ? "s" : ""} ativo${tvCount !== 1 ? "s" : ""}`, modalKey: "modotv" },
-    plano: { icon: "⭐", label: "Plano", sub: () => isPro ? "Pro" : restaurant.status === "trial" ? `Trial · ${trialDays}d` : restaurant.plan ?? "menu", modalKey: "plano" },
-    config: { icon: "⚙️", label: "Configurações", sub: () => `Perfil · ${restaurant.plan === "menupro" ? "MenuPro" : restaurant.plan === "business" ? "Business" : "Menu"} · Segurança`, modalKey: "config" },
+    plano: { icon: "⭐", label: "Plano", sub: () => restaurantState.status === "trial" ? `Trial · ${trialDays}d` : planLabel(restaurantState.plan), modalKey: "plano" },
+    config: { icon: "⚙️", label: "Configurações", sub: () => `Perfil · ${planLabel(restaurantState.plan)} · Segurança`, modalKey: "config" },
     estoque: { icon: "📦", label: "Estoque", sub: () => stockStats.out > 0 ? `${stockStats.out} esgotado${stockStats.out !== 1 ? "s" : ""}` : stockStats.low > 0 ? `${stockStats.low} baixo${stockStats.low !== 1 ? "s" : ""}` : "Tudo em ordem", modalKey: "estoque" },
     operacoes: { icon: "🎛️", label: "Operações", sub: "Cozinha · Garçom · Andamento", modalKey: "operacoes" },
     equipe: { icon: "👥", label: "Equipe", sub: "Funcionários · Avaliações", modalKey: "equipe" },
@@ -1479,19 +1496,19 @@ export default function DashboardClient({
       </div>
 
       <Modal open={modal === "analytics"} onClose={close} title="Analytics">
-        <AnalyticsModal analytics={analytics} unit={unit} products={products} categories={categories} restaurant={restaurant} />
+        <AnalyticsModal analytics={analytics} unit={unit} products={products} categories={categories} restaurant={restaurantState} />
       </Modal>
       <Modal open={modal === "pedidos"} onClose={close} title="Pedidos de hoje">
         {unit && <PedidosModal unitId={unit.id} unit={unit} />}
       </Modal>
       <Modal open={modal === "cardapio"} onClose={close} title="Cardápio">
-        <CardapioModal unit={unit} categories={categories} products={products} upsellItems={upsellItems} restaurant={restaurant} onClose={close} />
+        <CardapioModal unit={unit} categories={categories} products={products} upsellItems={upsellItems} restaurant={restaurantState} onClose={close} />
       </Modal>
       <Modal open={modal === "financeiro"} onClose={close} title="Financeiro">
-        <FinanceiroModal unit={unit} analytics={analytics} reportData={reportData} restaurant={restaurant} onOpenPlano={() => open("plano")} />
+        <FinanceiroModal unit={unit} analytics={analytics} reportData={reportData} restaurant={restaurantState} onOpenPlano={() => open("plano")} />
       </Modal>
       <Modal open={modal === "unidade"} onClose={close} title="Unidade">
-        <UnidadeModal unit={unit} isPro={isPro} onClose={close} onOpenPlans={() => open("plano")} />
+        <UnidadeModal unit={unit} canAddUnit={canAddUnit} plan={restaurantState.plan} onClose={close} onOpenPlans={() => open("plano")} />
       </Modal>
       <Modal open={modal === "tv"} onClose={close} title="Modo TV">
         <TVModal unit={unit} tvCount={tvCount} />
@@ -1500,13 +1517,13 @@ export default function DashboardClient({
         {unit && <ModoTVModal unit={unit} onClose={close} />}
       </Modal>
       <Modal open={modal === "plano"} onClose={close} title="Plano">
-        <PlanoModal restaurant={restaurant} trialDays={trialDays} onUpgrade={() => { close(); router.push("/painel/planos"); }} onClose={close} />
+        <PlanoModal restaurant={restaurantState} trialDays={trialDays} onUpgrade={() => { close(); router.push("/painel/planos"); }} onClose={close} />
       </Modal>
       <Modal open={modal === "config"} onClose={close} title="Configurações">
-        <ConfigModal profile={profile} restaurant={restaurant} />
+        <ConfigModal profile={profile} restaurant={restaurantState} />
       </Modal>
       <Modal open={modal === "estoque"} onClose={close} title="Estoque">
-        <EstoqueModal unit={unit} restaurant={restaurant} />
+        <EstoqueModal unit={unit} restaurant={restaurantState} />
       </Modal>
       <Modal open={modal === "operacoes"} onClose={close} title="Operações">
         {unit && <RestaurantOperationsModal unitId={unit.id} comandaClosePermission={unit.comanda_close_permission ?? "somente_caixa"} />}
@@ -1515,7 +1532,7 @@ export default function DashboardClient({
         {unit && <PrinterModal unitId={unit.id} categories={categories} />}
       </Modal>
       <Modal open={modal === "equipe"} onClose={close} title="Equipe">
-        {unit && <StaffAnalyticsModal unitId={unit.id} plan={restaurant.plan ?? "menu"} />}
+        {unit && <StaffAnalyticsModal unitId={unit.id} plan={restaurantState.plan ?? "menu"} />}
       </Modal>
       <Modal open={modal === "links"} onClose={close} title="">
         <div style={{ paddingTop: 4 }}>
