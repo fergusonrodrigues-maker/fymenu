@@ -42,7 +42,21 @@ type AuditLog = {
   created_at: string;
 };
 
-type Tab = "cozinha" | "garcom" | "andamento" | "auditoria";
+type Mesa = {
+  id: string;
+  unit_id: string;
+  number: number;
+  label: string | null;
+  capacity: number;
+  status: "available" | "occupied" | "reserved" | "inactive";
+  current_comanda_id: string | null;
+  current_waiter_id: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+type Tab = "mesas" | "cozinha" | "garcom" | "andamento" | "auditoria";
 
 // ── Status helpers ────────────────────────────────────────────────────────────
 
@@ -88,12 +102,22 @@ export default function RestaurantOperationsModal({
   comandaClosePermission: "garcom_e_caixa" | "somente_caixa";
 }) {
   const supabase = createClient();
-  const [tab, setTab] = useState<Tab>("cozinha");
+  const [tab, setTab] = useState<Tab>("mesas");
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [comandaPermission, setComandaPermission] = useState<"garcom_e_caixa" | "somente_caixa">(
     initialPermission
   );
+
+  // ── Mesas state ──────────────────────────────────────────────────────────────
+  const [mesas, setMesas] = useState<Mesa[]>([]);
+  const [showAddMesa, setShowAddMesa] = useState(false);
+  const [mesaFrom, setMesaFrom] = useState(1);
+  const [mesaTo, setMesaTo] = useState(10);
+  const [mesaCapacity, setMesaCapacity] = useState(4);
+  const [addingMesas, setAddingMesas] = useState(false);
+  const [selectedMesa, setSelectedMesa] = useState<Mesa | null>(null);
+  const [editMesaLabel, setEditMesaLabel] = useState("");
 
   useEffect(() => {
     if (!unitId) return;
@@ -133,6 +157,59 @@ export default function RestaurantOperationsModal({
     return () => { supabase.removeChannel(channel); };
   }, [unitId]);
 
+  // ── Mesas: load + realtime ───────────────────────────────────────────────────
+  useEffect(() => {
+    if (!unitId) return;
+    supabase.from("mesas").select("*").eq("unit_id", unitId).order("number")
+      .then(({ data }) => { if (data) setMesas(data as Mesa[]); });
+
+    const channel = supabase.channel("mesas-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "mesas", filter: `unit_id=eq.${unitId}` },
+        () => {
+          supabase.from("mesas").select("*").eq("unit_id", unitId).order("number")
+            .then(({ data }) => { if (data) setMesas(data as Mesa[]); });
+        })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [unitId]);
+
+  useEffect(() => { setEditMesaLabel(selectedMesa?.label ?? ""); }, [selectedMesa]);
+
+  // ── Mesas handlers ───────────────────────────────────────────────────────────
+  async function handleAddMesas() {
+    if (mesaFrom > mesaTo || mesaFrom < 1) return;
+    setAddingMesas(true);
+    const inserts = [];
+    for (let i = mesaFrom; i <= mesaTo; i++) {
+      inserts.push({ unit_id: unitId, number: i, capacity: mesaCapacity });
+    }
+    const { error } = await supabase.from("mesas").upsert(inserts, { onConflict: "unit_id,number" });
+    if (!error) {
+      setShowAddMesa(false);
+      const { data } = await supabase.from("mesas").select("*").eq("unit_id", unitId).order("number");
+      if (data) setMesas(data as Mesa[]);
+    }
+    setAddingMesas(false);
+  }
+
+  async function handleForceCloseMesa(mesaId: string) {
+    await supabase.from("mesas").update({
+      status: "available", current_comanda_id: null, current_waiter_id: null, updated_at: new Date().toISOString(),
+    }).eq("id", mesaId);
+    setSelectedMesa(null);
+  }
+
+  async function handleToggleMesaStatus(mesaId: string, newStatus: string) {
+    await supabase.from("mesas").update({ status: newStatus, updated_at: new Date().toISOString() }).eq("id", mesaId);
+    setSelectedMesa(null);
+  }
+
+  async function handleDeleteMesa(mesaId: string) {
+    await supabase.from("mesas").update({ is_active: false }).eq("id", mesaId);
+    setSelectedMesa(null);
+  }
+
   async function updateKitchenStatus(orderId: string, kitchen_status: string) {
     await supabase.from("order_intents").update({ kitchen_status }).eq("id", orderId);
   }
@@ -147,6 +224,7 @@ export default function RestaurantOperationsModal({
   }
 
   const tabs: { id: Tab; label: string }[] = [
+    { id: "mesas", label: "🪑 Mesas" },
     { id: "cozinha", label: "🍳 Cozinha" },
     { id: "garcom", label: "🎯 Garçom" },
     { id: "andamento", label: "📊 Andamento" },
@@ -183,6 +261,32 @@ export default function RestaurantOperationsModal({
         ))}
       </div>
 
+      {tab === "mesas" && (
+        <MesasTab
+          mesas={mesas}
+          showAddMesa={showAddMesa}
+          setShowAddMesa={setShowAddMesa}
+          mesaFrom={mesaFrom}
+          setMesaFrom={setMesaFrom}
+          mesaTo={mesaTo}
+          setMesaTo={setMesaTo}
+          mesaCapacity={mesaCapacity}
+          setMesaCapacity={setMesaCapacity}
+          addingMesas={addingMesas}
+          onAddMesas={handleAddMesas}
+          selectedMesa={selectedMesa}
+          setSelectedMesa={setSelectedMesa}
+          editMesaLabel={editMesaLabel}
+          setEditMesaLabel={setEditMesaLabel}
+          onUpdateLabel={async (label) => {
+            if (!selectedMesa) return;
+            await supabase.from("mesas").update({ label }).eq("id", selectedMesa.id);
+          }}
+          onForceClose={handleForceCloseMesa}
+          onToggleStatus={handleToggleMesaStatus}
+          onDelete={handleDeleteMesa}
+        />
+      )}
       {tab === "cozinha" && (
         <CozinhaTab orders={orders} onUpdateKitchen={updateKitchenStatus} />
       )}
@@ -654,6 +758,239 @@ function AuditoriaTab({ unitId }: { unitId: string }) {
               </div>
             );
           })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Aba Mesas ─────────────────────────────────────────────────────────────────
+
+function MesasTab({
+  mesas,
+  showAddMesa, setShowAddMesa,
+  mesaFrom, setMesaFrom,
+  mesaTo, setMesaTo,
+  mesaCapacity, setMesaCapacity,
+  addingMesas,
+  onAddMesas,
+  selectedMesa, setSelectedMesa,
+  editMesaLabel, setEditMesaLabel,
+  onUpdateLabel,
+  onForceClose,
+  onToggleStatus,
+  onDelete,
+}: {
+  mesas: Mesa[];
+  showAddMesa: boolean;
+  setShowAddMesa: (v: boolean) => void;
+  mesaFrom: number;
+  setMesaFrom: (v: number) => void;
+  mesaTo: number;
+  setMesaTo: (v: number) => void;
+  mesaCapacity: number;
+  setMesaCapacity: (v: number) => void;
+  addingMesas: boolean;
+  onAddMesas: () => void;
+  selectedMesa: Mesa | null;
+  setSelectedMesa: (m: Mesa | null) => void;
+  editMesaLabel: string;
+  setEditMesaLabel: (v: string) => void;
+  onUpdateLabel: (label: string) => Promise<void>;
+  onForceClose: (id: string) => Promise<void>;
+  onToggleStatus: (id: string, status: string) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
+}) {
+  const statusColors: Record<string, { bg: string; color: string; border: string }> = {
+    available: { bg: "var(--dash-accent-soft)", color: "var(--dash-accent)", border: "rgba(0,255,174,0.15)" },
+    occupied:  { bg: "var(--dash-warning-soft)", color: "var(--dash-warning)", border: "rgba(251,191,36,0.15)" },
+    reserved:  { bg: "var(--dash-info-soft)", color: "var(--dash-info)", border: "rgba(96,165,250,0.15)" },
+    inactive:  { bg: "var(--dash-card)", color: "var(--dash-text-muted)", border: "var(--dash-border)" },
+  };
+
+  const statusLabel: Record<string, string> = {
+    available: "Livre",
+    occupied: "Ocupada",
+    reserved: "Reservada",
+    inactive: "Inativa",
+  };
+
+  const activeMesas = mesas.filter((m) => m.is_active).sort((a, b) => a.number - b.number);
+
+  return (
+    <div>
+      {/* Contadores */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 16 }}>
+        <div style={{ padding: 12, borderRadius: 12, background: "var(--dash-card)", textAlign: "center", boxShadow: "var(--dash-shadow)" }}>
+          <div style={{ fontSize: 20, fontWeight: 900, color: "var(--dash-text)" }}>{activeMesas.length}</div>
+          <div style={{ fontSize: 9, color: "var(--dash-text-muted)" }}>Total</div>
+        </div>
+        <div style={{ padding: 12, borderRadius: 12, background: "var(--dash-accent-soft)", textAlign: "center" }}>
+          <div style={{ fontSize: 20, fontWeight: 900, color: "var(--dash-accent)" }}>{activeMesas.filter((m) => m.status === "available").length}</div>
+          <div style={{ fontSize: 9, color: "var(--dash-text-muted)" }}>Livres</div>
+        </div>
+        <div style={{ padding: 12, borderRadius: 12, background: "var(--dash-warning-soft)", textAlign: "center" }}>
+          <div style={{ fontSize: 20, fontWeight: 900, color: "var(--dash-warning)" }}>{activeMesas.filter((m) => m.status === "occupied").length}</div>
+          <div style={{ fontSize: 9, color: "var(--dash-text-muted)" }}>Ocupadas</div>
+        </div>
+        <div style={{ padding: 12, borderRadius: 12, background: "var(--dash-info-soft)", textAlign: "center" }}>
+          <div style={{ fontSize: 20, fontWeight: 900, color: "var(--dash-info)" }}>{activeMesas.filter((m) => m.status === "reserved").length}</div>
+          <div style={{ fontSize: 9, color: "var(--dash-text-muted)" }}>Reservadas</div>
+        </div>
+      </div>
+
+      {/* Grid de mesas */}
+      {activeMesas.length > 0 && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))", gap: 8, marginBottom: 16 }}>
+          {activeMesas.map((m) => {
+            const s = statusColors[m.status] ?? statusColors.available;
+            return (
+              <button key={m.id} onClick={() => setSelectedMesa(m)} style={{
+                padding: 16, borderRadius: 14,
+                background: s.bg, border: `1px solid ${s.border}`,
+                cursor: "pointer", textAlign: "center",
+                transition: "all 0.2s",
+                boxShadow: "var(--dash-shadow)",
+              }}>
+                <div style={{ fontSize: 22, fontWeight: 900, color: s.color }}>{m.number}</div>
+                <div style={{ fontSize: 9, color: "var(--dash-text-muted)", marginTop: 2 }}>
+                  {m.label || `Mesa ${m.number}`}
+                </div>
+                <div style={{ fontSize: 8, color: s.color, marginTop: 4, textTransform: "uppercase", fontWeight: 700, letterSpacing: 1 }}>
+                  {statusLabel[m.status] ?? m.status}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Adicionar mesas */}
+      {!showAddMesa ? (
+        <button onClick={() => setShowAddMesa(true)} style={{
+          width: "100%", padding: 12, borderRadius: 12,
+          border: "1px dashed var(--dash-border)", background: "transparent",
+          color: "var(--dash-text-muted)", fontSize: 12, cursor: "pointer",
+        }}>+ Adicionar mesas</button>
+      ) : (
+        <div style={{
+          padding: 16, borderRadius: 14,
+          background: "var(--dash-card)", border: "1px solid var(--dash-border)",
+        }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "var(--dash-text)", marginBottom: 12 }}>Adicionar mesas</div>
+          <div style={{ display: "flex", gap: 8, marginBottom: 12, alignItems: "flex-end" }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 10, color: "var(--dash-text-muted)", marginBottom: 4 }}>De</div>
+              <input type="number" min="1" value={mesaFrom} onChange={(e) => setMesaFrom(Number(e.target.value))}
+                style={{
+                  width: "100%", padding: "10px 14px", borderRadius: 10,
+                  background: "var(--dash-input-bg)", border: "1px solid var(--dash-input-border)",
+                  color: "var(--dash-text)", fontSize: 14, fontWeight: 700, outline: "none", boxSizing: "border-box",
+                }} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 10, color: "var(--dash-text-muted)", marginBottom: 4 }}>Até</div>
+              <input type="number" min="1" value={mesaTo} onChange={(e) => setMesaTo(Number(e.target.value))}
+                style={{
+                  width: "100%", padding: "10px 14px", borderRadius: 10,
+                  background: "var(--dash-input-bg)", border: "1px solid var(--dash-input-border)",
+                  color: "var(--dash-text)", fontSize: 14, fontWeight: 700, outline: "none", boxSizing: "border-box",
+                }} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 10, color: "var(--dash-text-muted)", marginBottom: 4 }}>Lugares</div>
+              <input type="number" min="1" max="20" value={mesaCapacity} onChange={(e) => setMesaCapacity(Number(e.target.value))}
+                style={{
+                  width: "100%", padding: "10px 14px", borderRadius: 10,
+                  background: "var(--dash-input-bg)", border: "1px solid var(--dash-input-border)",
+                  color: "var(--dash-text)", fontSize: 14, fontWeight: 700, outline: "none", boxSizing: "border-box",
+                }} />
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={() => setShowAddMesa(false)} style={{
+              flex: 1, padding: 10, borderRadius: 10, border: "none", cursor: "pointer",
+              background: "var(--dash-card)", color: "var(--dash-text-muted)", fontSize: 12,
+              boxShadow: "var(--dash-shadow)",
+            }}>Cancelar</button>
+            <button onClick={onAddMesas} disabled={addingMesas} style={{
+              flex: 1, padding: 10, borderRadius: 10, border: "none", cursor: "pointer",
+              background: "var(--dash-accent-soft)", color: "var(--dash-accent)",
+              fontSize: 12, fontWeight: 700,
+              boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
+              opacity: addingMesas ? 0.5 : 1,
+            }}>{addingMesas ? "Criando..." : `Criar ${Math.max(0, mesaTo - mesaFrom + 1)} mesas`}</button>
+          </div>
+        </div>
+      )}
+
+      {/* Detalhe da mesa selecionada */}
+      {selectedMesa && (
+        <div style={{
+          marginTop: 16, padding: 16, borderRadius: 14,
+          background: "var(--dash-card)", border: "1px solid var(--dash-border)",
+        }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <div style={{ fontSize: 16, fontWeight: 800, color: "var(--dash-text)" }}>
+              Mesa {selectedMesa.number}
+            </div>
+            <button onClick={() => setSelectedMesa(null)} style={{
+              width: 28, height: 28, borderRadius: 8, border: "none", cursor: "pointer",
+              background: "rgba(220,38,38,0.12)", color: "var(--dash-danger)",
+              display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12,
+            }}>✕</button>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
+            <div>
+              <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>Status</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--dash-text)" }}>
+                {selectedMesa.status === "available" ? "🟢 Livre"
+                  : selectedMesa.status === "occupied" ? "🟡 Ocupada"
+                  : selectedMesa.status === "reserved" ? "🔵 Reservada"
+                  : "⚫ Inativa"}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>Capacidade</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--dash-text)" }}>{selectedMesa.capacity} lugares</div>
+            </div>
+          </div>
+
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 10, color: "var(--dash-text-muted)", marginBottom: 4 }}>Apelido (opcional)</div>
+            <input
+              value={editMesaLabel}
+              onChange={(e) => setEditMesaLabel(e.target.value)}
+              onBlur={() => onUpdateLabel(editMesaLabel)}
+              placeholder="Ex: Varanda, VIP, Terraço"
+              style={{
+                width: "100%", padding: "8px 12px", borderRadius: 10,
+                background: "var(--dash-input-bg)", border: "1px solid var(--dash-input-border)",
+                color: "var(--dash-text)", fontSize: 12, outline: "none", boxSizing: "border-box",
+              }}
+            />
+          </div>
+
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {selectedMesa.status === "occupied" && (
+              <button onClick={() => onForceClose(selectedMesa.id)} style={{
+                flex: 1, padding: 10, borderRadius: 10, border: "none", cursor: "pointer",
+                background: "var(--dash-danger-soft)", color: "var(--dash-danger)",
+                fontSize: 11, fontWeight: 700,
+              }}>Fechar comanda</button>
+            )}
+            <button onClick={() => onToggleStatus(selectedMesa.id, selectedMesa.status === "inactive" ? "available" : "inactive")} style={{
+              flex: 1, padding: 10, borderRadius: 10, border: "none", cursor: "pointer",
+              background: "var(--dash-card)", color: "var(--dash-text-muted)",
+              fontSize: 11, fontWeight: 600, boxShadow: "var(--dash-shadow)",
+            }}>{selectedMesa.status === "inactive" ? "Ativar" : "Desativar"}</button>
+            <button onClick={() => onDelete(selectedMesa.id)} style={{
+              padding: "10px 14px", borderRadius: 10, border: "none", cursor: "pointer",
+              background: "rgba(220,38,38,0.08)", color: "var(--dash-danger)",
+              fontSize: 11, fontWeight: 600,
+            }}>Excluir</button>
+          </div>
         </div>
       )}
     </div>
