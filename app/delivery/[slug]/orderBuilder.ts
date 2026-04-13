@@ -82,3 +82,41 @@ export function buildExternalLink(
 export function formatPrice(value: number): string {
   return `R$${Number(value).toFixed(2).replace(".", ",")}`;
 }
+
+// Multi-item cart WhatsApp message
+export interface CartOrderItem {
+  name: string;
+  qty: number;
+  unit_price: number;
+}
+
+export function buildCartWhatsAppMessage(
+  items: CartOrderItem[],
+  whatsapp: string,
+  customerName?: string,
+  customerPhone?: string
+): string {
+  const lines: string[] = [];
+  lines.push("Olá! Quero fazer um pedido:");
+  lines.push("");
+
+  items.forEach((item) => {
+    lines.push(`📦 *${item.name}*  x${item.qty}  —  R$${(item.unit_price * item.qty).toFixed(2).replace(".", ",")}`);
+  });
+
+  const total = items.reduce((s, i) => s + i.qty * i.unit_price, 0);
+  lines.push("");
+  lines.push(`💰 Total estimado: R$${total.toFixed(2).replace(".", ",")}`);
+
+  if (customerName?.trim()) {
+    lines.push("");
+    lines.push(`👤 Nome: ${customerName.trim()}`);
+  }
+  if (customerPhone && customerPhone.replace(/\D/g, "").length >= 10) {
+    lines.push(`📱 Tel: ${customerPhone}`);
+  }
+
+  const text = encodeURIComponent(lines.join("\n"));
+  const phone = whatsapp.replace(/\D/g, "");
+  return `https://wa.me/${phone}?text=${text}`;
+}

@@ -3,6 +3,8 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import type { Unit } from "./menuTypes";
+import type { CartItem } from "./CartModal";
+import { buildCartWhatsAppMessage } from "./orderBuilder";
 
 function normalizeWhatsapp(raw: string): string | null {
   const digits = (raw ?? "").replace(/\D/g, "");
@@ -103,11 +105,28 @@ interface Props {
   visible: boolean;
   minimized?: boolean; // kept for compat, unused — expansion is scroll/click-driven
   onIfoodClick?: () => void;
+  // Cart props (delivery mode)
+  cart?: CartItem[];
+  cartTotal?: number;
+  onUpdateQty?: (productId: string, qty: number) => void;
+  onClearCart?: () => void;
 }
 
-export default function BottomGlassBar({ unit, visible, onIfoodClick }: Props) {
+const CUST_KEY = "fy_cust_info";
+function loadCustInfo(): { name: string; phone: string } {
+  if (typeof window === "undefined") return { name: "", phone: "" };
+  try { return JSON.parse(localStorage.getItem(CUST_KEY) || "{}"); } catch { return { name: "", phone: "" }; }
+}
+
+export default function BottomGlassBar({ unit, visible, onIfoodClick, cart = [], cartTotal = 0, onUpdateQty, onClearCart }: Props) {
   const [glassExpanded, setGlassExpanded] = useState(false);
   const glassExpandedRef = useRef(false); // mirror for scroll handler (avoids stale closure)
+  const cartCount = cart.reduce((s, i) => s + i.qty, 0);
+
+  // Customer info (cached in localStorage)
+  const [custName, setCustName] = useState("");
+  const [custPhone, setCustPhone] = useState("");
+  const [sending, setSending] = useState(false);
 
   const [isDark, setIsDark] = useState(true);
   useEffect(() => {
@@ -116,6 +135,13 @@ export default function BottomGlassBar({ unit, visible, onIfoodClick }: Props) {
     const obs = new MutationObserver(check);
     obs.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
     return () => obs.disconnect();
+  }, []);
+
+  // Load cached customer info
+  useEffect(() => {
+    const saved = loadCustInfo();
+    if (saved.name) setCustName(saved.name);
+    if (saved.phone) setCustPhone(saved.phone);
   }, []);
 
   // Keep ref in sync
@@ -151,6 +177,27 @@ export default function BottomGlassBar({ unit, visible, onIfoodClick }: Props) {
     window.scrollTo({ top: 0, behavior: "smooth" });
     setGlassExpanded(false);
   }, []);
+
+  const handleSendOrder = useCallback(() => {
+    if (cart.length === 0) return;
+    const phone = (unit.whatsapp || "").replace(/\D/g, "");
+    if (!phone) return;
+    // Save customer info
+    try { localStorage.setItem(CUST_KEY, JSON.stringify({ name: custName, phone: custPhone })); } catch {}
+    const url = buildCartWhatsAppMessage(
+      cart.map(i => ({ name: i.name, qty: i.qty, unit_price: i.unit_price })),
+      unit.whatsapp || "",
+      custName,
+      custPhone
+    );
+    window.open(url, "_blank", "noreferrer");
+    setSending(true);
+    setTimeout(() => {
+      onClearCart?.();
+      setSending(false);
+      setGlassExpanded(false);
+    }, 1500);
+  }, [cart, unit.whatsapp, custName, custPhone, onClearCart]);
 
   const wa = normalizeWhatsapp(unit.whatsapp || "");
   const ig = normalizeInstagram(unit.instagram || "");
@@ -246,22 +293,34 @@ export default function BottomGlassBar({ unit, visible, onIfoodClick }: Props) {
         {/* Logo — circular, same height as icons, centered in bar */}
         <div
           onClick={e => { e.stopPropagation(); setGlassExpanded(true); }}
-          style={{
+          style={{ position: "relative", flexShrink: 0, cursor: "pointer" }}
+        >
+          <div style={{
             width: LOGO_SIZE, height: LOGO_SIZE,
             borderRadius: "50%",
             background: "#00ffae",
             display: "flex", alignItems: "center", justifyContent: "center",
             overflow: "hidden",
-            flexShrink: 0,
             border: isDark ? "2px solid rgba(10,10,10,0.9)" : "2px solid rgba(255,255,255,0.9)",
             boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
-            cursor: "pointer",
-          }}
-        >
-          {logo ? (
-            <img src={logo} alt={unit.name} loading="lazy" decoding="async" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-          ) : (
-            <span style={{ fontSize: 16, fontWeight: 900, color: "#000", fontStyle: "italic" }}>fy</span>
+          }}>
+            {logo ? (
+              <img src={logo} alt={unit.name} loading="lazy" decoding="async" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            ) : (
+              <span style={{ fontSize: 16, fontWeight: 900, color: "#000", fontStyle: "italic" }}>fy</span>
+            )}
+          </div>
+          {cartCount > 0 && (
+            <div style={{
+              position: "absolute", top: -4, right: -4,
+              minWidth: 18, height: 18, borderRadius: 9,
+              background: "#ef4444",
+              color: "#fff", fontSize: 10, fontWeight: 800,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              padding: "0 4px",
+              border: isDark ? "1.5px solid rgba(10,10,10,0.9)" : "1.5px solid rgba(255,255,255,0.9)",
+              pointerEvents: "none",
+            }}>{cartCount}</div>
           )}
         </div>
 
@@ -394,6 +453,133 @@ export default function BottomGlassBar({ unit, visible, onIfoodClick }: Props) {
             </div>
           </div>
         </div>
+
+        {/* Cart section */}
+        {cart.length > 0 && (
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: textPrimary, marginBottom: 10, letterSpacing: "-0.3px" }}>
+              🛒 Seu pedido
+            </div>
+
+            {/* Item list */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
+              {cart.map(item => (
+                <div key={item.product_id} style={{
+                  display: "flex", alignItems: "center", gap: 10,
+                  padding: "10px 12px", borderRadius: 14,
+                  background: cardBg, border: `1px solid ${cardBorder}`,
+                }}>
+                  {/* Name */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: textPrimary, lineHeight: 1.3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {item.name}
+                    </div>
+                    <div style={{ fontSize: 11, color: isDark ? "#00ffae" : "#00a06a", fontWeight: 600, marginTop: 1 }}>
+                      R${(item.unit_price * item.qty).toFixed(2).replace(".", ",")}
+                    </div>
+                  </div>
+                  {/* Qty controls */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                    <button
+                      onClick={e => { e.stopPropagation(); onUpdateQty?.(item.product_id, item.qty - 1); }}
+                      style={{
+                        width: 28, height: 28, borderRadius: 8,
+                        background: isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.06)",
+                        border: `1px solid ${cardBorder}`,
+                        color: textPrimary, fontSize: 16, fontWeight: 700,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        cursor: "pointer", lineHeight: 1,
+                      }}
+                    >−</button>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: textPrimary, minWidth: 16, textAlign: "center" }}>
+                      {item.qty}
+                    </span>
+                    <button
+                      onClick={e => { e.stopPropagation(); onUpdateQty?.(item.product_id, item.qty + 1); }}
+                      style={{
+                        width: 28, height: 28, borderRadius: 8,
+                        background: isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.06)",
+                        border: `1px solid ${cardBorder}`,
+                        color: textPrimary, fontSize: 16, fontWeight: 700,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        cursor: "pointer", lineHeight: 1,
+                      }}
+                    >+</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Total */}
+            <div style={{
+              display: "flex", justifyContent: "space-between", alignItems: "center",
+              padding: "10px 14px", borderRadius: 12,
+              background: isDark ? "rgba(0,255,174,0.05)" : "rgba(0,160,100,0.05)",
+              border: `1px solid ${isDark ? "rgba(0,255,174,0.1)" : "rgba(0,160,100,0.08)"}`,
+              marginBottom: 12,
+            }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: textSecondary }}>Total estimado</span>
+              <span style={{ fontSize: 16, fontWeight: 900, color: isDark ? "#00ffae" : "#00a06a" }}>
+                R${cartTotal.toFixed(2).replace(".", ",")}
+              </span>
+            </div>
+
+            {/* Customer info */}
+            <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+              <input
+                type="text"
+                placeholder="Seu nome (opcional)"
+                value={custName}
+                onChange={e => setCustName(e.target.value)}
+                onClick={e => e.stopPropagation()}
+                style={{
+                  flex: 1, padding: "10px 12px", borderRadius: 12, fontSize: 13,
+                  background: cardBg, border: `1px solid ${cardBorder}`,
+                  color: textPrimary, outline: "none",
+                }}
+              />
+              <input
+                type="tel"
+                placeholder="Telefone (opcional)"
+                value={custPhone}
+                onChange={e => setCustPhone(e.target.value)}
+                onClick={e => e.stopPropagation()}
+                style={{
+                  flex: 1, padding: "10px 12px", borderRadius: 12, fontSize: 13,
+                  background: cardBg, border: `1px solid ${cardBorder}`,
+                  color: textPrimary, outline: "none",
+                }}
+              />
+            </div>
+
+            {/* Send + Clear buttons */}
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                onClick={e => { e.stopPropagation(); handleSendOrder(); }}
+                disabled={sending}
+                style={{
+                  flex: 1, padding: "14px 16px", borderRadius: 16,
+                  background: sending ? "rgba(37,211,102,0.4)" : "rgba(37,211,102,1)",
+                  border: "none", color: "#000", fontSize: 14, fontWeight: 800,
+                  cursor: sending ? "default" : "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                  transition: "opacity 200ms",
+                }}
+              >
+                {sending ? "Enviando..." : "💬 Enviar no WhatsApp"}
+              </button>
+              <button
+                onClick={e => { e.stopPropagation(); onClearCart?.(); }}
+                style={{
+                  padding: "14px 14px", borderRadius: 16,
+                  background: cardBg, border: `1px solid ${cardBorder}`,
+                  color: textSecondary, fontSize: 12, fontWeight: 700,
+                  cursor: "pointer",
+                }}
+              >Limpar</button>
+            </div>
+          </div>
+        )}
 
         {/* Bento grid */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>

@@ -443,11 +443,7 @@ export default function MenuClient({
 
   function handleProductOrder(payload: OrderPayload) {
     setSelectedProduct(null);
-    if (mode === "presencial") {
-      addToCart(payload);
-      return;
-    }
-    setPendingPayload(payload);
+    addToCart(payload); // both delivery and presencial accumulate in cart
   }
 
   function handleUpsellClose() {
@@ -1191,6 +1187,10 @@ export default function MenuClient({
           visible={pillsSticky && !selectedProduct && !pendingPayload && !cartOpen}
           minimized={!glassBarMaximized}
           onIfoodClick={trackIfoodClick}
+          cart={cart}
+          cartTotal={cartTotal}
+          onUpdateQty={updateCartQty}
+          onClearCart={clearCart}
         />
       )}
 
