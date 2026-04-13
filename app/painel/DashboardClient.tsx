@@ -17,6 +17,7 @@ const CardapioModal = dynamic(() => import("./modals/CardapioModal"), { ssr: fal
 const FinanceiroModal = dynamic(() => import("./modals/FinanceiroModal"), { ssr: false, loading: () => loadingFallback });
 const UnidadeModal = dynamic(() => import("./modals/UnidadeModal"), { ssr: false, loading: () => loadingFallback });
 const TVModal = dynamic(() => import("./modals/TVModal"), { ssr: false, loading: () => loadingFallback });
+const ModoTVModal = dynamic(() => import("./modals/ModoTVModal"), { ssr: false, loading: () => loadingFallback });
 const PlanoModal = dynamic(() => import("./modals/PlanoModal"), { ssr: false, loading: () => loadingFallback });
 const EstoqueModal = dynamic(() => import("./modals/EstoqueModal"), { ssr: false, loading: () => loadingFallback });
 const ConfigModal = dynamic(() => import("./modals/ConfigModal"), { ssr: false, loading: () => loadingFallback });
@@ -249,7 +250,7 @@ export default function DashboardClient({
   reportData: ReportData;
 }) {
   const router = useRouter();
-  const [modal, setModal] = useState<"analytics" | "cardapio" | "pedidos" | "financeiro" | "unidade" | "plano" | "config" | "tv" | "estoque" | "operacoes" | "equipe" | "impressoras" | "links" | "crm" | null>(null);
+  const [modal, setModal] = useState<"analytics" | "cardapio" | "pedidos" | "financeiro" | "unidade" | "plano" | "config" | "tv" | "modotv" | "estoque" | "operacoes" | "equipe" | "impressoras" | "links" | "crm" | null>(null);
   const open = (m: typeof modal) => setModal(m);
   const close = () => setModal(null);
 
@@ -472,7 +473,7 @@ export default function DashboardClient({
     pedidos: { icon: "🛒", label: "Pedidos", sub: () => `${analytics.orders} pedido${analytics.orders !== 1 ? "s" : ""} hoje`, modalKey: "pedidos" },
     financeiro: { icon: "💰", label: "Financeiro", sub: "Relatórios e receita", modalKey: "financeiro" },
     unidade: { icon: "📍", label: "Unidade", sub: () => unit?.is_published ? "Publicado" : "Não publicado", modalKey: "unidade" },
-    tv: { icon: "📺", label: "Modo TV", sub: () => `${tvCount} vídeo${tvCount !== 1 ? "s" : ""} ativo${tvCount !== 1 ? "s" : ""}`, modalKey: "tv" },
+    tv: { icon: "📺", label: "Modo TV", sub: () => `${tvCount} vídeo${tvCount !== 1 ? "s" : ""} ativo${tvCount !== 1 ? "s" : ""}`, modalKey: "modotv" },
     plano: { icon: "⭐", label: "Plano", sub: () => isPro ? "Pro" : restaurant.status === "trial" ? `Trial · ${trialDays}d` : restaurant.plan ?? "menu", modalKey: "plano" },
     config: { icon: "⚙️", label: "Configurações", sub: () => `Perfil · ${restaurant.plan === "menupro" ? "MenuPro" : restaurant.plan === "business" ? "Business" : "Menu"} · Segurança`, modalKey: "config" },
     estoque: { icon: "📦", label: "Estoque", sub: () => stockStats.out > 0 ? `${stockStats.out} esgotado${stockStats.out !== 1 ? "s" : ""}` : stockStats.low > 0 ? `${stockStats.low} baixo${stockStats.low !== 1 ? "s" : ""}` : "Tudo em ordem", modalKey: "estoque" },
@@ -1493,6 +1494,9 @@ export default function DashboardClient({
       </Modal>
       <Modal open={modal === "tv"} onClose={close} title="Modo TV">
         <TVModal unit={unit} tvCount={tvCount} />
+      </Modal>
+      <Modal open={modal === "modotv"} onClose={close} title="Modo TV">
+        {unit && <ModoTVModal unit={unit} onClose={close} />}
       </Modal>
       <Modal open={modal === "plano"} onClose={close} title="Plano">
         <PlanoModal restaurant={restaurant} trialDays={trialDays} onUpgrade={() => { close(); router.push("/painel/planos"); }} onClose={close} />
