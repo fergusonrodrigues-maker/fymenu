@@ -1,7 +1,7 @@
 // FILE: /app/u/[slug]/BottomGlassBar.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import type { Unit } from "./menuTypes";
 
 function normalizeWhatsapp(raw: string): string | null {
@@ -93,15 +93,21 @@ function getPlatformName(platform: string | null | undefined): string {
   }
 }
 
+// Shared icon sizes
+const ICON_SIZE = 40;
+const ICON_RADIUS = 12;
+const LOGO_SIZE = 44;
+
 interface Props {
   unit: Unit;
   visible: boolean;
-  minimized?: boolean; // kept for compat, unused — expansion is click-driven
+  minimized?: boolean; // kept for compat, unused — expansion is scroll/click-driven
   onIfoodClick?: () => void;
 }
 
 export default function BottomGlassBar({ unit, visible, onIfoodClick }: Props) {
   const [glassExpanded, setGlassExpanded] = useState(false);
+  const glassExpandedRef = useRef(false); // mirror for scroll handler (avoids stale closure)
 
   const [isDark, setIsDark] = useState(true);
   useEffect(() => {
@@ -112,6 +118,40 @@ export default function BottomGlassBar({ unit, visible, onIfoodClick }: Props) {
     return () => obs.disconnect();
   }, []);
 
+  // Keep ref in sync
+  useEffect(() => { glassExpandedRef.current = glassExpanded; }, [glassExpanded]);
+
+  // Scroll-driven expand/collapse
+  useEffect(() => {
+    if (!visible) return;
+    const lastYRef = { current: window.scrollY };
+
+    const handleScroll = () => {
+      const currentY = window.scrollY;
+      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+      const atBottom = maxScroll > 0 && currentY >= maxScroll - 50;
+      const scrolledUpEnough = currentY < lastYRef.current - 10;
+      const farFromBottom = currentY < maxScroll - 200;
+
+      if (atBottom && !glassExpandedRef.current) {
+        setGlassExpanded(true);
+      } else if (scrolledUpEnough && glassExpandedRef.current && farFromBottom) {
+        setGlassExpanded(false);
+      }
+
+      lastYRef.current = currentY;
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [visible]);
+
+  const collapse = useCallback(() => setGlassExpanded(false), []);
+  const backToTop = useCallback(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    setGlassExpanded(false);
+  }, []);
+
   const wa = normalizeWhatsapp(unit.whatsapp || "");
   const ig = normalizeInstagram(unit.instagram || "");
   const maps = mapsUrl(unit);
@@ -119,9 +159,8 @@ export default function BottomGlassBar({ unit, visible, onIfoodClick }: Props) {
   const { isOpen, label: openLabel, nextChange } = getOpenStatus(unit);
 
   const EASE = "cubic-bezier(0.16, 1, 0.3, 1)";
-  const DUR = "400ms";
 
-  // Colors
+  // Theme tokens
   const bg = isDark ? "rgba(10,10,10,0.92)" : "rgba(255,255,255,0.92)";
   const border = isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.08)";
   const textPrimary = isDark ? "#fff" : "#1a1a1a";
@@ -129,127 +168,148 @@ export default function BottomGlassBar({ unit, visible, onIfoodClick }: Props) {
   const cardBg = isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)";
   const cardBorder = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)";
 
+  // Shared icon style for minimized bar
+  const iconBase: React.CSSProperties = {
+    width: ICON_SIZE, height: ICON_SIZE,
+    borderRadius: ICON_RADIUS,
+    display: "flex", alignItems: "center", justifyContent: "center",
+    fontSize: 18, flexShrink: 0,
+    textDecoration: "none",
+  };
+
   return (
     <>
       {/* ── MINIMIZED pill — floating centered ── */}
-      <div style={{
-        position: "fixed",
-        bottom: `calc(12px + env(safe-area-inset-bottom, 0px))`,
-        left: "50%",
-        transform: visible && !glassExpanded ? "translateX(-50%) translateY(0)" : "translateX(-50%) translateY(24px)",
-        zIndex: 101,
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
-        padding: "8px 14px",
-        paddingTop: 16,
-        borderRadius: 22,
-        background: bg,
-        backdropFilter: "blur(24px)",
-        WebkitBackdropFilter: "blur(24px)",
-        border,
-        boxShadow: isDark
-          ? "0 8px 32px rgba(0,0,0,0.45)"
-          : "0 8px 32px rgba(0,0,0,0.12)",
-        opacity: visible && !glassExpanded ? 1 : 0,
-        pointerEvents: visible && !glassExpanded ? "auto" : "none",
-        transition: `opacity 300ms ${EASE}, transform 300ms ${EASE}`,
-        whiteSpace: "nowrap",
-      }}>
-          {/* Maps */}
-          {maps && (
-            <a href={maps} target="_blank" rel="noreferrer" style={{
-              width: 44, height: 44, borderRadius: 12,
-              background: isDark ? "rgba(239,68,68,0.12)" : "rgba(239,68,68,0.08)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              textDecoration: "none", flexShrink: 0, fontSize: 20,
-            }}>
-              📍
-            </a>
-          )}
-
-          {/* City / Neighborhood */}
-          <div style={{
-            padding: "6px 10px", borderRadius: 10,
-            background: isDark ? "rgba(0,255,174,0.06)" : "rgba(0,150,100,0.06)",
-            textAlign: "center", flexShrink: 0,
-          }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: isDark ? "#00ffae" : "#00a06a", lineHeight: 1.2 }}>
-              {unit.city || ""}
-            </div>
-            {unit.neighborhood && (
-              <div style={{ fontSize: 8, color: isDark ? "rgba(0,255,174,0.5)" : "rgba(0,130,80,0.5)" }}>
-                {unit.neighborhood}
-              </div>
-            )}
-          </div>
-
-          {/* Logo — circular, pops above the bar, click to expand */}
-          <div
-            onClick={() => setGlassExpanded(true)}
+      <div
+        onClick={() => setGlassExpanded(true)}
+        style={{
+          position: "fixed",
+          bottom: `calc(12px + env(safe-area-inset-bottom, 0px))`,
+          left: "50%",
+          transform: visible && !glassExpanded
+            ? "translateX(-50%) translateY(0)"
+            : "translateX(-50%) translateY(20px)",
+          zIndex: 101,
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          padding: "6px 10px",
+          borderRadius: 24,
+          background: bg,
+          backdropFilter: "blur(24px)",
+          WebkitBackdropFilter: "blur(24px)",
+          border,
+          boxShadow: isDark
+            ? "0 8px 32px rgba(0,0,0,0.45)"
+            : "0 8px 32px rgba(0,0,0,0.12)",
+          opacity: visible && !glassExpanded ? 1 : 0,
+          pointerEvents: visible && !glassExpanded ? "auto" : "none",
+          transition: `opacity 300ms ${EASE}, transform 300ms ${EASE}`,
+          whiteSpace: "nowrap",
+          cursor: "pointer",
+        }}
+      >
+        {/* Maps */}
+        {maps && (
+          <a
+            href={maps} target="_blank" rel="noreferrer"
+            onClick={e => e.stopPropagation()}
             style={{
-              width: 52, height: 52,
-              borderRadius: "50%",
-              background: "#00ffae",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              overflow: "hidden",
-              marginTop: -28,
-              border: isDark ? "3px solid rgba(10,10,10,0.95)" : "3px solid rgba(255,255,255,0.95)",
-              boxShadow: "0 4px 14px rgba(0,0,0,0.35)",
-              flexShrink: 0,
-              cursor: "pointer",
+              ...iconBase,
+              background: isDark ? "rgba(239,68,68,0.12)" : "rgba(239,68,68,0.08)",
             }}
-          >
-            {logo ? (
-              <img src={logo} alt={unit.name} loading="lazy" decoding="async" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-            ) : (
-              <span style={{ fontSize: 18, fontWeight: 900, color: "#000" }}>fy</span>
-            )}
+          >📍</a>
+        )}
+
+        {/* City / Neighborhood */}
+        <div
+          style={{
+            height: ICON_SIZE,
+            padding: "0 10px",
+            borderRadius: ICON_RADIUS,
+            background: isDark ? "rgba(0,255,174,0.06)" : "rgba(0,150,100,0.06)",
+            display: "flex", flexDirection: "column",
+            alignItems: "center", justifyContent: "center",
+            flexShrink: 0,
+          }}
+        >
+          <div style={{ fontSize: 9, fontWeight: 700, color: isDark ? "#00ffae" : "#00a06a", lineHeight: 1.3 }}>
+            {unit.city || ""}
           </div>
-
-          {/* WhatsApp */}
-          {wa && (
-            <a href={wa} target="_blank" rel="noreferrer" style={{
-              width: 44, height: 44, borderRadius: 12,
-              background: isDark ? "rgba(37,211,102,0.12)" : "rgba(37,211,102,0.1)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              textDecoration: "none", flexShrink: 0, fontSize: 20,
-            }}>
-              💬
-            </a>
+          {unit.neighborhood && (
+            <div style={{ fontSize: 7, color: isDark ? "rgba(0,255,174,0.5)" : "rgba(0,130,80,0.5)" }}>
+              {unit.neighborhood}
+            </div>
           )}
+        </div>
 
-          {/* Instagram */}
-          {ig && (
-            <a href={ig} target="_blank" rel="noreferrer" style={{
-              width: 44, height: 44, borderRadius: 12,
+        {/* Logo — circular, same height as icons, centered in bar */}
+        <div
+          onClick={e => { e.stopPropagation(); setGlassExpanded(true); }}
+          style={{
+            width: LOGO_SIZE, height: LOGO_SIZE,
+            borderRadius: "50%",
+            background: "#00ffae",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            overflow: "hidden",
+            flexShrink: 0,
+            border: isDark ? "2px solid rgba(10,10,10,0.9)" : "2px solid rgba(255,255,255,0.9)",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+            cursor: "pointer",
+          }}
+        >
+          {logo ? (
+            <img src={logo} alt={unit.name} loading="lazy" decoding="async" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          ) : (
+            <span style={{ fontSize: 16, fontWeight: 900, color: "#000", fontStyle: "italic" }}>fy</span>
+          )}
+        </div>
+
+        {/* WhatsApp */}
+        {wa && (
+          <a
+            href={wa} target="_blank" rel="noreferrer"
+            onClick={e => e.stopPropagation()}
+            style={{
+              ...iconBase,
+              background: isDark ? "rgba(37,211,102,0.12)" : "rgba(37,211,102,0.1)",
+            }}
+          >💬</a>
+        )}
+
+        {/* Instagram */}
+        {ig && (
+          <a
+            href={ig} target="_blank" rel="noreferrer"
+            onClick={e => e.stopPropagation()}
+            style={{
+              ...iconBase,
               background: isDark
                 ? "linear-gradient(135deg, rgba(131,58,180,0.12), rgba(253,29,29,0.12))"
                 : "linear-gradient(135deg, rgba(131,58,180,0.08), rgba(253,29,29,0.08))",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              textDecoration: "none", flexShrink: 0, fontSize: 20,
-            }}>
-              📸
-            </a>
-          )}
+            }}
+          >📸</a>
+        )}
 
-          {/* iFood / external platform */}
-          {unit.ifood_url && (
-            <a href={unit.ifood_url} target="_blank" rel="noopener noreferrer" onClick={onIfoodClick}
-              style={{
-                width: 44, height: 44, borderRadius: 12, flexShrink: 0,
-                background: getPlatformGradient(unit.ifood_platform),
-                display: "flex", alignItems: "center", justifyContent: "center",
-                textDecoration: "none", fontSize: 22,
-              }}>
-              {getPlatformIcon(unit.ifood_platform)}
-            </a>
-          )}
+        {/* iFood / external platform */}
+        {unit.ifood_url && (
+          <a
+            href={unit.ifood_url} target="_blank" rel="noopener noreferrer"
+            onClick={e => { e.stopPropagation(); onIfoodClick?.(); }}
+            style={{
+              ...iconBase,
+              borderRadius: ICON_RADIUS,
+              background: getPlatformGradient(unit.ifood_platform),
+            }}
+          >
+            {getPlatformIcon(unit.ifood_platform)}
+          </a>
+        )}
       </div>
 
       {/* ── Backdrop ── */}
       <div
-        onClick={() => setGlassExpanded(false)}
+        onClick={collapse}
         style={{
           position: "fixed", inset: 0, zIndex: 102,
           background: "rgba(0,0,0,0.5)",
@@ -264,9 +324,7 @@ export default function BottomGlassBar({ unit, visible, onIfoodClick }: Props) {
       {/* ── EXPANDED bento bottom sheet ── */}
       <div style={{
         position: "fixed",
-        bottom: 0,
-        left: 0,
-        right: 0,
+        bottom: 0, left: 0, right: 0,
         zIndex: 103,
         opacity: glassExpanded ? 1 : 0,
         transform: glassExpanded ? "translateY(0)" : "translateY(100%)",
@@ -282,15 +340,36 @@ export default function BottomGlassBar({ unit, visible, onIfoodClick }: Props) {
         padding: "16px 16px",
         paddingBottom: "max(24px, env(safe-area-inset-bottom, 24px))",
       }}>
-        {/* Drag handle — click to close */}
-        <div
-          onClick={() => setGlassExpanded(false)}
-          style={{ display: "flex", justifyContent: "center", marginBottom: 16, cursor: "pointer", padding: "4px 0" }}
-        >
-          <div style={{
-            width: 36, height: 4, borderRadius: 2,
-            background: isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.1)",
-          }} />
+        {/* Handle row: centered drag pill + back-to-top button */}
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "center",
+          position: "relative", marginBottom: 16,
+        }}>
+          <div
+            onClick={collapse}
+            style={{
+              width: 36, height: 4, borderRadius: 2,
+              background: isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.1)",
+              cursor: "pointer",
+            }}
+          />
+          {/* Back to top */}
+          <button
+            onClick={backToTop}
+            style={{
+              position: "absolute", right: 0, top: "50%", transform: "translateY(-50%)",
+              width: 36, height: 36, borderRadius: 12,
+              background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
+              border: `1px solid ${isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"}`,
+              color: isDark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.4)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 16, cursor: "pointer",
+              boxShadow: isDark
+                ? "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset"
+                : "0 1px 3px rgba(0,0,0,0.06)",
+            }}
+            aria-label="Voltar ao topo"
+          >↑</button>
         </div>
 
         {/* Logo + unit name */}
@@ -309,9 +388,7 @@ export default function BottomGlassBar({ unit, visible, onIfoodClick }: Props) {
             )}
           </div>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 900, color: textPrimary, lineHeight: 1.2 }}>
-              {unit.name}
-            </div>
+            <div style={{ fontSize: 16, fontWeight: 900, color: textPrimary, lineHeight: 1.2 }}>{unit.name}</div>
             <div style={{ fontSize: 11, color: textSecondary, marginTop: 2 }}>
               {[unit.city, unit.neighborhood].filter(Boolean).join(" · ")}
             </div>
@@ -390,24 +467,21 @@ export default function BottomGlassBar({ unit, visible, onIfoodClick }: Props) {
                 gridColumn: (!ig && !maps) ? "1 / -1" : "auto",
                 display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
                 gap: 8, padding: "18px 10px", borderRadius: 18,
-                background: cardBg,
-                border: `1px solid ${cardBorder}`,
+                background: cardBg, border: `1px solid ${cardBorder}`,
                 textDecoration: "none",
               }}>
               <div style={{
                 width: 40, height: 40, borderRadius: 12,
                 background: getPlatformGradient(unit.ifood_platform),
                 display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20,
-              }}>
-                {getPlatformIcon(unit.ifood_platform)}
-              </div>
+              }}>{getPlatformIcon(unit.ifood_platform)}</div>
               <span style={{ fontSize: 12, fontWeight: 700, color: textSecondary }}>
                 {getPlatformName(unit.ifood_platform)}
               </span>
             </a>
           )}
 
-          {/* Horário — full width */}
+          {/* Horário */}
           {openLabel && (
             <div style={{
               gridColumn: "1 / -1",
@@ -423,23 +497,17 @@ export default function BottomGlassBar({ unit, visible, onIfoodClick }: Props) {
               }} />
               <span style={{
                 fontSize: 11, fontWeight: 600,
-                color: isOpen
-                  ? (isDark ? "#00ffae" : "#00a06a")
-                  : (isDark ? "#f87171" : "#dc2626"),
-              }}>
-                {openLabel}
-              </span>
+                color: isOpen ? (isDark ? "#00ffae" : "#00a06a") : (isDark ? "#f87171" : "#dc2626"),
+              }}>{openLabel}</span>
               {nextChange && (
-                <span style={{ fontSize: 10, color: textSecondary }}>
-                  · {nextChange}
-                </span>
+                <span style={{ fontSize: 10, color: textSecondary }}>· {nextChange}</span>
               )}
             </div>
           )}
 
           {/* Powered by */}
           <div style={{ gridColumn: "1 / -1", textAlign: "center", padding: "4px 0" }}>
-            <span style={{ fontSize: 9, color: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)", fontWeight: 600 }}>
+            <span style={{ fontSize: 9, fontWeight: 600, color: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)" }}>
               Powered by FyMenu
             </span>
           </div>
