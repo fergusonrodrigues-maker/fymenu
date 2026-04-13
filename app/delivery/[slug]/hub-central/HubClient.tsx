@@ -6,14 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 type HubOrder = {
   id: string;
   table_number: number | null;
-  items: Array<{
-    product_id: string;
-    qty: number;
-    unit_price: number;
-    total: number;
-    code_name?: string;
-    notes?: string;
-  }>;
+  items: Array<{ product_id: string; qty: number; unit_price: number; total: number; code_name?: string; notes?: string }>;
   total: number;
   status: string;
   waiter_status: string | null;
@@ -42,16 +35,10 @@ function elapsedSeconds(from: string) {
 }
 
 function formatPrice(cents: number) {
-  return `R$ ${(cents / 100).toFixed(2)}`;
+  return `R$ ${(cents / 100).toFixed(2).replace(".", ",")}`;
 }
 
-export default function HubClient({
-  unitId,
-  unitName,
-  restaurantName,
-  slug,
-  initialOrders,
-}: Props) {
+export default function HubClient({ unitId, unitName, restaurantName, slug, initialOrders }: Props) {
   const [orders, setOrders] = useState<HubOrder[]>(initialOrders);
   const [tick, setTick] = useState(0);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -59,7 +46,6 @@ export default function HubClient({
   const supabase = createClient();
   const audioCtxRef = useRef<AudioContext | null>(null);
 
-  // Atualizar timers a cada 10s
   useEffect(() => {
     const id = setInterval(() => setTick((t) => t + 1), 10000);
     return () => clearInterval(id);
@@ -70,12 +56,9 @@ export default function HubClient({
       if (!audioCtxRef.current) audioCtxRef.current = new AudioContext();
       const ctx = audioCtxRef.current;
       [440, 550, 660].forEach((f, i) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.frequency.value = f;
-        osc.type = "triangle";
+        const osc = ctx.createOscillator(); const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.frequency.value = f; osc.type = "triangle";
         gain.gain.setValueAtTime(0.4, ctx.currentTime + i * 0.12);
         gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.12 + 0.5);
         osc.start(ctx.currentTime + i * 0.12);
@@ -84,425 +67,210 @@ export default function HubClient({
     } catch {}
   };
 
-  // Realtime Supabase
   useEffect(() => {
     const channel = supabase
       .channel(`hub-${unitId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "order_intents",
-          filter: `unit_id=eq.${unitId}`,
-        },
-        (payload) => {
-          if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
-            const o = payload.new as HubOrder;
-            if (o.status === "confirmed" && o.kitchen_status !== "delivered") {
-              if (payload.eventType === "INSERT") playBell();
-              setOrders((prev) => {
-                const exists = prev.find((x) => x.id === o.id);
-                if (exists) return prev.map((x) => (x.id === o.id ? { ...x, ...o } : x));
-                playBell();
-                return [o, ...prev];
-              });
-            } else {
-              setOrders((prev) => prev.filter((x) => x.id !== o.id));
-            }
-          } else if (payload.eventType === "DELETE") {
-            setOrders((prev) => prev.filter((x) => x.id !== (payload.old as HubOrder).id));
+      .on("postgres_changes", { event: "*", schema: "public", table: "order_intents", filter: `unit_id=eq.${unitId}` }, (payload) => {
+        if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
+          const o = payload.new as HubOrder;
+          if (o.status === "confirmed" && o.kitchen_status !== "delivered") {
+            if (payload.eventType === "INSERT") playBell();
+            setOrders((prev) => {
+              const exists = prev.find((x) => x.id === o.id);
+              if (exists) return prev.map((x) => (x.id === o.id ? { ...x, ...o } : x));
+              playBell();
+              return [o, ...prev];
+            });
+          } else {
+            setOrders((prev) => prev.filter((x) => x.id !== o.id));
           }
+        } else if (payload.eventType === "DELETE") {
+          setOrders((prev) => prev.filter((x) => x.id !== (payload.old as HubOrder).id));
         }
-      )
+      })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [unitId]);
 
-  // Realtime — table_calls
   useEffect(() => {
-    supabase
-      .from("table_calls")
-      .select("*")
-      .eq("unit_id", unitId)
-      .eq("status", "pending")
-      .order("created_at", { ascending: false })
+    supabase.from("table_calls").select("*").eq("unit_id", unitId).eq("status", "pending").order("created_at", { ascending: false })
       .then(({ data }) => { if (data) setTableCalls(data); });
 
     const channel = supabase
       .channel("hub-table-calls")
-      .on("postgres_changes", {
-        event: "INSERT",
-        schema: "public",
-        table: "table_calls",
-        filter: `unit_id=eq.${unitId}`,
-      }, (payload) => {
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "table_calls", filter: `unit_id=eq.${unitId}` }, (payload) => {
         const call = payload.new as any;
         setTableCalls(prev => [call, ...prev]);
-        if (call.type === "manager" && navigator.vibrate) {
-          navigator.vibrate([500, 200, 500, 200, 500]);
-        } else if (navigator.vibrate) {
-          navigator.vibrate([200, 100, 200]);
-        }
+        if (call.type === "manager" && navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 500]);
+        else if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
         try { new Audio("/notification.mp3").play(); } catch {}
       })
-      .on("postgres_changes", {
-        event: "UPDATE",
-        schema: "public",
-        table: "table_calls",
-        filter: `unit_id=eq.${unitId}`,
-      }, (payload) => {
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "table_calls", filter: `unit_id=eq.${unitId}` }, (payload) => {
         setTableCalls(prev => prev.map(c => c.id === payload.new.id ? payload.new as any : c));
       })
       .subscribe();
-
     return () => { supabase.removeChannel(channel); };
   }, [unitId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const markKitchenStatus = async (orderId: string, status: string) => {
-    await supabase
-      .from("order_intents")
-      .update({ kitchen_status: status })
-      .eq("id", orderId);
-
+    await supabase.from("order_intents").update({ kitchen_status: status }).eq("id", orderId);
     if (status === "delivered") {
       setOrders((prev) => prev.filter((o) => o.id !== orderId));
     } else {
-      setOrders((prev) =>
-        prev.map((o) => (o.id === orderId ? { ...o, kitchen_status: status } : o))
-      );
+      setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, kitchen_status: status } : o)));
     }
   };
 
-  const novos = orders.filter(
-    (o) => !o.kitchen_status || o.kitchen_status === "waiting"
-  );
+  const novos = orders.filter((o) => !o.kitchen_status || o.kitchen_status === "waiting");
   const preparando = orders.filter((o) => o.kitchen_status === "preparing");
   const prontos = orders.filter((o) => o.kitchen_status === "ready");
-  const totalAtivos = orders.length;
+  const pendingCalls = tableCalls.filter(c => c.status === "pending");
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white flex flex-col">
+    <div style={{ minHeight: "100vh", background: "#050505", color: "#fff", fontFamily: "'Montserrat', system-ui, sans-serif", display: "flex", flexDirection: "column" }}>
       {/* Header */}
-      <header className="bg-gray-900 border-b border-gray-800 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
+      <header style={{ position: "sticky", top: 0, zIndex: 20, background: "rgba(5,5,5,0.9)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.04)", padding: "12px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
         <div>
-          <h1 className="text-xl font-black tracking-tight">
-            🍳 Hub Central
-            <span className="ml-2 text-gray-400 font-medium text-base">— {unitName}</span>
-          </h1>
-          <p className="text-gray-500 text-xs mt-0.5">{restaurantName}</p>
+          <div style={{ fontSize: 15, fontWeight: 800, color: "#fff" }}>🍳 Hub Central <span style={{ color: "rgba(255,255,255,0.3)", fontWeight: 400 }}>— {unitName}</span></div>
+          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>{restaurantName}</div>
         </div>
-
-        <div className="flex items-center gap-3">
-          {totalAtivos === 0 ? (
-            <span className="text-gray-500 text-sm">Nenhum pedido ativo</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
+          {orders.length === 0 ? (
+            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.25)" }}>Nenhum pedido</span>
           ) : (
             <>
-              <Pill color="red" count={novos.length} label="novos" />
-              <Pill color="yellow" count={preparando.length} label="em preparo" />
-              <Pill color="green" count={prontos.length} label="prontos" />
+              <span style={{ padding: "4px 10px", borderRadius: 8, background: "rgba(248,113,113,0.08)", color: "#f87171", fontSize: 10, fontWeight: 700, border: "1px solid rgba(248,113,113,0.2)" }}>{novos.length} novos</span>
+              <span style={{ padding: "4px 10px", borderRadius: 8, background: "rgba(251,191,36,0.08)", color: "#fbbf24", fontSize: 10, fontWeight: 700, border: "1px solid rgba(251,191,36,0.2)" }}>{preparando.length} prep.</span>
+              <span style={{ padding: "4px 10px", borderRadius: 8, background: "rgba(0,255,174,0.06)", color: "#00ffae", fontSize: 10, fontWeight: 700, border: "1px solid rgba(0,255,174,0.15)" }}>{prontos.length} pronto{prontos.length !== 1 ? "s" : ""}</span>
             </>
           )}
-          <a
-            href="/pdv"
-            className="ml-2 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-sm font-bold transition-colors"
-          >
-            💳 PDV
-          </a>
+          <a href="/pdv" style={{ marginLeft: 4, padding: "6px 12px", borderRadius: 8, border: "none", cursor: "pointer", background: "rgba(167,139,250,0.12)", color: "#a78bfa", fontSize: 10, fontWeight: 700, textDecoration: "none" }}>💳 PDV</a>
         </div>
       </header>
 
-      {/* Chamados pendentes */}
-      {tableCalls.filter(c => c.status === "pending").length > 0 && (
-        <div style={{ padding: "12px 24px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", flexDirection: "column", gap: 6 }}>
-          {tableCalls.filter(c => c.status === "pending" && c.type === "manager").map(call => (
-            <div key={call.id} style={{
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-              padding: "12px 16px", borderRadius: 14,
-              background: "rgba(168,85,247,0.1)",
-              border: "1px solid rgba(168,85,247,0.2)",
-              animation: "pulse 1s infinite",
-            }}>
+      {/* Chamados */}
+      {pendingCalls.length > 0 && (
+        <div style={{ padding: "10px 20px", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", flexDirection: "column", gap: 6, flexShrink: 0 }}>
+          {pendingCalls.filter(c => c.type === "manager").map(call => (
+            <div key={call.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", borderRadius: 12, background: "rgba(168,85,247,0.06)", border: "1px solid rgba(168,85,247,0.2)" }}>
               <div>
-                <div style={{ color: "#a855f7", fontSize: 14, fontWeight: 800 }}>
-                  👔 Mesa {call.table_number} — GERENTE!
-                </div>
-                <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, marginTop: 2 }}>
-                  {new Date(call.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-                </div>
+                <div style={{ color: "#a855f7", fontSize: 13, fontWeight: 800 }}>👔 Mesa {call.table_number} — GERENTE!</div>
+                <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 10, marginTop: 2 }}>{new Date(call.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</div>
               </div>
-              <button
-                onClick={async () => {
-                  await supabase.from("table_calls").update({
-                    status: "resolved",
-                    acknowledged_by: "Gerente",
-                    acknowledged_at: new Date().toISOString(),
-                    resolved_at: new Date().toISOString(),
-                  }).eq("id", call.id);
-                }}
-                style={{
-                  padding: "8px 16px", borderRadius: 10, border: "none", cursor: "pointer",
-                  background: "rgba(168,85,247,0.15)", color: "#a855f7",
-                  fontSize: 12, fontWeight: 700,
-                }}
-              >
-                ✓ Atender
-              </button>
+              <button onClick={async () => { await supabase.from("table_calls").update({ status: "resolved", acknowledged_by: "Gerente", acknowledged_at: new Date().toISOString(), resolved_at: new Date().toISOString() }).eq("id", call.id); }} style={{ padding: "6px 14px", borderRadius: 8, border: "none", cursor: "pointer", background: "rgba(168,85,247,0.12)", color: "#a855f7", fontSize: 11, fontWeight: 700 }}>✓ Atender</button>
             </div>
           ))}
-          {tableCalls.filter(c => c.status === "pending" && c.type === "waiter").map(call => (
-            <div key={call.id} style={{
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-              padding: "12px 16px", borderRadius: 14,
-              background: "rgba(251,191,36,0.1)",
-              border: "1px solid rgba(251,191,36,0.2)",
-              animation: "pulse 1.5s infinite",
-            }}>
+          {pendingCalls.filter(c => c.type === "waiter").map(call => (
+            <div key={call.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", borderRadius: 12, background: "rgba(251,191,36,0.06)", border: "1px solid rgba(251,191,36,0.2)" }}>
               <div>
-                <div style={{ color: "#fbbf24", fontSize: 14, fontWeight: 800 }}>
-                  🖐️ Mesa {call.table_number} chamando!
-                </div>
-                <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, marginTop: 2 }}>
-                  {new Date(call.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-                </div>
+                <div style={{ color: "#fbbf24", fontSize: 13, fontWeight: 800 }}>🖐️ Mesa {call.table_number} chamando!</div>
+                <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 10, marginTop: 2 }}>{new Date(call.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</div>
               </div>
-              <button
-                onClick={async () => {
-                  await supabase.from("table_calls").update({
-                    status: "resolved",
-                    acknowledged_by: unitName,
-                    acknowledged_at: new Date().toISOString(),
-                    resolved_at: new Date().toISOString(),
-                  }).eq("id", call.id);
-                }}
-                style={{
-                  padding: "8px 16px", borderRadius: 10, border: "none", cursor: "pointer",
-                  background: "rgba(0,255,174,0.1)", color: "#00ffae",
-                  fontSize: 12, fontWeight: 700,
-                }}
-              >
-                ✓ Atender
-              </button>
+              <button onClick={async () => { await supabase.from("table_calls").update({ status: "resolved", acknowledged_by: unitName, acknowledged_at: new Date().toISOString(), resolved_at: new Date().toISOString() }).eq("id", call.id); }} style={{ padding: "6px 14px", borderRadius: 8, border: "none", cursor: "pointer", background: "rgba(0,255,174,0.1)", color: "#00ffae", fontSize: 11, fontWeight: 700 }}>✓ Atender</button>
             </div>
           ))}
         </div>
       )}
 
       {/* Kanban */}
-      <div className="flex-1 grid grid-cols-3 divide-x divide-gray-800 min-h-0">
+      <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", overflow: "hidden" }}>
         {/* NOVOS */}
-        <KanbanColumn
-          title="🔴 NOVOS"
-          accentClass="border-red-600"
-          titleClass="text-red-400"
-          bgClass="bg-red-950/10"
-          isEmpty={novos.length === 0}
-          emptyText="Nenhum pedido novo"
-        >
+        <HubColumn title="🔴 NOVOS" accentColor="rgba(248,113,113,0.5)" titleColor="#f87171" bg="rgba(248,113,113,0.015)">
+          {novos.length === 0 && <HubEmptyState text="Nenhum pedido novo" />}
           {novos.map((o) => (
-            <OrderCard key={o.id} order={o} tick={tick}>
-              <button
-                onClick={() => markKitchenStatus(o.id, "preparing")}
-                className="w-full py-2.5 rounded-lg bg-yellow-600 hover:bg-yellow-500 text-white font-bold text-sm mt-3 transition-colors"
-              >
+            <HubOrderCard key={o.id} order={o} tick={tick}>
+              <button onClick={() => markKitchenStatus(o.id, "preparing")} style={{ width: "100%", padding: 10, borderRadius: 10, border: "none", cursor: "pointer", background: "rgba(251,191,36,0.1)", color: "#fbbf24", fontSize: 12, fontWeight: 700, marginTop: 10, boxShadow: "0 1px 0 rgba(251,191,36,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
                 🍳 Iniciar Preparo
               </button>
-            </OrderCard>
+            </HubOrderCard>
           ))}
-        </KanbanColumn>
+        </HubColumn>
 
         {/* EM PREPARO */}
-        <KanbanColumn
-          title="🟡 EM PREPARO"
-          accentClass="border-yellow-500"
-          titleClass="text-yellow-400"
-          bgClass="bg-yellow-950/10"
-          isEmpty={preparando.length === 0}
-          emptyText="Nenhum em preparo"
-        >
+        <HubColumn title="🟡 EM PREPARO" accentColor="rgba(251,191,36,0.5)" titleColor="#fbbf24" bg="rgba(251,191,36,0.015)">
+          {preparando.length === 0 && <HubEmptyState text="Nenhum em preparo" />}
           {preparando.map((o) => (
-            <OrderCard key={o.id} order={o} tick={tick}>
-              <button
-                onClick={() => markKitchenStatus(o.id, "ready")}
-                className="w-full py-2.5 rounded-lg bg-green-600 hover:bg-green-500 text-white font-bold text-sm mt-3 transition-colors"
-              >
+            <HubOrderCard key={o.id} order={o} tick={tick}>
+              <button onClick={() => markKitchenStatus(o.id, "ready")} style={{ width: "100%", padding: 10, borderRadius: 10, border: "none", cursor: "pointer", background: "rgba(0,255,174,0.1)", color: "#00ffae", fontSize: 12, fontWeight: 700, marginTop: 10, boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
                 ✅ Marcar Pronto
               </button>
-            </OrderCard>
+            </HubOrderCard>
           ))}
-        </KanbanColumn>
+        </HubColumn>
 
         {/* PRONTOS */}
-        <KanbanColumn
-          title="🟢 PRONTOS"
-          accentClass="border-green-600"
-          titleClass="text-green-400"
-          bgClass="bg-green-950/10"
-          isEmpty={prontos.length === 0}
-          emptyText="Nenhum pronto ainda"
-        >
+        <HubColumn title="🟢 PRONTOS" accentColor="rgba(0,255,174,0.4)" titleColor="#00ffae" bg="rgba(0,255,174,0.01)">
+          {prontos.length === 0 && <HubEmptyState text="Nenhum pronto ainda" />}
           {prontos.map((o) => (
-            <OrderCard key={o.id} order={o} tick={tick}>
+            <HubOrderCard key={o.id} order={o} tick={tick}>
               <button
-                onClick={() => {
-                  const link = `${window.location.origin}/entrega/${o.id}`;
-                  navigator.clipboard.writeText(link).then(() => {
-                    setCopiedId(o.id);
-                    setTimeout(() => setCopiedId(null), 2000);
-                  });
-                }}
-                className="w-full py-2 rounded-lg text-sm mt-3 transition-colors"
-                style={{ background: "rgba(96,165,250,0.1)", border: "1px solid rgba(96,165,250,0.25)", color: "#60a5fa", fontWeight: 600 }}
+                onClick={() => { const link = `${window.location.origin}/entrega/${o.id}`; navigator.clipboard.writeText(link).then(() => { setCopiedId(o.id); setTimeout(() => setCopiedId(null), 2000); }); }}
+                style={{ width: "100%", padding: 10, borderRadius: 10, border: "1px solid rgba(96,165,250,0.25)", cursor: "pointer", background: "rgba(96,165,250,0.08)", color: "#60a5fa", fontSize: 12, fontWeight: 600, marginTop: 10 }}
               >
                 {copiedId === o.id ? "✓ Link copiado!" : "🔗 Enviar pro entregador"}
               </button>
-              <button
-                onClick={() => markKitchenStatus(o.id, "delivered")}
-                className="w-full py-2.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white text-sm mt-2 transition-colors"
-              >
+              <button onClick={() => markKitchenStatus(o.id, "delivered")} style={{ width: "100%", padding: 10, borderRadius: 10, border: "1px solid rgba(255,255,255,0.06)", cursor: "pointer", background: "rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.4)", fontSize: 12, fontWeight: 600, marginTop: 6 }}>
                 🚀 Entregue — Remover
               </button>
-            </OrderCard>
+            </HubOrderCard>
           ))}
-        </KanbanColumn>
+        </HubColumn>
       </div>
     </div>
   );
 }
 
-// ─── Sub-componentes ─────────────────────────────────────────────────────────
-
-function Pill({
-  color,
-  count,
-  label,
-}: {
-  color: "red" | "yellow" | "green";
-  count: number;
-  label: string;
-}) {
-  const styles = {
-    red: "bg-red-900/40 text-red-300 border-red-700/50",
-    yellow: "bg-yellow-900/40 text-yellow-300 border-yellow-700/50",
-    green: "bg-green-900/40 text-green-300 border-green-700/50",
-  };
+function HubColumn({ title, accentColor, titleColor, bg, children }: { title: string; accentColor: string; titleColor: string; bg: string; children: React.ReactNode }) {
   return (
-    <span
-      className={`px-3 py-1.5 rounded-lg border text-sm font-semibold ${styles[color]}`}
-    >
-      {count} {label}
-    </span>
-  );
-}
-
-function KanbanColumn({
-  title,
-  accentClass,
-  titleClass,
-  bgClass,
-  isEmpty,
-  emptyText,
-  children,
-}: {
-  title: string;
-  accentClass: string;
-  titleClass: string;
-  bgClass: string;
-  isEmpty: boolean;
-  emptyText: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className={`flex flex-col ${bgClass}`}>
-      <div className={`px-4 py-3 border-b-2 ${accentClass} bg-gray-900/50 sticky top-[73px] z-[5]`}>
-        <h2 className={`font-black text-sm tracking-widest uppercase ${titleClass}`}>
-          {title}
-        </h2>
+    <div style={{ borderRight: "1px solid rgba(255,255,255,0.04)", background: bg, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      <div style={{ padding: "10px 14px", borderBottom: `2px solid ${accentColor}`, background: "rgba(5,5,5,0.6)", flexShrink: 0 }}>
+        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.5px", color: titleColor }}>{title}</div>
       </div>
-      <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
-        {isEmpty ? <EmptyState text={emptyText} /> : children}
-      </div>
+      <div style={{ flex: 1, overflowY: "auto", padding: 10, display: "flex", flexDirection: "column", gap: 8 }}>{children}</div>
     </div>
   );
 }
 
-function EmptyState({ text }: { text: string }) {
+function HubEmptyState({ text }: { text: string }) {
   return (
-    <div className="flex items-center justify-center h-32 text-gray-600 text-sm">
-      {text}
-    </div>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 80, color: "rgba(255,255,255,0.15)", fontSize: 12 }}>{text}</div>
   );
 }
 
-function OrderCard({
-  order,
-  tick,
-  children,
-}: {
-  order: HubOrder;
-  tick: number;
-  children: React.ReactNode;
-}) {
-  const tableLabel =
-    order.table_number != null ? `Mesa ${order.table_number}` : "S/ Mesa";
+function HubOrderCard({ order, tick, children }: { order: HubOrder; tick: number; children: React.ReactNode }) {
+  const label = order.table_number != null ? `Mesa ${order.table_number}` : "S/ Mesa";
   const since = order.waiter_confirmed_at ?? order.created_at;
   const secs = elapsedSeconds(since);
-  const isLate = secs > 600; // >10 min
+  const isLate = secs > 600;
 
   return (
-    <div
-      className={`rounded-xl border p-4 ${
-        isLate
-          ? "border-red-500 bg-red-950/30"
-          : "border-gray-700 bg-gray-900/60"
-      }`}
-    >
-      {/* Header do card */}
-      <div className="flex justify-between items-start mb-2">
-        <span className="font-black text-lg">{tableLabel}</span>
-        <div className="flex items-center gap-2">
-          <span
-            className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-              isLate
-                ? "bg-red-500/20 text-red-400"
-                : "bg-gray-700 text-gray-300"
-            }`}
-          >
-            {elapsed(since)}
-          </span>
-        </div>
+    <div style={{
+      padding: 14, borderRadius: 14,
+      background: isLate ? "rgba(248,113,113,0.04)" : "rgba(255,255,255,0.02)",
+      border: `1px solid ${isLate ? "rgba(248,113,113,0.25)" : "rgba(255,255,255,0.05)"}`,
+      boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
+    }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+        <span style={{ fontSize: 14, fontWeight: 800, color: "#fff" }}>{label}</span>
+        <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 6, background: isLate ? "rgba(248,113,113,0.1)" : "rgba(255,255,255,0.06)", color: isLate ? "#f87171" : "rgba(255,255,255,0.4)" }}>
+          {elapsed(since)}
+        </span>
       </div>
-
-      {/* Itens */}
-      <ul className="space-y-1 text-sm mb-2">
+      <ul style={{ listStyle: "none", margin: "0 0 6px", padding: 0, display: "flex", flexDirection: "column", gap: 3 }}>
         {order.items?.map((item, i) => (
-          <li key={i} className="flex gap-1.5 items-baseline">
-            <span className="text-white font-bold min-w-[20px]">{item.qty}×</span>
-            <span className="text-gray-200 flex-1">
-              {item.code_name ?? `Item ${i + 1}`}
-            </span>
-            {item.notes && (
-              <span className="text-gray-500 text-xs">({item.notes})</span>
-            )}
+          <li key={i} style={{ display: "flex", gap: 4, fontSize: 13, alignItems: "baseline" }}>
+            <span style={{ color: "#fff", fontWeight: 700, minWidth: 20 }}>{item.qty}×</span>
+            <span style={{ color: "rgba(255,255,255,0.7)", flex: 1 }}>{item.code_name ?? `Item ${i + 1}`}</span>
+            {item.notes && <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 11 }}>({item.notes})</span>}
           </li>
         ))}
       </ul>
-
-      {/* Observações */}
       {order.notes && (
-        <p className="text-gray-500 text-xs italic border-t border-gray-700 pt-1.5 mb-1">
-          ⚠️ {order.notes}
-        </p>
+        <div style={{ marginBottom: 6, padding: "5px 10px", borderRadius: 8, background: "rgba(251,191,36,0.06)", border: "1px solid rgba(251,191,36,0.15)", fontSize: 11, color: "#fbbf24" }}>⚠️ {order.notes}</div>
       )}
-
-      {/* Total */}
-      <div className="flex justify-end mt-1">
-        <span className="text-green-400 font-bold text-sm">
-          {formatPrice(order.total)}
-        </span>
+      <div style={{ display: "flex", justifyContent: "flex-end" }}>
+        <span style={{ fontSize: 12, fontWeight: 700, color: "#a78bfa" }}>{formatPrice(order.total)}</span>
       </div>
-
-      {/* Ação */}
       {children}
     </div>
   );
