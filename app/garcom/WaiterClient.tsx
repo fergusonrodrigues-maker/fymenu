@@ -52,7 +52,19 @@ interface WaiterClientProps {
   initialComandas: OpenComanda[];
 }
 
-type Tab = "queue" | "tables" | "comandas";
+type Tab = "mesas" | "queue" | "tables" | "comandas";
+type MesaScreen = "grid" | "abrir";
+
+type Mesa = {
+  id: string;
+  number: number;
+  label: string | null;
+  capacity: number;
+  status: "available" | "occupied" | "reserved" | "inactive";
+  current_comanda_id: string | null;
+  current_waiter_id: string | null;
+  is_active: boolean;
+};
 
 export default function WaiterClient({
   unitId,
@@ -67,7 +79,7 @@ export default function WaiterClient({
   const [orders, setOrders] = useState<WaiterOrder[]>(initialOrders);
   const [openComandas, setOpenComandas] = useState<OpenComanda[]>(initialComandas);
   const [tableCalls, setTableCalls] = useState<any[]>([]);
-  const [tab, setTab] = useState<Tab>("queue");
+  const [tab, setTab] = useState<Tab>("mesas");
   const [editOrder, setEditOrder] = useState<WaiterOrder | null>(null);
   const [pdvOrder, setPdvOrder] = useState<WaiterOrder | null>(null);
   const [qrOpen, setQrOpen] = useState(false);
@@ -75,6 +87,18 @@ export default function WaiterClient({
   const supabase = createClient();
   const audioCtxRef = useRef<AudioContext | null>(null);
   const router = useRouter();
+
+  // ── Mesas flow ───────────────────────────────────────────────────────────────
+  const [mesas, setMesas] = useState<Mesa[]>([]);
+  const [mesaFilter, setMesaFilter] = useState<"all" | "available" | "occupied">("all");
+  const [mesaScreen, setMesaScreen] = useState<MesaScreen>("grid");
+  const [selectedMesa, setSelectedMesa] = useState<Mesa | null>(null);
+  const [clientName, setClientName] = useState("");
+  const [clientPhone, setClientPhone] = useState("");
+  const [guestCount, setGuestCount] = useState(2);
+  const [opening, setOpening] = useState(false);
+  const [mesaError, setMesaError] = useState("");
+  const [employeeName, setEmployeeName] = useState("");
 
   const playSound = (type: "new" | "ready") => {
     try {
@@ -170,6 +194,111 @@ export default function WaiterClient({
     return () => { supabase.removeChannel(channel); };
   }, [unitId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Employee name from localStorage ─────────────────────────────────────────
+  useEffect(() => {
+    setEmployeeName(localStorage.getItem("fy_employee_name") ?? "Garçom");
+  }, []);
+
+  // ── Mesas: load + realtime ───────────────────────────────────────────────────
+  const loadMesas = async () => {
+    const { data } = await supabase.from("mesas")
+      .select("*").eq("unit_id", unitId).eq("is_active", true).order("number");
+    if (data) setMesas(data as Mesa[]);
+  };
+
+  useEffect(() => {
+    loadMesas();
+    const channel = supabase.channel("garcom-mesas")
+      .on("postgres_changes", { event: "*", schema: "public", table: "mesas", filter: `unit_id=eq.${unitId}` },
+        () => loadMesas())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [unitId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Handlers mesas ───────────────────────────────────────────────────────────
+  function handlePhoneChange(e: React.ChangeEvent<HTMLInputElement>) {
+    let v = e.target.value.replace(/\D/g, "").slice(0, 11);
+    if (v.length > 6) v = v.replace(/(\d{2})(\d{5})(\d{0,4})/, "($1) $2-$3");
+    else if (v.length > 2) v = v.replace(/(\d{2})(\d{0,5})/, "($1) $2");
+    setClientPhone(v);
+  }
+
+  async function handleOpenComanda() {
+    if (!clientName.trim() || !selectedMesa) return;
+    setOpening(true);
+    setMesaError("");
+
+    const { data: mesaCheck } = await supabase
+      .from("mesas").select("status").eq("id", selectedMesa.id).single();
+    if (mesaCheck?.status === "occupied") {
+      setMesaError("Esta mesa foi ocupada por outro garçom agora.");
+      setOpening(false);
+      return;
+    }
+
+    const shortCode = generateShortCode();
+    const { data: comanda, error: cmdError } = await supabase
+      .from("comandas").insert({
+        unit_id: unitId,
+        mesa_id: selectedMesa.id,
+        mesa_number: selectedMesa.number,
+        table_number: selectedMesa.number,
+        waiter_id: userId,
+        waiter_name: employeeName,
+        opened_by: userId,
+        opened_by_name: employeeName,
+        opened_by_role: "garcom",
+        customer_name: clientName.trim(),
+        customer_phone: clientPhone.replace(/\D/g, ""),
+        guest_count: guestCount || 2,
+        short_code: shortCode,
+        status: "open",
+        hash: crypto.randomUUID().replace(/-/g, "").slice(0, 16),
+      }).select().single();
+
+    if (cmdError || !comanda) {
+      setMesaError("Erro ao abrir comanda. Tente novamente.");
+      setOpening(false);
+      return;
+    }
+
+    await supabase.from("mesas").update({
+      status: "occupied",
+      current_comanda_id: comanda.id,
+      current_waiter_id: userId,
+      updated_at: new Date().toISOString(),
+    }).eq("id", selectedMesa.id);
+
+    const phoneClean = clientPhone.replace(/\D/g, "");
+    if (phoneClean.length >= 10) {
+      await supabase.from("crm_customers").upsert({
+        unit_id: unitId,
+        phone: phoneClean,
+        name: clientName.trim(),
+        source: "mesa",
+        last_visit_at: new Date().toISOString(),
+      }, { onConflict: "unit_id,phone" });
+
+      const fullPhone = phoneClean.startsWith("55") ? phoneClean : `55${phoneClean}`;
+      const msg = encodeURIComponent(
+        `Olá ${clientName.trim()}! Sua comanda está pronta 🍽️\n\n` +
+        `Acompanhe seus pedidos:\n👉 https://fymenu.com/comanda/${shortCode}\n\n` +
+        `Mesa ${selectedMesa.number} · ${unitName}`
+      );
+      window.open(`https://wa.me/${fullPhone}?text=${msg}`, "_blank");
+    }
+
+    await logComandaAction({
+      comanda_id: comanda.id, unit_id: unitId, action: "comanda_opened",
+      new_value: { mesa_number: selectedMesa.number, customer_name: clientName.trim() },
+      performed_by_role: "garcom", performed_by_name: employeeName,
+    });
+
+    setClientName(""); setClientPhone(""); setGuestCount(2);
+    setOpening(false);
+    router.push(`/garcom/comanda/${comanda.id}`);
+  }
+
   const updateOrder = async (orderId: string, patch: Partial<WaiterOrder>) => {
     await supabase.from("order_intents").update(patch).eq("id", orderId);
     setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, ...patch } : o)));
@@ -242,23 +371,25 @@ export default function WaiterClient({
         </div>
 
         {/* Tabs */}
-        <div style={{ maxWidth: 700, margin: "0 auto", padding: "0 16px", display: "flex" }}>
-          {(["queue", "tables", "comandas"] as Tab[]).map((t) => (
+        <div style={{ maxWidth: 700, margin: "0 auto", padding: "0 16px", display: "flex", overflowX: "auto" }}>
+          {(["mesas", "queue", "tables", "comandas"] as Tab[]).map((t) => (
             <button
               key={t}
-              onClick={() => setTab(t)}
+              onClick={() => { setTab(t); if (t !== "mesas") { setMesaScreen("grid"); setSelectedMesa(null); } }}
               style={{
-                flex: 1, padding: "10px 0", fontSize: 12, fontWeight: 600, border: "none", cursor: "pointer",
+                flex: 1, minWidth: 64, padding: "10px 0", fontSize: 11, fontWeight: 600, border: "none", cursor: "pointer",
                 background: "transparent",
                 borderBottom: `2px solid ${tab === t ? "#00ffae" : "transparent"}`,
                 color: tab === t ? "#00ffae" : "rgba(255,255,255,0.3)",
-                transition: "all 0.2s",
+                transition: "all 0.2s", whiteSpace: "nowrap",
               }}
             >
-              {t === "queue"
+              {t === "mesas"
+                ? `🪑 Mesas${mesas.filter(m => m.status === "occupied").length > 0 ? ` (${mesas.filter(m => m.status === "occupied").length})` : ""}`
+                : t === "queue"
                 ? `Fila${queue.length > 0 ? ` (${queue.length})` : ""}`
                 : t === "tables"
-                ? `Mesas${active.length > 0 ? ` (${active.length})` : ""}`
+                ? `Pedidos${active.length > 0 ? ` (${active.length})` : ""}`
                 : `Comandas${openComandas.length > 0 ? ` (${openComandas.length})` : ""}`}
             </button>
           ))}
@@ -297,6 +428,163 @@ export default function WaiterClient({
               </div>
             ))}
           </div>
+        )}
+
+        {/* ABA: MESAS */}
+        {tab === "mesas" && (
+          mesaScreen === "grid" ? (
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 800, color: "#fff", marginBottom: 14 }}>Mesas</div>
+
+              {/* Filtro rápido */}
+              <div style={{ display: "flex", gap: 4, marginBottom: 14 }}>
+                {([
+                  { key: "all", label: "Todas", count: mesas.length },
+                  { key: "available", label: "Livres", count: mesas.filter(m => m.status === "available").length },
+                  { key: "occupied", label: "Ocupadas", count: mesas.filter(m => m.status === "occupied").length },
+                ] as { key: "all" | "available" | "occupied"; label: string; count: number }[]).map(f => (
+                  <button key={f.key} onClick={() => setMesaFilter(f.key)} style={{
+                    padding: "6px 12px", borderRadius: 8, border: "none", cursor: "pointer",
+                    background: mesaFilter === f.key ? "rgba(0,255,174,0.1)" : "rgba(255,255,255,0.03)",
+                    color: mesaFilter === f.key ? "#00ffae" : "rgba(255,255,255,0.4)",
+                    fontSize: 11, fontWeight: 600,
+                  }}>{f.label} ({f.count})</button>
+                ))}
+              </div>
+
+              {/* Grid */}
+              {mesas.length === 0 ? (
+                <div style={{ textAlign: "center", padding: 40, color: "rgba(255,255,255,0.2)", fontSize: 12, borderRadius: 16, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)" }}>
+                  <div style={{ fontSize: 32, marginBottom: 8 }}>🪑</div>
+                  Nenhuma mesa cadastrada.<br />Peça ao gerente pra adicionar em Operações.
+                </div>
+              ) : (
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+                  {mesas
+                    .filter(m => mesaFilter === "all" || m.status === mesaFilter)
+                    .map(m => {
+                      const isOwn = m.status === "occupied" && m.current_waiter_id === userId;
+                      const isOther = m.status === "occupied" && m.current_waiter_id !== userId;
+                      return (
+                        <button key={m.id} onClick={() => {
+                          if (isOther) return;
+                          setSelectedMesa(m);
+                          if (m.status === "occupied" && m.current_comanda_id) {
+                            router.push(`/garcom/comanda/${m.current_comanda_id}`);
+                          } else if (m.status === "available") {
+                            setMesaError("");
+                            setMesaScreen("abrir");
+                          }
+                        }} style={{
+                          padding: 16, borderRadius: 16, textAlign: "center",
+                          background: m.status === "occupied" ? "rgba(251,191,36,0.06)" : m.status === "reserved" ? "rgba(96,165,250,0.06)" : "rgba(0,255,174,0.04)",
+                          border: `1px solid ${m.status === "occupied" ? "rgba(251,191,36,0.15)" : m.status === "reserved" ? "rgba(96,165,250,0.15)" : "rgba(0,255,174,0.1)"}`,
+                          cursor: isOther ? "not-allowed" : "pointer",
+                          opacity: isOther ? 0.45 : 1,
+                          boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
+                        }}>
+                          <div style={{ fontSize: 24, fontWeight: 900, color: "#fff" }}>{m.number}</div>
+                          <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", marginTop: 2 }}>
+                            {m.label || `Mesa ${m.number}`}
+                          </div>
+                          <div style={{
+                            marginTop: 6, padding: "2px 8px", borderRadius: 6, display: "inline-block",
+                            fontSize: 8, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1,
+                            background: m.status === "occupied" ? "rgba(251,191,36,0.1)" : m.status === "reserved" ? "rgba(96,165,250,0.1)" : "rgba(0,255,174,0.1)",
+                            color: m.status === "occupied" ? "#fbbf24" : m.status === "reserved" ? "#60a5fa" : "#00ffae",
+                          }}>
+                            {m.status === "available" ? "Livre" : m.status === "occupied" ? "Ocupada" : "Reservada"}
+                          </div>
+                          {isOwn && (
+                            <div style={{ fontSize: 8, color: "rgba(0,255,174,0.5)", marginTop: 4 }}>Sua mesa</div>
+                          )}
+                        </button>
+                      );
+                    })}
+                </div>
+              )}
+            </div>
+          ) : (
+            /* TELA: ABRIR COMANDA */
+            <div>
+              <button onClick={() => { setMesaScreen("grid"); setSelectedMesa(null); }} style={{
+                background: "transparent", border: "none", color: "rgba(255,255,255,0.4)",
+                fontSize: 12, cursor: "pointer", marginBottom: 12, padding: 0,
+              }}>← Voltar</button>
+
+              <div style={{ padding: 20, borderRadius: 18, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                <div style={{ fontSize: 18, fontWeight: 900, color: "#fff", marginBottom: 4 }}>
+                  Mesa {selectedMesa?.number}
+                </div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginBottom: 20 }}>
+                  Abrir comanda para o cliente
+                </div>
+
+                {/* Nome */}
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", display: "block", marginBottom: 6 }}>Nome do cliente</label>
+                  <input
+                    value={clientName} onChange={e => setClientName(e.target.value)}
+                    placeholder="Nome" autoFocus
+                    style={{ width: "100%", padding: "14px 16px", borderRadius: 14, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#fff", fontSize: 16, outline: "none", boxSizing: "border-box" }}
+                    onFocus={e => e.currentTarget.style.borderColor = "#00ffae"}
+                    onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"}
+                  />
+                </div>
+
+                {/* Telefone */}
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", display: "block", marginBottom: 6 }}>WhatsApp do cliente</label>
+                  <input
+                    value={clientPhone} onChange={handlePhoneChange}
+                    placeholder="(62) 99999-9999" inputMode="numeric"
+                    style={{ width: "100%", padding: "14px 16px", borderRadius: 14, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#fff", fontSize: 16, outline: "none", boxSizing: "border-box" }}
+                    onFocus={e => e.currentTarget.style.borderColor = "#00ffae"}
+                    onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"}
+                  />
+                </div>
+
+                {/* Pessoas */}
+                <div style={{ marginBottom: 20 }}>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", display: "block", marginBottom: 6 }}>Pessoas na mesa</label>
+                  <div style={{ display: "flex", gap: 4 }}>
+                    {[1, 2, 3, 4, 5, 6].map(n => (
+                      <button key={n} onClick={() => setGuestCount(n)} style={{
+                        flex: 1, padding: "10px 0", borderRadius: 10, border: "none", cursor: "pointer",
+                        background: guestCount === n ? "rgba(0,255,174,0.1)" : "rgba(255,255,255,0.03)",
+                        color: guestCount === n ? "#00ffae" : "rgba(255,255,255,0.3)",
+                        fontSize: 14, fontWeight: 700,
+                      }}>{n}</button>
+                    ))}
+                    <button onClick={() => setGuestCount(prev => Math.min(prev + 1, 20))} style={{
+                      flex: 1, padding: "10px 0", borderRadius: 10, border: "none", cursor: "pointer",
+                      background: guestCount > 6 ? "rgba(0,255,174,0.1)" : "rgba(255,255,255,0.03)",
+                      color: guestCount > 6 ? "#00ffae" : "rgba(255,255,255,0.3)",
+                      fontSize: 14, fontWeight: 700,
+                    }}>{guestCount > 6 ? guestCount : "+"}</button>
+                  </div>
+                </div>
+
+                {mesaError && (
+                  <div style={{ padding: "10px 14px", borderRadius: 12, background: "rgba(248,113,113,0.08)", color: "#f87171", fontSize: 12, marginBottom: 14 }}>
+                    {mesaError}
+                  </div>
+                )}
+
+                <button
+                  onClick={handleOpenComanda}
+                  disabled={opening || !clientName.trim()}
+                  style={{
+                    width: "100%", padding: 16, borderRadius: 14, border: "none", cursor: "pointer",
+                    background: "rgba(0,255,174,0.1)", color: "#00ffae",
+                    fontSize: 16, fontWeight: 800,
+                    boxShadow: "0 1px 0 rgba(0,255,174,0.12) inset, 0 -1px 0 rgba(0,0,0,0.2) inset",
+                    opacity: opening || !clientName.trim() ? 0.4 : 1,
+                  }}
+                >{opening ? "Abrindo..." : "Abrir comanda"}</button>
+              </div>
+            </div>
+          )
         )}
 
         {/* ABA: FILA */}
@@ -454,6 +742,15 @@ export default function WaiterClient({
       )}
     </div>
   );
+}
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function generateShortCode(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "";
+  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
 }
 
 // ─── QR Mesa Modal ───────────────────────────────────────────────────────────
