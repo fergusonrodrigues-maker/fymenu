@@ -116,228 +116,286 @@ export default function UnidadeModal({ unit, isPro, onClose, onOpenPlans }: { un
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingTop: 8 }}>
-      <DominioSection
-        unitId={unit.id}
-        currentDomain={unit.custom_domain}
-        slug={unit.slug}
-        restaurantName={unit.name}
-      />
 
-      <CopyLinkRow label="Link Delivery" url={`${origin}/delivery/${unit.slug}`} />
-      <CopyLinkRow label="Link Presencial (QR Code / Mesa)" url={`${origin}/menu/${unit.slug}`} />
-
-      <LogoUploader unitId={unit.id} currentLogoUrl={unit.logo_url} />
-
-      {/* ── Foto de Capa ── */}
-      <div style={{ borderRadius: 14, padding: 14, background: "var(--dash-card)", border: "1px solid var(--dash-section-border)" }}>
-        <div style={{ fontSize: 14, fontWeight: 700, color: "var(--dash-text)", marginBottom: 10 }}>Foto de Capa</div>
-        <p style={{ color: "var(--dash-text-muted)", fontSize: 12, marginBottom: 12, marginTop: 0 }}>
-          Aparece no topo do cardápio público. Use uma foto da fachada ou de um prato.
-        </p>
-
-        {/* Preview */}
-        <div
-          onClick={() => coverInputRef.current?.click()}
-          style={{
-            position: "relative",
-            width: "100%",
-            height: 140,
-            borderRadius: 12,
-            overflow: "hidden",
-            background: "var(--dash-card-hover)",
-            border: "1px solid var(--dash-border)",
-            marginBottom: 10,
-            cursor: "pointer",
-          }}
-        >
-          {coverPreview || coverUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={coverPreview || coverUrl!}
-              alt="Capa"
-              style={{ width: "100%", height: "100%", objectFit: "cover" }}
-            />
-          ) : (
-            <div style={{
-              width: "100%", height: "100%",
-              display: "flex", flexDirection: "column",
-              alignItems: "center", justifyContent: "center",
-              color: "var(--dash-text-subtle)",
-            }}>
-              <span style={{ fontSize: 28, marginBottom: 6 }}>📷</span>
-              <span style={{ fontSize: 12 }}>Toque para adicionar foto de capa</span>
-            </div>
-          )}
-
-          {uploadingCover && (
-            <div style={{
-              position: "absolute", inset: 0,
-              background: "rgba(0,0,0,0.6)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              color: "var(--dash-text)", fontSize: 13,
-            }}>
-              Enviando...
-            </div>
-          )}
+      {/* SEÇÃO 1 — Informações da unidade */}
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ fontSize: 10, fontWeight: 800, color: "var(--dash-text-muted)", marginBottom: 14, textTransform: "uppercase", letterSpacing: 1 }}>
+          Informações da unidade
         </div>
 
-        <input
-          ref={coverInputRef}
-          type="file"
-          accept="image/*"
-          style={{ display: "none" }}
-          onChange={handleCoverUpload}
+        <DominioSection
+          unitId={unit.id}
+          currentDomain={unit.custom_domain}
+          slug={unit.slug}
+          restaurantName={unit.name}
         />
 
-        {(coverPreview || coverUrl) && (
-          <button
-            type="button"
-            onClick={handleRemoveCover}
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
+          <CopyLinkRow label="Link Delivery" url={`${origin}/delivery/${unit.slug}`} />
+          <CopyLinkRow label="Link Presencial (QR Code / Mesa)" url={`${origin}/menu/${unit.slug}`} />
+        </div>
+
+        <div style={{ marginTop: 8 }}>
+          <LogoUploader unitId={unit.id} currentLogoUrl={unit.logo_url} />
+        </div>
+
+        {/* ── Foto de Capa ── */}
+        <div style={{ borderRadius: 14, padding: 14, background: "var(--dash-card)", border: "1px solid var(--dash-section-border)", marginTop: 8 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: "var(--dash-text)", marginBottom: 10 }}>Foto de Capa</div>
+          <p style={{ color: "var(--dash-text-muted)", fontSize: 12, marginBottom: 12, marginTop: 0 }}>
+            Aparece no topo do cardápio público. Use uma foto da fachada ou de um prato.
+          </p>
+
+          {/* Preview */}
+          <div
+            onClick={() => coverInputRef.current?.click()}
             style={{
-              padding: "6px 14px",
-              borderRadius: 8,
-              background: "var(--dash-danger-soft)",
-              border: "none",
-              color: "var(--dash-danger)",
-              fontSize: 12,
+              position: "relative",
+              width: "100%",
+              height: 140,
+              borderRadius: 12,
+              overflow: "hidden",
+              background: "var(--dash-card-hover)",
+              border: "1px solid var(--dash-border)",
+              marginBottom: 10,
               cursor: "pointer",
             }}
           >
-            Remover capa
-          </button>
-        )}
-      </div>
+            {coverPreview || coverUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={coverPreview || coverUrl!}
+                alt="Capa"
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              />
+            ) : (
+              <div style={{
+                width: "100%", height: "100%",
+                display: "flex", flexDirection: "column",
+                alignItems: "center", justifyContent: "center",
+                color: "var(--dash-text-subtle)",
+              }}>
+                <span style={{ fontSize: 28, marginBottom: 6 }}>📷</span>
+                <span style={{ fontSize: 12 }}>Toque para adicionar foto de capa</span>
+              </div>
+            )}
 
-      {/* ── Descrição curta ── */}
-      <div style={{ borderRadius: 14, padding: 14, background: "var(--dash-card)", border: "1px solid var(--dash-section-border)" }}>
-        <div style={{ fontSize: 14, fontWeight: 700, color: "var(--dash-text)", marginBottom: 10 }}>Descrição curta</div>
-        <input
-          type="text"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          onBlur={handleDescriptionBlur}
-          placeholder="Ex: Lugar de comer porco!"
-          maxLength={100}
-          style={inp}
-        />
-        <span style={{ color: "var(--dash-text-subtle)", fontSize: 11, marginTop: 6, display: "block" }}>
-          {description.length}/100 — Aparece abaixo do nome no cardápio público
-        </span>
-      </div>
+            {uploadingCover && (
+              <div style={{
+                position: "absolute", inset: 0,
+                background: "rgba(0,0,0,0.6)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                color: "var(--dash-text)", fontSize: 13,
+              }}>
+                Enviando...
+              </div>
+            )}
+          </div>
 
-      {/* ── Facebook Pixel ── */}
-      <div style={{ borderRadius: 14, padding: 14, background: "var(--dash-card)", border: "1px solid var(--dash-section-border)" }}>
-        <div style={{ fontSize: 14, fontWeight: 700, color: "var(--dash-text)", marginBottom: 10 }}>Integrações</div>
-        {/* Facebook Pixel */}
-        <div style={{ marginTop: 0 }}>
-          <label style={{ color: "var(--dash-text-muted)", fontSize: 12, fontWeight: 600, display: "block", marginBottom: 6 }}>Facebook Pixel ID</label>
           <input
-            type="text"
-            placeholder="Ex: 123456789012345"
-            value={pixelId}
-            onChange={(e) => setPixelId(e.target.value)}
-            onBlur={async () => {
-              const supabase = createClient();
-              await supabase.from("units").update({ facebook_pixel_id: pixelId.trim() || null }).eq("id", unit.id);
-            }}
-            style={{
-              width: "100%", padding: "10px 14px", borderRadius: 12,
-              background: "var(--dash-card-hover)", border: "none",
-              color: "var(--dash-text)", fontSize: 14, outline: "none", boxSizing: "border-box",
-            }}
+            ref={coverInputRef}
+            type="file"
+            accept="image/*"
+            style={{ display: "none" }}
+            onChange={handleCoverUpload}
           />
-          <span style={{ color: "var(--dash-text-subtle)", fontSize: 10, marginTop: 4, display: "block" }}>
-            Rastreia conversões do cardápio no Facebook/Instagram Ads
-          </span>
-        </div>
-        {/* iFood / Plataforma externa */}
-        <div style={{ marginTop: 16 }}>
-          <label style={{ color: "var(--dash-text-muted)", fontSize: 12, fontWeight: 600, display: "block", marginBottom: 6 }}>Plataforma de Delivery</label>
-          <div style={{ display: "flex", gap: 8, marginBottom: 6 }}>
-            <select
-              value={ifoodPlatform}
-              onChange={async (e) => {
-                setIfoodPlatform(e.target.value);
-                const supabase = createClient();
-                await supabase.from("units").update({ ifood_platform: e.target.value }).eq("id", unit.id);
-              }}
+
+          {(coverPreview || coverUrl) && (
+            <button
+              type="button"
+              onClick={handleRemoveCover}
               style={{
-                padding: "10px 12px", borderRadius: 12,
-                backgroundColor: "var(--dash-card-hover)", border: "none",
-                color: "var(--dash-text)", fontSize: 13, outline: "none", width: 120,
+                padding: "6px 14px",
+                borderRadius: 8,
+                background: "var(--dash-danger-soft)",
+                border: "none",
+                color: "var(--dash-danger)",
+                fontSize: 12,
+                cursor: "pointer",
               }}
             >
-              <option value="ifood">iFood</option>
-              <option value="rappi">Rappi</option>
-              <option value="uber_eats">Uber Eats</option>
-              <option value="aiqfome">AiQFome</option>
-              <option value="outro">Outro</option>
-            </select>
-            <input
-              type="url"
-              placeholder="Cole o link da sua loja na plataforma"
-              value={ifoodUrl}
-              onChange={(e) => setIfoodUrl(e.target.value)}
-              onBlur={async () => {
-                const supabase = createClient();
-                await supabase.from("units").update({ ifood_url: ifoodUrl.trim() || null }).eq("id", unit.id);
-              }}
-              style={{
-                flex: 1, padding: "10px 14px", borderRadius: 12,
-                background: "var(--dash-card-hover)", border: "none",
-                color: "var(--dash-text)", fontSize: 13, outline: "none",
-              }}
-            />
-          </div>
-          <span style={{ color: "var(--dash-text-subtle)", fontSize: 10, display: "block" }}>
-            Só contabiliza cliques — vendas são processadas na plataforma externa.
-          </span>
+              Remover capa
+            </button>
+          )}
         </div>
-        {/* Google Reviews */}
-        <div style={{ marginTop: 16 }}>
-          <label style={{ color: "var(--dash-text-muted)", fontSize: 12, fontWeight: 600, display: "block", marginBottom: 6 }}>Link do Google Reviews</label>
+
+        {/* ── Descrição curta ── */}
+        <div style={{ borderRadius: 14, padding: 14, background: "var(--dash-card)", border: "1px solid var(--dash-section-border)", marginTop: 8 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: "var(--dash-text)", marginBottom: 10 }}>Descrição curta</div>
           <input
-            type="url"
-            placeholder="Cole o link do Google Reviews do seu restaurante"
-            value={googleReviewUrl}
-            onChange={(e) => setGoogleReviewUrl(e.target.value)}
-            onBlur={async () => {
-              const supabase = createClient();
-              await supabase.from("units").update({ google_review_url: googleReviewUrl.trim() || null }).eq("id", unit.id);
-            }}
-            style={{
-              width: "100%", padding: "10px 14px", borderRadius: 12,
-              background: "var(--dash-card-hover)", border: "none",
-              color: "var(--dash-text)", fontSize: 13, outline: "none", boxSizing: "border-box",
-            }}
+            type="text"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            onBlur={handleDescriptionBlur}
+            placeholder="Ex: Lugar de comer porco!"
+            maxLength={100}
+            style={inp}
           />
-          <span style={{ color: "var(--dash-text-subtle)", fontSize: 10, marginTop: 4, display: "block" }}>
-            Clientes que dão 4-5 estrelas são redirecionados pra avaliar no Google
+          <span style={{ color: "var(--dash-text-subtle)", fontSize: 11, marginTop: 6, display: "block" }}>
+            {description.length}/100 — Aparece abaixo do nome no cardápio público
           </span>
         </div>
       </div>
 
-      <form action={updateUnit} onSubmit={() => setTimeout(onClose, 300)} style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 4 }}>
-        <input type="hidden" name="unit_id" value={unit.id} />
-        <input type="hidden" name="is_published" value={String(isPublished)} />
+      {/* Divisor */}
+      <div style={{ height: 1, background: "var(--dash-section-border)", marginBottom: 16 }} />
 
-        {[
-          { name: "name", label: "Nome da unidade", value: unit.name },
-          { name: "address", label: "Endereço", value: unit.address },
-          { name: "city", label: "Cidade", value: unit.city ?? "" },
-          { name: "neighborhood", label: "Bairro", value: unit.neighborhood ?? "" },
-          { name: "whatsapp", label: "WhatsApp", value: unit.whatsapp ?? "" },
-          { name: "instagram", label: "Instagram", value: unit.instagram ?? "" },
-          { name: "maps_url", label: "Link do Google Maps", value: unit.maps_url ?? "" },
-        ].map((f) => (
-          <div key={f.name}>
-            <div style={{ color: "var(--dash-text-muted)", fontSize: 11, marginBottom: 4 }}>{f.label}</div>
-            <input name={f.name} defaultValue={f.value} style={inp} />
+      {/* SEÇÃO 2 — Dados do estabelecimento */}
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ fontSize: 10, fontWeight: 800, color: "var(--dash-text-muted)", marginBottom: 14, textTransform: "uppercase", letterSpacing: 1 }}>
+          Dados do estabelecimento
+        </div>
+
+        <form action={updateUnit} onSubmit={() => setTimeout(onClose, 300)} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <input type="hidden" name="unit_id" value={unit.id} />
+          <input type="hidden" name="is_published" value={String(isPublished)} />
+
+          {[
+            { name: "name", label: "Nome da unidade", value: unit.name },
+            { name: "address", label: "Endereço", value: unit.address },
+            { name: "city", label: "Cidade", value: unit.city ?? "" },
+            { name: "neighborhood", label: "Bairro", value: unit.neighborhood ?? "" },
+            { name: "whatsapp", label: "WhatsApp", value: unit.whatsapp ?? "" },
+            { name: "instagram", label: "Instagram", value: unit.instagram ?? "" },
+            { name: "maps_url", label: "Link do Google Maps", value: unit.maps_url ?? "" },
+          ].map((f) => (
+            <div key={f.name}>
+              <div style={{ color: "var(--dash-text-muted)", fontSize: 11, marginBottom: 4 }}>{f.label}</div>
+              <input name={f.name} defaultValue={f.value} style={inp} />
+            </div>
+          ))}
+
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 0 4px" }}>
+            <div>
+              <div style={{ color: "var(--dash-text)", fontSize: 14, fontWeight: 600 }}>Publicar cardápio</div>
+              <div style={{ color: "var(--dash-text-muted)", fontSize: 12 }}>Cardápio visível publicamente</div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsPublished((v) => !v)}
+              style={{
+                width: 44, height: 26, borderRadius: 13, border: "none",
+                background: isPublished ? "var(--dash-accent)" : "var(--dash-card-hover)",
+                position: "relative", transition: "background 0.2s",
+                cursor: "pointer", flexShrink: 0,
+              }}
+            >
+              <span style={{
+                display: "block", width: 20, height: 20, borderRadius: "50%",
+                background: "#fff", position: "absolute", top: 3, left: 3,
+                transition: "transform 0.2s",
+                transform: isPublished ? "translateX(18px)" : "translateX(0)",
+              }} />
+            </button>
           </div>
-        ))}
 
-        {/* Horário de funcionamento */}
-        <div style={{ marginTop: 20 }}>
+          <button type="submit" style={{ marginTop: 8, padding: "14px", borderRadius: 14, border: "none", background: "var(--dash-accent-soft)", color: "var(--dash-accent)", fontSize: 15, fontWeight: 700, cursor: "pointer", boxShadow: "var(--dash-shadow)" }}>Salvar unidade</button>
+        </form>
+      </div>
+
+      {/* Divisor */}
+      <div style={{ height: 1, background: "var(--dash-section-border)", marginBottom: 16 }} />
+
+      {/* SEÇÃO 3 — Configurações avançadas */}
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ fontSize: 10, fontWeight: 800, color: "var(--dash-text-muted)", marginBottom: 14, textTransform: "uppercase", letterSpacing: 1 }}>
+          Configurações avançadas
+        </div>
+
+        {/* ── Integrações ── */}
+        <div style={{ borderRadius: 14, padding: 14, background: "var(--dash-card)", border: "1px solid var(--dash-section-border)" }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: "var(--dash-text)", marginBottom: 10 }}>Integrações</div>
+          {/* Facebook Pixel */}
+          <div style={{ marginTop: 0 }}>
+            <label style={{ color: "var(--dash-text-muted)", fontSize: 12, fontWeight: 600, display: "block", marginBottom: 6 }}>Facebook Pixel ID</label>
+            <input
+              type="text"
+              placeholder="Ex: 123456789012345"
+              value={pixelId}
+              onChange={(e) => setPixelId(e.target.value)}
+              onBlur={async () => {
+                const supabase = createClient();
+                await supabase.from("units").update({ facebook_pixel_id: pixelId.trim() || null }).eq("id", unit.id);
+              }}
+              style={{
+                width: "100%", padding: "10px 14px", borderRadius: 12,
+                background: "var(--dash-card-hover)", border: "none",
+                color: "var(--dash-text)", fontSize: 14, outline: "none", boxSizing: "border-box",
+              }}
+            />
+            <span style={{ color: "var(--dash-text-subtle)", fontSize: 10, marginTop: 4, display: "block" }}>
+              Rastreia conversões do cardápio no Facebook/Instagram Ads
+            </span>
+          </div>
+          {/* iFood / Plataforma externa */}
+          <div style={{ marginTop: 16 }}>
+            <label style={{ color: "var(--dash-text-muted)", fontSize: 12, fontWeight: 600, display: "block", marginBottom: 6 }}>Plataforma de Delivery</label>
+            <div style={{ display: "flex", gap: 8, marginBottom: 6 }}>
+              <select
+                value={ifoodPlatform}
+                onChange={async (e) => {
+                  setIfoodPlatform(e.target.value);
+                  const supabase = createClient();
+                  await supabase.from("units").update({ ifood_platform: e.target.value }).eq("id", unit.id);
+                }}
+                style={{
+                  padding: "10px 12px", borderRadius: 12,
+                  backgroundColor: "var(--dash-card-hover)", border: "none",
+                  color: "var(--dash-text)", fontSize: 13, outline: "none", width: 120,
+                }}
+              >
+                <option value="ifood">iFood</option>
+                <option value="rappi">Rappi</option>
+                <option value="uber_eats">Uber Eats</option>
+                <option value="aiqfome">AiQFome</option>
+                <option value="outro">Outro</option>
+              </select>
+              <input
+                type="url"
+                placeholder="Cole o link da sua loja na plataforma"
+                value={ifoodUrl}
+                onChange={(e) => setIfoodUrl(e.target.value)}
+                onBlur={async () => {
+                  const supabase = createClient();
+                  await supabase.from("units").update({ ifood_url: ifoodUrl.trim() || null }).eq("id", unit.id);
+                }}
+                style={{
+                  flex: 1, padding: "10px 14px", borderRadius: 12,
+                  background: "var(--dash-card-hover)", border: "none",
+                  color: "var(--dash-text)", fontSize: 13, outline: "none",
+                }}
+              />
+            </div>
+            <span style={{ color: "var(--dash-text-subtle)", fontSize: 10, display: "block" }}>
+              Só contabiliza cliques — vendas são processadas na plataforma externa.
+            </span>
+          </div>
+          {/* Google Reviews */}
+          <div style={{ marginTop: 16 }}>
+            <label style={{ color: "var(--dash-text-muted)", fontSize: 12, fontWeight: 600, display: "block", marginBottom: 6 }}>Link do Google Reviews</label>
+            <input
+              type="url"
+              placeholder="Cole o link do Google Reviews do seu restaurante"
+              value={googleReviewUrl}
+              onChange={(e) => setGoogleReviewUrl(e.target.value)}
+              onBlur={async () => {
+                const supabase = createClient();
+                await supabase.from("units").update({ google_review_url: googleReviewUrl.trim() || null }).eq("id", unit.id);
+              }}
+              style={{
+                width: "100%", padding: "10px 14px", borderRadius: 12,
+                background: "var(--dash-card-hover)", border: "none",
+                color: "var(--dash-text)", fontSize: 13, outline: "none", boxSizing: "border-box",
+              }}
+            />
+            <span style={{ color: "var(--dash-text-subtle)", fontSize: 10, marginTop: 4, display: "block" }}>
+              Clientes que dão 4-5 estrelas são redirecionados pra avaliar no Google
+            </span>
+          </div>
+        </div>
+
+        {/* ── Horário de funcionamento ── */}
+        <div style={{ marginTop: 8 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: "var(--dash-text)", marginBottom: 12 }}>Horário de funcionamento</div>
 
           {/* Override manual */}
@@ -424,36 +482,13 @@ export default function UnidadeModal({ unit, isPro, onClose, onOpenPlans }: { un
             </div>
           )}
         </div>
+      </div>
 
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 0 4px" }}>
-          <div>
-            <div style={{ color: "var(--dash-text)", fontSize: 14, fontWeight: 600 }}>Publicar cardápio</div>
-            <div style={{ color: "var(--dash-text-muted)", fontSize: 12 }}>Cardápio visível publicamente</div>
-          </div>
-          <button
-            type="button"
-            onClick={() => setIsPublished((v) => !v)}
-            style={{
-              width: 44, height: 26, borderRadius: 13, border: "none",
-              background: isPublished ? "var(--dash-accent)" : "var(--dash-card-hover)",
-              position: "relative", transition: "background 0.2s",
-              cursor: "pointer", flexShrink: 0,
-            }}
-          >
-            <span style={{
-              display: "block", width: 20, height: 20, borderRadius: "50%",
-              background: "#fff", position: "absolute", top: 3, left: 3,
-              transition: "transform 0.2s",
-              transform: isPublished ? "translateX(18px)" : "translateX(0)",
-            }} />
-          </button>
-        </div>
+      {/* Divisor */}
+      <div style={{ height: 1, background: "var(--dash-section-border)", marginBottom: 16 }} />
 
-        <button type="submit" style={{ marginTop: 8, padding: "14px", borderRadius: 14, border: "none", background: "var(--dash-accent-soft)", color: "var(--dash-accent)", fontSize: 15, fontWeight: 700, cursor: "pointer", boxShadow: "var(--dash-shadow)" }}>Salvar unidade</button>
-      </form>
-
-      {/* ── Nova Unidade ── */}
-      <div style={{ marginTop: 8, borderTop: "1px solid var(--dash-separator)", paddingTop: 16 }}>
+      {/* SEÇÃO 4 — Nova unidade */}
+      <div>
         {!showNewUnit ? (
           <button onClick={() => setShowNewUnit(true)} style={{ width: "100%", padding: "13px", borderRadius: 14, border: "1px solid var(--dash-section-border)", background: "transparent", color: "var(--dash-text-muted)", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
             + Nova Unidade
@@ -492,6 +527,7 @@ export default function UnidadeModal({ unit, isPro, onClose, onOpenPlans }: { un
           </div>
         )}
       </div>
+
     </div>
   );
 }
