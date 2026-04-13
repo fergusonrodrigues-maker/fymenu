@@ -4,13 +4,6 @@
 import { useEffect, useState } from "react";
 import type { Unit } from "./menuTypes";
 
-const ICONS = {
-  maps:      "https://rjfbavmupiypxiqzksxo.supabase.co/storage/v1/object/public/GLASSBAR%20MESTRE/BOTOM-MAPS.png",
-  unidade:   "https://rjfbavmupiypxiqzksxo.supabase.co/storage/v1/object/public/GLASSBAR%20MESTRE/BOTOM-UNIDADS.png",
-  whatsapp:  "https://rjfbavmupiypxiqzksxo.supabase.co/storage/v1/object/public/GLASSBAR%20MESTRE/WHATSPP-BOTOM.png",
-  instagram: "https://rjfbavmupiypxiqzksxo.supabase.co/storage/v1/object/public/GLASSBAR%20MESTRE/INSTAGRAM-BOTOM.png",
-};
-
 function normalizeWhatsapp(raw: string): string | null {
   const digits = (raw ?? "").replace(/\D/g, "");
   if (!digits) return null;
@@ -31,6 +24,43 @@ function mapsUrl(unit: Unit): string | null {
   if (unit.maps_url?.trim()) return unit.maps_url.trim();
   const q = [unit.name, unit.neighborhood, unit.city].filter(Boolean).join(" - ");
   return q ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}` : null;
+}
+
+function getOpenStatus(unit: Unit): { isOpen: boolean; label: string; nextChange: string } {
+  if (unit.force_status === "open") return { isOpen: true, label: "Aberto agora", nextChange: "" };
+  if (unit.force_status === "closed") return { isOpen: false, label: "Fechado", nextChange: "" };
+
+  const hours = unit.business_hours || [];
+  if (hours.length === 0) return { isOpen: true, label: "", nextChange: "" };
+
+  const now = new Date();
+  const dayNames = ["dom", "seg", "ter", "qua", "qui", "sex", "sab"];
+  const currentDay = dayNames[now.getDay()];
+  const currentTime = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+  const todayHours = hours.find((h: any) => h.day === currentDay);
+
+  if (!todayHours || !todayHours.enabled) {
+    for (let i = 1; i <= 7; i++) {
+      const next = hours.find((h: any) => h.day === dayNames[(now.getDay() + i) % 7]);
+      if (next?.enabled) return { isOpen: false, label: "Fechado hoje", nextChange: `Abre ${next.day} às ${next.open}` };
+    }
+    return { isOpen: false, label: "Fechado", nextChange: "" };
+  }
+
+  const { open: openTime, close: closeTime } = todayHours;
+  const overnight = closeTime <= openTime;
+
+  if (overnight ? (currentTime >= openTime || currentTime < closeTime) : (currentTime >= openTime && currentTime < closeTime)) {
+    return { isOpen: true, label: "Aberto agora", nextChange: `Fecha às ${closeTime}` };
+  }
+
+  if (currentTime < openTime) return { isOpen: false, label: "Fechado", nextChange: `Abre hoje às ${openTime}` };
+
+  for (let i = 1; i <= 7; i++) {
+    const next = hours.find((h: any) => h.day === dayNames[(now.getDay() + i) % 7]);
+    if (next?.enabled) return { isOpen: false, label: "Fechado", nextChange: `Abre ${next.day} às ${next.open}` };
+  }
+  return { isOpen: false, label: "Fechado", nextChange: "" };
 }
 
 function getPlatformGradient(platform: string | null | undefined): string {
@@ -82,269 +112,328 @@ export default function BottomGlassBar({ unit, visible, minimized, onIfoodClick 
     return () => obs.disconnect();
   }, []);
 
-  const wa   = normalizeWhatsapp(unit.whatsapp || "");
-  const ig   = normalizeInstagram(unit.instagram || "");
+  const wa = normalizeWhatsapp(unit.whatsapp || "");
+  const ig = normalizeInstagram(unit.instagram || "");
   const maps = mapsUrl(unit);
   const logo = unit.logo_url || null;
-  const city = [unit.city, unit.neighborhood].filter(Boolean).join(" - ");
+  const { isOpen, label: openLabel, nextChange } = getOpenStatus(unit);
 
   const EASE = "cubic-bezier(0.16, 1, 0.3, 1)";
-  const DUR  = "400ms";
+  const DUR = "400ms";
+
+  // Colors
+  const bg = isDark ? "rgba(10,10,10,0.92)" : "rgba(255,255,255,0.92)";
+  const border = isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.08)";
+  const textPrimary = isDark ? "#fff" : "#1a1a1a";
+  const textSecondary = isDark ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.4)";
+  const cardBg = isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)";
+  const cardBorder = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)";
 
   return (
-    <div style={{
-      position: "fixed",
-      bottom: 0,
-      left: 0,
-      right: 0,
-      zIndex: 100,
-      display: "flex",
-      justifyContent: "center",
-      padding: isMaximized ? "0" : minimized ? "0 8px" : "0 12px",
-      paddingBottom: isMaximized ? "0" : minimized ? "calc(4px + env(safe-area-inset-bottom, 0px))" : "calc(12px + env(safe-area-inset-bottom, 0px))",
-      pointerEvents: "none",
-      transform: visible ? "translateY(0)" : "translateY(110%)",
-      transition: `transform ${DUR} ${EASE}, padding ${DUR} ${EASE}`,
-    }}>
+    <>
+      {/* ── MINIMIZED pill ── */}
       <div style={{
-        position: "relative",
-        width: isMaximized ? "100%" : minimized ? "min(96vw, 280px)" : "min(96vw, 520px)",
-        height: isMaximized ? "min(50vh, 340px)" : minimized ? 58 : 72,
-        borderRadius: isMaximized ? "28px 28px 0 0" : minimized ? 14 : 20,
-        background: isDark
-          ? "rgba(10, 10, 10, 0.15)"
-          : "rgba(255, 255, 255, 0.15)",
-        backdropFilter: "blur(80px) saturate(1.8)",
-        WebkitBackdropFilter: "blur(80px) saturate(1.8)",
-        border: isDark
-          ? "0.5px solid rgba(255,255,255,0.08)"
-          : "0.5px solid rgba(0,0,0,0.08)",
-        boxShadow: isDark
-          ? "0 1px 0 rgba(255,255,255,0.04) inset, 0 -1px 0 rgba(0,0,0,0.2) inset, 0 -8px 24px rgba(0,0,0,0.2)"
-          : "0 1px 0 rgba(255,255,255,0.6) inset, 0 -1px 0 rgba(0,0,0,0.05) inset, 0 -8px 24px rgba(0,0,0,0.08)",
+        position: "fixed",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        zIndex: 100,
         display: "flex",
         justifyContent: "center",
-        pointerEvents: "auto",
-        transition: `all ${DUR} ${EASE}`,
-        overflow: "visible",
+        paddingBottom: "calc(10px + env(safe-area-inset-bottom, 0px))",
+        pointerEvents: "none",
+        opacity: minimized && visible ? 1 : 0,
+        transform: minimized && visible ? "translateY(0)" : "translateY(20px)",
+        transition: `opacity 300ms ${EASE}, transform 300ms ${EASE}`,
       }}>
-
-        {/* LOGO — flutua acima */}
         <div style={{
-          position: "absolute",
-          left: "50%",
-          transform: "translateX(-50%)",
-          top: isMaximized ? -32 : minimized ? -8 : -10,
-          width: isMaximized ? 72 : minimized ? 44 : 56,
-          height: isMaximized ? 72 : minimized ? 44 : 56,
-          borderRadius: isMaximized ? 20 : minimized ? 12 : 16,
-          background: "rgba(255,255,255,0.95)",
-          boxShadow: "0 8px 28px rgba(0,0,0,0.5)",
           display: "flex",
           alignItems: "center",
-          justifyContent: "center",
-          zIndex: 20,
-          transition: `all ${DUR} ${EASE}`,
-          overflow: "hidden",
+          gap: 8,
+          padding: "8px 12px",
+          borderRadius: 22,
+          background: bg,
+          backdropFilter: "blur(24px)",
+          WebkitBackdropFilter: "blur(24px)",
+          border,
+          boxShadow: isDark
+            ? "0 8px 32px rgba(0,0,0,0.45)"
+            : "0 8px 32px rgba(0,0,0,0.12)",
+          pointerEvents: "auto",
+          // paddingTop accounts for logo overflow
+          paddingTop: 16,
+          marginTop: 8,
+          alignSelf: "flex-end",
         }}>
-          <img
-            src={logo ?? "https://rjfbavmupiypxiqzksxo.supabase.co/storage/v1/object/public/GLASSBAR%20MESTRE/PERFIL-BOTOM-MEIO.png"}
-            alt={unit.name}
-            style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit" }}
-          />
-        </div>
-
-        {/* ── MINIMIZADO (horizontal) ── */}
-        <div style={{
-          position: "absolute",
-          inset: 0,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 6,
-          padding: "0 6px",
-          opacity: isMaximized ? 0 : 1,
-          pointerEvents: isMaximized ? "none" : "auto",
-          transition: `opacity 250ms ease ${isMaximized ? "0ms" : "300ms"}`,
-        }}>
+          {/* Maps */}
           {maps && (
             <a href={maps} target="_blank" rel="noreferrer" style={{
-              width: 46, height: 46, borderRadius: 14,
-              overflow: "hidden", flexShrink: 0,
+              width: 44, height: 44, borderRadius: 12,
+              background: isDark ? "rgba(239,68,68,0.12)" : "rgba(239,68,68,0.08)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              textDecoration: "none", flexShrink: 0, fontSize: 20,
             }}>
-              <img src={ICONS.maps} alt="Maps"
-                style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              📍
             </a>
           )}
 
+          {/* City / Neighborhood */}
           <div style={{
-            width: 46, height: 46, borderRadius: 14,
-            position: "relative", overflow: "hidden", flexShrink: 0,
+            padding: "6px 10px", borderRadius: 10,
+            background: isDark ? "rgba(0,255,174,0.06)" : "rgba(0,150,100,0.06)",
+            textAlign: "center", flexShrink: 0,
           }}>
-            <img src={ICONS.unidade} alt=""
-              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
-            <div style={{
-              position: "relative", zIndex: 1,
-              height: "100%", display: "flex", flexDirection: "column",
-              justifyContent: "center", alignItems: "center", padding: "0 3px",
-            }}>
-              <span style={{ fontSize: 7, fontWeight: 900, color: "#1a1a1a", lineHeight: 1.2, textAlign: "center" }}>
-                {unit.city || ""}
-              </span>
-              <span style={{ fontSize: 6, fontWeight: 800, color: "#1a1a1a", lineHeight: 1.2, textAlign: "center" }}>
-                {unit.neighborhood || unit.name}
-              </span>
+            <div style={{ fontSize: 10, fontWeight: 700, color: isDark ? "#00ffae" : "#00a06a", lineHeight: 1.2 }}>
+              {unit.city || ""}
             </div>
+            {unit.neighborhood && (
+              <div style={{ fontSize: 8, color: isDark ? "rgba(0,255,174,0.5)" : "rgba(0,130,80,0.5)" }}>
+                {unit.neighborhood}
+              </div>
+            )}
           </div>
 
-          {/* Spacer para o logo flutuante */}
-          <div style={{ width: minimized ? 48 : 60, flexShrink: 0 }} />
+          {/* Logo — circular, pops above the bar */}
+          <div style={{
+            width: 52, height: 52,
+            borderRadius: "50%",
+            background: "#00ffae",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            overflow: "hidden",
+            marginTop: -28,
+            border: isDark ? "3px solid rgba(10,10,10,0.95)" : "3px solid rgba(255,255,255,0.95)",
+            boxShadow: "0 4px 14px rgba(0,0,0,0.35)",
+            flexShrink: 0,
+          }}>
+            {logo ? (
+              <img src={logo} alt={unit.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            ) : (
+              <span style={{ fontSize: 18, fontWeight: 900, color: "#000" }}>fy</span>
+            )}
+          </div>
 
+          {/* WhatsApp */}
           {wa && (
             <a href={wa} target="_blank" rel="noreferrer" style={{
-              width: 46, height: 46, borderRadius: 14,
-              overflow: "hidden", flexShrink: 0,
+              width: 44, height: 44, borderRadius: 12,
+              background: isDark ? "rgba(37,211,102,0.12)" : "rgba(37,211,102,0.1)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              textDecoration: "none", flexShrink: 0, fontSize: 20,
             }}>
-              <img src={ICONS.whatsapp} alt="WhatsApp"
-                style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              💬
             </a>
           )}
 
+          {/* Instagram */}
           {ig && (
             <a href={ig} target="_blank" rel="noreferrer" style={{
-              width: 46, height: 46, borderRadius: 14,
-              overflow: "hidden", flexShrink: 0,
+              width: 44, height: 44, borderRadius: 12,
+              background: isDark
+                ? "linear-gradient(135deg, rgba(131,58,180,0.12), rgba(253,29,29,0.12))"
+                : "linear-gradient(135deg, rgba(131,58,180,0.08), rgba(253,29,29,0.08))",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              textDecoration: "none", flexShrink: 0, fontSize: 20,
             }}>
-              <img src={ICONS.instagram} alt="Instagram"
-                style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              📸
             </a>
           )}
+
+          {/* iFood / external platform */}
           {unit.ifood_url && (
-            <a
-              href={unit.ifood_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={onIfoodClick}
+            <a href={unit.ifood_url} target="_blank" rel="noopener noreferrer" onClick={onIfoodClick}
               style={{
-                width: 46, height: 46, borderRadius: 14, flexShrink: 0,
+                width: 44, height: 44, borderRadius: 12, flexShrink: 0,
                 background: getPlatformGradient(unit.ifood_platform),
                 display: "flex", alignItems: "center", justifyContent: "center",
                 textDecoration: "none", fontSize: 22,
-              }}
-            >
+              }}>
               {getPlatformIcon(unit.ifood_platform)}
             </a>
           )}
         </div>
+      </div>
 
-        {/* ── MAXIMIZADO (vertical) ── */}
-        <div style={{
-          position: "absolute",
-          inset: 0,
-          padding: "52px 20px 20px",
-          paddingBottom: "calc(20px + env(safe-area-inset-bottom, 0px))",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          gap: 8,
-          opacity: isMaximized ? 1 : 0,
-          pointerEvents: isMaximized ? "auto" : "none",
-          transition: `opacity 250ms ease ${isMaximized ? "300ms" : "0ms"}`,
-        }}>
-          {/* Botão voltar ao topo — canto superior direito */}
-          <button
-            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-            style={{
-              position: "absolute",
-              top: 14,
-              right: 16,
-              width: 36,
-              height: 36,
-              borderRadius: 12,
-              background: "rgba(255,255,255,0.10)",
-              border: "0.5px solid rgba(255,255,255,0.12)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
-            }}
-            aria-label="Voltar ao topo"
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M8 13V3M8 3L4 7M8 3L12 7" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-
-          {wa && (
-            <a href={wa} target="_blank" rel="noreferrer" style={{
-              display: "flex", alignItems: "center",
-              width: "100%", height: 48, borderRadius: 14,
-              background: "#25D366", padding: "0 18px", gap: 12,
-              textDecoration: "none",
-            }}>
-              <img src={ICONS.whatsapp} alt="" style={{ width: 32, height: 32, borderRadius: 10, objectFit: "cover" }} />
-              <span style={{ color: "#fff", fontWeight: 800, fontSize: 16 }}>Pedir no WhatsApp</span>
-            </a>
-          )}
-
-          {ig && (
-            <a href={ig} target="_blank" rel="noreferrer" style={{
-              display: "flex", alignItems: "center",
-              width: "100%", height: 48, borderRadius: 14,
-              background: "linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)",
-              padding: "0 18px", gap: 12, textDecoration: "none",
-            }}>
-              <img src={ICONS.instagram} alt="" style={{ width: 32, height: 32, borderRadius: 10, objectFit: "cover" }} />
-              <span style={{ color: "#fff", fontWeight: 800, fontSize: 16 }}>Siga no Instagram</span>
-            </a>
-          )}
-
-          {maps && (
-            <a href={maps} target="_blank" rel="noreferrer" style={{
-              display: "flex", alignItems: "center",
-              width: "100%", height: 48, borderRadius: 14,
-              background: "#E53935", padding: "0 18px", gap: 12,
-              textDecoration: "none",
-            }}>
-              <img src={ICONS.maps} alt="" style={{ width: 32, height: 32, borderRadius: 10, objectFit: "cover" }} />
-              <span style={{ color: "#fff", fontWeight: 800, fontSize: 16 }}>Como Chegar</span>
-            </a>
-          )}
-
-          {unit.ifood_url && (
-            <a
-              href={unit.ifood_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={onIfoodClick}
-              style={{
-                display: "flex", alignItems: "center",
-                width: "100%", height: 48, borderRadius: 14,
-                background: getPlatformGradient(unit.ifood_platform),
-                padding: "0 18px", gap: 12, textDecoration: "none",
-              }}
-            >
-              <span style={{ fontSize: 26 }}>{getPlatformIcon(unit.ifood_platform)}</span>
-              <span style={{ color: "#fff", fontWeight: 800, fontSize: 16 }}>Pedir no {getPlatformName(unit.ifood_platform)}</span>
-            </a>
-          )}
-
+      {/* ── MAXIMIZED bento bottom sheet ── */}
+      <div style={{
+        position: "fixed",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        zIndex: 100,
+        opacity: isMaximized && visible ? 1 : 0,
+        transform: isMaximized && visible ? "translateY(0)" : "translateY(100%)",
+        transition: `opacity 350ms ${EASE}, transform 350ms ${EASE}`,
+        pointerEvents: isMaximized && visible ? "auto" : "none",
+        borderRadius: "24px 24px 0 0",
+        background: isDark ? "rgba(10,10,10,0.97)" : "rgba(255,255,255,0.97)",
+        backdropFilter: "blur(30px)",
+        WebkitBackdropFilter: "blur(30px)",
+        border,
+        borderBottom: "none",
+        boxShadow: isDark ? "0 -8px 40px rgba(0,0,0,0.5)" : "0 -8px 40px rgba(0,0,0,0.15)",
+        padding: "16px 16px",
+        paddingBottom: "max(24px, env(safe-area-inset-bottom, 24px))",
+      }}>
+        {/* Drag handle */}
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
           <div style={{
-            display: "flex", alignItems: "center",
-            width: "100%", height: 48, borderRadius: 14,
-            position: "relative", overflow: "hidden",
+            width: 36, height: 4, borderRadius: 2,
+            background: isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.1)",
+          }} />
+        </div>
+
+        {/* Logo + unit name */}
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+          <div style={{
+            width: 48, height: 48, borderRadius: "50%",
+            background: "#00ffae", overflow: "hidden",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            flexShrink: 0,
+            boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
           }}>
-            <img src={ICONS.unidade} alt="" style={{
-              position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover",
-            }} />
-            <div style={{ position: "relative", zIndex: 1, width: "100%", textAlign: "center", padding: "0 18px" }}>
-              <div style={{ fontSize: 14, fontWeight: 900, color: "#1a1a1a" }}>{city}</div>
-              <div style={{ fontSize: 12, fontWeight: 600, color: "#444" }}>{unit.name}</div>
+            {logo ? (
+              <img src={logo} alt={unit.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            ) : (
+              <span style={{ fontSize: 18, fontWeight: 900, color: "#000" }}>fy</span>
+            )}
+          </div>
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 900, color: textPrimary, lineHeight: 1.2 }}>
+              {unit.name}
+            </div>
+            <div style={{ fontSize: 11, color: textSecondary, marginTop: 2 }}>
+              {[unit.city, unit.neighborhood].filter(Boolean).join(" · ")}
             </div>
           </div>
         </div>
 
+        {/* Bento grid */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+
+          {/* WhatsApp — full width */}
+          {wa && (
+            <a href={wa} target="_blank" rel="noreferrer" style={{
+              gridColumn: "1 / -1",
+              display: "flex", alignItems: "center", gap: 14,
+              padding: "14px 16px", borderRadius: 18,
+              background: isDark ? "rgba(37,211,102,0.08)" : "rgba(37,211,102,0.07)",
+              border: `1px solid ${isDark ? "rgba(37,211,102,0.14)" : "rgba(37,211,102,0.12)"}`,
+              textDecoration: "none",
+            }}>
+              <div style={{
+                width: 42, height: 42, borderRadius: 13,
+                background: "rgba(37,211,102,0.15)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 22, flexShrink: 0,
+              }}>💬</div>
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 800, color: "#25d366" }}>Pedir no WhatsApp</div>
+                <div style={{ fontSize: 10, color: textSecondary }}>Envie seu pedido direto</div>
+              </div>
+            </a>
+          )}
+
+          {/* Instagram */}
+          {ig && (
+            <a href={ig} target="_blank" rel="noreferrer" style={{
+              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+              gap: 8, padding: "18px 10px", borderRadius: 18,
+              background: isDark
+                ? "linear-gradient(135deg, rgba(131,58,180,0.07), rgba(253,29,29,0.07))"
+                : "linear-gradient(135deg, rgba(131,58,180,0.05), rgba(253,29,29,0.05))",
+              border: `1px solid ${cardBorder}`,
+              textDecoration: "none",
+            }}>
+              <div style={{
+                width: 40, height: 40, borderRadius: 12,
+                background: "linear-gradient(135deg, rgba(131,58,180,0.15), rgba(253,29,29,0.15))",
+                display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20,
+              }}>📸</div>
+              <span style={{ fontSize: 12, fontWeight: 700, color: textSecondary }}>Instagram</span>
+            </a>
+          )}
+
+          {/* Maps */}
+          {maps && (
+            <a href={maps} target="_blank" rel="noreferrer" style={{
+              gridColumn: ig ? "auto" : "1 / -1",
+              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+              gap: 8, padding: "18px 10px", borderRadius: 18,
+              background: isDark ? "rgba(239,68,68,0.07)" : "rgba(239,68,68,0.05)",
+              border: `1px solid ${cardBorder}`,
+              textDecoration: "none",
+            }}>
+              <div style={{
+                width: 40, height: 40, borderRadius: 12,
+                background: "rgba(239,68,68,0.14)",
+                display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20,
+              }}>📍</div>
+              <span style={{ fontSize: 12, fontWeight: 700, color: textSecondary }}>Como Chegar</span>
+            </a>
+          )}
+
+          {/* iFood / external platform */}
+          {unit.ifood_url && (
+            <a href={unit.ifood_url} target="_blank" rel="noopener noreferrer" onClick={onIfoodClick}
+              style={{
+                gridColumn: (!ig && !maps) ? "1 / -1" : "auto",
+                display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                gap: 8, padding: "18px 10px", borderRadius: 18,
+                background: cardBg,
+                border: `1px solid ${cardBorder}`,
+                textDecoration: "none",
+              }}>
+              <div style={{
+                width: 40, height: 40, borderRadius: 12,
+                background: getPlatformGradient(unit.ifood_platform),
+                display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20,
+              }}>
+                {getPlatformIcon(unit.ifood_platform)}
+              </div>
+              <span style={{ fontSize: 12, fontWeight: 700, color: textSecondary }}>
+                {getPlatformName(unit.ifood_platform)}
+              </span>
+            </a>
+          )}
+
+          {/* Horário — full width */}
+          {openLabel && (
+            <div style={{
+              gridColumn: "1 / -1",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              gap: 6, padding: "10px 14px", borderRadius: 14,
+              background: cardBg,
+            }}>
+              <div style={{
+                width: 6, height: 6, borderRadius: "50%",
+                background: isOpen ? "#00ffae" : "#f87171",
+                boxShadow: isOpen ? "0 0 6px rgba(0,255,174,0.4)" : "none",
+                flexShrink: 0,
+              }} />
+              <span style={{
+                fontSize: 11, fontWeight: 600,
+                color: isOpen
+                  ? (isDark ? "#00ffae" : "#00a06a")
+                  : (isDark ? "#f87171" : "#dc2626"),
+              }}>
+                {openLabel}
+              </span>
+              {nextChange && (
+                <span style={{ fontSize: 10, color: textSecondary }}>
+                  · {nextChange}
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Powered by */}
+          <div style={{ gridColumn: "1 / -1", textAlign: "center", padding: "4px 0" }}>
+            <span style={{ fontSize: 9, color: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)", fontWeight: 600 }}>
+              Powered by FyMenu
+            </span>
+          </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
