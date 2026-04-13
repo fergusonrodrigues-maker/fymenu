@@ -58,30 +58,52 @@ export default function AnalyticsModal({
   const [analyticsText, setAnalyticsText] = useState("");
   const analyticsFileRef = useRef<HTMLInputElement>(null);
   const [chartData, setChartData] = useState<any[]>([]);
+  const [period, setPeriod] = useState<"7d" | "15d" | "30d" | "90d" | "custom">("7d");
+  const [customStart, setCustomStart] = useState("");
+  const [customEnd, setCustomEnd] = useState("");
+
+  function getPeriodStart(p: string): string {
+    const now = new Date();
+    if (p === "7d") now.setDate(now.getDate() - 7);
+    else if (p === "15d") now.setDate(now.getDate() - 15);
+    else if (p === "30d") now.setDate(now.getDate() - 30);
+    else if (p === "90d") now.setDate(now.getDate() - 90);
+    else if (p === "custom" && customStart) return new Date(customStart).toISOString();
+    else now.setDate(now.getDate() - 7);
+    return now.toISOString();
+  }
+
+  function getPeriodEnd(): string {
+    if (period === "custom" && customEnd) {
+      const end = new Date(customEnd);
+      end.setHours(23, 59, 59, 999);
+      return end.toISOString();
+    }
+    return new Date().toISOString();
+  }
 
   useEffect(() => {
     if (!unit) return;
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
     supabase
       .from("menu_events")
       .select("id", { count: "exact", head: true })
       .eq("unit_id", unit.id)
       .eq("event", "ifood_click")
-      .gte("created_at", sevenDaysAgo)
+      .gte("created_at", getPeriodStart(period))
+      .lte("created_at", getPeriodEnd())
       .then(({ count }) => setIfoodClicks(count ?? 0));
-  }, [unit]);
+  }, [unit, period]);
 
   async function loadChartData() {
     if (!unit) return;
-    const daysBack = 30;
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - daysBack);
+    const startDate = new Date(getPeriodStart(period));
 
     const { data: events } = await supabase
       .from("menu_events")
       .select("event, created_at, product_id")
       .eq("unit_id", unit.id)
       .gte("created_at", startDate.toISOString())
+      .lte("created_at", getPeriodEnd())
       .order("created_at");
 
     if (!events || events.length === 0) { setChartData([]); return; }
@@ -113,7 +135,7 @@ export default function AnalyticsModal({
   useEffect(() => {
     if (tab !== "Geral" || !unit) return;
     loadChartData();
-  }, [tab, unit]);
+  }, [tab, unit, period]);
 
   const stats = [
     { label: "Visitas ao cardápio", value: analytics.views, icon: "👁", color: "var(--dash-accent)", desc: "últimos 7 dias" },
@@ -153,14 +175,14 @@ export default function AnalyticsModal({
     const plan = restaurant?.plan ?? "";
     if (plan !== "menupro" && plan !== "business") return;
     setLoadingAttention(true);
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
     supabase
       .from("menu_events")
       .select("product_id, meta")
       .eq("unit_id", unit.id)
       .eq("event", "product_view")
       .not("meta", "is", null)
-      .gte("created_at", sevenDaysAgo)
+      .gte("created_at", getPeriodStart(period))
+      .lte("created_at", getPeriodEnd())
       .then(({ data }) => {
         const byProduct: Record<string, { name: string; totalMs: number; count: number }> = {};
         for (const e of data || []) {
@@ -195,6 +217,10 @@ export default function AnalyticsModal({
       .limit(200)
       .then(({ data }) => { if (data) setReviews(data); });
   }, [tab, unit]);
+
+  async function loadData() {
+    await loadChartData();
+  }
 
   async function handleDownloadPDF() {
     if (!unit) return;
@@ -435,6 +461,47 @@ export default function AnalyticsModal({
           </button>
         ))}
       </div>
+
+      {/* Period selector */}
+      <div style={{ display: "flex", gap: 4, marginBottom: 0, flexWrap: "wrap", alignItems: "center" }}>
+        {[
+          { key: "7d", label: "7 dias" },
+          { key: "15d", label: "15 dias" },
+          { key: "30d", label: "30 dias" },
+          { key: "90d", label: "90 dias" },
+          { key: "custom", label: "Personalizado" },
+        ].map(p => (
+          <button key={p.key} onClick={() => setPeriod(p.key as any)} style={{
+            padding: "6px 12px", borderRadius: 8, border: "none", cursor: "pointer",
+            background: period === p.key ? "var(--dash-accent-soft)" : "var(--dash-card)",
+            color: period === p.key ? "var(--dash-accent)" : "var(--dash-text-muted)",
+            fontSize: 11, fontWeight: 600, transition: "all 0.15s",
+          }}>{p.label}</button>
+        ))}
+      </div>
+
+      {period === "custom" && (
+        <div style={{ display: "flex", gap: 8, marginBottom: 0, alignItems: "center", flexWrap: "wrap" }}>
+          <input type="date" value={customStart} onChange={e => setCustomStart(e.target.value)}
+            style={{
+              padding: "8px 12px", borderRadius: 10,
+              background: "var(--dash-input-bg, var(--dash-card))", border: "1px solid var(--dash-input-border, var(--dash-border))",
+              color: "var(--dash-text)", fontSize: 12, outline: "none",
+            }} />
+          <span style={{ fontSize: 11, color: "var(--dash-text-muted)" }}>até</span>
+          <input type="date" value={customEnd} onChange={e => setCustomEnd(e.target.value)}
+            style={{
+              padding: "8px 12px", borderRadius: 10,
+              background: "var(--dash-input-bg, var(--dash-card))", border: "1px solid var(--dash-input-border, var(--dash-border))",
+              color: "var(--dash-text)", fontSize: 12, outline: "none",
+            }} />
+          <button onClick={() => loadData()} style={{
+            padding: "8px 14px", borderRadius: 10, border: "none", cursor: "pointer",
+            background: "var(--dash-accent-soft)", color: "var(--dash-accent)",
+            fontSize: 11, fontWeight: 700,
+          }}>Filtrar</button>
+        </div>
+      )}
 
       {/* PDF download — MenuPro/Business only */}
       {(restaurant?.plan === "menupro" || restaurant?.plan === "business") && (

@@ -182,25 +182,40 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
   const [importingFinance, setImportingFinance] = useState(false);
   const [financeText, setFinanceText] = useState("");
   const financeFileRef = useRef<HTMLInputElement>(null);
+  const [period, setPeriod] = useState<"7d" | "15d" | "30d" | "90d" | "custom">("7d");
+  const [customStart, setCustomStart] = useState("");
+  const [customEnd, setCustomEnd] = useState("");
 
-  useEffect(() => {
-    if (!unit?.id) return;
-
-    // Load expenses
-    supabase.from("business_expenses").select("*").eq("unit_id", unit.id).order("date", { ascending: false })
-      .then(({ data }) => { if (data) setExpenses(data); });
-
-    // Load resumo data
+  function getPeriodStart(p: string): string {
     const now = new Date();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+    if (p === "7d") now.setDate(now.getDate() - 7);
+    else if (p === "15d") now.setDate(now.getDate() - 15);
+    else if (p === "30d") now.setDate(now.getDate() - 30);
+    else if (p === "90d") now.setDate(now.getDate() - 90);
+    else if (p === "custom" && customStart) return new Date(customStart).toISOString();
+    else now.setDate(now.getDate() - 7);
+    return now.toISOString();
+  }
 
+  function getPeriodEnd(): string {
+    if (period === "custom" && customEnd) {
+      const end = new Date(customEnd);
+      end.setHours(23, 59, 59, 999);
+      return end.toISOString();
+    }
+    return new Date().toISOString();
+  }
+
+  async function loadResumoData() {
+    if (!unit?.id) return;
+    const todayStart = new Date(new Date().setHours(0, 0, 0, 0)).toISOString();
     supabase
       .from("order_intents")
       .select("total, source, payment_method, table_number, whatsapp_link, created_at")
       .eq("unit_id", unit.id)
       .eq("status", "confirmed")
-      .gte("created_at", monthStart)
+      .gte("created_at", getPeriodStart(period))
+      .lte("created_at", getPeriodEnd())
       .then(({ data: orders }) => {
         const revBySrc: Record<string, number> = { whatsapp: 0, mesa: 0, delivery: 0, ifood: 0, comanda: 0, manual: 0 };
         const ordBySrc: Record<string, number> = { whatsapp: 0, mesa: 0, delivery: 0, ifood: 0, comanda: 0, manual: 0 };
@@ -228,6 +243,26 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
         setTodayRevenue(todayRev);
         setPaymentMethodsMap(pmMap);
       });
+  }
+
+  function loadData() {
+    loadResumoData();
+  }
+
+  useEffect(() => {
+    if (period !== "custom") loadResumoData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [period]);
+
+  useEffect(() => {
+    if (!unit?.id) return;
+
+    // Load expenses
+    supabase.from("business_expenses").select("*").eq("unit_id", unit.id).order("date", { ascending: false })
+      .then(({ data }) => { if (data) setExpenses(data); });
+
+    // Load resumo data
+    loadResumoData();
 
     // Load employees
     supabase
@@ -569,6 +604,47 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
           </button>
         ))}
       </div>
+
+      {/* Period selector */}
+      <div style={{ display: "flex", gap: 4, marginBottom: 0, flexWrap: "wrap", alignItems: "center" }}>
+        {[
+          { key: "7d", label: "7 dias" },
+          { key: "15d", label: "15 dias" },
+          { key: "30d", label: "30 dias" },
+          { key: "90d", label: "90 dias" },
+          { key: "custom", label: "Personalizado" },
+        ].map(p => (
+          <button key={p.key} onClick={() => setPeriod(p.key as any)} style={{
+            padding: "6px 12px", borderRadius: 8, border: "none", cursor: "pointer",
+            background: period === p.key ? "var(--dash-accent-soft)" : "var(--dash-card)",
+            color: period === p.key ? "var(--dash-accent)" : "var(--dash-text-muted)",
+            fontSize: 11, fontWeight: 600, transition: "all 0.15s",
+          }}>{p.label}</button>
+        ))}
+      </div>
+
+      {period === "custom" && (
+        <div style={{ display: "flex", gap: 8, marginBottom: 0, alignItems: "center", flexWrap: "wrap" }}>
+          <input type="date" value={customStart} onChange={e => setCustomStart(e.target.value)}
+            style={{
+              padding: "8px 12px", borderRadius: 10,
+              background: "var(--dash-input-bg, var(--dash-card))", border: "1px solid var(--dash-input-border, var(--dash-border))",
+              color: "var(--dash-text)", fontSize: 12, outline: "none",
+            }} />
+          <span style={{ fontSize: 11, color: "var(--dash-text-muted)" }}>até</span>
+          <input type="date" value={customEnd} onChange={e => setCustomEnd(e.target.value)}
+            style={{
+              padding: "8px 12px", borderRadius: 10,
+              background: "var(--dash-input-bg, var(--dash-card))", border: "1px solid var(--dash-input-border, var(--dash-border))",
+              color: "var(--dash-text)", fontSize: 12, outline: "none",
+            }} />
+          <button onClick={() => loadData()} style={{
+            padding: "8px 14px", borderRadius: 10, border: "none", cursor: "pointer",
+            background: "var(--dash-accent-soft)", color: "var(--dash-accent)",
+            fontSize: 11, fontWeight: 700,
+          }}>Filtrar</button>
+        </div>
+      )}
 
       {/* ── RESUMO ── */}
       {tab === "resumo" && (
