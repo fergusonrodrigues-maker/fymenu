@@ -553,8 +553,8 @@ export default function ProductModal({
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
                 padding: "13px", borderRadius: 14,
                 border: "none",
-                background: canOrder ? "linear-gradient(135deg, #00ffae, #00d9ff)" : "rgba(255,255,255,0.05)",
-                color: canOrder ? "#fff" : "rgba(255,255,255,0.28)",
+                background: canOrder ? "#ffffff" : "rgba(255,255,255,0.05)",
+                color: canOrder ? "#000000" : "rgba(255,255,255,0.28)",
                 fontSize: 14, fontWeight: canOrder ? 900 : 500,
                 textTransform: canOrder ? "uppercase" : "none",
                 letterSpacing: canOrder ? "0.05em" : "normal",
@@ -563,8 +563,8 @@ export default function ProductModal({
                 transform: canOrder && pressing ? "scale(0.96) translateY(2px)" : "scale(1) translateY(0)",
                 boxShadow: canOrder
                   ? pressing
-                    ? "0 1px 4px rgba(0, 255, 174, 0.2), inset 0 2px 4px rgba(0,0,0,0.2)"
-                    : "0 4px 15px rgba(0, 255, 174, 0.3), inset 0 1px 0 rgba(255,255,255,0.25)"
+                    ? "0 1px 4px rgba(0,0,0,0.15), inset 0 2px 4px rgba(0,0,0,0.08)"
+                    : "0 4px 16px rgba(255,255,255,0.15), inset 0 1px 0 rgba(255,255,255,0.8)"
                   : "none",
               }}
             >
@@ -576,14 +576,14 @@ export default function ProductModal({
                   : "Selecione uma opção"}
               </span>
               {canOrder && displayPrice && (
-                <span style={{ position: "relative", zIndex: 1, fontSize: 12, color: "rgba(255,255,255,0.55)" }}>
+                <span style={{ position: "relative", zIndex: 1, fontSize: 12, color: "rgba(0,0,0,0.45)" }}>
                   · {displayPrice}
                 </span>
               )}
               {canOrder && (
                 <svg style={{ position: "relative", zIndex: 1 }} width="14" height="14" viewBox="0 0 15 15" fill="none">
-                  <line x1="3" y1="7.5" x2="12" y2="7.5" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" />
-                  <polyline points="9,4.5 12,7.5 9,10.5" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  <line x1="3" y1="7.5" x2="12" y2="7.5" stroke="#000" strokeWidth="1.5" strokeLinecap="round" />
+                  <polyline points="9,4.5 12,7.5 9,10.5" stroke="#000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               )}
             </button>

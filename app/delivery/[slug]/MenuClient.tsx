@@ -436,6 +436,7 @@ export default function MenuClient({
   return (
     <>
       <style>{`
+  html { scroll-behavior: smooth; }
   html.menu-snap {
     -webkit-overflow-scrolling: touch;
   }
@@ -454,10 +455,15 @@ export default function MenuClient({
     from { opacity: 0; transform: translateY(-8px); }
     to   { opacity: 1; transform: translateY(0); }
   }
+  @keyframes glassSlideUp {
+    from { transform: translateY(100%); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
   .search-result-card:active {
     opacity: 0.7;
   }
   .featured-scroll::-webkit-scrollbar { display: none; }
+  .product-card { will-change: transform; }
 `}</style>
       {/* Conteúdo scrollável */}
       <div
@@ -511,7 +517,7 @@ export default function MenuClient({
                 height: "75%",
                 background: isDark
                   ? "linear-gradient(to top, #050505 0%, rgba(5,5,5,0.95) 15%, rgba(5,5,5,0.7) 40%, rgba(5,5,5,0.3) 65%, transparent 100%)"
-                  : "linear-gradient(to top, #f5f5f5 0%, rgba(245,245,245,0.95) 15%, rgba(245,245,245,0.7) 40%, rgba(245,245,245,0.3) 65%, transparent 100%)",
+                  : "linear-gradient(to top, #ffffff 0%, rgba(255,255,255,0.95) 15%, rgba(255,255,255,0.7) 40%, rgba(255,255,255,0.3) 65%, transparent 100%)",
                 pointerEvents: "none",
               }}
             />
@@ -567,6 +573,8 @@ export default function MenuClient({
                 <img
                   src={unit.logo_url}
                   alt=""
+                  loading="lazy"
+                  decoding="async"
                   style={{ width: "100%", height: "100%", objectFit: "cover" }}
                 />
               </div>
@@ -575,7 +583,7 @@ export default function MenuClient({
               style={{
                 fontSize: 20,
                 fontWeight: 800,
-                color: "#fff",
+                color: isDark ? "#fff" : "#111",
                 letterSpacing: "-0.3px",
               }}
             >
@@ -585,7 +593,7 @@ export default function MenuClient({
               <div
                 style={{
                   fontSize: 13,
-                  color: "rgba(255,255,255,0.5)",
+                  color: isDark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.5)",
                   marginTop: 4,
                 }}
               >
@@ -619,7 +627,7 @@ export default function MenuClient({
             <div
               style={{
                 fontSize: 12,
-                color: "rgba(255,255,255,0.35)",
+                color: isDark ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.3)",
                 marginTop: 6,
                 letterSpacing: "0.5px",
               }}
@@ -1043,6 +1051,7 @@ export default function MenuClient({
                                 src={product.thumbnail_url}
                                 alt={product.name}
                                 loading="lazy"
+                                decoding="async"
                                 style={{
                                   position: "absolute",
                                   inset: 0,
@@ -1056,15 +1065,24 @@ export default function MenuClient({
                                 style={{
                                   position: "absolute",
                                   inset: 0,
-                                  background: "rgba(255,255,255,0.04)",
+                                  background: isDark
+                                    ? "rgba(255,255,255,0.03)"
+                                    : "rgba(0,0,0,0.04)",
                                   display: "flex",
+                                  flexDirection: "column",
                                   alignItems: "center",
                                   justifyContent: "center",
-                                  fontSize: 32,
-                                  color: "rgba(255,255,255,0.1)",
+                                  gap: 6,
                                 }}
                               >
-                                🍽️
+                                <span style={{ fontSize: 22, opacity: 0.2 }}>📷</span>
+                                <span style={{
+                                  fontSize: 10,
+                                  fontWeight: 500,
+                                  color: isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.2)",
+                                  textAlign: "center",
+                                  padding: "0 8px",
+                                }}>Sem foto e vídeo</span>
                               </div>
                             )}
 
@@ -1081,68 +1099,44 @@ export default function MenuClient({
                               }}
                             />
 
-                            {/* Info */}
+                            {/* Info — centered overlay */}
                             <div
                               style={{
                                 position: "absolute",
                                 bottom: 0,
                                 left: 0,
                                 right: 0,
-                                padding: isLastAndOdd ? "12px 16px" : "10px 12px",
-                                display: "flex",
-                                justifyContent: "space-between",
-                                alignItems: "flex-end",
+                                padding: isLastAndOdd ? "12px 14px" : "10px 10px",
+                                textAlign: "center",
                               }}
                             >
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <div
+                              <div
+                                style={{
+                                  color: "#fff",
+                                  fontSize: isLastAndOdd ? 15 : 12,
+                                  fontWeight: 700,
+                                  lineHeight: 1.25,
+                                  marginBottom: 3,
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  display: "-webkit-box",
+                                  WebkitLineClamp: 2,
+                                  WebkitBoxOrient: "vertical",
+                                } as React.CSSProperties}
+                              >
+                                {product.name}
+                              </div>
+                              {product.base_price != null && (
+                                <span
                                   style={{
-                                    color: "#fff",
-                                    fontSize: isLastAndOdd ? 16 : 13,
-                                    fontWeight: 700,
-                                    lineHeight: 1.2,
-                                    marginBottom: 3,
-                                    overflow: "hidden",
-                                    textOverflow: "ellipsis",
-                                    whiteSpace: isLastAndOdd ? "normal" : "nowrap",
+                                    color: "#00ffae",
+                                    fontSize: isLastAndOdd ? 14 : 12,
+                                    fontWeight: 900,
                                   }}
                                 >
-                                  {product.name}
-                                </div>
-                                {product.base_price != null && (
-                                  <span
-                                    style={{
-                                      color: "#00ffae",
-                                      fontSize: isLastAndOdd ? 15 : 13,
-                                      fontWeight: 800,
-                                    }}
-                                  >
-                                    R$ {product.base_price.toFixed(2).replace(".", ",")}
-                                  </span>
-                                )}
-                              </div>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleOpenProduct(product);
-                                }}
-                                style={{
-                                  width: 28,
-                                  height: 28,
-                                  background: "transparent",
-                                  border: "none",
-                                  cursor: "pointer",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  flexShrink: 0,
-                                  marginLeft: 8,
-                                }}
-                              >
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                  <path d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zM18.28 11.09c-.42-.35-1.01-.34-1.42-.01L15 12.5V7.5c0-.83-.67-1.5-1.5-1.5S12 6.67 12 7.5v10l-3.73-.93c-.41-.1-.84.01-1.15.3-.43.39-.45 1.04-.05 1.46l3.38 3.55c.28.29.67.46 1.07.46h6.37c.58 0 1.09-.38 1.26-.93l1.59-5.27c.22-.72-.08-1.49-.7-1.88l-1.76-1.17z" fill="white" fillOpacity="0.85"/>
-                                </svg>
-                              </button>
+                                  R$ {product.base_price.toFixed(2).replace(".", ",")}
+                                </span>
+                              )}
                             </div>
                           </div>
                         );
