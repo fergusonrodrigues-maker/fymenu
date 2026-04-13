@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { createCategory, updateCategory, deleteCategory, createProduct } from "../actions";
 import { createClient as createSupabaseClient } from "@/lib/supabase/client";
@@ -181,6 +181,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
   const [comboPrice, setComboPrice] = useState("");
   const [comboOriginalPrice, setComboOriginalPrice] = useState(0);
   const [comboSuggestionProducts, setComboSuggestionProducts] = useState<string[]>([]);
+  const [comboProductSearch, setComboProductSearch] = useState("");
   const [savingCombo, setSavingCombo] = useState(false);
 
   useEffect(() => { setOrderedCats(categories); }, [categories]);
@@ -591,6 +592,15 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
   // ── Combos helpers ────────────────────────────────────────────────────────────
   const allProducts = products;
 
+  const productsByCategory = useMemo(() => {
+    const grouped: Record<string, { category: Category; products: Product[] }> = {};
+    for (const cat of categories) {
+      const prods = allProducts.filter(p => p.category_id === cat.id && p.is_active);
+      if (prods.length > 0) grouped[cat.id] = { category: cat, products: prods };
+    }
+    return grouped;
+  }, [categories, allProducts]);
+
   async function loadCombos() {
     if (!unit) return;
     const { data } = await createSupabaseClient()
@@ -614,7 +624,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
 
   function resetComboForm() {
     setComboName(""); setComboDesc(""); setComboItems([]); setComboPrice("");
-    setComboOriginalPrice(0); setComboSuggestionProducts([]);
+    setComboOriginalPrice(0); setComboSuggestionProducts([]); setComboProductSearch("");
   }
 
   function openEditCombo(combo: any) {
@@ -1115,8 +1125,12 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                         recalcOriginalPrice(updated);
                       }} style={{ flex: 1, padding: "6px 8px", borderRadius: 8, background: "var(--dash-input-bg, var(--dash-card))", border: "1px solid var(--dash-border)", color: "var(--dash-text)", fontSize: 11, outline: "none", cursor: "pointer" }}>
                         <option value="">Selecionar produto</option>
-                        {allProducts.map(p => (
-                          <option key={p.id} value={p.id}>{p.name}{p.base_price != null ? ` — R$${p.base_price.toFixed(2)}` : ""}</option>
+                        {Object.values(productsByCategory).map(({ category, products: catProds }) => (
+                          <optgroup key={category.id} label={category.name}>
+                            {catProds.map(p => (
+                              <option key={p.id} value={p.id}>{p.name}{p.base_price != null ? ` — R$${p.base_price.toFixed(2)}` : ""}</option>
+                            ))}
+                          </optgroup>
                         ))}
                       </select>
                       <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
@@ -1162,19 +1176,98 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                   </div>
                 </div>
 
-                {/* Vincular a produtos */}
+                {/* Vincular a produtos — agrupado por categoria */}
                 <div style={{ marginBottom: 16 }}>
-                  <div style={{ fontSize: 11, color: "var(--dash-text-muted)", marginBottom: 8 }}>Sugerir quando o cliente pedir:</div>
-                  <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-                    {allProducts.map(p => {
-                      const isLinked = comboSuggestionProducts.includes(p.id);
+                  <div style={{ fontSize: 11, fontWeight: 600, color: "var(--dash-text-muted)", marginBottom: 2 }}>Sugerir quando o cliente pedir:</div>
+                  <div style={{ fontSize: 9, color: "var(--dash-text-muted)", marginBottom: 10 }}>
+                    Selecione os produtos que, quando pedidos, mostrarão este combo como sugestão.
+                  </div>
+
+                  {/* Busca rápida */}
+                  <input
+                    value={comboProductSearch}
+                    onChange={e => setComboProductSearch(e.target.value)}
+                    placeholder="🔍 Buscar produto..."
+                    style={{
+                      width: "100%", padding: "7px 12px", borderRadius: 10,
+                      background: "var(--dash-card-hover)", border: "1px solid var(--dash-border)",
+                      color: "var(--dash-text)", fontSize: 12, outline: "none",
+                      boxSizing: "border-box", marginBottom: 8,
+                    }}
+                  />
+
+                  {/* Atalhos */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+                    <button type="button" onClick={() => setComboSuggestionProducts(allProducts.map(p => p.id))} style={{
+                      padding: "4px 10px", borderRadius: 6, border: "none", cursor: "pointer",
+                      background: "var(--dash-card)", color: "var(--dash-text-muted)", fontSize: 10, fontWeight: 600,
+                    }}>Selecionar todos</button>
+                    <button type="button" onClick={() => setComboSuggestionProducts([])} style={{
+                      padding: "4px 10px", borderRadius: 6, border: "none", cursor: "pointer",
+                      background: "var(--dash-card)", color: "var(--dash-text-muted)", fontSize: 10, fontWeight: 600,
+                    }}>Limpar</button>
+                    <span style={{ flex: 1 }} />
+                    <span style={{ fontSize: 10, color: "var(--dash-accent)", fontWeight: 700 }}>
+                      {comboSuggestionProducts.length} selecionado{comboSuggestionProducts.length !== 1 ? "s" : ""}
+                    </span>
+                  </div>
+
+                  {/* Lista agrupada por categoria */}
+                  <div style={{ maxHeight: 280, overflowY: "auto", display: "flex", flexDirection: "column", gap: 8, scrollbarWidth: "thin" }}>
+                    {Object.values(productsByCategory).map(({ category, products: catProds }) => {
+                      const filtered = comboProductSearch.trim()
+                        ? catProds.filter(p => p.name.toLowerCase().includes(comboProductSearch.toLowerCase()))
+                        : catProds;
+                      if (filtered.length === 0) return null;
+
+                      const allSel = filtered.every(p => comboSuggestionProducts.includes(p.id));
+                      const someSel = filtered.some(p => comboSuggestionProducts.includes(p.id));
+
                       return (
-                        <button key={p.id} type="button" onClick={() => setComboSuggestionProducts(isLinked ? comboSuggestionProducts.filter(id => id !== p.id) : [...comboSuggestionProducts, p.id])} style={{
-                          padding: "4px 10px", borderRadius: 8, border: "none", cursor: "pointer",
-                          background: isLinked ? "var(--dash-accent-soft)" : "var(--dash-card)",
-                          color: isLinked ? "var(--dash-accent)" : "var(--dash-text-muted)",
-                          fontSize: 10, fontWeight: 600,
-                        }}>{p.name}</button>
+                        <div key={category.id}>
+                          {/* Header da categoria */}
+                          <button type="button" onClick={() => {
+                            if (allSel) {
+                              setComboSuggestionProducts(prev => prev.filter(id => !filtered.find(p => p.id === id)));
+                            } else {
+                              setComboSuggestionProducts(prev => [...new Set([...prev, ...filtered.map(p => p.id)])]);
+                            }
+                          }} style={{
+                            display: "flex", alignItems: "center", gap: 6, width: "100%",
+                            padding: "5px 8px", borderRadius: 8, border: "none", cursor: "pointer",
+                            background: someSel ? "var(--dash-accent-soft)" : "var(--dash-card)",
+                            marginBottom: 4, textAlign: "left",
+                          }}>
+                            <span style={{
+                              width: 14, height: 14, borderRadius: 3, flexShrink: 0,
+                              background: allSel ? "rgba(0,200,120,0.25)" : someSel ? "rgba(0,200,120,0.12)" : "rgba(128,128,128,0.12)",
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                              fontSize: 8, fontWeight: 900,
+                              color: allSel || someSel ? "var(--dash-accent)" : "transparent",
+                            }}>{allSel ? "✓" : someSel ? "−" : ""}</span>
+                            <span style={{ fontSize: 11, fontWeight: 700, color: someSel ? "var(--dash-accent)" : "var(--dash-text-secondary, var(--dash-text-muted))" }}>
+                              {category.name}
+                            </span>
+                            <span style={{ fontSize: 9, color: "var(--dash-text-muted)" }}>({filtered.length})</span>
+                          </button>
+
+                          {/* Pills dos produtos */}
+                          <div style={{ display: "flex", gap: 4, flexWrap: "wrap", paddingLeft: 8 }}>
+                            {filtered.map(p => {
+                              const isSel = comboSuggestionProducts.includes(p.id);
+                              return (
+                                <button key={p.id} type="button" onClick={() => setComboSuggestionProducts(
+                                  isSel ? comboSuggestionProducts.filter(id => id !== p.id) : [...comboSuggestionProducts, p.id]
+                                )} style={{
+                                  padding: "4px 10px", borderRadius: 6, border: "none", cursor: "pointer",
+                                  background: isSel ? "var(--dash-accent-soft)" : "var(--dash-card-hover)",
+                                  color: isSel ? "var(--dash-accent)" : "var(--dash-text-muted)",
+                                  fontSize: 10, fontWeight: 600, transition: "all 0.12s",
+                                }}>{p.name}</button>
+                              );
+                            })}
+                          </div>
+                        </div>
                       );
                     })}
                   </div>
