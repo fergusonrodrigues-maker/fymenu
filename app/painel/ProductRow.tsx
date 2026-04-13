@@ -416,63 +416,118 @@ export default function ProductRow({
                   <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", margin: 0 }}>Adicione uma foto para gerar descrição com IA</p>
                 )}
               </div>
-              <div style={{ display: "flex", gap: 8 }}>
-                <select
-                  name="price_type"
-                  value={priceType}
-                  onChange={(e) => { setPriceType(e.target.value); setVariationsLoaded(false); }}
-                  style={{ ...inputStyle, background: undefined as any, backgroundColor: "rgba(255,255,255,0.05)", flex: 1 }}
-                >
-                  <option value="fixed">Preço fixo</option>
-                  <option value="variable">Preço variável</option>
-                </select>
-                {priceType === "fixed" && (
-                  <input name="base_price" type="text" inputMode="decimal" defaultValue={product.base_price != null ? (product.base_price / 100).toFixed(2).replace(".", ",") : ""} placeholder="R$ 0,00" style={{ ...inputStyle, flex: 1 }} />
-                )}
+              {/* Tipo de preço — toggle buttons */}
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.4)", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.04em" }}>Tipo de preço</div>
+                <div style={{ display: "flex", gap: 4 }}>
+                  {[
+                    { value: "fixed", label: "💰 Preço único" },
+                    { value: "variable", label: "📋 Variações" },
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => { setPriceType(opt.value); setVariationsLoaded(false); }}
+                      style={{
+                        flex: 1, padding: "8px 10px", borderRadius: 10, border: "none", cursor: "pointer",
+                        background: priceType === opt.value ? "rgba(0,255,174,0.12)" : "rgba(255,255,255,0.05)",
+                        color: priceType === opt.value ? "#00ffae" : "rgba(255,255,255,0.45)",
+                        fontSize: 12, fontWeight: 600, transition: "all 0.15s",
+                      }}
+                    >{opt.label}</button>
+                  ))}
+                </div>
+                {/* Hidden input so formData still has price_type */}
+                <input type="hidden" name="price_type" value={priceType} />
               </div>
 
-              {/* Variations section */}
+              {/* Preço único */}
+              {priceType === "fixed" && (
+                <div style={{ position: "relative" }}>
+                  <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,0.4)", fontSize: 13, fontWeight: 700 }}>R$</span>
+                  <input
+                    name="base_price"
+                    type="text"
+                    inputMode="decimal"
+                    defaultValue={product.base_price != null ? (product.base_price / 100).toFixed(2).replace(".", ",") : ""}
+                    placeholder="0,00"
+                    style={{ ...inputStyle, paddingLeft: 36 }}
+                  />
+                </div>
+              )}
+
+              {/* Variações */}
               {priceType === "variable" && (
-                <div style={{ border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: 12, display: "flex", flexDirection: "column", gap: 8 }}>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.6)", marginBottom: 2 }}>Variações de preço</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  <div style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                    Variações ({variations.length})
+                  </div>
+
                   {variations.map((v, i) => (
-                    <div key={i} style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                    <div key={v.id ?? i} style={{
+                      display: "flex", alignItems: "center", gap: 6,
+                      padding: "8px 10px", borderRadius: 10,
+                      background: "rgba(255,255,255,0.04)",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                    }}>
+                      {/* Ordem */}
+                      <span style={{
+                        width: 18, height: 18, borderRadius: 5,
+                        background: "rgba(0,255,174,0.12)", color: "#00ffae",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: 9, fontWeight: 800, flexShrink: 0,
+                      }}>{i + 1}</span>
+
+                      {/* Nome */}
                       <input
-                        placeholder="Nome (ex: P, M, G)"
+                        placeholder="Ex: Pequeno"
                         value={v.name}
                         onChange={(e) => setVariations(variations.map((x, j) => j === i ? { ...x, name: e.target.value } : x))}
-                        style={{ ...inputStyle, flex: 2, fontSize: 13 }}
+                        style={{ ...inputStyle, flex: 1, fontSize: 12, padding: "5px 8px", minWidth: 0 }}
                       />
-                      <input
-                        type="text"
-                        inputMode="decimal"
-                        placeholder="R$ 0,00"
-                        value={v.price ? (v.price / 100).toFixed(2).replace(".", ",") : ""}
-                        onChange={(e) => {
-                          const raw = e.target.value.replace(/[^\d,]/g, "");
-                          const normalized = raw.replace(",", ".");
-                          const cents = Math.round(parseFloat(normalized) * 100) || 0;
-                          setVariations(variations.map((x, j) => j === i ? { ...x, price: cents } : x));
-                        }}
-                        style={{ ...inputStyle, flex: 1, fontSize: 13 }}
-                      />
+
+                      {/* Preço */}
+                      <div style={{ display: "flex", alignItems: "center", gap: 2, flexShrink: 0 }}>
+                        <span style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>R$</span>
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          placeholder="0,00"
+                          value={v.price ? (v.price / 100).toFixed(2).replace(".", ",") : ""}
+                          onChange={(e) => {
+                            const raw = e.target.value.replace(/[^\d,]/g, "");
+                            const normalized = raw.replace(",", ".");
+                            const cents = Math.round(parseFloat(normalized) * 100) || 0;
+                            setVariations(variations.map((x, j) => j === i ? { ...x, price: cents } : x));
+                          }}
+                          style={{ ...inputStyle, width: 70, fontSize: 13, fontWeight: 700, padding: "5px 8px", textAlign: "right", color: "#00ffae" }}
+                        />
+                      </div>
+
+                      {/* Remover */}
                       <button
                         type="button"
                         onClick={() => setVariations(variations.filter((_, j) => j !== i))}
                         style={{
-                          width: 24, height: 24, borderRadius: 6, border: "none", cursor: "pointer",
-                          background: "rgba(220,38,38,0.10)", color: "#ffffff",
+                          width: 22, height: 22, borderRadius: 6, border: "none", cursor: "pointer",
+                          background: "rgba(220,38,38,0.12)", color: "#f87171",
                           display: "flex", alignItems: "center", justifyContent: "center",
-                          fontSize: 11, transition: "all 0.2s", flexShrink: 0,
+                          fontSize: 10, flexShrink: 0,
                         }}
                       >✕</button>
                     </div>
                   ))}
+
                   <button
                     type="button"
                     onClick={() => setVariations([...variations, { name: "", price: 0 }])}
-                    style={{ padding: "8px 0", background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 600 }}
+                    style={{
+                      padding: "9px 0", background: "transparent",
+                      color: "rgba(255,255,255,0.4)", border: "1px dashed rgba(255,255,255,0.12)",
+                      borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 600,
+                    }}
                   >+ Adicionar variação</button>
+
                   {variations.length === 0 && (
                     <p style={{ fontSize: 11, color: "#fbbf24", margin: 0 }}>⚠️ Adicione pelo menos uma variação</p>
                   )}

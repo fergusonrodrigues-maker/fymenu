@@ -62,7 +62,15 @@ export default function ProductModal({
 
   useEffect(() => {
     if (currentProduct) {
-      setSelectedVariation(null);
+      // Auto-select first variation for variable-price products
+      if (currentProduct.price_type === "variable" && currentVariations.length > 0) {
+        const sorted = [...currentVariations].sort(
+          (a, b) => (a.order_index ?? 0) - (b.order_index ?? 0)
+        );
+        setSelectedVariation(sorted[0]);
+      } else {
+        setSelectedVariation(null);
+      }
       setThumbVisible(!currentProduct.video_url);
       setStarred(false);
       setSelectedAddons([]);
@@ -437,34 +445,35 @@ export default function ProductModal({
 
           {hasVariations && (
             <div style={{ marginBottom: 12 }}>
-              <p style={{ color: "#FF6B00", fontSize: 18, fontWeight: 500, margin: "0 0 10px", textAlign: "center" }}>
-                {displayPrice ?? "\u00a0"}
+              <p style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.45)", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                Escolha uma opção
               </p>
-              <div style={{ display: "flex", gap: 5 }}>
-                {currentVariations.slice(0, 4).map((variation) => {
-                  const isSelected = selectedVariation?.id === variation.id;
-                  return (
-                    <button
-                      key={variation.id}
-                      onClick={() => setSelectedVariation(variation)}
-                      style={{
-                        flex: 1, minWidth: 0, padding: "5px 4px", borderRadius: 999,
-                        border: isSelected ? "1px solid #FF6B00" : "1px solid rgba(255,255,255,0.18)",
-                        background: isSelected ? "rgba(255,107,0,0.12)" : "rgba(255,255,255,0.06)",
-                        cursor: "pointer",
-                      }}
-                    >
-                      <span style={{
-                        fontSize: 10,
-                        color: isSelected ? "#FF6B00" : "rgba(255,255,255,0.55)",
-                        whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-                        display: "block", width: "100%", textAlign: "center",
-                      }}>
-                        {variation.name}
-                      </span>
-                    </button>
-                  );
-                })}
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {[...currentVariations]
+                  .sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0))
+                  .map((variation) => {
+                    const isSelected = selectedVariation?.id === variation.id;
+                    return (
+                      <button
+                        key={variation.id}
+                        onClick={() => setSelectedVariation(variation)}
+                        style={{
+                          display: "flex", justifyContent: "space-between", alignItems: "center",
+                          padding: "12px 14px", borderRadius: 12,
+                          border: isSelected ? "1px solid rgba(255,107,0,0.35)" : "1px solid rgba(255,255,255,0.08)",
+                          background: isSelected ? "rgba(255,107,0,0.10)" : "rgba(255,255,255,0.04)",
+                          cursor: "pointer", transition: "all 0.18s",
+                        }}
+                      >
+                        <span style={{ fontSize: 13, fontWeight: 600, color: isSelected ? "#FF6B00" : "rgba(255,255,255,0.85)" }}>
+                          {variation.name}
+                        </span>
+                        <span style={{ fontSize: 15, fontWeight: 800, color: isSelected ? "#FF6B00" : "#fff" }}>
+                          {moneyBR(variation.price)}
+                        </span>
+                      </button>
+                    );
+                  })}
               </div>
             </div>
           )}
