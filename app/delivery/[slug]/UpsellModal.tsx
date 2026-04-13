@@ -39,6 +39,7 @@ interface UpsellModalProps {
     whatsapp?: string | null;
   };
   onClose: () => void;
+  onOrdered?: () => void;
 }
 
 export default function UpsellModal({
@@ -46,6 +47,7 @@ export default function UpsellModal({
   suggestions,
   unit,
   onClose,
+  onOrdered,
 }: UpsellModalProps) {
   const [selectedUpsells, setSelectedUpsells] = useState<UpsellItem[]>([]);
   const [upsellData, setUpsellData] = useState<UpsellData>({ combos: [], suggestions: [] });
@@ -247,6 +249,8 @@ export default function UpsellModal({
     }
     window.open(url, "_blank");
     onClose();
+    // Clear cart after order is sent (2s delay to ensure wa.me opened)
+    if (onOrdered) setTimeout(onOrdered, 2000);
   }
 
   const hasStaticUpsells = suggestions.length > 0;

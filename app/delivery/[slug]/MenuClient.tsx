@@ -91,8 +91,23 @@ export default function MenuClient({
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [pendingPayload, setPendingPayload] = useState<OrderPayload | null>(null);
 
-  // Carrinho para modo presencial
-  const [cart, setCart] = useState<CartItem[]>([]);
+  // Carrinho — persiste no localStorage por 1 hora (presencial e delivery)
+  const CART_KEY = `fy_cart_${unit.id}`;
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const saved = localStorage.getItem(`fy_cart_${unit.id}`);
+      if (!saved) return [];
+      const parsed = JSON.parse(saved);
+      if (parsed.expiresAt && new Date(parsed.expiresAt) < new Date()) {
+        localStorage.removeItem(`fy_cart_${unit.id}`);
+        return [];
+      }
+      return Array.isArray(parsed.items) ? parsed.items : [];
+    } catch {
+      return [];
+    }
+  });
   const [cartOpen, setCartOpen] = useState(false);
 
   // Busca
@@ -171,6 +186,25 @@ export default function MenuClient({
 
   const cartTotal = cart.reduce((s, i) => s + i.qty * i.unit_price, 0);
   const cartCount = cart.reduce((s, i) => s + i.qty, 0);
+
+  // Sync cart → localStorage whenever it changes
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (cart.length === 0) {
+      localStorage.removeItem(CART_KEY);
+    } else {
+      localStorage.setItem(CART_KEY, JSON.stringify({
+        items: cart,
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+      }));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cart]);
+
+  function clearCart() {
+    setCart([]);
+    if (typeof window !== "undefined") localStorage.removeItem(CART_KEY);
+  }
 
   const { track } = useTrack(unit.id);
 
@@ -1189,6 +1223,7 @@ export default function MenuClient({
           }
           unit={unit}
           onClose={handleUpsellClose}
+          onOrdered={clearCart}
         />
       )}
 
@@ -1199,7 +1234,7 @@ export default function MenuClient({
           unitId={unit.id}
           initialTable={initialTable}
           onClose={() => setCartOpen(false)}
-          onSuccess={() => setCart([])}
+          onSuccess={clearCart}
           onUpdateQty={updateCartQty}
         />
       )}

@@ -6,10 +6,8 @@ interface CartBarProps {
   onOpen: () => void;
 }
 
-function moneyBR(cents: number) {
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
-    cents / 100
-  );
+function moneyBR(value: number) {
+  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 }
 
 export default function CartBar({ itemCount, total, onOpen }: CartBarProps) {

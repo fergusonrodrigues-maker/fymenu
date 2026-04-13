@@ -19,7 +19,7 @@ interface ProductModalProps {
 
 function moneyBR(value: number | null | undefined) {
   if (value == null || Number.isNaN(Number(value))) return "";
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(value) / 100);
+  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(value));
 }
 
 export default function ProductModal({
