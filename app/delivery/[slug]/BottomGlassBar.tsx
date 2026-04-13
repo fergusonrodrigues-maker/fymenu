@@ -96,12 +96,12 @@ function getPlatformName(platform: string | null | undefined): string {
 interface Props {
   unit: Unit;
   visible: boolean;
-  minimized: boolean;
+  minimized?: boolean; // kept for compat, unused — expansion is click-driven
   onIfoodClick?: () => void;
 }
 
-export default function BottomGlassBar({ unit, visible, minimized, onIfoodClick }: Props) {
-  const isMaximized = !minimized;
+export default function BottomGlassBar({ unit, visible, onIfoodClick }: Props) {
+  const [glassExpanded, setGlassExpanded] = useState(false);
 
   const [isDark, setIsDark] = useState(true);
   useEffect(() => {
@@ -131,40 +131,31 @@ export default function BottomGlassBar({ unit, visible, minimized, onIfoodClick 
 
   return (
     <>
-      {/* ── MINIMIZED pill ── */}
+      {/* ── MINIMIZED pill — floating centered ── */}
       <div style={{
         position: "fixed",
-        bottom: 0,
-        left: 0,
-        right: 0,
-        zIndex: 100,
+        bottom: `calc(12px + env(safe-area-inset-bottom, 0px))`,
+        left: "50%",
+        transform: visible && !glassExpanded ? "translateX(-50%) translateY(0)" : "translateX(-50%) translateY(24px)",
+        zIndex: 101,
         display: "flex",
-        justifyContent: "center",
-        paddingBottom: "calc(10px + env(safe-area-inset-bottom, 0px))",
-        pointerEvents: "none",
-        opacity: minimized && visible ? 1 : 0,
-        transform: minimized && visible ? "translateY(0)" : "translateY(20px)",
+        alignItems: "center",
+        gap: 8,
+        padding: "8px 14px",
+        paddingTop: 16,
+        borderRadius: 22,
+        background: bg,
+        backdropFilter: "blur(24px)",
+        WebkitBackdropFilter: "blur(24px)",
+        border,
+        boxShadow: isDark
+          ? "0 8px 32px rgba(0,0,0,0.45)"
+          : "0 8px 32px rgba(0,0,0,0.12)",
+        opacity: visible && !glassExpanded ? 1 : 0,
+        pointerEvents: visible && !glassExpanded ? "auto" : "none",
         transition: `opacity 300ms ${EASE}, transform 300ms ${EASE}`,
+        whiteSpace: "nowrap",
       }}>
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          padding: "8px 12px",
-          borderRadius: 22,
-          background: bg,
-          backdropFilter: "blur(24px)",
-          WebkitBackdropFilter: "blur(24px)",
-          border,
-          boxShadow: isDark
-            ? "0 8px 32px rgba(0,0,0,0.45)"
-            : "0 8px 32px rgba(0,0,0,0.12)",
-          pointerEvents: "auto",
-          // paddingTop accounts for logo overflow
-          paddingTop: 16,
-          marginTop: 8,
-          alignSelf: "flex-end",
-        }}>
           {/* Maps */}
           {maps && (
             <a href={maps} target="_blank" rel="noreferrer" style={{
@@ -193,18 +184,22 @@ export default function BottomGlassBar({ unit, visible, minimized, onIfoodClick 
             )}
           </div>
 
-          {/* Logo — circular, pops above the bar */}
-          <div style={{
-            width: 52, height: 52,
-            borderRadius: "50%",
-            background: "#00ffae",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            overflow: "hidden",
-            marginTop: -28,
-            border: isDark ? "3px solid rgba(10,10,10,0.95)" : "3px solid rgba(255,255,255,0.95)",
-            boxShadow: "0 4px 14px rgba(0,0,0,0.35)",
-            flexShrink: 0,
-          }}>
+          {/* Logo — circular, pops above the bar, click to expand */}
+          <div
+            onClick={() => setGlassExpanded(true)}
+            style={{
+              width: 52, height: 52,
+              borderRadius: "50%",
+              background: "#00ffae",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              overflow: "hidden",
+              marginTop: -28,
+              border: isDark ? "3px solid rgba(10,10,10,0.95)" : "3px solid rgba(255,255,255,0.95)",
+              boxShadow: "0 4px 14px rgba(0,0,0,0.35)",
+              flexShrink: 0,
+              cursor: "pointer",
+            }}
+          >
             {logo ? (
               <img src={logo} alt={unit.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             ) : (
@@ -250,20 +245,33 @@ export default function BottomGlassBar({ unit, visible, minimized, onIfoodClick 
               {getPlatformIcon(unit.ifood_platform)}
             </a>
           )}
-        </div>
       </div>
 
-      {/* ── MAXIMIZED bento bottom sheet ── */}
+      {/* ── Backdrop ── */}
+      <div
+        onClick={() => setGlassExpanded(false)}
+        style={{
+          position: "fixed", inset: 0, zIndex: 102,
+          background: "rgba(0,0,0,0.5)",
+          backdropFilter: "blur(2px)",
+          WebkitBackdropFilter: "blur(2px)",
+          opacity: glassExpanded ? 1 : 0,
+          pointerEvents: glassExpanded ? "auto" : "none",
+          transition: `opacity 300ms ${EASE}`,
+        }}
+      />
+
+      {/* ── EXPANDED bento bottom sheet ── */}
       <div style={{
         position: "fixed",
         bottom: 0,
         left: 0,
         right: 0,
-        zIndex: 100,
-        opacity: isMaximized && visible ? 1 : 0,
-        transform: isMaximized && visible ? "translateY(0)" : "translateY(100%)",
+        zIndex: 103,
+        opacity: glassExpanded ? 1 : 0,
+        transform: glassExpanded ? "translateY(0)" : "translateY(100%)",
         transition: `opacity 350ms ${EASE}, transform 350ms ${EASE}`,
-        pointerEvents: isMaximized && visible ? "auto" : "none",
+        pointerEvents: glassExpanded ? "auto" : "none",
         borderRadius: "24px 24px 0 0",
         background: isDark ? "rgba(10,10,10,0.97)" : "rgba(255,255,255,0.97)",
         backdropFilter: "blur(30px)",
@@ -274,8 +282,11 @@ export default function BottomGlassBar({ unit, visible, minimized, onIfoodClick 
         padding: "16px 16px",
         paddingBottom: "max(24px, env(safe-area-inset-bottom, 24px))",
       }}>
-        {/* Drag handle */}
-        <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
+        {/* Drag handle — click to close */}
+        <div
+          onClick={() => setGlassExpanded(false)}
+          style={{ display: "flex", justifyContent: "center", marginBottom: 16, cursor: "pointer", padding: "4px 0" }}
+        >
           <div style={{
             width: 36, height: 4, borderRadius: 2,
             background: isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.1)",
