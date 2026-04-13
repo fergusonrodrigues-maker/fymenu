@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useProductAddons } from "@/lib/hooks/useProductAddons";
 import { Trash2, Edit2, Plus } from "lucide-react";
+import FyLoader from "@/components/FyLoader";
 
 interface AddonManagerProps {
   productId: string;
@@ -97,7 +98,7 @@ export function AddonManager({ productId, unitId, productName }: AddonManagerPro
 
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
         {loading ? (
-          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", margin: 0 }}>Carregando…</p>
+          <div style={{ display: "flex", justifyContent: "center", padding: "8px 0" }}><FyLoader size="sm" /></div>
         ) : addons.length === 0 ? (
           <p style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", margin: 0 }}>Nenhum adicional cadastrado</p>
         ) : (

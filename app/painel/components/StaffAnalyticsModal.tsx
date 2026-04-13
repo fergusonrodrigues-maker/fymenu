@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import FyLoader from "@/components/FyLoader";
 
 interface Employee {
   id: string;
@@ -339,7 +340,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
   });
 
   if (loading) return (
-    <div style={{ textAlign: "center", padding: "40px 0", color: "#888" }}>Carregando...</div>
+    <div style={{ display: "flex", justifyContent: "center", padding: "40px 0" }}><FyLoader size="sm" /></div>
   );
 
   return (

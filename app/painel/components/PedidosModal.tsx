@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Unit } from "../types";
+import FyLoader from "@/components/FyLoader";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -191,8 +192,8 @@ export default function PedidosModal({ unitId, unit }: { unitId: string; unit?: 
       {mainTab === "pedidos" && (
         <>
           {loading ? (
-            <div style={{ textAlign: "center", padding: "40px 0", color: "var(--dash-text-muted)" }}>
-              Carregando pedidos...
+            <div style={{ display: "flex", justifyContent: "center", padding: "40px 0" }}>
+              <FyLoader size="sm" />
             </div>
           ) : (
             <>

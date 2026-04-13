@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
+import FyLoader from "@/components/FyLoader";
 
 const supabase = createClient();
 
@@ -338,7 +339,7 @@ export default function CrmModal({ unit, restaurant }: { unit: any; restaurant: 
       </div>
 
       {loading ? (
-        <div style={{ textAlign: "center", padding: 40, color: "var(--dash-text-muted)" }}>Carregando...</div>
+        <div style={{ display: "flex", justifyContent: "center", padding: 40 }}><FyLoader size="sm" /></div>
       ) : (
         <>
           {/* === TAB CLIENTES === */}

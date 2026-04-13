@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import FyLoader from "@/components/FyLoader";
 
 const PLAN_PRICES: Record<string, number> = {
   menu: 12900,
@@ -178,7 +179,7 @@ export default function PartnerDashboard() {
   if (loading) {
     return (
       <div style={{ minHeight: "100vh", background: "#0a0a0a", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 14 }}>Carregando...</p>
+        <FyLoader size="md" />
       </div>
     );
   }

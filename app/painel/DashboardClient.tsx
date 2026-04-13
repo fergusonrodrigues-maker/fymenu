@@ -6,8 +6,9 @@ import ThemeToggle from "@/components/ThemeToggle";
 import { createClient } from "@/lib/supabase/client";
 import dynamic from "next/dynamic";
 import type { Restaurant, Unit, StockStats, Category, Product, Profile, ReportData } from "./types";
+import FyLoader from "@/components/FyLoader";
 
-const loadingFallback = <div style={{padding:40,textAlign:"center",color:"var(--dash-text-muted)"}}>Carregando...</div>;
+const loadingFallback = <div style={{padding:40,display:"flex",justifyContent:"center"}}><FyLoader size="sm" /></div>;
 
 const RestaurantOperationsModal = dynamic(() => import("./components/RestaurantOperationsModal"), { ssr: false, loading: () => loadingFallback });
 const PedidosModal = dynamic(() => import("./components/PedidosModal"), { ssr: false, loading: () => loadingFallback });

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
+import FyLoader from "@/components/FyLoader";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -154,8 +155,8 @@ export default function RestaurantOperationsModal({
 
   if (loading) {
     return (
-      <div style={{ textAlign: "center", padding: "40px 0", color: "var(--dash-text-muted)" }}>
-        Carregando pedidos...
+      <div style={{ display: "flex", justifyContent: "center", padding: "40px 0" }}>
+        <FyLoader size="sm" />
       </div>
     );
   }
@@ -607,8 +608,8 @@ function AuditoriaTab({ unitId }: { unitId: string }) {
       </div>
 
       {loadingAudit ? (
-        <div style={{ textAlign: "center", padding: "32px 0", color: "var(--dash-text-muted)", fontSize: 13 }}>
-          Carregando auditoria...
+        <div style={{ display: "flex", justifyContent: "center", padding: "32px 0" }}>
+          <FyLoader size="sm" />
         </div>
       ) : auditLog.length === 0 ? (
         <div style={{ textAlign: "center", padding: "32px 0", color: "var(--dash-text-muted)", fontSize: 13 }}>

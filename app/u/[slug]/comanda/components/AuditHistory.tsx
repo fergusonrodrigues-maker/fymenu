@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useOrderAudit } from "@/lib/hooks/useOrderAudit";
+import FyLoader from "@/components/FyLoader";
 
 interface AuditHistoryProps {
   orderId: string;
@@ -14,7 +15,7 @@ export function AuditHistory({ orderId }: AuditHistoryProps) {
     fetchAuditLogs(orderId);
   }, [orderId, fetchAuditLogs]);
 
-  if (loading) return <p className="text-sm text-gray-500">Carregando histórico...</p>;
+  if (loading) return <div style={{ display: "flex", justifyContent: "center", padding: "8px 0" }}><FyLoader size="sm" /></div>;
 
   return (
     <div className="space-y-2 p-3 bg-gray-50 rounded border text-sm">

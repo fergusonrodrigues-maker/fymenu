@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
+import FyLoader from "@/components/FyLoader";
 
 const supabase = createClient();
 
@@ -680,7 +681,7 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
 
           {/* Items list */}
           {loading ? (
-            <div style={{ textAlign: "center", padding: 40, color: "var(--dash-text-muted)" }}>Carregando...</div>
+            <div style={{ display: "flex", justifyContent: "center", padding: 40 }}><FyLoader size="sm" /></div>
           ) : filtered.length === 0 ? (
             <div style={{ textAlign: "center", padding: 40, color: "var(--dash-text-muted)" }}>
               {items.length === 0 ? "Nenhum ingrediente cadastrado. Clique em + Adicionar." : "Nenhum resultado para o filtro."}

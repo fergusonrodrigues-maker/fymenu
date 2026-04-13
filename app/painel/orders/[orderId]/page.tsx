@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import FyLoader from "@/components/FyLoader";
 import {
   getOrderById,
   generateOrderWhatsAppLink,
@@ -32,7 +33,7 @@ export default function OrderDetailPage({ params }: { params: { orderId: string 
   }, [params.orderId]);
 
   if (loading) {
-    return <main style={{ padding: "20px", textAlign: "center" }}>Carregando pedido...</main>;
+    return <main style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}><FyLoader size="md" /></main>;
   }
 
   if (error || !order) {

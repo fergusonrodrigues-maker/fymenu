@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import FyLoader from "@/components/FyLoader";
 
 const supabase = createClient();
 
@@ -91,8 +92,8 @@ export default function PerfilFuncionarioPage() {
   }
 
   if (loading) return (
-    <div style={{ minHeight: "100vh", background: "#050505", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.3)" }}>
-      Carregando...
+    <div style={{ minHeight: "100vh", background: "#050505", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <FyLoader size="md" />
     </div>
   );
 

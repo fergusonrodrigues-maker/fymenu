@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import FyLoader from "@/components/FyLoader";
 
 type OrderItem = { qty: number; code_name?: string; unit_price: number; total: number; notes?: string };
 
@@ -110,9 +111,8 @@ function OrderDetailView({ orderId }: { orderId: string }) {
 
       <div style={{ maxWidth: 520, margin: "0 auto", padding: "16px 16px 40px" }}>
         {loading && (
-          <div style={{ textAlign: "center", padding: "60px 0", color: "rgba(255,255,255,0.2)" }}>
-            <div style={{ fontSize: 36, marginBottom: 12 }}>🔍</div>
-            <div style={{ fontSize: 13 }}>Carregando pedido...</div>
+          <div style={{ display: "flex", justifyContent: "center", padding: "60px 0" }}>
+            <FyLoader size="sm" />
           </div>
         )}
 
@@ -228,8 +228,8 @@ function SlugPortalView({ slug }: { slug: string }) {
   }
 
   if (loading) return (
-    <div style={{ minHeight: "100vh", background: "#050505", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.2)", fontFamily: "'Montserrat', system-ui, sans-serif" }}>
-      Carregando...
+    <div style={{ minHeight: "100vh", background: "#050505", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <FyLoader size="md" />
     </div>
   );
 

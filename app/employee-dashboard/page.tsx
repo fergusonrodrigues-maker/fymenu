@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import FyLoader from "@/components/FyLoader";
 
 interface Employee {
   id: string;
@@ -140,8 +141,8 @@ export default function EmployeeDashboard() {
 
   if (loading || !employee) {
     return (
-      <div style={{ minHeight: "100vh", background: "#0a0a0a", display: "flex", alignItems: "center", justifyContent: "center", color: "#888", fontFamily: "system-ui" }}>
-        Carregando...
+      <div style={{ minHeight: "100vh", background: "#0a0a0a", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <FyLoader size="md" />
       </div>
     );
   }

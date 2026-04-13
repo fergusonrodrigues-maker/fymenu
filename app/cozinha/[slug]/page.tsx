@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import dynamic from "next/dynamic";
+import FyLoader from "@/components/FyLoader";
 
 const KitchenClient = dynamic(() => import("../KitchenClient"), { ssr: false });
 
@@ -53,8 +54,8 @@ export default function CozinhaSlugPage() {
   }, [slug, router]);
 
   if (loading) return (
-    <div style={{ minHeight: "100vh", background: "#050505", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.3)" }}>
-      Carregando...
+    <div style={{ minHeight: "100vh", background: "#050505", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <FyLoader size="md" />
     </div>
   );
 

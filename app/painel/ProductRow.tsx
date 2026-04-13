@@ -3,6 +3,7 @@
 import { useState, useRef, useTransition, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { updateProduct, deleteProduct, updateProductStock, updateProductNutrition, updateProductVariations } from "./actions";
+import FyLoader from "@/components/FyLoader";
 import { useGenerateProductDescription } from "@/lib/hooks/useGenerateProductDescription";
 import { uploadMedia } from "@/lib/upload";
 
@@ -112,7 +113,7 @@ function RecipeSection({ productId, unitId, basePrice }: { productId: string; un
 
   function fmtBRL(v: number) { return `R$ ${(v / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`; }
 
-  if (loading) return <div style={{ color: "var(--dash-text-muted)", fontSize: 12, padding: "10px 0" }}>Carregando ficha técnica...</div>;
+  if (loading) return <div style={{ display: "flex", justifyContent: "center", padding: "10px 0" }}><FyLoader size="sm" /></div>;
 
   const usedIds = recipes.map(r => r.inventory_item_id);
   const available = inventoryItems.filter(i => !usedIds.includes(i.id));

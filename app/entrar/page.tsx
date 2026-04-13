@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import MouseGlow from "@/app/components/MouseGlow";
+import MouseGlow from "@/components/MouseGlow";
 
 export default async function LoginPage({
   searchParams,
