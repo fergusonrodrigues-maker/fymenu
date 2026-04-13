@@ -448,12 +448,6 @@ export default function SignupPage() {
           </button>
         </form>
 
-        <div className="divider">
-          <span className="divider-text">ou</span>
-        </div>
-
-        <button className="social-btn">Continuar com Google</button>
-
         <div className="footer-text">
           Já tem conta? <a href="/entrar">Fazer login</a>
         </div>

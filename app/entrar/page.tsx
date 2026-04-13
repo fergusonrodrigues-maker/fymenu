@@ -332,12 +332,6 @@ export default async function LoginPage({
           <button type="submit" className="submit-btn">Entrar</button>
         </form>
 
-        <div className="divider">
-          <span className="divider-text">ou</span>
-        </div>
-
-        <button className="social-btn">Continuar com Google</button>
-
         <div className="footer-text">
           Não tem conta? <a href="/cadastro">Criar uma agora</a>
         </div>
