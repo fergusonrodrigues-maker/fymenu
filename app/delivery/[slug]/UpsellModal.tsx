@@ -50,7 +50,16 @@ export default function UpsellModal({
   const [selectedUpsells, setSelectedUpsells] = useState<UpsellItem[]>([]);
   const [upsellData, setUpsellData] = useState<UpsellData>({ combos: [], suggestions: [] });
   const [loadingAi, setLoadingAi] = useState(false);
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
   const { track } = useTrack(unit.id);
+
+  // Load saved customer data from localStorage
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setCustomerName(localStorage.getItem("fy_customer_name") ?? "");
+    setCustomerPhone(localStorage.getItem("fy_customer_phone") ?? "");
+  }, []);
 
   // Load AI + combo suggestions when modal opens
   useEffect(() => {
@@ -123,9 +132,109 @@ export default function UpsellModal({
     selectedUpsells
   );
 
+  function handlePhoneChange(e: React.ChangeEvent<HTMLInputElement>) {
+    let v = e.target.value.replace(/\D/g, "").slice(0, 11);
+    if (v.length > 6) v = v.replace(/(\d{2})(\d{5})(\d{0,4})/, "($1) $2-$3");
+    else if (v.length > 2) v = v.replace(/(\d{2})(\d{0,5})/, "($1) $2");
+    setCustomerPhone(v);
+  }
+
+  async function saveToCRM() {
+    try {
+      const phoneClean = customerPhone.replace(/\D/g, "");
+      const nameTrimmed = customerName.trim();
+      if (!phoneClean && !nameTrimmed) return;
+
+      const { createClient } = await import("@/lib/supabase/client");
+      const supabase = createClient();
+      const now = new Date().toISOString();
+
+      if (phoneClean.length >= 10) {
+        // Check if customer already exists
+        const { data: existing } = await supabase
+          .from("crm_customers")
+          .select("id, total_orders, total_spent, name")
+          .eq("unit_id", unit.id)
+          .eq("phone", phoneClean)
+          .maybeSingle();
+
+        if (existing) {
+          await supabase
+            .from("crm_customers")
+            .update({
+              // Only update name if existing is blank and we have one
+              ...(nameTrimmed && !existing.name ? { name: nameTrimmed } : {}),
+              last_order_at: now,
+              total_orders: (existing.total_orders ?? 0) + 1,
+              total_spent: (Number(existing.total_spent) ?? 0) + finalPayload.total,
+              updated_at: now,
+            })
+            .eq("id", existing.id);
+        } else {
+          await supabase.from("crm_customers").insert({
+            unit_id: unit.id,
+            phone: phoneClean,
+            name: nameTrimmed || null,
+            source: "delivery",
+            last_order_at: now,
+            total_orders: 1,
+            total_spent: finalPayload.total,
+            is_active: true,
+          });
+        }
+      } else if (nameTrimmed) {
+        // No phone — insert name-only record (may create duplicates, acceptable)
+        await supabase.from("crm_customers").insert({
+          unit_id: unit.id,
+          name: nameTrimmed,
+          source: "delivery",
+          last_order_at: now,
+          total_orders: 1,
+          total_spent: finalPayload.total,
+          is_active: true,
+        });
+      }
+    } catch {
+      // CRM errors never block the order
+    }
+  }
+
+  async function saveOrderEvent() {
+    try {
+      const { createClient } = await import("@/lib/supabase/client");
+      const supabase = createClient();
+      await supabase.from("menu_events").insert({
+        event: "whatsapp_order",
+        unit_id: unit.id,
+        product_id: finalPayload.product.id ?? null,
+        meta: {
+          product: finalPayload.product.name,
+          variation: finalPayload.variation?.name ?? null,
+          upsells: finalPayload.upsells.map((u) => u.name),
+          total: finalPayload.total,
+          customer_name: customerName.trim() || null,
+          customer_phone: customerPhone.replace(/\D/g, "") || null,
+        },
+      });
+    } catch {
+      // Event errors never block the order
+    }
+  }
+
   function handleWhatsApp() {
     if (!unit.whatsapp) return;
-    const url = buildWhatsAppMessage(finalPayload, unit.whatsapp);
+
+    // Persist customer data for next visit (fire and forget)
+    if (typeof window !== "undefined") {
+      if (customerName.trim()) localStorage.setItem("fy_customer_name", customerName.trim());
+      if (customerPhone.trim()) localStorage.setItem("fy_customer_phone", customerPhone.trim());
+    }
+
+    // Save to CRM + event log (fire and forget)
+    saveToCRM();
+    saveOrderEvent();
+
+    const url = buildWhatsAppMessage(finalPayload, unit.whatsapp, customerName, customerPhone);
     track({ event: "whatsapp_click", product_id: payload?.product.id });
     if (typeof window !== "undefined" && (window as any).fbq) {
       const totalValue = finalPayload.total;
@@ -375,6 +484,40 @@ export default function UpsellModal({
           >
             ➕ Adicionar mais itens
           </button>
+
+          {/* ── Customer data (optional, for CRM) ──────────────────────── */}
+          <div className="rounded-2xl p-3.5 mb-4"
+            style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)" }}
+          >
+            <p className="text-zinc-600 text-xs font-semibold mb-2.5">
+              Dados pra entrega <span className="font-normal">(opcional)</span>
+            </p>
+            <div className="flex gap-2">
+              <input
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                placeholder="Seu nome"
+                autoComplete="given-name"
+                className="flex-1 min-w-0 px-3 py-2.5 rounded-xl text-white text-sm
+                  placeholder-zinc-600 outline-none transition-colors"
+                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}
+                onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(0,255,174,0.2)")}
+                onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)")}
+              />
+              <input
+                value={customerPhone}
+                onChange={handlePhoneChange}
+                placeholder="(62) 99999-9999"
+                inputMode="numeric"
+                autoComplete="tel"
+                className="flex-1 min-w-0 px-3 py-2.5 rounded-xl text-white text-sm
+                  placeholder-zinc-600 outline-none transition-colors"
+                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}
+                onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(0,255,174,0.2)")}
+                onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)")}
+              />
+            </div>
+          </div>
 
           {/* ── Total ───────────────────────────────────────────────────── */}
           <div className="flex items-center justify-between px-1 mb-5 pt-1

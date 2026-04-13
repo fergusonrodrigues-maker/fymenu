@@ -32,7 +32,9 @@ export function buildOrderPayload(
 
 export function buildWhatsAppMessage(
   payload: OrderPayload,
-  whatsapp: string
+  whatsapp: string,
+  customerName?: string,
+  customerPhone?: string
 ): string {
   const lines: string[] = [];
 
@@ -56,6 +58,14 @@ export function buildWhatsAppMessage(
   lines.push(
     `💰 Total estimado: R$${Number(payload.total).toFixed(2).replace(".", ",")}`
   );
+
+  if (customerName?.trim()) {
+    lines.push("");
+    lines.push(`👤 Nome: ${customerName.trim()}`);
+  }
+  if (customerPhone && customerPhone.replace(/\D/g, "").length >= 10) {
+    lines.push(`📱 Tel: ${customerPhone}`);
+  }
 
   const text = encodeURIComponent(lines.join("\n"));
   const phone = whatsapp.replace(/\D/g, "");
