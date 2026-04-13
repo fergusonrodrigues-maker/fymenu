@@ -931,9 +931,6 @@ export default function LandingPage() {
             zIndex: 1,
           }}
         >
-          {/* Glow orbs */}
-          <div className="glow-orb" style={{ width: 400, height: 400, background: theme === "dark" ? "rgba(0,255,174,0.08)" : "rgba(213,22,89,0.04)", top: "20%", left: "10%" }} />
-          <div className="glow-orb" style={{ width: 300, height: 300, background: theme === "dark" ? "rgba(0,217,255,0.06)" : "rgba(254,74,44,0.04)", bottom: "20%", right: "10%" }} />
 
           <div
             style={{

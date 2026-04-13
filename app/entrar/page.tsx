@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import MouseGlow from "@/app/components/MouseGlow";
 
 export default async function LoginPage({
   searchParams,
@@ -64,43 +65,31 @@ export default async function LoginPage({
           opacity: 0.7;
         }
 
-        .auth-glow {
-          position: fixed;
-          border-radius: 50%;
-          filter: blur(120px);
-          pointer-events: none;
-          z-index: 0;
-        }
-
         .glass-container {
           position: relative;
-          z-index: 1;
+          z-index: 2;
           width: 100%;
-          max-width: 420px;
+          max-width: 400px;
           backdrop-filter: blur(24px);
           -webkit-backdrop-filter: blur(24px);
-          background: rgba(255,255,255,0.03);
-          border: 1px solid rgba(0,255,174,0.12);
+          background: rgba(255,255,255,0.02);
+          border: 1px solid rgba(255,255,255,0.06);
           border-radius: 24px;
-          padding: 48px 36px;
-          box-shadow: 0 8px 40px rgba(0,255,174,0.06), inset 0 1px 0 rgba(255,255,255,0.05);
+          padding: 40px 32px;
+          box-shadow: 0 20px 60px rgba(0,0,0,0.4);
         }
 
         .logo {
           display: flex;
           align-items: center;
           justify-content: center;
-          margin-bottom: 32px;
-          font-size: 32px;
+          margin-bottom: 28px;
+          font-size: 36px;
           font-weight: 900;
+          font-style: italic;
           letter-spacing: -1px;
-        }
-
-        .logo-gradient {
-          background: linear-gradient(135deg, #00ffae 0%, #00d9ff 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
+          color: #00ffae;
+          text-shadow: 0 0 30px rgba(0,255,174,0.3), 0 0 60px rgba(0,255,174,0.1);
         }
 
         .title {
@@ -112,89 +101,88 @@ export default async function LoginPage({
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
+          text-shadow: none;
+          filter: drop-shadow(0 0 12px rgba(0,255,174,0.2));
         }
 
         .subtitle {
-          font-size: 14px;
-          color: rgba(255,255,255,0.4);
+          font-size: 13px;
+          color: rgba(255,255,255,0.35);
           text-align: center;
           margin-bottom: 32px;
+          text-shadow: none;
         }
 
         .form-group {
-          margin-bottom: 16px;
+          margin-bottom: 18px;
         }
 
         .form-group label {
           display: block;
-          font-size: 12px;
-          font-weight: 600;
+          font-size: 10px;
+          font-weight: 800;
           margin-bottom: 8px;
           text-transform: uppercase;
-          letter-spacing: 0.5px;
-          background: linear-gradient(to right, rgba(255,255,255,0.4) 0%, #fff 10%, rgba(255,255,255,0.4) 20%);
-          background-size: 180px;
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-          animation: textShine 3s infinite linear;
+          letter-spacing: 2px;
+          color: rgba(255,255,255,0.5);
+          text-shadow: none;
         }
 
         .input-wrapper input {
           width: 100%;
-          padding: 12px 16px;
+          padding: 14px 18px;
           background: rgba(255,255,255,0.04);
-          border: 1px solid rgba(0,255,174,0.1);
-          border-radius: 12px;
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 14px;
           color: #ffffff;
-          font-size: 14px;
+          font-size: 15px;
           font-family: inherit;
-          transition: all 0.3s ease;
+          transition: border-color 0.2s, box-shadow 0.2s;
+          outline: none;
+          box-sizing: border-box;
         }
 
         .input-wrapper input::placeholder {
-          color: rgba(255,255,255,0.25);
+          color: rgba(255,255,255,0.2);
         }
 
         .input-wrapper input:focus {
-          outline: none;
-          background: rgba(255,255,255,0.06);
-          border: 1px solid rgba(0,255,174,0.35);
-          box-shadow: 0 0 0 3px rgba(0,255,174,0.08), 0 0 20px rgba(0,255,174,0.05);
+          border-color: rgba(0,255,174,0.3);
+          background: rgba(255,255,255,0.05);
+          box-shadow: 0 0 12px rgba(0,255,174,0.08);
         }
 
         .submit-btn {
           width: 100%;
-          padding: 14px 24px;
+          padding: 16px;
           margin-top: 24px;
           background: linear-gradient(135deg, #00ffae 0%, #00d9ff 100%);
           border: none;
           border-radius: 14px;
           color: #000;
-          font-size: 15px;
-          font-weight: 700;
+          font-size: 16px;
+          font-weight: 900;
           cursor: pointer;
-          transition: all 0.3s ease;
-          box-shadow: 0 4px 20px rgba(0,255,174,0.25), inset 0 1px 0 rgba(255,255,255,0.25), inset 0 -2px 0 rgba(0,0,0,0.08);
-          letter-spacing: 0.3px;
+          transition: all 0.2s;
+          box-shadow: 0 0 20px rgba(0,255,174,0.15), 0 0 40px rgba(0,255,174,0.05), inset 0 1px 0 rgba(0,255,174,0.12), inset 0 -1px 0 rgba(0,0,0,0.2);
           font-family: inherit;
-          transform: translateY(0);
+          letter-spacing: 0.3px;
         }
 
         .submit-btn:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 8px 32px rgba(0,255,174,0.4), inset 0 1px 0 rgba(255,255,255,0.3);
+          transform: translateY(-1px);
+          box-shadow: 0 0 30px rgba(0,255,174,0.25), 0 0 60px rgba(0,255,174,0.1), inset 0 1px 0 rgba(0,255,174,0.15), inset 0 -1px 0 rgba(0,0,0,0.2);
         }
 
         .submit-btn:active {
           transform: translateY(1px);
-          box-shadow: 0 2px 8px rgba(0,255,174,0.15), inset 0 2px 4px rgba(0,0,0,0.12);
+          box-shadow: 0 0 10px rgba(0,255,174,0.1), inset 0 2px 4px rgba(0,0,0,0.12);
         }
 
         .divider {
           display: flex;
           align-items: center;
-          margin: 28px 0;
+          margin: 24px 0;
           gap: 12px;
         }
 
@@ -203,39 +191,37 @@ export default async function LoginPage({
           content: '';
           flex: 1;
           height: 1px;
-          background: rgba(0,255,174,0.08);
+          background: rgba(255,255,255,0.06);
         }
 
         .divider-text {
           font-size: 12px;
           text-transform: uppercase;
           letter-spacing: 1px;
-          background: linear-gradient(to right, rgba(255,255,255,0.3) 0%, #fff 10%, rgba(255,255,255,0.3) 20%);
-          background-size: 180px;
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-          animation: textShine 3s infinite linear;
+          color: rgba(255,255,255,0.2);
+          text-shadow: none;
         }
 
         .social-btn {
           width: 100%;
-          padding: 12px 16px;
+          padding: 14px;
           background: rgba(255,255,255,0.03);
-          border: 1px solid rgba(0,255,174,0.1);
-          border-radius: 12px;
-          color: rgba(255,255,255,0.7);
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 14px;
+          color: rgba(255,255,255,0.4);
           font-size: 14px;
+          font-weight: 600;
           cursor: pointer;
-          transition: all 0.3s ease;
+          transition: all 0.2s;
           margin-bottom: 12px;
           font-family: inherit;
+          text-shadow: none;
         }
 
         .social-btn:hover {
-          background: rgba(0,255,174,0.04);
-          border-color: rgba(0,255,174,0.2);
-          color: #fff;
+          background: rgba(255,255,255,0.05);
+          border-color: rgba(255,255,255,0.12);
+          color: rgba(255,255,255,0.6);
         }
 
         .footer-text {
@@ -243,15 +229,14 @@ export default async function LoginPage({
           font-size: 13px;
           color: rgba(255,255,255,0.4);
           margin-top: 24px;
+          text-shadow: none;
         }
 
         .footer-text a {
-          background: linear-gradient(135deg, #00ffae 0%, #00d9ff 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
+          color: #00ffae;
           text-decoration: none;
           font-weight: 600;
+          text-shadow: none;
         }
 
         .footer-text a:hover {
@@ -281,51 +266,34 @@ export default async function LoginPage({
         .forgot-password {
           display: flex;
           justify-content: flex-end;
+          margin-top: -6px;
           margin-bottom: 24px;
         }
 
         .forgot-password a {
           font-size: 13px;
-          background: linear-gradient(135deg, #00ffae 0%, #00d9ff 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
+          color: #00ffae;
           text-decoration: none;
-          font-weight: 500;
+          font-weight: 600;
+          text-shadow: none;
         }
 
         .forgot-password a:hover {
           text-decoration: underline;
         }
-
-        .text-shine {
-          background: linear-gradient(to right, rgba(255,255,255,0.4) 0%, #fff 10%, rgba(255,255,255,0.4) 20%);
-          background-position: 0;
-          background-size: 180px;
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-          animation: textShine 3s infinite linear;
-        }
-        @keyframes textShine {
-          0% { background-position: 0; }
-          60% { background-position: 180px; }
-          100% { background-position: 180px; }
-        }
       `}</style>
 
-      {/* Dot background + glow */}
+      {/* Dot grid background */}
       <div className="auth-dots" />
-      <div className="auth-glow" style={{ width: 400, height: 400, background: "rgba(0,255,174,0.06)", top: "20%", left: "10%" }} />
-      <div className="auth-glow" style={{ width: 300, height: 300, background: "rgba(0,217,255,0.04)", bottom: "20%", right: "10%" }} />
+
+      {/* Mouse cursor glow */}
+      <MouseGlow />
 
       <div className="glass-container">
-        <div className="logo">
-          <span className="logo-gradient">FyMenu</span>
-        </div>
+        <div className="logo">FyMenu</div>
 
         <h1 className="title">Bem-vindo</h1>
-        <p className="subtitle text-shine">Gerencie seu cardápio digital</p>
+        <p className="subtitle">Gerencie seu cardápio digital</p>
 
         {err && <div className="error-message">{err}</div>}
         {ok && <div className="success-message">{ok}</div>}
@@ -370,7 +338,7 @@ export default async function LoginPage({
 
         <button className="social-btn">Continuar com Google</button>
 
-        <div className="footer-text text-shine">
+        <div className="footer-text">
           Não tem conta? <a href="/cadastro">Criar uma agora</a>
         </div>
       </div>
