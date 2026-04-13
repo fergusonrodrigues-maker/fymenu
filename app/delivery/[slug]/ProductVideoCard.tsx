@@ -27,7 +27,7 @@ export default function ProductVideoCard({ product }: ProductVideoCardProps) {
           obs.disconnect(); // only need to fire once
         }
       },
-      { rootMargin: "200% 0px", threshold: 0 }
+      { rootMargin: "150% 0px", threshold: 0 }
     );
     obs.observe(el);
     return () => obs.disconnect();
@@ -45,16 +45,16 @@ export default function ProductVideoCard({ product }: ProductVideoCardProps) {
     return () => obs.disconnect();
   }, []);
 
-  // Play/pause based on visibility
+  // Play/pause based on visibility — also re-runs when src is set (shouldLoad flips)
   useEffect(() => {
     const vid = videoRef.current;
-    if (!vid) return;
+    if (!vid || !shouldLoad) return;
     if (isVisible) {
       vid.play().catch(() => {});
     } else {
       vid.pause();
     }
-  }, [isVisible]);
+  }, [isVisible, shouldLoad]);
 
   // Pause when product modal opens, resume when it closes
   useEffect(() => {
@@ -80,7 +80,7 @@ export default function ProductVideoCard({ product }: ProductVideoCardProps) {
         muted
         loop
         playsInline
-        preload="none"
+        preload="metadata"
         poster={product.thumbnail_url || undefined}
         style={{
           position: "absolute",
