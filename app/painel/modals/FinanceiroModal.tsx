@@ -258,7 +258,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
     if (!unit?.id) return;
 
     // Load expenses
-    supabase.from("business_expenses").select("*").eq("unit_id", unit.id).order("date", { ascending: false })
+    supabase.from("business_expenses").select("id, name, category, amount, is_recurring, recurrence, date").eq("unit_id", unit.id).order("date", { ascending: false })
       .then(({ data }) => { if (data) setExpenses(data); });
 
     // Load resumo data
@@ -404,7 +404,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
       }));
       const { error } = await supabase.from("business_expenses").insert(inserts);
       if (error) throw error;
-      const { data: newExpenses } = await supabase.from("business_expenses").select("*").eq("unit_id", unit.id).order("date", { ascending: false });
+      const { data: newExpenses } = await supabase.from("business_expenses").select("id, name, category, amount, is_recurring, recurrence, date").eq("unit_id", unit.id).order("date", { ascending: false });
       if (newExpenses) setExpenses(newExpenses);
       setImportFinanceStep("done");
     } catch (err) {

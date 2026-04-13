@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import ThemeToggle from "@/components/ThemeToggle";
 import { createClient } from "@/lib/supabase/client";
@@ -241,6 +241,50 @@ function Modal({ open, onClose, children, title }: { open: boolean; onClose: () 
   );
 }
 
+// ─── Static layout config — defined once at module level ─────────────────────
+const GRID_LAYOUTS: Record<string, Array<{ id: string; cols: number; mobileCols: number }>> = {
+  // menu: analytics full-width + 2 rows of 4
+  menu: [
+    { id: "analytics",   cols: 4, mobileCols: 2 },
+    { id: "cardapio",    cols: 1, mobileCols: 1 },
+    { id: "pedidos",     cols: 1, mobileCols: 1 },
+    { id: "financeiro",  cols: 1, mobileCols: 1 },
+    { id: "unidade",     cols: 1, mobileCols: 1 },
+    { id: "tv",          cols: 1, mobileCols: 1 },
+    { id: "config",      cols: 1, mobileCols: 1 },
+    { id: "impressoras", cols: 2, mobileCols: 2 },
+  ],
+  // menupro: analytics full-width + 3 rows of 4
+  menupro: [
+    { id: "analytics",   cols: 4, mobileCols: 2 },
+    { id: "cardapio",    cols: 1, mobileCols: 1 },
+    { id: "pedidos",     cols: 1, mobileCols: 1 },
+    { id: "financeiro",  cols: 1, mobileCols: 1 },
+    { id: "operacoes",   cols: 1, mobileCols: 1 },
+    { id: "unidade",     cols: 1, mobileCols: 1 },
+    { id: "equipe",      cols: 1, mobileCols: 1 },
+    { id: "estoque",     cols: 1, mobileCols: 1 },
+    { id: "tv",          cols: 1, mobileCols: 1 },
+    { id: "config",      cols: 2, mobileCols: 2 },
+    { id: "impressoras", cols: 2, mobileCols: 2 },
+  ],
+  // business: analytics full-width + 3 rows of 4
+  business: [
+    { id: "analytics",   cols: 4, mobileCols: 2 },
+    { id: "cardapio",    cols: 1, mobileCols: 1 },
+    { id: "pedidos",     cols: 1, mobileCols: 1 },
+    { id: "financeiro",  cols: 1, mobileCols: 1 },
+    { id: "operacoes",   cols: 1, mobileCols: 1 },
+    { id: "unidade",     cols: 1, mobileCols: 1 },
+    { id: "equipe",      cols: 1, mobileCols: 1 },
+    { id: "estoque",     cols: 1, mobileCols: 1 },
+    { id: "crm",         cols: 1, mobileCols: 1 },
+    { id: "tv",          cols: 1, mobileCols: 1 },
+    { id: "config",      cols: 1, mobileCols: 1 },
+    { id: "impressoras", cols: 2, mobileCols: 2 },
+  ],
+};
+
 // ─── Main Component ──────────────────────────────────────────────────────────
 export default function DashboardClient({
   restaurant, unit, profile, categories, products, upsellItems, analytics, tvCount, stockStats, reportData,
@@ -442,50 +486,7 @@ export default function DashboardClient({
     return () => document.removeEventListener("click", handler);
   }, [showUnitSelector]);
 
-  const GRID_LAYOUTS: Record<string, Array<{ id: string; cols: number; mobileCols: number }>> = {
-    // menu: analytics full-width + 2 rows of 4
-    menu: [
-      { id: "analytics",   cols: 4, mobileCols: 2 },
-      { id: "cardapio",    cols: 1, mobileCols: 1 },
-      { id: "pedidos",     cols: 1, mobileCols: 1 },
-      { id: "financeiro",  cols: 1, mobileCols: 1 },
-      { id: "unidade",     cols: 1, mobileCols: 1 },
-      { id: "tv",          cols: 1, mobileCols: 1 },
-      { id: "config",      cols: 1, mobileCols: 1 },
-      { id: "impressoras", cols: 2, mobileCols: 2 },
-    ],
-    // menupro: analytics full-width + 3 rows of 4
-    menupro: [
-      { id: "analytics",   cols: 4, mobileCols: 2 },
-      { id: "cardapio",    cols: 1, mobileCols: 1 },
-      { id: "pedidos",     cols: 1, mobileCols: 1 },
-      { id: "financeiro",  cols: 1, mobileCols: 1 },
-      { id: "operacoes",   cols: 1, mobileCols: 1 },
-      { id: "unidade",     cols: 1, mobileCols: 1 },
-      { id: "equipe",      cols: 1, mobileCols: 1 },
-      { id: "estoque",     cols: 1, mobileCols: 1 },
-      { id: "tv",          cols: 1, mobileCols: 1 },
-      { id: "config",      cols: 2, mobileCols: 2 },
-      { id: "impressoras", cols: 2, mobileCols: 2 },
-    ],
-    // business: analytics full-width + 3 rows of 4
-    business: [
-      { id: "analytics",   cols: 4, mobileCols: 2 },
-      { id: "cardapio",    cols: 1, mobileCols: 1 },
-      { id: "pedidos",     cols: 1, mobileCols: 1 },
-      { id: "financeiro",  cols: 1, mobileCols: 1 },
-      { id: "operacoes",   cols: 1, mobileCols: 1 },
-      { id: "unidade",     cols: 1, mobileCols: 1 },
-      { id: "equipe",      cols: 1, mobileCols: 1 },
-      { id: "estoque",     cols: 1, mobileCols: 1 },
-      { id: "crm",         cols: 1, mobileCols: 1 },
-      { id: "tv",          cols: 1, mobileCols: 1 },
-      { id: "config",      cols: 1, mobileCols: 1 },
-      { id: "impressoras", cols: 2, mobileCols: 2 },
-    ],
-  };
-
-  const CARD_CONFIGS: Record<string, { icon: string; label: string; sub: string | (() => string); modalKey: string }> = {
+  const CARD_CONFIGS: Record<string, { icon: string; label: string; sub: string | (() => string); modalKey: string }> = useMemo(() => ({
     analytics: { icon: "📊", label: "Analytics", sub: () => `${analytics.views} visitas · ${analytics.clicks} cliques`, modalKey: "analytics" },
     cardapio: { icon: "📋", label: "Cardápio", sub: () => `${products.length} produto${products.length !== 1 ? "s" : ""}`, modalKey: "cardapio" },
     pedidos: { icon: "🛒", label: "Pedidos", sub: () => `${analytics.orders} pedido${analytics.orders !== 1 ? "s" : ""} hoje`, modalKey: "pedidos" },
@@ -500,7 +501,7 @@ export default function DashboardClient({
     impressoras: { icon: "🖨️", label: "Impressoras", sub: "Roteamento por categoria", modalKey: "impressoras" },
     links: { icon: "🔗", label: "Links Rápidos", sub: "Acessos do sistema", modalKey: "links" },
     crm: { icon: "📇", label: "CRM", sub: "Clientes e contatos", modalKey: "crm" },
-  };
+  }), [analytics, products.length, unit?.is_published, tvCount, restaurantState, trialDays, stockStats]);
 
   return (
     <>

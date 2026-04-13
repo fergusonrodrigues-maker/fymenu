@@ -187,7 +187,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
 
   useEffect(() => {
     if (!unit) return;
-    createSupabaseClient().from("custom_sections").select("*").eq("unit_id", unit.id).then(({ data }) => {
+    createSupabaseClient().from("custom_sections").select("id, name, icon, allows_video, allows_alcoholic_toggle").eq("unit_id", unit.id).then(({ data }) => {
       if (data) setCustomSections(data);
     });
   }, [unit?.id]);

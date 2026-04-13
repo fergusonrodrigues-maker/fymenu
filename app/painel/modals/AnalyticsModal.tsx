@@ -211,7 +211,7 @@ export default function AnalyticsModal({
     if (reviews.length > 0) return;
     supabase
       .from("reviews")
-      .select("*")
+      .select("id, restaurant_rating, waiter_rating, comment, redirected_to_google, waiter_name, created_at")
       .eq("unit_id", unit.id)
       .order("created_at", { ascending: false })
       .limit(200)

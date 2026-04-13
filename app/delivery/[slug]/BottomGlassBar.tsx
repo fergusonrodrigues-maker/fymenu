@@ -201,7 +201,7 @@ export default function BottomGlassBar({ unit, visible, onIfoodClick }: Props) {
             }}
           >
             {logo ? (
-              <img src={logo} alt={unit.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              <img src={logo} alt={unit.name} loading="lazy" decoding="async" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             ) : (
               <span style={{ fontSize: 18, fontWeight: 900, color: "#000" }}>fy</span>
             )}
@@ -303,7 +303,7 @@ export default function BottomGlassBar({ unit, visible, onIfoodClick }: Props) {
             boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
           }}>
             {logo ? (
-              <img src={logo} alt={unit.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              <img src={logo} alt={unit.name} loading="lazy" decoding="async" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             ) : (
               <span style={{ fontSize: 18, fontWeight: 900, color: "#000" }}>fy</span>
             )}
