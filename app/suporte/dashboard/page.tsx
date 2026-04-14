@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type Staff = {
@@ -12,7 +13,7 @@ type Staff = {
 type Section =
   | "restaurantes" | "unidades" | "pedidos" | "cardapios"
   | "crm" | "analytics" | "financeiro" | "features"
-  | "planos" | "equipe";
+  | "planos" | "equipe" | "chats";
 
 // ── Client-side permission check (mirrors lib/suporte-auth.ts) ────────────────
 const VIEWER_PERMS = ["ver_restaurantes", "ver_unidades", "ver_pedidos", "ver_cardapios"];
@@ -865,6 +866,308 @@ function EquipeSection({ token, currentStaff }: { token: string; currentStaff: S
   );
 }
 
+// ── Chats / Tickets ───────────────────────────────────────────────────────────
+type Conversation = {
+  id: string; subject: string; status: string; priority: string;
+  last_message_at: string; unread: number; assigned_staff_id?: string | null;
+  restaurants: { id: string; name: string; plan: string } | null;
+  support_staff: { id: string; name: string } | null;
+};
+type ChatMessage = {
+  id: string; conversation_id?: string; sender_type: string; sender_name: string;
+  sender_staff_id?: string; message: string; read_at: string | null; created_at: string;
+};
+
+const CHAT_STATUS: Record<string, { label: string; color: string }> = {
+  open:          { label: "Aberto",             color: "#60a5fa" },
+  waiting_reply: { label: "Aguardando resposta", color: "#fbbf24" },
+  resolved:      { label: "Resolvido",           color: "#6ee7b7" },
+  closed:        { label: "Fechado",             color: "#9ca3af" },
+};
+const CHAT_PRIORITY: Record<string, { label: string; color: string }> = {
+  low:    { label: "Baixa",   color: "#9ca3af" },
+  normal: { label: "Normal",  color: "#60a5fa" },
+  high:   { label: "Alta",    color: "#fbbf24" },
+  urgent: { label: "Urgente", color: "#f87171" },
+};
+
+function fmtRel(s: string) {
+  const diff = Date.now() - new Date(s).getTime();
+  if (diff < 60_000) return "agora";
+  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m atrás`;
+  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h atrás`;
+  return new Date(s).toLocaleDateString("pt-BR");
+}
+
+function ChatsSection({ token, staff }: { token: string; staff: Staff }) {
+  const canSeeStaffNames = ["gerente", "manager", "admin", "super_admin"].includes(staff.role);
+
+  // List state
+  const [convs, setConvs] = useState<Conversation[]>([]);
+  const [convLoading, setConvLoading] = useState(true);
+  const [convError, setConvError] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState("open");
+  const [mineOnly, setMineOnly] = useState(false);
+  const [q, setQ] = useState(""); const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1); const [total, setTotal] = useState(0);
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  // Active conversation
+  const [activeConv, setActiveConv] = useState<Conversation | null>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [msgLoading, setMsgLoading] = useState(false);
+  const [reply, setReply] = useState("");
+  const [sending, setSending] = useState(false);
+  const [patchLoading, setPatchLoading] = useState(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  const loadConvs = useCallback(async () => {
+    setConvLoading(true); setConvError(null);
+    const params = new URLSearchParams({ status: statusFilter, mine: mineOnly ? "1" : "0", q: search, page: String(page) });
+    const res = await fetch(`/api/suporte/chats?${params}`, { headers: { "x-suporte-token": token } });
+    const json = await res.json();
+    if (!res.ok) { setConvError(json.error); setConvLoading(false); return; }
+    setConvs(json.data ?? []); setTotal(json.count ?? 0); setConvLoading(false);
+  }, [token, statusFilter, mineOnly, search, page]);
+
+  useEffect(() => { loadConvs(); }, [loadConvs]);
+
+  // Realtime: listen for new messages across all conversations
+  useEffect(() => {
+    const supabase = createClient();
+    const channel = supabase
+      .channel("suporte-chat-updates")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "support_messages" }, (payload) => {
+        const msg = payload.new as ChatMessage;
+        if (activeConv?.id === msg.conversation_id) {
+          setMessages((prev) => [...prev, msg]);
+          setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
+        }
+        loadConvs();
+      })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "support_conversations" }, () => {
+        loadConvs();
+        if (activeConv) {
+          fetch(`/api/suporte/chats/${activeConv.id}`, { headers: { "x-suporte-token": token } })
+            .then((r) => r.json())
+            .then(({ data }) => { if (data) setActiveConv(data); });
+        }
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeConv?.id, token]);
+
+  async function openConv(c: Conversation) {
+    setActiveConv(c);
+    setMsgLoading(true); setMessages([]);
+    const res = await fetch(`/api/suporte/chats/${c.id}/messages`, { headers: { "x-suporte-token": token } });
+    const json = await res.json();
+    setMessages(json.data ?? []); setMsgLoading(false);
+    // Mark as read
+    fetch(`/api/suporte/chats/${c.id}/read`, { method: "POST", headers: { "x-suporte-token": token } });
+    setConvs((prev) => prev.map((cv) => cv.id === c.id ? { ...cv, unread: 0 } : cv));
+    setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "instant" }), 80);
+  }
+
+  async function sendReply() {
+    if (!reply.trim() || !activeConv || sending) return;
+    setSending(true);
+    const res = await fetch(`/api/suporte/chats/${activeConv.id}/messages`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-suporte-token": token },
+      body: JSON.stringify({ message: reply.trim() }),
+    });
+    if (res.ok) {
+      const json = await res.json();
+      setMessages((prev) => [...prev, json.data]);
+      setReply("");
+      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
+    }
+    setSending(false);
+  }
+
+  async function patchConv(updates: Record<string, unknown>) {
+    if (!activeConv) return;
+    setPatchLoading(true);
+    await fetch(`/api/suporte/chats/${activeConv.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", "x-suporte-token": token },
+      body: JSON.stringify(updates),
+    });
+    setPatchLoading(false);
+    // Refresh this conversation
+    const res = await fetch(`/api/suporte/chats/${activeConv.id}`, { headers: { "x-suporte-token": token } });
+    const { data } = await res.json();
+    if (data) setActiveConv(data);
+    loadConvs();
+  }
+
+  const totalUnread = convs.reduce((s, c) => s + c.unread, 0);
+
+  return (
+    <div style={{ display: "flex", height: "calc(100vh - 80px)", minHeight: 500, gap: 0 }}>
+      {/* ── Left: conversation list ────────────────────────────────────── */}
+      <div style={{ width: 320, flexShrink: 0, display: "flex", flexDirection: "column", borderRight: `1px solid ${BORDER}`, overflowY: "auto" }}>
+        <div style={{ padding: "0 0 12px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 18 }}>💬</span>
+              <h2 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: TEXT }}>Chats</h2>
+              {totalUnread > 0 && <span style={{ padding: "1px 8px", borderRadius: 20, background: "#ef4444", color: "#fff", fontSize: 11, fontWeight: 800 }}>{totalUnread}</span>}
+            </div>
+          </div>
+          <input value={q} onChange={(e) => { setQ(e.target.value); clearTimeout(searchTimer.current); searchTimer.current = setTimeout(() => { setSearch(e.target.value); setPage(1); }, 400); }}
+            placeholder="Buscar restaurante ou assunto..."
+            style={{ width: "100%", padding: "8px 12px", borderRadius: 10, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,0.06)", color: TEXT, fontSize: 12, outline: "none", boxSizing: "border-box", marginBottom: 8 }} />
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+              style={{ flex: 1, padding: "6px 10px", borderRadius: 8, border: `1px solid ${BORDER}`, background: "rgba(15,15,20,0.95)", color: TEXT, fontSize: 11, outline: "none" }}>
+              <option value="all">Todos</option>
+              <option value="open">Abertos</option>
+              <option value="waiting_reply">Aguardando</option>
+              <option value="resolved">Resolvidos</option>
+              <option value="closed">Fechados</option>
+            </select>
+            <button onClick={() => setMineOnly((v) => !v)}
+              style={{ padding: "6px 10px", borderRadius: 8, border: `1px solid ${mineOnly ? "rgba(124,58,237,0.5)" : BORDER}`, background: mineOnly ? "rgba(124,58,237,0.15)" : "transparent", color: mineOnly ? "#a78bfa" : MUTED, fontSize: 11, cursor: "pointer" }}>
+              Meus
+            </button>
+          </div>
+        </div>
+
+        {convLoading && <p style={{ fontSize: 12, color: MUTED, padding: "8px 0" }}>Carregando...</p>}
+        {convError && <p style={{ fontSize: 12, color: "#f87171" }}>{convError}</p>}
+        <div style={{ flex: 1, overflowY: "auto" }}>
+          {convs.map((c) => {
+            const st = CHAT_STATUS[c.status] ?? CHAT_STATUS.open;
+            const pr = CHAT_PRIORITY[c.priority] ?? CHAT_PRIORITY.normal;
+            const isActive = activeConv?.id === c.id;
+            return (
+              <button key={c.id} onClick={() => openConv(c)}
+                style={{ width: "100%", padding: "12px 8px", background: isActive ? "rgba(124,58,237,0.12)" : "transparent", border: "none", borderBottom: `1px solid ${BORDER}`, cursor: "pointer", textAlign: "left", transition: "background 0.15s", borderLeft: isActive ? "3px solid #7c3aed" : "3px solid transparent" }}
+                onMouseEnter={(e) => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.03)"; }}
+                onMouseLeave={(e) => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}>
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 3 }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: TEXT, flex: 1, marginRight: 6 }}>{c.restaurants?.name ?? "—"}</span>
+                  <span style={{ fontSize: 10, color: MUTED, flexShrink: 0 }}>{fmtRel(c.last_message_at)}</span>
+                </div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", marginBottom: 5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.subject}</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <span style={{ fontSize: 10, color: st.color, fontWeight: 600 }}>{st.label}</span>
+                  <span style={{ fontSize: 10, color: pr.color }}>· {pr.label}</span>
+                  {c.unread > 0 && <span style={{ marginLeft: "auto", width: 16, height: 16, borderRadius: "50%", background: "#ef4444", color: "#fff", fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>{c.unread}</span>}
+                </div>
+              </button>
+            );
+          })}
+          {!convLoading && convs.length === 0 && <p style={{ fontSize: 12, color: MUTED, padding: "20px 8px", textAlign: "center" }}>Nenhuma conversa.</p>}
+        </div>
+        {/* Pagination */}
+        {total > 25 && (
+          <div style={{ display: "flex", gap: 6, padding: "8px 0", justifyContent: "center" }}>
+            <button disabled={page === 1} onClick={() => setPage((p) => p - 1)} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${BORDER}`, background: "none", color: page === 1 ? MUTED : TEXT, cursor: page === 1 ? "not-allowed" : "pointer", fontSize: 11 }}>←</button>
+            <span style={{ fontSize: 11, color: MUTED, alignSelf: "center" }}>{page}</span>
+            <button disabled={page * 25 >= total} onClick={() => setPage((p) => p + 1)} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${BORDER}`, background: "none", color: page * 25 >= total ? MUTED : TEXT, cursor: page * 25 >= total ? "not-allowed" : "pointer", fontSize: 11 }}>→</button>
+          </div>
+        )}
+      </div>
+
+      {/* ── Right: active conversation ─────────────────────────────────── */}
+      <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
+        {!activeConv ? (
+          <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 12 }}>
+            <span style={{ fontSize: 48 }}>💬</span>
+            <p style={{ color: MUTED, fontSize: 14 }}>Selecione uma conversa para ver as mensagens</p>
+          </div>
+        ) : (
+          <>
+            {/* Conversation header */}
+            <div style={{ padding: "14px 20px", borderBottom: `1px solid ${BORDER}`, flexShrink: 0 }}>
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: TEXT, marginBottom: 3 }}>{activeConv.subject}</div>
+                  <div style={{ fontSize: 12, color: MUTED }}>{activeConv.restaurants?.name} · <span style={{ fontSize: 11, textTransform: "uppercase", color: "#a78bfa" }}>{activeConv.restaurants?.plan}</span></div>
+                </div>
+                <div style={{ display: "flex", gap: 6, flexShrink: 0, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                  <span style={{ padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: `${CHAT_STATUS[activeConv.status]?.color ?? "#fff"}18`, color: CHAT_STATUS[activeConv.status]?.color ?? TEXT }}>
+                    {CHAT_STATUS[activeConv.status]?.label ?? activeConv.status}
+                  </span>
+                  <span style={{ padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: `${CHAT_PRIORITY[activeConv.priority]?.color ?? "#fff"}18`, color: CHAT_PRIORITY[activeConv.priority]?.color ?? TEXT }}>
+                    {CHAT_PRIORITY[activeConv.priority]?.label ?? activeConv.priority}
+                  </span>
+                </div>
+              </div>
+              {/* Action buttons */}
+              <div style={{ display: "flex", gap: 6, marginTop: 10, flexWrap: "wrap" }}>
+                <Btn onClick={() => patchConv({ assign_to_me: true })} disabled={patchLoading || activeConv.assigned_staff_id === staff.id}>
+                  {activeConv.assigned_staff_id === staff.id ? "✓ Atribuído a mim" : "Atribuir a mim"}
+                </Btn>
+                {activeConv.status !== "resolved" && (
+                  <Btn variant="primary" onClick={() => patchConv({ status: "resolved" })} disabled={patchLoading}>Marcar resolvido</Btn>
+                )}
+                {(activeConv.status === "resolved" || activeConv.status === "closed") && (
+                  <Btn onClick={() => patchConv({ status: "open" })} disabled={patchLoading}>Reabrir</Btn>
+                )}
+                <select value={activeConv.priority} onChange={(e) => patchConv({ priority: e.target.value })}
+                  style={{ padding: "7px 10px", borderRadius: 10, border: `1px solid ${BORDER}`, background: "rgba(15,15,20,0.95)", color: TEXT, fontSize: 12, outline: "none", cursor: "pointer" }}>
+                  {Object.entries(CHAT_PRIORITY).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                </select>
+              </div>
+              {activeConv.support_staff && (
+                <div style={{ fontSize: 11, color: MUTED, marginTop: 6 }}>Atribuído a: {(activeConv.support_staff as any).name}</div>
+              )}
+            </div>
+
+            {/* Messages */}
+            <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px", display: "flex", flexDirection: "column", gap: 10 }}>
+              {msgLoading ? <p style={{ color: MUTED, fontSize: 13 }}>Carregando...</p> : messages.length === 0 ? (
+                <p style={{ color: MUTED, fontSize: 13 }}>Nenhuma mensagem.</p>
+              ) : messages.map((m) => {
+                const isClient = m.sender_type === "client";
+                const isSystem = m.sender_type === "system";
+                if (isSystem) return (
+                  <div key={m.id} style={{ textAlign: "center" }}>
+                    <span style={{ fontSize: 11, color: MUTED, background: "rgba(255,255,255,0.04)", padding: "3px 10px", borderRadius: 20 }}>{m.message}</span>
+                  </div>
+                );
+                return (
+                  <div key={m.id} style={{ display: "flex", flexDirection: "column", alignItems: isClient ? "flex-start" : "flex-end" }}>
+                    <div style={{ fontSize: 11, color: MUTED, marginBottom: 3 }}>
+                      {isClient ? m.sender_name : (canSeeStaffNames ? m.sender_name : "Suporte")}
+                      <span style={{ marginLeft: 6, fontSize: 10, color: "rgba(255,255,255,0.2)" }}>{new Date(m.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span>
+                    </div>
+                    <div style={{
+                      maxWidth: "75%", padding: "9px 14px",
+                      borderRadius: isClient ? "16px 16px 16px 4px" : "16px 16px 4px 16px",
+                      background: isClient ? CARD : "rgba(124,58,237,0.18)",
+                      color: TEXT, fontSize: 13, lineHeight: 1.5, wordBreak: "break-word",
+                      border: `1px solid ${isClient ? BORDER : "rgba(124,58,237,0.3)"}`,
+                    }}>{m.message}</div>
+                  </div>
+                );
+              })}
+              <div ref={bottomRef} />
+            </div>
+
+            {/* Reply input */}
+            {activeConv.status !== "closed" && (
+              <div style={{ padding: "12px 20px", borderTop: `1px solid ${BORDER}`, display: "flex", gap: 8, alignItems: "flex-end", flexShrink: 0 }}>
+                <textarea value={reply} onChange={(e) => setReply(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendReply(); } }}
+                  placeholder="Escreva uma resposta... (Enter para enviar, Shift+Enter nova linha)"
+                  rows={2}
+                  style={{ flex: 1, padding: "10px 14px", borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,0.06)", color: TEXT, fontSize: 13, resize: "none", fontFamily: "inherit", outline: "none" }} />
+                <Btn variant="primary" onClick={sendReply} disabled={sending || !reply.trim()}>{sending ? "…" : "Enviar"}</Btn>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
 // MAIN DASHBOARD
 // ══════════════════════════════════════════════════════════════════════════════
@@ -875,6 +1178,7 @@ export default function SuporteDashboard() {
   const [section, setSection] = useState<Section>("restaurantes");
   const [mobileSidebar, setMobileSidebar] = useState(false);
   const [authReady, setAuthReady] = useState(false);
+  const [chatUnread, setChatUnread] = useState(0);
 
   useEffect(() => {
     const t = localStorage.getItem("suporte_token");
@@ -890,6 +1194,11 @@ export default function SuporteDashboard() {
         setStaff(srv);
         localStorage.setItem("suporte_staff", JSON.stringify(srv));
         setAuthReady(true);
+        // Load initial unread chat count
+        fetch("/api/suporte/chats?status=open&page=1", { headers: { "x-suporte-token": t } })
+          .then((r) => r.json())
+          .then(({ data }) => { setChatUnread((data ?? []).reduce((s: number, c: any) => s + (c.unread ?? 0), 0)); })
+          .catch(() => {});
       })
       .catch(() => { router.replace("/suporte/login"); });
   }, [router]);
@@ -922,6 +1231,7 @@ export default function SuporteDashboard() {
     { id: "features",     icon: "⚙️", label: "Features",    perm: "gerenciar_features" },
     { id: "planos",       icon: "🏷️", label: "Planos",      perm: "gerenciar_planos" },
     { id: "equipe",       icon: "👥", label: "Equipe",       perm: "gerenciar_staff" },
+    { id: "chats",        icon: "💬", label: "Chats",        perm: "responder_tickets" },
   ];
 
   const visibleItems = MENU_ITEMS.filter((m) => can(staff, m.perm));
@@ -943,6 +1253,7 @@ export default function SuporteDashboard() {
       case "features":     return <FeaturesSection token={token!} />;
       case "planos":       return <PlanosSection token={token!} />;
       case "equipe":       return <EquipeSection token={token!} currentStaff={staff!} />;
+      case "chats":        return <ChatsSection token={token!} staff={staff!} />;
       default:             return null;
     }
   }
@@ -971,6 +1282,9 @@ export default function SuporteDashboard() {
                 color: active ? "#c4b5fd" : "rgba(255,255,255,0.55)" }}>
               <span style={{ fontSize: 16, width: 20, textAlign: "center" }}>{item.icon}</span>
               <span style={{ fontSize: 13, fontWeight: active ? 700 : 500 }}>{item.label}</span>
+              {item.id === "chats" && chatUnread > 0 && !active && (
+                <span style={{ marginLeft: "auto", padding: "1px 6px", borderRadius: 20, background: "#ef4444", color: "#fff", fontSize: 10, fontWeight: 800 }}>{chatUnread}</span>
+              )}
               {active && <span style={{ marginLeft: "auto", width: 4, height: 4, borderRadius: "50%", background: "#7c3aed" }} />}
             </button>
           );

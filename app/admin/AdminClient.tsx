@@ -117,7 +117,7 @@ interface Props {
   };
 }
 
-const TABS = ["Visão Geral", "Usuários", "Faturamento", "Analytics", "CRM", "Parceiros", "Fotos", "Controle"] as const;
+const TABS = ["Visão Geral", "Usuários", "Faturamento", "Analytics", "CRM", "Parceiros", "Fotos", "Controle", "Chats"] as const;
 type Tab = (typeof TABS)[number];
 
 const PLAN_PRICES: Record<string, number> = {
@@ -3084,6 +3084,252 @@ export default function AdminClient({
           onUpdated={handleUpdated}
         />
       )}
+
+        {/* ── Chats tab ─────────────────────────────────────────────────── */}
+        {tab === "Chats" && <AdminChatsTab />}
+    </div>
+  );
+}
+
+// ── Admin Chats Tab ───────────────────────────────────────────────────────────
+function AdminChatsTab() {
+  type Conv = {
+    id: string; subject: string; status: string; priority: string;
+    last_message_at: string; unread: number;
+    restaurants: { id: string; name: string; plan: string } | null;
+    support_staff: { id: string; name: string } | null;
+  };
+  type Msg = {
+    id: string; sender_type: string; sender_name: string;
+    sender_staff_id?: string; message: string; read_at: string | null; created_at: string;
+  };
+
+  const STATUS_L: Record<string, { label: string; color: string }> = {
+    open:          { label: "Aberto",             color: "#60a5fa" },
+    waiting_reply: { label: "Aguardando resposta", color: "#fbbf24" },
+    resolved:      { label: "Resolvido",           color: "#6ee7b7" },
+    closed:        { label: "Fechado",             color: "#9ca3af" },
+  };
+  const PRIO_L: Record<string, { label: string; color: string }> = {
+    low:    { label: "Baixa",   color: "#9ca3af" },
+    normal: { label: "Normal",  color: "#60a5fa" },
+    high:   { label: "Alta",    color: "#fbbf24" },
+    urgent: { label: "Urgente", color: "#f87171" },
+  };
+
+  const [convs, setConvs] = useState<Conv[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState("open");
+  const [q, setQ] = useState("");
+  const [page, setPage] = useState(1);
+  const [active, setActive] = useState<Conv | null>(null);
+  const [messages, setMessages] = useState<Msg[]>([]);
+  const [msgLoading, setMsgLoading] = useState(false);
+  const [reply, setReply] = useState("");
+  const [sending, setSending] = useState(false);
+  const bottomRef = React.useRef<HTMLDivElement>(null);
+  const supabase = React.useMemo(() => createClient(), []);
+
+  // Get admin token (from supabase session — admin uses regular auth)
+  // For admin, we call suporte APIs directly via fetch with session cookie (server handles it via ADMIN_EMAIL)
+  // But suporte API uses x-suporte-token. For the admin tab we call a dedicated admin endpoint instead.
+  // We'll use the /api/admin/chats/* pattern (fetched as admin via cookie auth).
+  // Since those don't exist yet, we'll re-use the suporte API by reading from Supabase directly via client.
+
+  async function loadConvs() {
+    setLoading(true);
+    const params = new URLSearchParams({ status: statusFilter, q, page: String(page) });
+    const res = await fetch(`/api/admin/chats?${params}`);
+    if (res.ok) {
+      const json = await res.json();
+      setConvs(json.data ?? []); setTotal(json.count ?? 0);
+    }
+    setLoading(false);
+  }
+
+  React.useEffect(() => { loadConvs(); }, [statusFilter, q, page]); // eslint-disable-line
+
+  // Realtime
+  React.useEffect(() => {
+    const channel = supabase
+      .channel("admin-chats")
+      .on("postgres_changes", { event: "*", schema: "public", table: "support_messages" }, () => {
+        loadConvs();
+        if (active) {
+          fetch(`/api/admin/chats/${active.id}/messages`)
+            .then((r) => r.json())
+            .then(({ data }) => { if (data) { setMessages(data); setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50); } });
+        }
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "support_conversations" }, () => { loadConvs(); })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [active?.id]); // eslint-disable-line
+
+  async function openConv(c: Conv) {
+    setActive(c); setMsgLoading(true); setMessages([]);
+    const res = await fetch(`/api/admin/chats/${c.id}/messages`);
+    const json = await res.json();
+    setMessages(json.data ?? []); setMsgLoading(false);
+    setConvs((prev) => prev.map((cv) => cv.id === c.id ? { ...cv, unread: 0 } : cv));
+    setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "instant" }), 80);
+  }
+
+  async function sendReply() {
+    if (!reply.trim() || !active || sending) return;
+    setSending(true);
+    const res = await fetch(`/api/admin/chats/${active.id}/messages`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: reply.trim() }),
+    });
+    if (res.ok) {
+      const json = await res.json();
+      setMessages((prev) => [...prev, json.data]);
+      setReply("");
+      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
+    }
+    setSending(false);
+  }
+
+  async function patchConv(updates: Record<string, unknown>) {
+    if (!active) return;
+    await fetch(`/api/admin/chats/${active.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updates),
+    });
+    loadConvs();
+    const res = await fetch(`/api/admin/chats/${active.id}`);
+    const { data } = await res.json();
+    if (data) setActive(data);
+  }
+
+  const totalUnread = convs.reduce((s, c) => s + c.unread, 0);
+
+  return (
+    <div className="flex h-[calc(100vh-200px)] min-h-96 gap-0 rounded-2xl overflow-hidden border border-gray-800">
+      {/* Left: list */}
+      <div className="w-80 flex-shrink-0 bg-gray-950 border-r border-gray-800 flex flex-col">
+        <div className="p-4 border-b border-gray-800">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-bold text-gray-200 flex items-center gap-2">
+              💬 Chats
+              {totalUnread > 0 && <span className="px-2 py-0.5 rounded-full bg-red-500 text-white text-xs font-black">{totalUnread}</span>}
+            </h3>
+          </div>
+          <input value={q} onChange={(e) => { setQ(e.target.value); setPage(1); }} placeholder="Buscar restaurante..."
+            className="w-full px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-white text-xs placeholder-gray-600 outline-none mb-2" />
+          <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+            className="w-full px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-gray-300 text-xs outline-none">
+            <option value="all">Todos</option>
+            <option value="open">Abertos</option>
+            <option value="waiting_reply">Aguardando</option>
+            <option value="resolved">Resolvidos</option>
+            <option value="closed">Fechados</option>
+          </select>
+        </div>
+        <div className="flex-1 overflow-y-auto">
+          {loading && <p className="text-gray-600 text-xs p-4">Carregando...</p>}
+          {convs.map((c) => {
+            const st = STATUS_L[c.status] ?? STATUS_L.open;
+            return (
+              <button key={c.id} onClick={() => openConv(c)}
+                className={`w-full p-3 text-left border-b border-gray-900 transition-colors ${active?.id === c.id ? "bg-purple-900/20 border-l-2 border-l-purple-500" : "hover:bg-gray-900/50"}`}>
+                <div className="flex items-start justify-between mb-1">
+                  <span className="text-xs font-bold text-gray-200 truncate flex-1 mr-2">{c.restaurants?.name ?? "—"}</span>
+                  {c.unread > 0 && <span className="w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-black flex items-center justify-center flex-shrink-0">{c.unread}</span>}
+                </div>
+                <div className="text-gray-500 text-[11px] truncate mb-1">{c.subject}</div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-semibold" style={{ color: st.color }}>{st.label}</span>
+                  {c.support_staff && <span className="text-gray-600 text-[10px]">→ {(c.support_staff as any).name}</span>}
+                </div>
+              </button>
+            );
+          })}
+          {!loading && convs.length === 0 && <p className="text-gray-600 text-xs p-4 text-center">Nenhuma conversa.</p>}
+        </div>
+      </div>
+
+      {/* Right: conversation */}
+      <div className="flex-1 min-w-0 flex flex-col bg-gray-950/50">
+        {!active ? (
+          <div className="flex-1 flex items-center justify-center flex-col gap-3 text-gray-600">
+            <span className="text-4xl">💬</span>
+            <p className="text-sm">Selecione uma conversa</p>
+          </div>
+        ) : (
+          <>
+            <div className="p-4 border-b border-gray-800">
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div>
+                  <h4 className="font-bold text-gray-200 text-sm">{active.subject}</h4>
+                  <p className="text-gray-500 text-xs">{active.restaurants?.name} · <span className="text-purple-400">{active.restaurants?.plan}</span></p>
+                </div>
+                <div className="flex gap-2 flex-shrink-0">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: `${STATUS_L[active.status]?.color ?? "#fff"}18`, color: STATUS_L[active.status]?.color }}>{STATUS_L[active.status]?.label}</span>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: `${PRIO_L[active.priority]?.color ?? "#fff"}18`, color: PRIO_L[active.priority]?.color }}>{PRIO_L[active.priority]?.label}</span>
+                </div>
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                {active.status !== "resolved" && (
+                  <button onClick={() => patchConv({ status: "resolved" })} className="px-3 py-1 rounded-lg bg-green-900/30 text-green-400 text-xs font-semibold border border-green-800/50">✓ Resolver</button>
+                )}
+                {(active.status === "resolved" || active.status === "closed") && (
+                  <button onClick={() => patchConv({ status: "open" })} className="px-3 py-1 rounded-lg bg-blue-900/30 text-blue-400 text-xs font-semibold border border-blue-800/50">↩ Reabrir</button>
+                )}
+                {active.status !== "closed" && (
+                  <button onClick={() => patchConv({ status: "closed" })} className="px-3 py-1 rounded-lg bg-gray-800 text-gray-400 text-xs font-semibold">Fechar</button>
+                )}
+                <select value={active.priority} onChange={(e) => patchConv({ priority: e.target.value })}
+                  className="px-3 py-1 rounded-lg bg-gray-800 text-gray-300 text-xs outline-none cursor-pointer">
+                  {Object.entries(PRIO_L).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                </select>
+              </div>
+            </div>
+
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
+              {msgLoading ? <p className="text-gray-600 text-xs">Carregando...</p> : messages.map((m) => {
+                const isClient = m.sender_type === "client";
+                const isSystem = m.sender_type === "system";
+                if (isSystem) return (
+                  <div key={m.id} className="text-center">
+                    <span className="text-gray-600 text-[11px] bg-gray-900 px-3 py-1 rounded-full">{m.message}</span>
+                  </div>
+                );
+                return (
+                  <div key={m.id} className={`flex flex-col ${isClient ? "items-start" : "items-end"}`}>
+                    <span className="text-gray-500 text-[11px] mb-1">{m.sender_name}</span>
+                    <div className={`max-w-xs px-3 py-2 rounded-2xl text-sm leading-relaxed break-words ${isClient ? "bg-gray-800 text-gray-100 rounded-tl-sm" : "bg-purple-900/40 text-gray-100 border border-purple-800/50 rounded-tr-sm"}`}>
+                      {m.message}
+                    </div>
+                    <span className="text-gray-700 text-[10px] mt-1">{new Date(m.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span>
+                  </div>
+                );
+              })}
+              <div ref={bottomRef} />
+            </div>
+
+            {/* Input */}
+            {active.status !== "closed" && (
+              <div className="p-3 border-t border-gray-800 flex gap-2 items-end">
+                <textarea value={reply} onChange={(e) => setReply(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendReply(); } }}
+                  placeholder="Responder... (Enter para enviar)"
+                  rows={2}
+                  className="flex-1 px-3 py-2 rounded-xl bg-gray-900 border border-gray-700 text-white text-sm resize-none outline-none focus:border-purple-500 font-inherit"
+                />
+                <button onClick={sendReply} disabled={sending || !reply.trim()}
+                  className="px-4 py-2 rounded-xl bg-purple-700 hover:bg-purple-600 text-white text-sm font-semibold disabled:opacity-40 transition-colors">
+                  {sending ? "…" : "Enviar"}
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }

@@ -25,6 +25,7 @@ const EstoqueModal = dynamic(() => import("./modals/EstoqueModal"), { ssr: false
 const ConfigModal = dynamic(() => import("./modals/ConfigModal"), { ssr: false, loading: () => loadingFallback });
 const PrinterModal = dynamic(() => import("./modals/PrinterModal"), { ssr: false, loading: () => loadingFallback });
 const CrmModal = dynamic(() => import("./modals/CrmModal"), { ssr: false, loading: () => loadingFallback });
+const ChatWidget = dynamic(() => import("./components/ChatWidget"), { ssr: false });
 
 // ─── Modal backdrop ─────────────────────────────────────────────────────────
 function Modal({ open, onClose, children, title }: { open: boolean; onClose: () => void; children: React.ReactNode; title: string }) {
@@ -252,6 +253,7 @@ const GRID_LAYOUTS: Record<string, Array<{ id: string; cols: number; mobileCols:
     { id: "unidade",     cols: 1, mobileCols: 1 },
     { id: "tv",          cols: 1, mobileCols: 1 },
     { id: "config",      cols: 1, mobileCols: 1 },
+    { id: "suporte",     cols: 1, mobileCols: 1 },
     { id: "impressoras", cols: 2, mobileCols: 2 },
   ],
   // menupro: analytics full-width + 3 rows of 4
@@ -265,6 +267,7 @@ const GRID_LAYOUTS: Record<string, Array<{ id: string; cols: number; mobileCols:
     { id: "equipe",      cols: 1, mobileCols: 1 },
     { id: "estoque",     cols: 1, mobileCols: 1 },
     { id: "tv",          cols: 1, mobileCols: 1 },
+    { id: "suporte",     cols: 1, mobileCols: 1 },
     { id: "config",      cols: 2, mobileCols: 2 },
     { id: "impressoras", cols: 2, mobileCols: 2 },
   ],
@@ -280,6 +283,7 @@ const GRID_LAYOUTS: Record<string, Array<{ id: string; cols: number; mobileCols:
     { id: "estoque",     cols: 1, mobileCols: 1 },
     { id: "crm",         cols: 1, mobileCols: 1 },
     { id: "tv",          cols: 1, mobileCols: 1 },
+    { id: "suporte",     cols: 1, mobileCols: 1 },
     { id: "config",      cols: 1, mobileCols: 1 },
     { id: "impressoras", cols: 2, mobileCols: 2 },
   ],
@@ -297,6 +301,7 @@ export default function DashboardClient({
 }) {
   const router = useRouter();
   const [modal, setModal] = useState<"analytics" | "cardapio" | "pedidos" | "financeiro" | "unidade" | "plano" | "config" | "tv" | "modotv" | "estoque" | "operacoes" | "equipe" | "impressoras" | "links" | "crm" | null>(null);
+  const [chatOpen, setChatOpen] = useState(false);
   const open = (m: typeof modal) => setModal(m);
   const close = () => setModal(null);
 
@@ -501,6 +506,7 @@ export default function DashboardClient({
     impressoras: { icon: "🖨️", label: "Impressoras", sub: "Roteamento por categoria", modalKey: "impressoras" },
     links: { icon: "🔗", label: "Links Rápidos", sub: "Acessos do sistema", modalKey: "links" },
     crm: { icon: "📇", label: "CRM", sub: "Clientes e contatos", modalKey: "crm" },
+    suporte: { icon: "💬", label: "Suporte", sub: "Chat com nossa equipe", modalKey: "suporte" },
   }), [analytics, products.length, unit?.is_published, tvCount, restaurantState, trialDays, stockStats]);
 
   return (
@@ -1342,6 +1348,7 @@ export default function DashboardClient({
             plano:       "var(--dash-warning-soft)",
             config:      "var(--dash-card-hover)",
             impressoras: "var(--dash-card-hover)",
+            suporte:     "rgba(0,255,174,0.08)",
           };
 
           const baseCard: React.CSSProperties = {
@@ -1484,6 +1491,17 @@ export default function DashboardClient({
                   );
                 }
 
+                // ── Suporte — chat widget ─────────────────────────────────
+                if (item.id === "suporte") {
+                  return (
+                    <div key="suporte" className="card" onClick={() => setChatOpen(true)} style={{ ...baseCard, gridColumn: `span ${colSpan}`, background: "linear-gradient(135deg, var(--dash-card) 0%, rgba(0,255,174,0.03) 100%)" }}>
+                      <IconBox id="suporte" />
+                      <div style={{ color: "var(--dash-text)", fontSize: 14, fontWeight: 700, lineHeight: 1.2 }}>Suporte</div>
+                      <div style={{ color: "var(--dash-accent)", fontSize: 12 }}>Falar com equipe</div>
+                    </div>
+                  );
+                }
+
                 // ── Card padrão ───────────────────────────────────────────
                 return (
                   <div key={item.id} className="card" onClick={() => open(config.modalKey as any)} style={{ ...baseCard, gridColumn: `span ${colSpan}` }}>
@@ -1601,6 +1619,12 @@ export default function DashboardClient({
       <Modal open={modal === "crm"} onClose={close} title="CRM">
         {unit && restaurant && <CrmModal unit={unit} restaurant={restaurant} />}
       </Modal>
+      <ChatWidget
+        restaurantId={restaurant.id}
+        open={chatOpen}
+        onOpen={() => setChatOpen(true)}
+        onClose={() => setChatOpen(false)}
+      />
     </>
   );
 }
