@@ -70,6 +70,7 @@ export default function PaymentModal({ planKey, planName, accent, accentRgb, onC
   const [copied, setCopied] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
 
   // Card
   const [cardHolder, setCardHolder] = useState("");
@@ -111,6 +112,11 @@ export default function PaymentModal({ planKey, planName, accent, accentRgb, onC
     return () => { if (pollingRef.current) clearInterval(pollingRef.current); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, pixPaymentId]);
+
+  // Scroll sheet to top on every step change (and on mount)
+  useEffect(() => {
+    sheetRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  }, [step]);
 
   async function generatePix() {
     setPixLoading(true);
@@ -186,7 +192,7 @@ export default function PaymentModal({ planKey, planName, accent, accentRgb, onC
       <div onClick={onClose} style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)" }} />
 
       {/* Sheet */}
-      <div style={{
+      <div ref={sheetRef} style={{
         position: "relative", zIndex: 1,
         width: "100%", maxWidth: 480,
         maxHeight: "92dvh", overflowY: "auto",
