@@ -244,7 +244,7 @@ export default function ProductRow({
   const [thumbnailUrl, setThumbnailUrl] = useState(product.thumbnail_url ?? "");
   const [videoUrl, setVideoUrl] = useState(product.video_url ?? "");
   const [priceType, setPriceType] = useState(product.price_type ?? "fixed");
-  const [variations, setVariations] = useState<{ id?: string; name: string; price: number }[]>([]);
+  const [variations, setVariations] = useState<{ id?: string; name: string; price: number; priceStr?: string }[]>([]);
   const [variationsLoaded, setVariationsLoaded] = useState(false);
   const [description, setDescription] = useState(product.description ?? "");
   const [descriptionSource, setDescriptionSource] = useState<"MANUAL" | "AI_GENERATED" | "HYBRID">(product.description_source ?? "MANUAL");
@@ -492,12 +492,17 @@ export default function ProductRow({
                           type="text"
                           inputMode="decimal"
                           placeholder="0,00"
-                          value={v.price ? (v.price / 100).toFixed(2).replace(".", ",") : ""}
+                          value={v.priceStr !== undefined ? v.priceStr : (v.price ? (v.price / 100).toFixed(2).replace(".", ",") : "")}
                           onChange={(e) => {
-                            const raw = e.target.value.replace(/[^\d,]/g, "");
+                            const raw = e.target.value.replace(/[^\d,\.]/g, "");
+                            setVariations(variations.map((x, j) => j === i ? { ...x, priceStr: raw } : x));
+                          }}
+                          onBlur={(e) => {
+                            const raw = e.target.value.replace(/[^\d,\.]/g, "");
                             const normalized = raw.replace(",", ".");
                             const cents = Math.round(parseFloat(normalized) * 100) || 0;
-                            setVariations(variations.map((x, j) => j === i ? { ...x, price: cents } : x));
+                            const formatted = cents ? (cents / 100).toFixed(2).replace(".", ",") : "";
+                            setVariations(variations.map((x, j) => j === i ? { ...x, price: cents, priceStr: formatted } : x));
                           }}
                           style={{ ...inputStyle, width: 70, fontSize: 13, fontWeight: 700, padding: "5px 8px", textAlign: "right", color: "#00ffae" }}
                         />
