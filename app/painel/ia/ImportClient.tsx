@@ -408,35 +408,13 @@ export default function ImportClient({ unitId, unitName, embedded = false }: { u
             {error && <div style={{ borderRadius: 12, padding: "12px 14px", background: "rgba(255,80,80,0.08)", border: "1px solid rgba(255,80,80,0.2)", color: "#f87171", fontSize: 13 }}>{error}</div>}
 
             <div style={{ display: "flex", justifyContent: "center" }}>
-              <button
-                type="button"
+              <AIButton
+                label="Analisar cardápio"
+                loadingLabel="Analisando..."
+                loading={loading}
                 onClick={handleImport}
-                disabled={loading}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 8,
-                  padding: "12px 32px",
-                  border: "none",
-                  borderRadius: 12,
-                  cursor: loading ? "not-allowed" : "pointer",
-                  fontSize: 14,
-                  fontWeight: 700,
-                  color: "#e8dff5",
-                  fontFamily: "inherit",
-                  background: loading
-                    ? "rgba(124,58,237,0.3)"
-                    : "linear-gradient(145deg, #7c3aed 0%, #5b21b6 40%, #4c1d95 100%)",
-                  boxShadow: loading
-                    ? "none"
-                    : "0 4px 14px rgba(124,58,237,0.3), inset 0 1px 0 rgba(255,255,255,0.15), inset 0 -2px 0 rgba(0,0,0,0.2)",
-                  transition: "all 0.2s ease",
-                  opacity: loading ? 0.6 : 1,
-                }}
-              >
-                {loading ? "⏳ Analisando..." : "✨ Analisar cardápio"}
-              </button>
+                size="lg"
+              />
             </div>
           </div>
         )}
@@ -480,42 +458,30 @@ export default function ImportClient({ unitId, unitName, embedded = false }: { u
                             <ConfidenceBadge conf={prod.import_confidence} />
                           </div>
                           <input value={prod.description ?? ""} onChange={(e) => updateProduct(ci, pi, { description: e.target.value || null })} placeholder="Descrição (opcional)" style={{ width: "100%", background: "transparent", border: "none", borderBottom: "1px solid rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.4)", fontSize: 12, padding: "2px 0", outline: "none", fontFamily: "inherit", marginBottom: 4 }} />
-                          <button
-                            type="button"
-                            onClick={async () => {
-                              try {
-                                const res = await fetch("/api/ia/describe", {
-                                  method: "POST",
-                                  headers: { "Content-Type": "application/json" },
-                                  body: JSON.stringify({
-                                    name: prod.name,
-                                    category: cat.name,
-                                    price: prod.base_price,
-                                    existing_description: prod.description,
-                                  }),
-                                });
-                                const json = await res.json();
-                                if (json.description) {
-                                  updateProduct(ci, pi, { description: json.description });
-                                }
-                              } catch {}
-                            }}
-                            style={{
-                              background: "none",
-                              border: "1px solid rgba(99,102,241,0.3)",
-                              borderRadius: 8,
-                              padding: "3px 10px",
-                              color: "#a5b4fc",
-                              fontSize: 11,
-                              cursor: "pointer",
-                              marginBottom: 6,
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 4,
-                            }}
-                          >
-                            ✨ {prod.description ? "Reescrever com IA" : "Gerar descrição"}
-                          </button>
+                          <div style={{ marginBottom: 6 }}>
+                            <AIButton
+                              label={prod.description ? "Reescrever com IA" : "Gerar descrição"}
+                              size="sm"
+                              onClick={async () => {
+                                try {
+                                  const res = await fetch("/api/ia/describe", {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({
+                                      name: prod.name,
+                                      category: cat.name,
+                                      price: prod.base_price,
+                                      existing_description: prod.description,
+                                    }),
+                                  });
+                                  const json = await res.json();
+                                  if (json.description) {
+                                    updateProduct(ci, pi, { description: json.description });
+                                  }
+                                } catch {}
+                              }}
+                            />
+                          </div>
                           {prod.price_type === "fixed" ? (
                             <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                               <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 12 }}>R$</span>

@@ -6,6 +6,8 @@ import { createCategory, updateCategory, deleteCategory, createProduct } from ".
 import { createClient as createSupabaseClient } from "@/lib/supabase/client";
 import ProductRow from "../ProductRow";
 import { Unit, Category, Product, Restaurant } from "../types";
+import AIButton from "@/components/AIButton";
+import AIWaveLoader from "@/components/AIWaveLoader";
 
 type CustomSection = { id: string; name: string; icon: string; allows_video: boolean; allows_alcoholic_toggle: boolean };
 
@@ -750,22 +752,24 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                 onFocus={inpFocus} onBlur={inpBlur}
               />
               {pastedText.trim() && (
-                <button onClick={() => handleImportText(pastedText)} style={{
-                  marginTop: 10, width: "100%", padding: 14, borderRadius: 14,
-                  background: "var(--dash-accent-soft)", border: "none", color: "var(--dash-accent)",
-                  fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
-                  boxShadow: "0 1px 0 rgba(0,255,174,0.12) inset, 0 -1px 0 rgba(0,0,0,0.2) inset",
-                }}>✨ Analisar com IA</button>
+                <div style={{ marginTop: 10 }}>
+                  <AIButton label="Analisar com IA" loadingLabel="Analisando..." onClick={() => handleImportText(pastedText)} fullWidth size="lg" />
+                </div>
               )}
             </>
           )}
 
           {/* Processing */}
           {importStep === "processing" && (
-            <div style={{ textAlign: "center", padding: "60px 20px" }}>
-              <div style={{ fontSize: 40, marginBottom: 16 }}>✨</div>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "60px 20px", gap: 16 }}>
+              <div style={{ display: "flex", gap: 6 }}>
+                {[0, 1, 2, 3, 4, 5].map(i => (
+                  <div key={i} style={{ width: 10, height: 10, borderRadius: 3, background: "linear-gradient(135deg, #7c3aed, #a855f7)", animation: `aiWaveLg 1.4s ease ${i * 0.12}s infinite` }} />
+                ))}
+              </div>
               <div style={{ color: "var(--dash-text)", fontSize: 16, fontWeight: 700 }}>Analisando seu cardápio...</div>
-              <div style={{ color: "var(--dash-text-muted)", fontSize: 13, marginTop: 8 }}>A IA está extraindo categorias, produtos e preços</div>
+              <div style={{ color: "var(--dash-text-muted)", fontSize: 13 }}>A IA está extraindo categorias, produtos e preços</div>
+              <style>{`@keyframes aiWaveLg { 0%,100%{transform:translateY(0);opacity:1} 50%{transform:translateY(14px);opacity:0.2} }`}</style>
             </div>
           )}
 
@@ -822,15 +826,16 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                 </div>
               ))}
 
-              <button onClick={handleConfirmImport} disabled={importing} style={{
-                width: "100%", padding: 14, borderRadius: 14, marginTop: 12,
-                background: "var(--dash-accent-soft)", border: "none",
-                color: "var(--dash-accent)", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
-                boxShadow: "0 1px 0 rgba(0,255,174,0.12) inset, 0 -1px 0 rgba(0,0,0,0.2) inset",
-                opacity: importing ? 0.5 : 1,
-              }}>
-                {importing ? "Importando..." : `✨ Importar ${importData.categories?.reduce((s: number, c: any) => s + (c.products?.length || 0), 0)} produtos`}
-              </button>
+              <div style={{ marginTop: 12 }}>
+                <AIButton
+                  label={`Importar ${importData.categories?.reduce((s: number, c: any) => s + (c.products?.length || 0), 0)} produtos`}
+                  loadingLabel="Importando..."
+                  loading={importing}
+                  onClick={handleConfirmImport}
+                  fullWidth
+                  size="lg"
+                />
+              </div>
             </>
           )}
 
@@ -867,13 +872,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
               Ver cardápio ↗
             </a>
           )}
-          <button type="button" onClick={() => setImportStep("upload")} style={{
-            padding: "8px 16px", borderRadius: 10, border: "none", cursor: "pointer",
-            background: "var(--dash-purple-soft)", color: "var(--dash-purple)", fontSize: 12, fontWeight: 600,
-            boxShadow: "0 1px 0 rgba(168,85,247,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
-          }}>
-            ✨ Importar com IA
-          </button>
+          <AIButton label="Importar com IA" onClick={() => setImportStep("upload")} size="md" />
           {otherUnits.length > 0 && (
             <button type="button" onClick={() => setShowCopyFromUnit(true)} style={{
               padding: "8px 16px", borderRadius: 10, border: "none", cursor: "pointer",

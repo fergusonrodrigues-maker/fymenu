@@ -6,6 +6,7 @@ import { updateProduct, deleteProduct, updateProductStock, updateProductNutritio
 import FyLoader from "@/components/FyLoader";
 import { useGenerateProductDescription } from "@/lib/hooks/useGenerateProductDescription";
 import { uploadMedia } from "@/lib/upload";
+import AIButton from "@/components/AIButton";
 
 type Product = {
   id: string;
@@ -401,23 +402,15 @@ export default function ProductRow({
                   </div>
                   <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>{description.length}/150</span>
                 </div>
-                <button
-                  type="button"
+                <AIButton
+                  label="Gerar descrição com IA"
+                  loadingLabel="Gerando..."
+                  loading={loadingAI}
                   onClick={() => generateDescription(thumbnailUrl, productName, "Geral", descriptionSource === "MANUAL" ? description : undefined)}
-                  disabled={loadingAI || !thumbnailUrl}
-                  style={{
-                    padding: "8px 0",
-                    background: loadingAI || !thumbnailUrl ? "rgba(255,255,255,0.04)" : "rgba(139,92,246,0.15)",
-                    color: loadingAI || !thumbnailUrl ? "rgba(255,255,255,0.25)" : "#a78bfa",
-                    border: `1px solid ${loadingAI || !thumbnailUrl ? "rgba(255,255,255,0.08)" : "rgba(139,92,246,0.3)"}`,
-                    borderRadius: 8,
-                    fontSize: 13,
-                    fontWeight: 600,
-                    cursor: loadingAI || !thumbnailUrl ? "not-allowed" : "pointer",
-                  }}
-                >
-                  {loadingAI ? "Gerando..." : "✨ Gerar descrição com IA"}
-                </button>
+                  disabled={!thumbnailUrl}
+                  fullWidth
+                  size="md"
+                />
                 {!thumbnailUrl && (
                   <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", margin: 0 }}>Adicione uma foto para gerar descrição com IA</p>
                 )}
@@ -713,9 +706,11 @@ export default function ProductRow({
               <input type="hidden" name="id" value={product.id} />
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 2 }}>
                 <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 11 }}>Informações nutricionais por porção</span>
-                <button
-                  type="button"
-                  disabled={nutLoading}
+                <AIButton
+                  label="Sugestão IA"
+                  loadingLabel="Calculando..."
+                  loading={nutLoading}
+                  size="sm"
                   onClick={async () => {
                     setNutLoading(true);
                     try {
@@ -737,10 +732,7 @@ export default function ProductRow({
                       setNutLoading(false);
                     }
                   }}
-                  style={{ padding: "4px 10px", background: "rgba(139,92,246,0.15)", color: "#a78bfa", border: "1px solid rgba(139,92,246,0.3)", borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: nutLoading ? "not-allowed" : "pointer", opacity: nutLoading ? 0.6 : 1 }}
-                >
-                  {nutLoading ? "Calculando…" : "✨ Sugestão IA"}
-                </button>
+                />
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                 {(["calories", "protein", "carbs", "fat"] as const).map((key) => (

@@ -69,22 +69,12 @@ export function DescribeAIButton({
   if (renderButton) return <>{renderButton(handleClick, generating)}</>;
 
   return (
-    <button
+    <AIButton
+      label="Gerar descrição"
+      loadingLabel="Gerando..."
+      loading={generating}
       onClick={handleClick}
-      disabled={generating}
-      type="button"
-      style={{
-        padding: "5px 12px", borderRadius: 20,
-        background: "var(--dash-accent-soft)",
-        border: "none", color: "var(--dash-accent)",
-        fontSize: 12, fontWeight: 700, cursor: generating ? "not-allowed" : "pointer",
-        display: "flex", alignItems: "center", gap: 5,
-        opacity: generating ? 0.7 : 1,
-        transition: "opacity 0.15s",
-        whiteSpace: "nowrap",
-      }}
-    >
-      {generating ? "⏳ Gerando..." : "✨ Gerar descrição"}
-    </button>
+      size="sm"
+    />
   );
 }

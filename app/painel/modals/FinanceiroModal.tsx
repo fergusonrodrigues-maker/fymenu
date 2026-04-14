@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Unit, Restaurant, ReportData, ReportProduct, ReportPayments, DayData } from "../types";
+import AIButton from "@/components/AIButton";
+import AIWaveLoader from "@/components/AIWaveLoader";
 
 const supabase = createClient();
 
@@ -486,11 +488,9 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
                 }}
               />
               {financeText.trim() && (
-                <button onClick={() => handleFinanceText(financeText)} style={{
-                  marginTop: 8, padding: "10px 20px", borderRadius: 12,
-                  background: "var(--dash-accent-soft)", border: "none", color: "var(--dash-accent)",
-                  fontSize: 13, fontWeight: 700, cursor: "pointer",
-                }}>✨ Analisar com IA</button>
+                <div style={{ marginTop: 8 }}>
+                  <AIButton label="Analisar com IA" loadingLabel="Analisando..." onClick={() => handleFinanceText(financeText)} size="md" />
+                </div>
               )}
             </div>
           </div>
@@ -498,10 +498,15 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
 
         {/* PROCESSING */}
         {importFinanceStep === "processing" && (
-          <div style={{ textAlign: "center", padding: "50px 20px" }}>
-            <div style={{ fontSize: 36, marginBottom: 12 }}>🧾</div>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "50px 20px", gap: 16 }}>
+            <div style={{ display: "flex", gap: 6 }}>
+              {[0, 1, 2, 3, 4, 5].map(i => (
+                <div key={i} style={{ width: 10, height: 10, borderRadius: 3, background: "linear-gradient(135deg, #7c3aed, #a855f7)", animation: `aiWaveLg 1.4s ease ${i * 0.12}s infinite` }} />
+              ))}
+            </div>
             <div style={{ color: "var(--dash-text)", fontSize: 15, fontWeight: 700 }}>Analisando documento...</div>
-            <div style={{ color: "var(--dash-text-muted)", fontSize: 12, marginTop: 6 }}>A IA está extraindo os dados financeiros</div>
+            <div style={{ color: "var(--dash-text-muted)", fontSize: 12 }}>A IA está extraindo os dados financeiros</div>
+            <style>{`@keyframes aiWaveLg { 0%,100%{transform:translateY(0);opacity:1} 50%{transform:translateY(14px);opacity:0.2} }`}</style>
           </div>
         )}
 
@@ -1256,15 +1261,14 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
               Análise completa cruzando receita, custos, equipe e desempenho.
             </div>
             {!financeAI ? (
-              <button onClick={handleFullFinanceAI} disabled={generatingFinanceAI} style={{
-                width: "100%", padding: 14, borderRadius: 14, border: "none", cursor: "pointer",
-                background: "var(--dash-accent-soft)", color: "var(--dash-accent)",
-                fontSize: 14, fontWeight: 800,
-                boxShadow: "0 1px 0 rgba(0,255,174,0.12) inset, 0 -1px 0 rgba(0,0,0,0.2) inset",
-                opacity: generatingFinanceAI ? 0.5 : 1,
-              }}>
-                {generatingFinanceAI ? "Gerando relatório..." : "✨ Gerar relatório completo com IA"}
-              </button>
+              <AIButton
+                label="Gerar relatório completo com IA"
+                loadingLabel="Gerando relatório..."
+                loading={generatingFinanceAI}
+                onClick={handleFullFinanceAI}
+                fullWidth
+                size="lg"
+              />
             ) : (
               <>
                 <div style={{ whiteSpace: "pre-wrap", fontSize: 13, color: "var(--dash-text-secondary)", lineHeight: 1.7 }}>
