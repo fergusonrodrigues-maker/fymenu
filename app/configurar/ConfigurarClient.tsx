@@ -2,6 +2,13 @@
 
 import { useState } from "react";
 
+function formatPlanPrice(price: number): string {
+  if (price >= 1000) {
+    return `R$${price.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`;
+  }
+  return `R$${price.toFixed(2).replace(".", ",")}`;
+}
+
 interface ConfigurarClientProps {
   restaurantId: string;
   restaurantName: string;
@@ -13,7 +20,7 @@ export default function ConfigurarClient({
   restaurantName,
   currentPlan,
 }: ConfigurarClientProps) {
-  const [selectedCycle, setSelectedCycle] = useState<"monthly" | "quarterly" | "semiannual">("monthly");
+  const [selectedCycle, setSelectedCycle] = useState<"monthly" | "quarterly" | "semiannual">("quarterly");
   const [loading, setLoading] = useState(false);
 
   const plans = [
@@ -21,7 +28,7 @@ export default function ConfigurarClient({
       key: "menu",
       name: "Menu",
       description: "Cardápio digital profissional",
-      prices: { monthly: 129, quarterly: 104, semiannual: 89 },
+      prices: { monthly: 199.90, quarterly: 179.90, semiannual: 159.90 },
       color: "#00ffae",
       features: [
         "1 unidade",
@@ -38,7 +45,7 @@ export default function ConfigurarClient({
       key: "menupro",
       name: "MenuPro",
       description: "Gestão completa do restaurante",
-      prices: { monthly: 249, quarterly: 219, semiannual: 179 },
+      prices: { monthly: 399.90, quarterly: 359.90, semiannual: 319.90 },
       color: "#00d9ff",
       popular: true,
       features: [
@@ -57,7 +64,7 @@ export default function ConfigurarClient({
       key: "business",
       name: "Business",
       description: "Operação profissional completa",
-      prices: { monthly: 1090, quarterly: 999, semiannual: 849 },
+      prices: { monthly: 1599, quarterly: 1399, semiannual: 1199 },
       color: "#a855f7",
       features: [
         "Até 4 unidades",
@@ -338,7 +345,7 @@ export default function ConfigurarClient({
                 <span
                   style={{ fontSize: 36, fontWeight: 900, color: "#fff" }}
                 >
-                  R${price}
+                  {formatPlanPrice(price)}
                 </span>
                 <span
                   style={{ fontSize: 13, color: "rgba(255,255,255,0.3)" }}

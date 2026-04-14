@@ -5,12 +5,19 @@ import { Restaurant } from "../types";
 
 type Cycle = "monthly" | "quarterly" | "semiannual";
 
+function formatPlanPrice(price: number): string {
+  if (price >= 1000) {
+    return `R$${price.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`;
+  }
+  return `R$${price.toFixed(2).replace(".", ",")}`;
+}
+
 const PLANS = [
   {
     key: "menu",
     name: "Menu",
     tagline: "Cardápio digital profissional",
-    prices: { monthly: 129, quarterly: 104, semiannual: 89 },
+    prices: { monthly: 199.90, quarterly: 179.90, semiannual: 159.90 },
     accent: "#00ffae",
     accentRgb: "0,255,174",
     gradientFrom: "rgba(0,255,174,0.08)",
@@ -33,7 +40,7 @@ const PLANS = [
     key: "menupro",
     name: "MenuPro",
     tagline: "Gestão completa do restaurante",
-    prices: { monthly: 249, quarterly: 219, semiannual: 179 },
+    prices: { monthly: 399.90, quarterly: 359.90, semiannual: 319.90 },
     accent: "#00d9ff",
     accentRgb: "0,217,255",
     gradientFrom: "rgba(0,217,255,0.08)",
@@ -58,7 +65,7 @@ const PLANS = [
     key: "business",
     name: "Business",
     tagline: "Operação profissional completa",
-    prices: { monthly: 1090, quarterly: 999, semiannual: 849 },
+    prices: { monthly: 1599, quarterly: 1399, semiannual: 1199 },
     accent: "#a855f7",
     accentRgb: "168,85,247",
     gradientFrom: "rgba(168,85,247,0.08)",
@@ -88,7 +95,7 @@ export default function PlanoModal({
   onUpgrade?: () => void;
   onClose?: () => void;
 }) {
-  const [planCycle, setPlanCycle] = useState<Cycle>("monthly");
+  const [planCycle, setPlanCycle] = useState<Cycle>("quarterly");
   const [planLoading, setPlanLoading] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
@@ -494,7 +501,7 @@ export default function PlanoModal({
                         lineHeight: 1,
                       }}
                     >
-                      R${price}
+                      {formatPlanPrice(price)}
                     </span>
                   </div>
                   <div

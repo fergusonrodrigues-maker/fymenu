@@ -96,9 +96,9 @@ export async function POST(req: NextRequest) {
     // Produção com ASAAS_API_KEY configurada
     // Preços em centavos por plano e ciclo
     const PRICES: Record<string, Record<string, number>> = {
-      menu: { monthly: 12900, quarterly: 31200, semiannual: 53400 },
-      menupro: { monthly: 24900, quarterly: 65700, semiannual: 107400 },
-      business: { monthly: 109000, quarterly: 299700, semiannual: 509400 },
+      menu: { monthly: 19990, quarterly: 53970, semiannual: 95940 },
+      menupro: { monthly: 39990, quarterly: 107970, semiannual: 191940 },
+      business: { monthly: 159900, quarterly: 419700, semiannual: 719400 },
     };
 
     const amount = PRICES[plan]?.[cycle];

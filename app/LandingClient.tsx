@@ -378,7 +378,7 @@ export default function LandingPage() {
   const [loading, setLoading] = useState(true);
   const [heroVisible, setHeroVisible] = useState(false);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
-  const [cycle, setCycle] = useState<"MONTHLY" | "QUARTERLY" | "SEMIANNUALLY">("MONTHLY");
+  const [cycle, setCycle] = useState<"MONTHLY" | "QUARTERLY" | "SEMIANNUALLY">("QUARTERLY");
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {

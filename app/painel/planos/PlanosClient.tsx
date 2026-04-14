@@ -56,7 +56,7 @@ type Props = {
 
 export default function PlanosClient({ currentPlan, currentStatus, freeAccess, activeSubscription }: Props) {
   const router = useRouter();
-  const [cycle, setCycle] = useState<"MONTHLY" | "QUARTERLY" | "SEMIANNUALLY">("MONTHLY");
+  const [cycle, setCycle] = useState<"MONTHLY" | "QUARTERLY" | "SEMIANNUALLY">("QUARTERLY");
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 

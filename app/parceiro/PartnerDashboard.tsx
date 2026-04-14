@@ -4,9 +4,9 @@ import { useRouter } from "next/navigation";
 import FyLoader from "@/components/FyLoader";
 
 const PLAN_PRICES: Record<string, number> = {
-  menu: 12900,
-  menupro: 24900,
-  business: 109000,
+  menu: 19990,
+  menupro: 39990,
+  business: 159900,
 };
 
 function fmtBRL(cents: number) {
