@@ -369,7 +369,16 @@ export default function ProductRow({
                 formData.set("video_url", videoUrl);
                 formData.set("is_alcoholic", isAlcoholic ? "on" : "off");
                 // Always sync variations: passes [] when fixed to delete stale variation rows
-                await updateProductVariations(product.id, priceType === "variable" ? variations : []);
+                // Convert priceStr → price (in case user typed price but never blurred the field)
+                const variationsToSave = variations.map(({ id, name, price, priceStr }) => {
+                  let finalPrice = price;
+                  if (priceStr !== undefined) {
+                    const normalized = priceStr.replace(",", ".");
+                    finalPrice = Math.round(parseFloat(normalized) * 100) || price;
+                  }
+                  return { id, name, price: finalPrice };
+                });
+                await updateProductVariations(product.id, priceType === "variable" ? variationsToSave : []);
                 startTransition(() => updateProduct(formData));
                 onClose();
               }}
