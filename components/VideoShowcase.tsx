@@ -53,7 +53,7 @@ export default function VideoShowcase() {
   }
 
   return (
-    <section style={{ padding: "40px 0 50px", overflow: "hidden", position: "relative" }}>
+    <section style={{ padding: "100px 0 16px", overflow: "hidden", position: "relative" }}>
       <div
         onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerLeave={onUp}
         style={{
