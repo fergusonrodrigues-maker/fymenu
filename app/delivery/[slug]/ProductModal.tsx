@@ -150,10 +150,10 @@ export default function ProductModal({
 
   const isFixed = currentProduct.price_type === "fixed";
   const hasVariations = currentVariations.length > 0;
-  const fixedPrice = currentProduct.base_price ?? null;
+  const fixedPrice = currentProduct.base_price != null ? currentProduct.base_price / 100 : null;
   const activePrice: number | null = isFixed
     ? fixedPrice
-    : selectedVariation?.price ?? null;
+    : selectedVariation != null ? selectedVariation.price / 100 : null;
   const canOrder = (isFixed || selectedVariation !== null) && (!currentProduct.is_age_restricted || ageConfirmed);
 
   // NUNCA usar: thumb_path | image_path | video_path
@@ -469,7 +469,7 @@ export default function ProductModal({
                           {variation.name}
                         </span>
                         <span style={{ fontSize: 15, fontWeight: 800, color: isSelected ? "#FF6B00" : "#fff" }}>
-                          {moneyBR(variation.price)}
+                          {moneyBR(variation.price / 100)}
                         </span>
                       </button>
                     );

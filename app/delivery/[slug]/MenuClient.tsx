@@ -460,9 +460,9 @@ export default function MenuClient({
   function productDisplayPrice(p: Product): { price: number | null; isFrom: boolean } {
     const vars = variations[p.id];
     if (p.price_type === "variable" && vars?.length) {
-      return { price: Math.min(...vars.map((v) => v.price)), isFrom: true };
+      return { price: Math.min(...vars.map((v) => v.price / 100)), isFrom: true };
     }
-    return { price: p.base_price, isFrom: false };
+    return { price: p.base_price != null ? p.base_price / 100 : null, isFrom: false };
   }
 
   function handleProductOrder(payload: OrderPayload) {
