@@ -40,7 +40,7 @@ export function buildWhatsAppMessage(
 
   lines.push("Olá! Quero fazer um pedido:");
   lines.push("");
-  lines.push(`📦 *${payload.product.name}*`);
+  lines.push(`*${payload.product.name}*`);
 
   if (payload.variation) {
     lines.push(`   Opção: ${payload.variation.name}`);
@@ -48,7 +48,7 @@ export function buildWhatsAppMessage(
 
   if (payload.upsells.length > 0) {
     lines.push("");
-    lines.push("➕ Adicionais:");
+    lines.push("Adicionais:");
     payload.upsells.forEach((u) => {
       lines.push(`   + ${u.name} — R$${Number(u.price).toFixed(2).replace(".", ",")}`);
     });
@@ -56,15 +56,15 @@ export function buildWhatsAppMessage(
 
   lines.push("");
   lines.push(
-    `💰 Total estimado: R$${Number(payload.total).toFixed(2).replace(".", ",")}`
+    `Total estimado: R$${Number(payload.total).toFixed(2).replace(".", ",")}`
   );
 
   if (customerName?.trim()) {
     lines.push("");
-    lines.push(`👤 Nome: ${customerName.trim()}`);
+    lines.push(`Nome: ${customerName.trim()}`);
   }
   if (customerPhone && customerPhone.replace(/\D/g, "").length >= 10) {
-    lines.push(`📱 Tel: ${customerPhone}`);
+    lines.push(`Tel: ${customerPhone}`);
   }
 
   const text = encodeURIComponent(lines.join("\n"));
@@ -101,19 +101,19 @@ export function buildCartWhatsAppMessage(
   lines.push("");
 
   items.forEach((item) => {
-    lines.push(`📦 *${item.name}*  x${item.qty}  —  R$${(item.unit_price * item.qty).toFixed(2).replace(".", ",")}`);
+    lines.push(`*${item.name}*  x${item.qty}  —  R$${(item.unit_price * item.qty).toFixed(2).replace(".", ",")}`);
   });
 
   const total = items.reduce((s, i) => s + i.qty * i.unit_price, 0);
   lines.push("");
-  lines.push(`💰 Total estimado: R$${total.toFixed(2).replace(".", ",")}`);
+  lines.push(`Total estimado: R$${total.toFixed(2).replace(".", ",")}`);
 
   if (customerName?.trim()) {
     lines.push("");
-    lines.push(`👤 Nome: ${customerName.trim()}`);
+    lines.push(`Nome: ${customerName.trim()}`);
   }
   if (customerPhone && customerPhone.replace(/\D/g, "").length >= 10) {
-    lines.push(`📱 Tel: ${customerPhone}`);
+    lines.push(`Tel: ${customerPhone}`);
   }
 
   const text = encodeURIComponent(lines.join("\n"));
