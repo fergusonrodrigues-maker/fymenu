@@ -140,27 +140,16 @@ export default function UnidadeModal({ unit, canAddUnit, plan, onClose, onOpenPl
         </div>
 
         {/* ── Foto de Capa ── */}
-        <div style={{ borderRadius: 14, padding: 14, background: "var(--dash-card)", border: "1px solid var(--dash-section-border)", marginTop: 8 }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: "var(--dash-text)", marginBottom: 10 }}>Foto de Capa</div>
-          <p style={{ color: "var(--dash-text-muted)", fontSize: 12, marginBottom: 12, marginTop: 0 }}>
-            Aparece no topo do cardápio público. Use uma foto da fachada ou de um prato.
-          </p>
-
-          {/* Preview */}
-          <div
-            onClick={() => coverInputRef.current?.click()}
-            style={{
-              position: "relative",
-              width: "100%",
-              height: 140,
-              borderRadius: 12,
-              overflow: "hidden",
-              background: "var(--dash-card-hover)",
-              border: "1px solid var(--dash-border)",
-              marginBottom: 10,
-              cursor: "pointer",
-            }}
-          >
+        <div style={{ marginTop: 8 }}>
+          {/* Cover hero — imagem + overlay + texto + botão */}
+          <div style={{
+            position: "relative",
+            width: "100%", height: 160, borderRadius: 16,
+            overflow: "hidden",
+            background: "var(--dash-card)",
+            border: "1px solid var(--dash-border)",
+          }}>
+            {/* Imagem de capa */}
             {coverPreview || coverUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -171,25 +160,74 @@ export default function UnidadeModal({ unit, canAddUnit, plan, onClose, onOpenPl
             ) : (
               <div style={{
                 width: "100%", height: "100%",
-                display: "flex", flexDirection: "column",
-                alignItems: "center", justifyContent: "center",
-                color: "var(--dash-text-subtle)",
+                background: "linear-gradient(135deg, rgba(0,255,174,0.05), rgba(0,217,255,0.05))",
+                display: "flex", alignItems: "center", justifyContent: "center",
               }}>
-                <span style={{ fontSize: 28, marginBottom: 6 }}>📷</span>
-                <span style={{ fontSize: 12 }}>Toque para adicionar foto de capa</span>
+                <span style={{ fontSize: 32, opacity: 0.15 }}>📷</span>
               </div>
             )}
 
+            {/* Overlay gradiente SEMPRE presente — garante contraste */}
+            <div style={{
+              position: "absolute", inset: 0,
+              background: "linear-gradient(transparent 20%, rgba(0,0,0,0.72) 100%)",
+              pointerEvents: "none",
+            }} />
+
+            {/* Uploading overlay */}
             {uploadingCover && (
               <div style={{
                 position: "absolute", inset: 0,
-                background: "rgba(0,0,0,0.6)",
+                background: "rgba(0,0,0,0.65)",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                color: "var(--dash-text)", fontSize: 13,
+                fontSize: 13, color: "#fff", fontWeight: 600,
               }}>
                 Enviando...
               </div>
             )}
+
+            {/* Texto e botão sobre a capa — sempre brancos */}
+            <div style={{
+              position: "absolute", bottom: 12, left: 14, right: 14,
+              display: "flex", justifyContent: "space-between", alignItems: "flex-end",
+            }}>
+              <div>
+                <div style={{
+                  fontSize: 16, fontWeight: 900, color: "#ffffff",
+                  textShadow: "0 1px 3px rgba(0,0,0,0.5)",
+                  lineHeight: 1.2,
+                }}>
+                  {unit.name}
+                </div>
+                {(unit.city || unit.neighborhood) && (
+                  <div style={{
+                    fontSize: 11, color: "rgba(255,255,255,0.7)",
+                    textShadow: "0 1px 2px rgba(0,0,0,0.5)",
+                    marginTop: 2,
+                  }}>
+                    {unit.city}{unit.neighborhood ? ` · ${unit.neighborhood}` : ""}
+                  </div>
+                )}
+              </div>
+
+              {/* Botão trocar / adicionar capa */}
+              <button
+                type="button"
+                onClick={() => coverInputRef.current?.click()}
+                style={{
+                  padding: "6px 12px", borderRadius: 8,
+                  background: "rgba(255,255,255,0.15)",
+                  backdropFilter: "blur(8px)",
+                  WebkitBackdropFilter: "blur(8px)",
+                  color: "#fff", fontSize: 10, fontWeight: 600,
+                  cursor: "pointer", display: "flex", alignItems: "center", gap: 4,
+                  border: "1px solid rgba(255,255,255,0.2)",
+                  flexShrink: 0,
+                }}
+              >
+                📷 {coverUrl || coverPreview ? "Trocar" : "Adicionar capa"}
+              </button>
+            </div>
           </div>
 
           <input
@@ -205,12 +243,13 @@ export default function UnidadeModal({ unit, canAddUnit, plan, onClose, onOpenPl
               type="button"
               onClick={handleRemoveCover}
               style={{
+                marginTop: 8,
                 padding: "6px 14px",
                 borderRadius: 8,
                 background: "var(--dash-danger-soft)",
                 border: "none",
                 color: "var(--dash-danger)",
-                fontSize: 12,
+                fontSize: 11,
                 cursor: "pointer",
               }}
             >
