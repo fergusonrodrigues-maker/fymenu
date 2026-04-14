@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
 
     const { data: instance } = await admin
       .from("whatsapp_instances")
-      .select("zapi_instance_id, zapi_instance_token, status")
+      .select("zapi_instance_id, zapi_instance_token, zapi_client_token, status")
       .eq("unit_id", unitId)
       .single();
 
@@ -40,7 +40,6 @@ export async function POST(req: NextRequest) {
     let message = rawMessage ?? "";
     let templateName: string | null = null;
 
-    // Apply template if provided
     if (templateId) {
       const { data: tpl } = await admin
         .from("whatsapp_templates")
@@ -57,7 +56,13 @@ export async function POST(req: NextRequest) {
 
     if (!message.trim()) return NextResponse.json({ error: "Mensagem vazia" }, { status: 400 });
 
-    const result = await sendText(instance.zapi_instance_id, instance.zapi_instance_token, phone, message);
+    const result = await sendText(
+      instance.zapi_instance_id,
+      instance.zapi_instance_token,
+      phone,
+      message,
+      instance.zapi_client_token ?? undefined
+    );
 
     await admin.from("whatsapp_messages").insert({
       unit_id: unitId,

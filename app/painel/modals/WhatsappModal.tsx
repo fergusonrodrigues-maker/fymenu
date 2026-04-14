@@ -95,126 +95,138 @@ function StatusDot({ status }: { status: WaStatus }) {
   );
 }
 
-// ─── Setup Screen ────────────────────────────────────────────────────────────
-function SetupScreen({
+// ─── Waiting Screen (no instance yet) ───────────────────────────────────────
+function WaitingScreen() {
+  return (
+    <div style={{ textAlign: "center", padding: "40px 24px" }}>
+      <div style={{
+        width: 72, height: 72, borderRadius: 22, margin: "0 auto 20px",
+        background: "rgba(255,255,255,0.05)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+      }}>
+        <svg viewBox="0 0 24 24" width="38" height="38" fill="rgba(255,255,255,0.25)">
+          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+        </svg>
+      </div>
+      <div style={{ fontSize: 18, fontWeight: 800, color: "var(--dash-text)", marginBottom: 10 }}>
+        WhatsApp em breve
+      </div>
+      <div style={{ fontSize: 13, color: "var(--dash-text-muted)", lineHeight: 1.7, maxWidth: 320, margin: "0 auto 24px" }}>
+        O WhatsApp da sua loja será ativado em breve.<br />
+        Entre em contato com o suporte se precisar.
+      </div>
+      <a
+        href="https://wa.me/5511999999999"
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{
+          display: "inline-block", padding: "10px 24px", borderRadius: 12,
+          background: "rgba(255,255,255,0.06)", color: "var(--dash-text-muted)",
+          fontSize: 13, fontWeight: 600, textDecoration: "none",
+          border: "1px solid var(--dash-border)",
+        }}
+      >
+        Falar com suporte
+      </a>
+    </div>
+  );
+}
+
+// ─── QR Screen (instance exists but disconnected) ────────────────────────────
+function QrScreen({
   unitId,
-  onDone,
+  onConnected,
 }: {
   unitId: string;
-  onDone: (instance: WaInstance) => void;
+  onConnected: (instance: WaInstance) => void;
 }) {
-  const [step, setStep] = useState<"idle" | "loading" | "qrcode" | "polling">("idle");
   const [qrcode, setQrcode] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [qrError, setQrError] = useState<string | null>(null);
+  const [connected, setConnected] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const startSetup = useCallback(async () => {
-    setError(null);
-    setStep("loading");
-
-    const res = await fetch("/api/whatsapp/setup", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ unitId }),
-    });
+  const fetchQr = useCallback(async () => {
+    setQrError(null);
+    const res = await fetch(`/api/whatsapp/qrcode?unit_id=${unitId}`);
     const json = await res.json();
-    if (!res.ok) { setError(json.error ?? "Erro ao configurar"); setStep("idle"); return; }
+    if (!res.ok) { setQrError(json.error ?? "Erro ao buscar QR Code"); return; }
+    setQrcode(json.qrcode ?? null);
+  }, [unitId]);
 
-    // Fetch QR code
-    setStep("qrcode");
-    const qrRes = await fetch(`/api/whatsapp/qrcode?unit_id=${unitId}`);
-    const qrJson = await qrRes.json();
-    if (!qrRes.ok) { setError(qrJson.error ?? "Erro ao buscar QR code"); setStep("idle"); return; }
-    setQrcode(qrJson.qrcode ?? null);
+  useEffect(() => {
+    fetchQr();
 
-    // Start polling status
-    setStep("polling");
     pollRef.current = setInterval(async () => {
-      const stRes = await fetch(`/api/whatsapp/status?unit_id=${unitId}`);
-      const stJson = await stRes.json();
-      if (stJson.status === "connected") {
+      const res = await fetch(`/api/whatsapp/status?unit_id=${unitId}`);
+      const json = await res.json();
+      if (json.status === "connected") {
         clearInterval(pollRef.current!);
-        // Fetch full instance
+        setConnected(true);
         const supabase = createClient();
         const { data } = await supabase
           .from("whatsapp_instances")
           .select("*")
           .eq("unit_id", unitId)
           .single();
-        if (data) onDone(data as WaInstance);
+        if (data) onConnected(data as WaInstance);
       }
     }, 5000);
-  }, [unitId, onDone]);
 
-  useEffect(() => () => { if (pollRef.current) clearInterval(pollRef.current); }, []);
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  }, [unitId, fetchQr, onConnected]);
+
+  if (connected) {
+    return (
+      <div style={{ textAlign: "center", padding: "60px 24px" }}>
+        <div style={{ fontSize: 48, marginBottom: 12 }}>✓</div>
+        <div style={{ fontSize: 18, fontWeight: 800, color: WA_GREEN }}>Conectado!</div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ textAlign: "center", padding: "32px 24px" }}>
-      <div style={{
-        width: 72, height: 72, borderRadius: 22, margin: "0 auto 20px",
-        background: `${WA_GREEN}22`,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: 36,
-      }}>
-        <svg viewBox="0 0 24 24" width="38" height="38" fill={WA_GREEN}>
-          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-        </svg>
+      <div style={{ fontSize: 18, fontWeight: 800, color: "var(--dash-text)", marginBottom: 6 }}>
+        Escaneie o QR Code
+      </div>
+      <div style={{ fontSize: 12, color: "var(--dash-text-muted)", marginBottom: 20 }}>
+        Conecte seu WhatsApp para ativar as notificações
       </div>
 
-      {step === "idle" && (
-        <>
-          <div style={{ fontSize: 20, fontWeight: 800, color: "var(--dash-text)", marginBottom: 8 }}>
-            Conecte o WhatsApp
-          </div>
-          <div style={{ fontSize: 13, color: "var(--dash-text-muted)", lineHeight: 1.6, marginBottom: 28, maxWidth: 340, margin: "0 auto 28px" }}>
-            Ative o WhatsApp da sua loja para enviar mensagens automáticas de pedido e campanhas promocionais aos seus clientes.
-          </div>
-          <button onClick={startSetup} style={{
-            padding: "14px 32px", borderRadius: 14, border: "none", cursor: "pointer",
-            background: WA_GREEN, color: "#fff", fontSize: 15, fontWeight: 700,
-            boxShadow: `0 4px 20px ${WA_GREEN}44`,
-          }}>
-            Ativar WhatsApp
-          </button>
-        </>
-      )}
-
-      {step === "loading" && (
-        <div style={{ color: "var(--dash-text-muted)", fontSize: 14 }}>Configurando instância...</div>
-      )}
-
-      {(step === "qrcode" || step === "polling") && qrcode && (
-        <>
-          <div style={{ fontSize: 16, fontWeight: 700, color: "var(--dash-text)", marginBottom: 16 }}>
-            Escaneie o QR Code
-          </div>
-          <div style={{
-            width: 220, height: 220, margin: "0 auto 20px",
-            borderRadius: 16, background: "#fff", padding: 12,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: "0 4px 24px rgba(0,0,0,0.2)",
-          }}>
-            <img src={`data:image/png;base64,${qrcode}`} alt="QR Code WhatsApp" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
-          </div>
-          <div style={{ fontSize: 12, color: "var(--dash-text-muted)", lineHeight: 1.7, maxWidth: 300, margin: "0 auto" }}>
-            1. Abra o WhatsApp no celular<br />
-            2. Toque em <strong>Configurações → Aparelhos conectados</strong><br />
-            3. Toque em <strong>Conectar aparelho</strong><br />
-            4. Aponte a câmera para o QR code
-          </div>
-          {step === "polling" && (
-            <div style={{ marginTop: 16, fontSize: 12, color: "var(--dash-text-muted)" }}>
-              Aguardando conexão<span style={{ animation: "pulse 1.5s infinite" }}>...</span>
-            </div>
-          )}
-        </>
-      )}
-
-      {error && (
-        <div style={{ marginTop: 16, padding: "10px 16px", borderRadius: 10, background: "rgba(239,68,68,0.1)", color: "#ef4444", fontSize: 12 }}>
-          {error}
+      {qrError ? (
+        <div style={{ padding: "16px", borderRadius: 12, background: "rgba(239,68,68,0.1)", color: "#ef4444", fontSize: 13, marginBottom: 16 }}>
+          {qrError}
+          <br />
+          <button onClick={fetchQr} style={{
+            marginTop: 10, padding: "6px 16px", borderRadius: 8, border: "none", cursor: "pointer",
+            background: "rgba(239,68,68,0.15)", color: "#ef4444", fontSize: 12, fontWeight: 600,
+          }}>Tentar novamente</button>
+        </div>
+      ) : qrcode ? (
+        <div style={{
+          width: 220, height: 220, margin: "0 auto 20px",
+          borderRadius: 16, background: "#fff", padding: 12,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          boxShadow: "0 4px 24px rgba(0,0,0,0.25)",
+        }}>
+          <img src={`data:image/png;base64,${qrcode}`} alt="QR Code WhatsApp" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+        </div>
+      ) : (
+        <div style={{ width: 220, height: 220, margin: "0 auto 20px", borderRadius: 16, background: "rgba(255,255,255,0.04)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <span style={{ fontSize: 12, color: "var(--dash-text-muted)" }}>Carregando QR...</span>
         </div>
       )}
+
+      <div style={{ fontSize: 12, color: "var(--dash-text-muted)", lineHeight: 1.8, maxWidth: 300, margin: "0 auto 16px" }}>
+        1. Abra o WhatsApp no celular<br />
+        2. Toque em <strong>Configurações → Aparelhos conectados</strong><br />
+        3. Toque em <strong>Conectar aparelho</strong><br />
+        4. Aponte a câmera para o QR code
+      </div>
+
+      <div style={{ fontSize: 12, color: "var(--dash-text-muted)" }}>
+        Aguardando conexão<span style={{ animation: "pulse 1.5s infinite" }}>...</span>
+      </div>
     </div>
   );
 }
@@ -861,10 +873,14 @@ export default function WhatsappModal({ unit }: { unit: { id: string; name: stri
   }
 
   if (!instance) {
+    return <WaitingScreen />;
+  }
+
+  if (instance.status !== "connected") {
     return (
-      <SetupScreen
+      <QrScreen
         unitId={unit.id}
-        onDone={(inst) => setInstance(inst)}
+        onConnected={(inst) => setInstance(inst)}
       />
     );
   }

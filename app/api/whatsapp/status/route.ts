@@ -13,26 +13,33 @@ export async function GET(req: NextRequest) {
     if (!unitId) return NextResponse.json({ error: "unit_id obrigatório" }, { status: 400 });
 
     const admin = createAdminClient();
+    const isAdmin = !!(process.env.ADMIN_EMAIL && user.email === process.env.ADMIN_EMAIL);
 
-    const { data: unit } = await admin
-      .from("units")
-      .select("id, restaurants(owner_id)")
-      .eq("id", unitId)
-      .single();
+    if (!isAdmin) {
+      const { data: unit } = await admin
+        .from("units")
+        .select("id, restaurants(owner_id)")
+        .eq("id", unitId)
+        .single();
 
-    if (!unit || (unit as any).restaurants?.owner_id !== user.id) {
-      return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
+      if (!unit || (unit as any).restaurants?.owner_id !== user.id) {
+        return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
+      }
     }
 
     const { data: instance } = await admin
       .from("whatsapp_instances")
-      .select("id, zapi_instance_id, zapi_instance_token")
+      .select("id, zapi_instance_id, zapi_instance_token, zapi_client_token")
       .eq("unit_id", unitId)
       .single();
 
     if (!instance) return NextResponse.json({ error: "Instância não configurada" }, { status: 404 });
 
-    const result = await getStatus(instance.zapi_instance_id, instance.zapi_instance_token);
+    const result = await getStatus(
+      instance.zapi_instance_id,
+      instance.zapi_instance_token,
+      instance.zapi_client_token ?? undefined
+    );
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 502 });
     }
@@ -41,7 +48,6 @@ export async function GET(req: NextRequest) {
     const phone = result.data?.phone ?? null;
     const newStatus = connected ? "connected" : "disconnected";
 
-    // Update DB
     await admin
       .from("whatsapp_instances")
       .update({

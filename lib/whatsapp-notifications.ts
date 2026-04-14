@@ -1,5 +1,5 @@
 // Automatic WhatsApp notifications triggered by order status changes.
-// Failure NEVER blocks the calling operation — always call inside try/catch.
+// Failure NEVER blocks the calling operation — always wrap calls in try/catch.
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendText } from "@/lib/zapi";
@@ -18,7 +18,14 @@ const NOTIFY_COLUMN: Record<OrderEventType, string> = {
   auto_order_delivering: "notify_order_delivering",
 };
 
-// Replaces {{variable}} placeholders in template body
+// Template names match whatsapp_templates.name created during setup
+const TEMPLATE_NAME: Record<OrderEventType, string> = {
+  auto_order_received:   "Pedido recebido",
+  auto_order_preparing:  "Pedido em preparo",
+  auto_order_ready:      "Pedido pronto",
+  auto_order_delivering: "Saiu para entrega",
+};
+
 function fillTemplate(body: string, vars: Record<string, string>): string {
   return body.replace(/\{\{(\w+)\}\}/g, (_, key) => vars[key] ?? "");
 }
@@ -31,10 +38,10 @@ export async function sendOrderNotification(
   try {
     const admin = createAdminClient();
 
-    // 1. Fetch instance and verify it's connected + this notification type is enabled
+    // 1. Fetch instance — must be connected and have this notification type enabled
     const { data: instance } = await admin
       .from("whatsapp_instances")
-      .select("id, zapi_instance_id, zapi_instance_token, status, auto_notifications, notify_order_received, notify_order_preparing, notify_order_ready, notify_order_delivering")
+      .select("id, zapi_instance_id, zapi_instance_token, zapi_client_token, status, auto_notifications, notify_order_received, notify_order_preparing, notify_order_ready, notify_order_delivering")
       .eq("unit_id", unitId)
       .single();
 
@@ -48,7 +55,7 @@ export async function sendOrderNotification(
     // 2. Fetch order + customer phone
     const { data: order } = await admin
       .from("order_intents")
-      .select("id, customer_name, customer_phone, total, delivery_type, items")
+      .select("id, customer_name, customer_phone, total, delivery_type")
       .eq("id", orderId)
       .single();
 
@@ -56,73 +63,69 @@ export async function sendOrderNotification(
     const phone: string | null = order.customer_phone ?? null;
     if (!phone) return;
 
-    // 3. Fetch unit info (for restaurant name and delivery_type context)
+    // 3. Fetch unit name for template variables
     const { data: unit } = await admin
       .from("units")
       .select("name")
       .eq("id", unitId)
       .single();
 
-    // 4. Find the default template for this trigger category
-    // Template name convention: trigger type without "auto_" prefix
-    const templateName = eventType.replace("auto_", "");
+    // 4. Find matching template
+    const tplName = TEMPLATE_NAME[eventType];
     const { data: template } = await admin
       .from("whatsapp_templates")
       .select("body")
       .eq("unit_id", unitId)
       .eq("is_active", true)
-      .ilike("name", templateName)
+      .ilike("name", tplName)
       .order("is_default", { ascending: false })
       .limit(1)
       .single();
 
     if (!template) return;
 
-    // 5. Build variable map
+    // 5. Build variables
     const shortId = orderId.slice(0, 8).toUpperCase();
-    const tipoRetirada =
-      order.delivery_type === "delivery"
-        ? "Aguarde o entregador."
-        : "Retire no balcão.";
     const totalFmt =
       typeof order.total === "number"
         ? `R$ ${order.total.toFixed(2).replace(".", ",")}`
         : String(order.total ?? "");
 
     const vars: Record<string, string> = {
-      nome:          order.customer_name ?? "Cliente",
-      pedido_id:     shortId,
-      total:         totalFmt,
-      restaurante:   unit?.name ?? "",
-      tipo_retirada: tipoRetirada,
+      nome:        order.customer_name ?? "Cliente",
+      pedido_id:   shortId,
+      total:       totalFmt,
+      restaurante: unit?.name ?? "",
     };
 
     const message = fillTemplate(template.body, vars);
 
-    // 6. Send
+    // 6. Send — pass clientToken when present
+    const clientToken = instance.zapi_client_token ?? undefined;
     const result = await sendText(
       instance.zapi_instance_id,
       instance.zapi_instance_token,
       phone,
-      message
+      message,
+      clientToken
     );
 
-    // 7. Log message (fire-and-forget; ignore errors)
+    // 7. Log (fire-and-forget)
     await admin.from("whatsapp_messages").insert({
-      unit_id:       unitId,
+      unit_id:         unitId,
       phone,
       message,
-      template_name: templateName,
-      trigger_type:  eventType,
+      template_name:   tplName,
+      trigger_type:    eventType,
       order_intent_id: orderId,
-      status:        result.success ? "sent" : "failed",
+      status:          result.success ? "sent" : "failed",
       zapi_message_id: result.success
         ? (result.data as Record<string, string> | undefined)?.messageId ?? null
         : null,
-      error_message: result.success ? null : result.error ?? null,
-      sent_at:       result.success ? new Date().toISOString() : null,
+      error_message:   result.success ? null : result.error ?? null,
+      sent_at:         result.success ? new Date().toISOString() : null,
     });
   } catch {
-    // Intentionally swallowed — WhatsApp failure must never block order operations
+    // Intentionally swallowed — WhatsApp must never block order operations
   }
 }

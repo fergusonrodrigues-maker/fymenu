@@ -1,7 +1,11 @@
+// DELETE /api/whatsapp/teardown?unit_id=X
+// Removes credentials from DB when restaurant cancels Business plan.
+// Does NOT call Z-API (credentials are manually managed).
+// Caller: admin (ADMIN_EMAIL) OR owner of the restaurant.
+
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { deleteInstance } from "@/lib/zapi";
 
 export async function DELETE(req: NextRequest) {
   try {
@@ -13,32 +17,40 @@ export async function DELETE(req: NextRequest) {
     if (!unitId) return NextResponse.json({ error: "unit_id obrigatório" }, { status: 400 });
 
     const admin = createAdminClient();
+    const isAdmin = !!(process.env.ADMIN_EMAIL && user.email === process.env.ADMIN_EMAIL);
 
-    const { data: unit } = await admin
-      .from("units")
-      .select("id, restaurants(owner_id)")
-      .eq("id", unitId)
-      .single();
+    if (!isAdmin) {
+      const { data: unit } = await admin
+        .from("units")
+        .select("id, restaurants(owner_id)")
+        .eq("id", unitId)
+        .single();
 
-    if (!unit || (unit as any).restaurants?.owner_id !== user.id) {
-      return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
+      if (!unit || (unit as any).restaurants?.owner_id !== user.id) {
+        return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
+      }
     }
 
     const { data: instance } = await admin
       .from("whatsapp_instances")
-      .select("id, zapi_instance_id")
+      .select("id")
       .eq("unit_id", unitId)
       .single();
 
-    if (!instance) return NextResponse.json({ success: true }); // already gone
+    if (!instance) return NextResponse.json({ success: true });
 
-    // Delete from Z-API (stop billing)
-    await deleteInstance(instance.zapi_instance_id);
-
-    // Mark as disconnected — keep row for message history audit
+    // Mark disconnected and clear credentials — keep row for message history audit
     await admin
       .from("whatsapp_instances")
-      .update({ status: "disconnected", phone_number: null, connected_at: null, updated_at: new Date().toISOString() })
+      .update({
+        status: "disconnected",
+        zapi_instance_id: "",
+        zapi_instance_token: "",
+        zapi_client_token: null,
+        phone_number: null,
+        connected_at: null,
+        updated_at: new Date().toISOString(),
+      })
       .eq("id", instance.id);
 
     return NextResponse.json({ success: true });

@@ -3622,52 +3622,136 @@ function ChartPlaceholder({ title }: { title: string }) {
 
 // ── Admin WhatsApp Tab ────────────────────────────────────────────────────────
 function AdminWhatsAppTab() {
-  const [instances, setInstances] = React.useState<Array<{
+  const WA_GREEN = "#25D366";
+
+  type WaInstance = {
     id: string;
     unit_id: string;
     zapi_instance_id: string;
+    zapi_instance_token: string;
+    zapi_client_token: string | null;
     phone_number: string | null;
     status: string;
     connected_at: string | null;
     created_at: string;
-    units: { name: string; slug: string; restaurants: { name: string } | null } | null;
-  }>>([]);
+    units: { id: string; name: string; slug: string; restaurants: { name: string } | null } | null;
+  };
+
+  type UnitOption = { id: string; name: string; restaurant_name: string };
+
+  const [instances, setInstances] = React.useState<WaInstance[]>([]);
   const [msgCounts, setMsgCounts] = React.useState<Record<string, number>>({});
   const [loading, setLoading] = React.useState(true);
+
+  // Form state
+  const [unitOptions, setUnitOptions] = React.useState<UnitOption[]>([]);
+  const [form, setForm] = React.useState({ unitId: "", instanceId: "", instanceToken: "", clientToken: "" });
+  const [saving, setSaving] = React.useState(false);
+  const [formMsg, setFormMsg] = React.useState<{ text: string; ok: boolean } | null>(null);
+
+  // QR code modal
+  const [qrModal, setQrModal] = React.useState<{ unitId: string; qrcode: string | null; loading: boolean } | null>(null);
+
   const supabase = createClient();
 
-  React.useEffect(() => {
-    async function load() {
-      setLoading(true);
-      const { data } = await supabase
-        .from("whatsapp_instances")
-        .select("*, units(name, slug, restaurants(name))")
-        .order("created_at", { ascending: false });
+  async function loadInstances() {
+    setLoading(true);
+    const { data } = await supabase
+      .from("whatsapp_instances")
+      .select("*, units(id, name, slug, restaurants(name))")
+      .order("created_at", { ascending: false });
+    setInstances((data ?? []) as WaInstance[]);
 
-      setInstances((data ?? []) as typeof instances);
-
-      // Fetch message counts per unit
-      if (data && data.length > 0) {
-        const unitIds = data.map((d: any) => d.unit_id);
-        const { data: counts } = await supabase
-          .from("whatsapp_messages")
-          .select("unit_id")
-          .in("unit_id", unitIds)
-          .eq("direction", "outbound");
-
-        const map: Record<string, number> = {};
-        for (const r of counts ?? []) map[r.unit_id] = (map[r.unit_id] ?? 0) + 1;
-        setMsgCounts(map);
-      }
-
-      setLoading(false);
+    if (data && data.length > 0) {
+      const unitIds = data.map((d: any) => d.unit_id);
+      const { data: counts } = await supabase
+        .from("whatsapp_messages")
+        .select("unit_id")
+        .in("unit_id", unitIds);
+      const map: Record<string, number> = {};
+      for (const r of counts ?? []) map[r.unit_id] = (map[r.unit_id] ?? 0) + 1;
+      setMsgCounts(map);
     }
-    load();
+    setLoading(false);
+  }
+
+  React.useEffect(() => {
+    loadInstances();
+    // Load all Business units for the dropdown
+    supabase
+      .from("units")
+      .select("id, name, restaurants(name, plan)")
+      .then(({ data }) => {
+        const opts: UnitOption[] = (data ?? [])
+          .filter((u: any) => (u.restaurants?.plan ?? "") === "business")
+          .map((u: any) => ({ id: u.id, name: u.name, restaurant_name: u.restaurants?.name ?? "" }));
+        setUnitOptions(opts);
+        if (opts.length > 0 && !form.unitId) setForm((f) => ({ ...f, unitId: opts[0].id }));
+      });
   }, []);
 
-  const WA_GREEN = "#25D366";
-  const connected = instances.filter((i) => i.status === "connected").length;
-  const estimatedCost = connected * 7000; // R$70 por instância em centavos
+  async function handleSave() {
+    if (!form.unitId || !form.instanceId || !form.instanceToken) {
+      setFormMsg({ text: "Instance ID e Instance Token são obrigatórios", ok: false });
+      return;
+    }
+    setSaving(true);
+    setFormMsg(null);
+    try {
+      const res = await fetch("/api/whatsapp/setup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          unitId:        form.unitId,
+          instanceId:    form.instanceId,
+          instanceToken: form.instanceToken,
+          clientToken:   form.clientToken || undefined,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setFormMsg({ text: json.error ?? "Erro ao salvar", ok: false });
+      } else {
+        setFormMsg({ text: "Credenciais salvas!", ok: true });
+        setForm({ unitId: unitOptions[0]?.id ?? "", instanceId: "", instanceToken: "", clientToken: "" });
+        loadInstances();
+        // Show QR if returned
+        if (json.qrCode) {
+          setQrModal({ unitId: form.unitId, qrcode: json.qrCode, loading: false });
+        }
+      }
+    } catch {
+      setFormMsg({ text: "Erro de rede", ok: false });
+    }
+    setSaving(false);
+  }
+
+  async function handleShowQr(unitId: string) {
+    setQrModal({ unitId, qrcode: null, loading: true });
+    const res = await fetch(`/api/whatsapp/qrcode?unit_id=${unitId}`);
+    const json = await res.json();
+    setQrModal({ unitId, qrcode: json.qrcode ?? null, loading: false });
+  }
+
+  async function handleCheckStatus(unitId: string) {
+    const res = await fetch(`/api/whatsapp/status?unit_id=${unitId}`);
+    await res.json();
+    loadInstances();
+  }
+
+  async function handleDisconnect(unitId: string) {
+    await fetch("/api/whatsapp/disconnect", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ unitId }),
+    });
+    loadInstances();
+  }
+
+  async function handleRemove(unitId: string) {
+    await fetch(`/api/whatsapp/teardown?unit_id=${unitId}`, { method: "DELETE" });
+    loadInstances();
+  }
 
   const statusColor: Record<string, string> = {
     connected:    WA_GREEN,
@@ -3682,15 +3766,18 @@ function AdminWhatsAppTab() {
     banned:       "Banido",
   };
 
+  const connected = instances.filter((i) => i.status === "connected").length;
+
+  const inputCls = "w-full px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-white text-sm placeholder-gray-600 outline-none focus:border-[#25D366]/60";
+
   return (
-    <div>
-      {/* Summary cards */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
+    <div className="space-y-6">
+      {/* Summary */}
+      <div className="grid grid-cols-3 gap-4">
         {[
           { label: "Total instâncias", value: instances.length, color: "white" },
           { label: "Conectadas", value: connected, color: WA_GREEN },
           { label: "Desconectadas", value: instances.length - connected, color: "#6b7280" },
-          { label: "Custo estimado/mês", value: `R$ ${(estimatedCost / 100).toFixed(2).replace(".", ",")}`, color: "#f59e0b" },
         ].map((c) => (
           <div key={c.label} className="rounded-xl p-4 border border-gray-800 bg-gray-950">
             <div style={{ fontSize: 22, fontWeight: 900, color: c.color }}>{c.value}</div>
@@ -3699,34 +3786,92 @@ function AdminWhatsAppTab() {
         ))}
       </div>
 
+      {/* Credential form */}
+      <div className="rounded-xl border border-gray-800 bg-gray-950 p-5">
+        <h3 className="text-sm font-bold text-gray-200 mb-4 flex items-center gap-2">
+          <span style={{ color: WA_GREEN }}>⊕</span> Adicionar / Atualizar Instância
+        </h3>
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          <div className="col-span-2">
+            <label className="block text-xs text-gray-500 mb-1">Unidade (plano Business)</label>
+            <select
+              value={form.unitId}
+              onChange={(e) => setForm({ ...form, unitId: e.target.value })}
+              className={inputCls}
+            >
+              {unitOptions.length === 0 && <option value="">Nenhuma unidade Business</option>}
+              {unitOptions.map((u) => (
+                <option key={u.id} value={u.id}>{u.restaurant_name} — {u.name}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">Instance ID <span className="text-red-400">*</span></label>
+            <input
+              className={inputCls}
+              value={form.instanceId}
+              onChange={(e) => setForm({ ...form, instanceId: e.target.value })}
+              placeholder="ex: 3B0A60B4..."
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">Instance Token <span className="text-red-400">*</span></label>
+            <input
+              className={inputCls}
+              value={form.instanceToken}
+              onChange={(e) => setForm({ ...form, instanceToken: e.target.value })}
+              placeholder="ex: F04B7A9D..."
+              type="password"
+            />
+          </div>
+          <div className="col-span-2">
+            <label className="block text-xs text-gray-500 mb-1">Client Token <span className="text-gray-600">(opcional)</span></label>
+            <input
+              className={inputCls}
+              value={form.clientToken}
+              onChange={(e) => setForm({ ...form, clientToken: e.target.value })}
+              placeholder="ex: F9A2B1C3..."
+              type="password"
+            />
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="px-5 py-2 rounded-lg text-sm font-bold text-black transition-all"
+            style={{ background: saving ? "#374151" : WA_GREEN, color: saving ? "#9ca3af" : "#000", cursor: saving ? "not-allowed" : "pointer" }}
+          >
+            {saving ? "Salvando..." : "Salvar e Conectar"}
+          </button>
+          {formMsg && (
+            <span style={{ fontSize: 12, color: formMsg.ok ? WA_GREEN : "#ef4444" }}>{formMsg.text}</span>
+          )}
+        </div>
+      </div>
+
+      {/* Instances table */}
       {loading ? (
-        <p className="text-gray-500 text-sm text-center py-12">Carregando...</p>
+        <p className="text-gray-500 text-sm text-center py-8">Carregando...</p>
       ) : instances.length === 0 ? (
-        <p className="text-gray-500 text-sm text-center py-12">Nenhuma instância WhatsApp configurada</p>
+        <p className="text-gray-500 text-sm text-center py-8">Nenhuma instância configurada</p>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-gray-800">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-800">
-                {["Restaurante", "Unidade", "Instância Z-API", "Telefone", "Status", "Mensagens", "Conectado em"].map((h) => (
+                {["Restaurante", "Unidade", "Telefone", "Status", "Mensagens (30d)", "Conectado em", "Ações"].map((h) => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {instances.map((inst) => (
-                <tr key={inst.id} className="border-b border-gray-800/50 hover:bg-gray-900/50 transition-colors">
+                <tr key={inst.id} className="border-b border-gray-800/50 hover:bg-gray-900/30 transition-colors">
                   <td className="px-4 py-3 text-gray-200 text-xs font-medium">
-                    {(inst as any).units?.restaurants?.name ?? "—"}
+                    {inst.units?.restaurants?.name ?? "—"}
                   </td>
-                  <td className="px-4 py-3 text-gray-400 text-xs">
-                    {(inst as any).units?.name ?? "—"}
-                  </td>
-                  <td className="px-4 py-3">
-                    <code className="text-gray-400 text-xs bg-gray-900 px-2 py-0.5 rounded">
-                      {inst.zapi_instance_id.slice(0, 12)}...
-                    </code>
-                  </td>
+                  <td className="px-4 py-3 text-gray-400 text-xs">{inst.units?.name ?? "—"}</td>
                   <td className="px-4 py-3 text-gray-300 text-xs">{inst.phone_number ?? "—"}</td>
                   <td className="px-4 py-3">
                     <span style={{
@@ -3737,18 +3882,80 @@ function AdminWhatsAppTab() {
                       {statusLabel[inst.status] ?? inst.status}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-gray-400 text-xs text-center">
-                    {msgCounts[inst.unit_id] ?? 0}
-                  </td>
+                  <td className="px-4 py-3 text-gray-400 text-xs text-center">{msgCounts[inst.unit_id] ?? 0}</td>
                   <td className="px-4 py-3 text-gray-500 text-xs">
-                    {inst.connected_at
-                      ? new Date(inst.connected_at).toLocaleDateString("pt-BR")
-                      : "—"}
+                    {inst.connected_at ? new Date(inst.connected_at).toLocaleDateString("pt-BR") : "—"}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex gap-1.5 flex-wrap">
+                      <button
+                        onClick={() => handleShowQr(inst.unit_id)}
+                        className="px-2 py-1 rounded text-xs font-medium transition-colors"
+                        style={{ background: `${WA_GREEN}20`, color: WA_GREEN, border: `1px solid ${WA_GREEN}40` }}
+                      >
+                        QR Code
+                      </button>
+                      <button
+                        onClick={() => handleCheckStatus(inst.unit_id)}
+                        className="px-2 py-1 rounded text-xs font-medium text-gray-400 bg-gray-800 hover:bg-gray-700 transition-colors"
+                      >
+                        Status
+                      </button>
+                      {inst.status === "connected" && (
+                        <button
+                          onClick={() => handleDisconnect(inst.unit_id)}
+                          className="px-2 py-1 rounded text-xs font-medium text-amber-400 bg-amber-400/10 hover:bg-amber-400/20 transition-colors"
+                        >
+                          Desconectar
+                        </button>
+                      )}
+                      <button
+                        onClick={() => { if (confirm("Remover instância?")) handleRemove(inst.unit_id); }}
+                        className="px-2 py-1 rounded text-xs font-medium text-red-400 bg-red-400/10 hover:bg-red-400/20 transition-colors"
+                      >
+                        Remover
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* QR Code modal */}
+      {qrModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)" }}
+          onClick={() => setQrModal(null)}
+        >
+          <div
+            className="rounded-2xl p-8 flex flex-col items-center gap-4"
+            style={{ background: "#111", border: "1px solid #333", minWidth: 280 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="text-white font-bold text-base">QR Code WhatsApp</div>
+            {qrModal.loading ? (
+              <div className="text-gray-400 text-sm py-8">Carregando QR...</div>
+            ) : qrModal.qrcode ? (
+              <div style={{ background: "#fff", borderRadius: 16, padding: 16 }}>
+                <img src={`data:image/png;base64,${qrModal.qrcode}`} alt="QR" style={{ width: 200, height: 200 }} />
+              </div>
+            ) : (
+              <div className="text-gray-400 text-sm py-4">QR Code não disponível no momento</div>
+            )}
+            <div className="text-gray-500 text-xs text-center max-w-xs">
+              Abra o WhatsApp → Configurações → Aparelhos conectados → Conectar aparelho
+            </div>
+            <button
+              onClick={() => setQrModal(null)}
+              className="px-4 py-2 rounded-lg bg-gray-800 text-gray-300 text-sm hover:bg-gray-700 transition-colors"
+            >
+              Fechar
+            </button>
+          </div>
         </div>
       )}
     </div>

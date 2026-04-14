@@ -1,5 +1,5 @@
-// Z-API WhatsApp integration
-// FyMenu manages instances; each restaurant connects its own number.
+// Z-API WhatsApp — per-instance wrapper
+// Credentials are manually inserted by admin; no partner/account API used.
 // Docs: https://developer.z-api.io
 
 const ZAPI_BASE = "https://api.z-api.io";
@@ -10,16 +10,17 @@ function instanceUrl(instanceId: string, token: string) {
 
 async function zapiRequest<T = unknown>(
   url: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
+  clientToken?: string
 ): Promise<{ success: boolean; data?: T; error?: string }> {
   try {
-    const res = await fetch(url, {
-      ...options,
-      headers: {
-        "Content-Type": "application/json",
-        ...(options.headers ?? {}),
-      },
-    });
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      ...((options.headers ?? {}) as Record<string, string>),
+    };
+    if (clientToken) headers["Client-Token"] = clientToken;
+
+    const res = await fetch(url, { ...options, headers });
 
     let data: unknown;
     try {
@@ -41,59 +42,43 @@ async function zapiRequest<T = unknown>(
   }
 }
 
-// ─── Admin — instance management ────────────────────────────────────────────
-// Creates a new Z-API instance under FyMenu's account
-export async function createInstance(name: string) {
-  return zapiRequest<{ id: string; token: string }>(
-    `${ZAPI_BASE}/instances/integrator/on-demand`,
-    {
-      method: "POST",
-      headers: { "Client-Token": process.env.ZAPI_ADMIN_TOKEN! },
-      body: JSON.stringify({ name }),
-    }
-  );
-}
+// ─── Per-instance operations ─────────────────────────────────────────────────
 
-// Deletes an instance from FyMenu's Z-API account (called on plan downgrade)
-export async function deleteInstance(instanceId: string) {
-  return zapiRequest(
-    `${ZAPI_BASE}/instances/${instanceId}`,
-    {
-      method: "DELETE",
-      headers: { "Client-Token": process.env.ZAPI_ADMIN_TOKEN! },
-    }
-  );
-}
-
-// ─── Per-instance operations (restaurant's number) ──────────────────────────
-export async function getQrCode(instanceId: string, token: string) {
+export async function getQrCode(instanceId: string, token: string, clientToken?: string) {
   return zapiRequest<{ value: string }>(
-    `${instanceUrl(instanceId, token)}/qr-code/image`
+    `${instanceUrl(instanceId, token)}/qr-code/image`,
+    {},
+    clientToken
   );
 }
 
-export async function getStatus(instanceId: string, token: string) {
+export async function getStatus(instanceId: string, token: string, clientToken?: string) {
   return zapiRequest<{ connected: boolean; phone?: string; session?: string }>(
-    `${instanceUrl(instanceId, token)}/status`
+    `${instanceUrl(instanceId, token)}/status`,
+    {},
+    clientToken
   );
 }
 
-export async function disconnect(instanceId: string, token: string) {
-  return zapiRequest(`${instanceUrl(instanceId, token)}/disconnect`);
+export async function disconnect(instanceId: string, token: string, clientToken?: string) {
+  return zapiRequest(
+    `${instanceUrl(instanceId, token)}/disconnect`,
+    {},
+    clientToken
+  );
 }
 
 export async function sendText(
   instanceId: string,
   token: string,
   phone: string,
-  message: string
+  message: string,
+  clientToken?: string
 ) {
   return zapiRequest<{ zaapId: string; messageId: string }>(
     `${instanceUrl(instanceId, token)}/send-text`,
-    {
-      method: "POST",
-      body: JSON.stringify({ phone, message }),
-    }
+    { method: "POST", body: JSON.stringify({ phone, message }) },
+    clientToken
   );
 }
 
@@ -102,14 +87,13 @@ export async function sendImage(
   token: string,
   phone: string,
   imageUrl: string,
-  caption?: string
+  caption?: string,
+  clientToken?: string
 ) {
   return zapiRequest(
     `${instanceUrl(instanceId, token)}/send-image`,
-    {
-      method: "POST",
-      body: JSON.stringify({ phone, image: imageUrl, caption }),
-    }
+    { method: "POST", body: JSON.stringify({ phone, image: imageUrl, caption }) },
+    clientToken
   );
 }
 
@@ -120,13 +104,12 @@ export async function sendLink(
   message: string,
   linkUrl: string,
   title?: string,
-  description?: string
+  description?: string,
+  clientToken?: string
 ) {
   return zapiRequest(
     `${instanceUrl(instanceId, token)}/send-link`,
-    {
-      method: "POST",
-      body: JSON.stringify({ phone, message, linkUrl, title, description }),
-    }
+    { method: "POST", body: JSON.stringify({ phone, message, linkUrl, title, description }) },
+    clientToken
   );
 }

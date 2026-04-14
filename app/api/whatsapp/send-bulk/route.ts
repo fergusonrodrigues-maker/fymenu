@@ -39,15 +39,16 @@ export async function POST(req: NextRequest) {
 
     const { data: instance } = await admin
       .from("whatsapp_instances")
-      .select("zapi_instance_id, zapi_instance_token, status")
+      .select("zapi_instance_id, zapi_instance_token, zapi_client_token, status")
       .eq("unit_id", unitId)
       .single();
 
     if (!instance) return NextResponse.json({ error: "Instância não configurada" }, { status: 404 });
     if (instance.status !== "connected") return NextResponse.json({ error: "WhatsApp não conectado" }, { status: 400 });
 
-    // Fetch customer phones
+    const clientToken = instance.zapi_client_token ?? undefined;
     const ids = customerIds.slice(0, BULK_LIMIT);
+
     const { data: customers } = await admin
       .from("crm_customers")
       .select("id, name, phone")
@@ -58,7 +59,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ total: 0, sent: 0, failed: 0 });
     }
 
-    // Resolve message template
     let bodyTemplate = rawMessage ?? "";
     let templateName: string | null = null;
 
@@ -79,11 +79,12 @@ export async function POST(req: NextRequest) {
     let sent = 0;
     let failed = 0;
 
-    for (const customer of customers) {
+    for (let i = 0; i < customers.length; i++) {
+      const customer = customers[i];
       if (!customer.phone) { failed++; continue; }
 
       const vars: Record<string, string> = {
-        nome: customer.name ?? "Cliente",
+        nome:     customer.name ?? "Cliente",
         telefone: customer.phone ?? "",
         ...(templateVars ?? {}),
       };
@@ -95,27 +96,26 @@ export async function POST(req: NextRequest) {
         instance.zapi_instance_id,
         instance.zapi_instance_token,
         customer.phone,
-        message
+        message,
+        clientToken
       );
 
       await admin.from("whatsapp_messages").insert({
-        unit_id: unitId,
-        customer_id: customer.id,
-        phone: customer.phone,
+        unit_id:         unitId,
+        customer_id:     customer.id,
+        phone:           customer.phone,
         message,
-        template_name: templateName,
-        trigger_type: "bulk",
-        status: result.success ? "sent" : "failed",
+        template_name:   templateName,
+        trigger_type:    "bulk",
+        status:          result.success ? "sent" : "failed",
         zapi_message_id: result.success ? (result.data as any)?.messageId ?? null : null,
-        error_message: result.success ? null : result.error ?? null,
-        sent_at: result.success ? new Date().toISOString() : null,
+        error_message:   result.success ? null : result.error ?? null,
+        sent_at:         result.success ? new Date().toISOString() : null,
       });
 
       if (result.success) sent++; else failed++;
 
-      if (customers.indexOf(customer) < customers.length - 1) {
-        await sleep(DELAY_MS);
-      }
+      if (i < customers.length - 1) await sleep(DELAY_MS);
     }
 
     return NextResponse.json({ total: customers.length, sent, failed });
