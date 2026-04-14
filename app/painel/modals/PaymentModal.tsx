@@ -242,48 +242,81 @@ export default function PaymentModal({ planKey, planName, accent, accentRgb, onC
         {/* ── STEP 1: Cycle ── */}
         {step === "cycle" && (
           <div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.6)", marginBottom: 12, textAlign: "center" }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.45)", marginBottom: 14, textAlign: "center", letterSpacing: "0.02em" }}>
               Escolha o ciclo de cobrança
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
               {(["monthly", "quarterly", "semiannual"] as CycleKey[]).map((c) => {
                 const info = cycleMap[c];
                 const selected = cycle === c;
+                const isBest = c === "semiannual";
                 return (
                   <div key={c} onClick={() => setCycle(c)} style={{
-                    padding: "14px 16px", borderRadius: 14, cursor: "pointer",
-                    background: selected ? `rgba(${accentRgb},0.08)` : "rgba(255,255,255,0.03)",
-                    border: `1px solid ${selected ? accent : "rgba(255,255,255,0.08)"}`,
-                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    padding: "16px 20px", borderRadius: 14, cursor: "pointer",
+                    background: selected ? `rgba(${accentRgb},0.08)` : "rgba(255,255,255,0.04)",
+                    border: selected ? `2px solid ${accent}` : "1px solid rgba(255,255,255,0.10)",
+                    display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
                     transition: "all 0.2s",
+                    position: "relative",
                   }}>
-                    <div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: selected ? accent : "#fff" }}>{info.label}</div>
-                      {info.savings && (
-                        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>
-                          R${info.total} total
-                        </div>
+                    {/* Left: name + total */}
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                        <span style={{ fontSize: 14, fontWeight: 800, color: selected ? accent : "#fff" }}>
+                          {info.label}
+                        </span>
+                        {isBest && (
+                          <span style={{
+                            padding: "2px 8px", borderRadius: 20, fontSize: 9, fontWeight: 900,
+                            background: `rgba(${accentRgb},0.15)`, color: accent,
+                            border: `1px solid rgba(${accentRgb},0.25)`,
+                            textTransform: "uppercase" as const, letterSpacing: "0.06em",
+                          }}>Melhor preço</span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>
+                        R${info.total} total
+                      </div>
+                    </div>
+
+                    {/* Right: price + discount badge */}
+                    <div style={{ textAlign: "right", flexShrink: 0 }}>
+                      <div style={{ fontSize: 20, fontWeight: 900, color: selected ? accent : "#fff", lineHeight: 1 }}>
+                        R${info.perMonth}
+                        <span style={{ fontSize: 11, fontWeight: 400, color: "rgba(255,255,255,0.35)" }}>/mês</span>
+                      </div>
+                      {info.savings ? (
+                        <div style={{
+                          fontSize: 10, fontWeight: 800, padding: "2px 7px", borderRadius: 6, marginTop: 5,
+                          background: `rgba(${accentRgb},0.15)`, color: accent, display: "inline-block",
+                          border: `1px solid rgba(${accentRgb},0.2)`,
+                        }}>-{info.savings}</div>
+                      ) : (
+                        <div style={{ height: 19 }} />
                       )}
                     </div>
-                    <div style={{ textAlign: "right" }}>
-                      <div style={{ fontSize: 18, fontWeight: 900, color: selected ? accent : "#fff" }}>
-                        R${info.perMonth}<span style={{ fontSize: 11, fontWeight: 400, color: "rgba(255,255,255,0.4)" }}>/mês</span>
-                      </div>
-                      {info.savings && (
-                        <div style={{
-                          fontSize: 10, fontWeight: 800, padding: "2px 6px", borderRadius: 5,
-                          background: `rgba(${accentRgb},0.15)`, color: accent, marginTop: 4, display: "inline-block",
-                        }}>-{info.savings}</div>
-                      )}
+
+                    {/* Checkmark */}
+                    <div style={{
+                      width: 20, height: 20, borderRadius: "50%", flexShrink: 0,
+                      background: selected ? accent : "rgba(255,255,255,0.06)",
+                      border: selected ? "none" : "1px solid rgba(255,255,255,0.15)",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      transition: "all 0.2s",
+                    }}>
+                      {selected && <span style={{ fontSize: 10, color: "#000", fontWeight: 900 }}>✓</span>}
                     </div>
                   </div>
                 );
               })}
             </div>
             <button onClick={() => setStep("method")} style={{
-              width: "100%", padding: 14, borderRadius: 12, border: "none", cursor: "pointer",
-              background: `linear-gradient(135deg, ${accent}, #00d9ff)`,
-              color: "#000", fontSize: 14, fontWeight: 900, fontFamily: "inherit",
+              width: "100%", padding: 16, borderRadius: 14, border: "none", cursor: "pointer",
+              background: planKey === "business"
+                ? "linear-gradient(135deg, #d4af37, #f5c518)"
+                : `linear-gradient(135deg, ${accent}, #00d9ff)`,
+              color: "#000", fontSize: 15, fontWeight: 800, fontFamily: "inherit",
+              transition: "opacity 0.2s",
             }}>
               Continuar →
             </button>
