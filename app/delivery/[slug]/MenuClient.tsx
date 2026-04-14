@@ -457,6 +457,14 @@ export default function MenuClient({
     });
   }
 
+  function productDisplayPrice(p: Product): { price: number | null; isFrom: boolean } {
+    const vars = variations[p.id];
+    if (p.price_type === "variable" && vars?.length) {
+      return { price: Math.min(...vars.map((v) => v.price)), isFrom: true };
+    }
+    return { price: p.base_price, isFrom: false };
+  }
+
   function handleProductOrder(payload: OrderPayload) {
     setSelectedProduct(null);
     addToCart(payload); // both delivery and presencial accumulate in cart
@@ -812,21 +820,14 @@ export default function MenuClient({
                         {p.description}
                       </div>
                     )}
-                    {p.base_price != null && (
-                      <div
-                        style={{
-                          fontSize: 13,
-                          color: "rgba(255,255,255,0.7)",
-                          marginTop: 4,
-                        }}
-                      >
-                        {p.price_type === "variable"
-                          ? "A partir de "
-                          : ""}
-                        R${" "}
-                        {p.base_price.toFixed(2).replace(".", ",")}
-                      </div>
-                    )}
+                    {(() => {
+                      const { price, isFrom } = productDisplayPrice(p);
+                      return price != null ? (
+                        <div style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", marginTop: 4 }}>
+                          {isFrom ? "A partir de " : ""}R$ {price.toFixed(2).replace(".", ",")}
+                        </div>
+                      ) : null;
+                    })()}
                   </div>
                 </button>
               ))
@@ -1006,11 +1007,15 @@ export default function MenuClient({
                             </div>
                           )}
                           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                            {product.base_price != null && (
-                              <span style={{ color: "#00ffae", fontSize: 16, fontWeight: 800 }}>
-                                R$ {product.base_price.toFixed(2).replace(".", ",")}
-                              </span>
-                            )}
+                            {(() => {
+                              const { price, isFrom } = productDisplayPrice(product);
+                              return price != null ? (
+                                <span style={{ color: "#00ffae", fontSize: 16, fontWeight: 800 }}>
+                                  {isFrom && <span style={{ fontSize: 10, fontWeight: 600, display: "block", opacity: 0.8 }}>a partir de</span>}
+                                  R$ {price.toFixed(2).replace(".", ",")}
+                                </span>
+                              ) : null;
+                            })()}
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -1177,17 +1182,15 @@ export default function MenuClient({
                               >
                                 {product.name}
                               </div>
-                              {product.base_price != null && (
-                                <span
-                                  style={{
-                                    color: "#00ffae",
-                                    fontSize: isLastAndOdd ? 14 : 12,
-                                    fontWeight: 900,
-                                  }}
-                                >
-                                  R$ {product.base_price.toFixed(2).replace(".", ",")}
-                                </span>
-                              )}
+                              {(() => {
+                                const { price, isFrom } = productDisplayPrice(product);
+                                return price != null ? (
+                                  <span style={{ color: "#00ffae", fontSize: isLastAndOdd ? 14 : 12, fontWeight: 900 }}>
+                                    {isFrom && <span style={{ fontSize: 9, fontWeight: 600, display: "block", opacity: 0.75 }}>a partir de</span>}
+                                    R$ {price.toFixed(2).replace(".", ",")}
+                                  </span>
+                                ) : null;
+                              })()}
                             </div>
                           </div>
                         );
