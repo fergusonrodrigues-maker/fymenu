@@ -1,4 +1,4 @@
-﻿import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import DashboardClient from "./DashboardClient";
 
@@ -67,9 +67,12 @@ function getDayStats(ordersList: OrderRow[], days: number, now: Date) {
 
 export default async function DashboardPage({ searchParams }: { searchParams?: Promise<{ unit_id?: string }> }) {
   const supabase = await createClient();
+
+  // Phase 1: auth
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/entrar");
 
+  // Phase 2: restaurant (depends on user.id)
   const { data: restaurant } = await supabase
     .from("restaurants")
     .select("id, name, plan, status, trial_ends_at, whatsapp, instagram, onboarding_completed, free_access")
@@ -82,39 +85,78 @@ export default async function DashboardPage({ searchParams }: { searchParams?: P
   const sp = searchParams ? await searchParams : {};
   const requestedUnitId = sp.unit_id;
 
-  // Load the requested unit (if it belongs to this restaurant), else fall back to first
-  let unitQuery = supabase
+  // Phase 3: units — load all, pick in memory (avoids conditional fallback query)
+  const { data: unitsData } = await supabase
     .from("units")
     .select("id, name, slug, custom_domain, address, city, neighborhood, whatsapp, instagram, logo_url, cover_url, description, maps_url, delivery_link, is_published, comanda_close_permission")
     .eq("restaurant_id", restaurant.id);
 
-  if (requestedUnitId) {
-    unitQuery = unitQuery.eq("id", requestedUnitId);
-  }
+  const unit = (requestedUnitId
+    ? (unitsData ?? []).find((u) => u.id === requestedUnitId) ?? unitsData?.[0]
+    : unitsData?.[0]) ?? null;
 
-  const { data: unitData } = await unitQuery.limit(1).maybeSingle();
+  // Phase 4: parallel — all independent queries that only need unit.id or user.id
+  const now = new Date();
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000).toISOString();
 
-  // If the requested unit didn't match (wrong id), fall back to first unit
-  const unit = unitData ?? (await supabase
-    .from("units")
-    .select("id, name, slug, custom_domain, address, city, neighborhood, whatsapp, instagram, logo_url, cover_url, description, maps_url, delivery_link, is_published, comanda_close_permission")
-    .eq("restaurant_id", restaurant.id)
-    .limit(1)
-    .maybeSingle()
-  ).data;
+  const [
+    categoriesRes,
+    eventsRes,
+    tvCountRes,
+    stockRes,
+    profileRes,
+    ordersRes,
+  ] = await Promise.all([
+    supabase
+      .from("categories")
+      .select("id, name, order_index, is_active, section, schedule_enabled, available_days, start_time, end_time")
+      .eq("unit_id", unit?.id)
+      .order("order_index"),
+    supabase
+      .from("menu_events")
+      .select("event")
+      .eq("unit_id", unit?.id)
+      .gte("created_at", sevenDaysAgo),
+    supabase
+      .from("tv_media")
+      .select("id", { count: "exact", head: true })
+      .eq("unit_id", unit?.id)
+      .eq("is_active", true),
+    supabase
+      .from("products")
+      .select("stock, stock_minimum, unlimited")
+      .eq("unit_id", unit?.id)
+      .eq("unlimited", false),
+    supabase
+      .from("profiles")
+      .select("first_name, last_name, phone, address, city")
+      .eq("id", user.id)
+      .single(),
+    supabase
+      .from("order_intents")
+      .select("id, total, items, status, waiter_status, payment_method, created_at")
+      .eq("unit_id", unit?.id)
+      .eq("status", "confirmed")
+      .gte("created_at", sixtyDaysAgo)
+      .order("created_at", { ascending: true }),
+  ]);
 
-  const { data: categories } = await supabase
-    .from("categories")
-    .select("id, name, order_index, is_active, section, schedule_enabled, available_days, start_time, end_time")
-    .eq("unit_id", unit?.id)
-    .order("order_index");
+  const categories = categoriesRes.data ?? [];
+  const events = eventsRes.data ?? [];
+  const tvCount = tvCountRes.count ?? 0;
+  const stockProducts = stockRes.data ?? [];
+  const profile = profileRes.data;
+  const rawOrders = ordersRes.data ?? [];
 
+  // Phase 5: products (depends on category ids from phase 4)
   const { data: products } = await supabase
     .from("products")
     .select("id, category_id, name, description, price_type, base_price, thumbnail_url, video_url, order_index, is_active, stock, stock_minimum, unlimited, sku, allergens, nutrition, preparation_time, is_age_restricted, is_alcoholic")
-    .in("category_id", (categories ?? []).map((c) => c.id));
+    .in("category_id", categories.map((c) => c.id));
 
-  const upsellGroupIds = (categories ?? []).length > 0
+  // Phase 6: upsell groups (depends on product ids)
+  const upsellGroupIds = (products ?? []).length > 0
     ? (await supabase
         .from("product_upsells")
         .select("id")
@@ -122,6 +164,7 @@ export default async function DashboardPage({ searchParams }: { searchParams?: P
       ).data?.map((u) => u.id) ?? []
     : [];
 
+  // Phase 7: upsell items (depends on upsell group ids)
   const { data: upsellItems } = upsellGroupIds.length > 0
     ? await supabase
         .from("product_upsell_items")
@@ -129,54 +172,19 @@ export default async function DashboardPage({ searchParams }: { searchParams?: P
         .in("upsell_id", upsellGroupIds)
     : { data: [] };
 
-  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-  const { data: events } = await supabase
-    .from("menu_events")
-    .select("event")
-    .eq("unit_id", unit?.id)
-    .gte("created_at", sevenDaysAgo);
-
-  const views = events?.filter((e) => e.event === "menu_view").length ?? 0;
-  const clicks = events?.filter((e) => e.event === "product_click").length ?? 0;
-  const orders = events?.filter((e) => e.event === "whatsapp_click").length ?? 0;
-
-  const { count: tvCount } = await supabase
-    .from("tv_media")
-    .select("id", { count: "exact", head: true })
-    .eq("unit_id", unit?.id)
-    .eq("is_active", true);
-
-  const { data: stockProducts } = await supabase
-    .from("products")
-    .select("stock, stock_minimum, unlimited")
-    .eq("unit_id", unit?.id)
-    .eq("unlimited", false);
+  // Derive analytics from events
+  const views = events.filter((e) => e.event === "menu_view").length;
+  const clicks = events.filter((e) => e.event === "product_click").length;
+  const orders = events.filter((e) => e.event === "whatsapp_click").length;
 
   const stockStats = {
-    out: (stockProducts ?? []).filter((p) => (p.stock ?? 0) === 0).length,
-    low: (stockProducts ?? []).filter((p) => (p.stock ?? 0) > 0 && (p.stock ?? 0) <= (p.stock_minimum ?? 10)).length,
+    out: stockProducts.filter((p) => (p.stock ?? 0) === 0).length,
+    low: stockProducts.filter((p) => (p.stock ?? 0) > 0 && (p.stock ?? 0) <= (p.stock_minimum ?? 10)).length,
   };
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("first_name, last_name, phone, address, city")
-    .eq("id", user.id)
-    .single();
-
-  // ─── Report data (últimos 60 dias de order_intents) ───
-  const now = new Date();
+  // Report computation (unchanged logic)
   const todayStr = getDateStr(now);
-  const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000).toISOString();
-
-  const { data: rawOrders } = await supabase
-    .from("order_intents")
-    .select("id, total, items, status, waiter_status, payment_method, created_at")
-    .eq("unit_id", unit?.id)
-    .eq("status", "confirmed")
-    .gte("created_at", sixtyDaysAgo)
-    .order("created_at", { ascending: true });
-
-  const allOrders = (rawOrders ?? []) as OrderRow[];
+  const allOrders = rawOrders as OrderRow[];
   const thirtyDaysAgoDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
   const sevenDaysAgoDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
@@ -213,11 +221,11 @@ export default async function DashboardPage({ searchParams }: { searchParams?: P
       restaurant={restaurant}
       unit={unit ?? null}
       profile={{ first_name: null, last_name: null, phone: null, address: null, city: null, ...profile, email: user.email }}
-      categories={categories ?? []}
+      categories={categories}
       products={products ?? []}
       upsellItems={upsellItems ?? []}
       analytics={{ views, clicks, orders }}
-      tvCount={tvCount ?? 0}
+      tvCount={tvCount}
       stockStats={stockStats}
       reportData={reportData}
     />
