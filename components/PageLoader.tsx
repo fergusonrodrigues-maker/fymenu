@@ -1,6 +1,6 @@
 "use client";
 
-import FyLoader from "./FyLoader";
+import FyPulseLoader from "./FyPulseLoader";
 
 export default function PageLoader() {
   return (
@@ -15,7 +15,7 @@ export default function PageLoader() {
         justifyContent: "center",
       }}
     >
-      <FyLoader size="lg" text="carregando" />
+      <FyPulseLoader size="lg" />
     </div>
   );
 }
