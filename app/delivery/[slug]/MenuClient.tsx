@@ -109,6 +109,7 @@ export default function MenuClient({
     }
   });
   const [cartOpen, setCartOpen] = useState(false);
+  const [addedToast, setAddedToast] = useState<string | null>(null);
 
   // Busca
   const [searchOpen, setSearchOpen] = useState(false);
@@ -172,6 +173,9 @@ export default function MenuClient({
       }
       return [...prev, { product_id: productId, name, qty: 1, unit_price: payload.total, addons: payload.upsells.length > 0 ? payload.upsells : undefined }];
     });
+    // Toast feedback
+    setAddedToast(payload.product.name);
+    setTimeout(() => setAddedToast(null), 2000);
   }
 
   function updateCartQty(productId: string, qty: number) {
@@ -494,6 +498,10 @@ export default function MenuClient({
   }
   .featured-scroll::-webkit-scrollbar { display: none; }
   .product-card { will-change: transform; }
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+  }
 `}</style>
       {/* Conteúdo scrollável */}
       <div
@@ -1179,6 +1187,27 @@ export default function MenuClient({
           </>
         )}
       </div>
+
+      {/* Toast — item adicionado ao carrinho */}
+      {addedToast && (
+        <div style={{
+          position: "fixed", top: 20, left: "50%",
+          transform: "translateX(-50%)",
+          padding: "10px 20px", borderRadius: 14,
+          background: isDark ? "rgba(0,255,174,0.15)" : "rgba(0,160,106,0.12)",
+          border: `1px solid ${isDark ? "rgba(0,255,174,0.2)" : "rgba(0,160,106,0.15)"}`,
+          backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
+          color: isDark ? "#00ffae" : "#00a06a",
+          fontSize: 13, fontWeight: 700,
+          zIndex: 9999,
+          animation: "toastIn 0.3s ease",
+          pointerEvents: "none",
+          whiteSpace: "nowrap",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
+        }}>
+          ✓ {addedToast} adicionado
+        </div>
+      )}
 
       {/* Bottom bar (apenas no modo delivery) */}
       {mode === "delivery" && (
