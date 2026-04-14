@@ -99,14 +99,18 @@ export default function WaiterClient({
   const [opening, setOpening] = useState(false);
   const [mesaError, setMesaError] = useState("");
   const [employeeName, setEmployeeName] = useState("");
+  const [newCall, setNewCall] = useState<any>(null);
+  const [showCalls, setShowCalls] = useState(false);
 
-  const playSound = (type: "new" | "ready") => {
+  const playSound = (type: "new" | "ready" | "call") => {
     try {
       if (!audioCtxRef.current) audioCtxRef.current = new AudioContext();
       const ctx = audioCtxRef.current;
       const configs =
         type === "new"
           ? [{ f: 523.25, t: 0 }, { f: 659.25, t: 0.15 }, { f: 783.99, t: 0.3 }]
+          : type === "call"
+          ? [{ f: 880, t: 0 }, { f: 1100, t: 0.15 }, { f: 880, t: 0.3 }]
           : [{ f: 783.99, t: 0 }, { f: 1046.5, t: 0.15 }];
       configs.forEach(({ f, t }) => {
         const osc = ctx.createOscillator();
@@ -183,12 +187,18 @@ export default function WaiterClient({
     const channel = supabase
       .channel("table-calls")
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "table_calls", filter: `unit_id=eq.${unitId}` }, (payload) => {
-        setTableCalls(prev => [payload.new as any, ...prev]);
-        if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-        try { new Audio("/notification.mp3").play(); } catch {}
+        const call = payload.new as any;
+        setTableCalls(prev => [call, ...prev]);
+        setNewCall(call);
+        playSound("call");
+        if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 200]);
+        setTimeout(() => setNewCall(null), 10000);
       })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "table_calls", filter: `unit_id=eq.${unitId}` }, (payload) => {
-        setTableCalls(prev => prev.map(c => c.id === payload.new.id ? payload.new as any : c));
+        const updated = payload.new as any;
+        setTableCalls(prev =>
+          prev.map(c => c.id === updated.id ? updated : c).filter(c => c.status === "pending")
+        );
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
@@ -322,6 +332,22 @@ export default function WaiterClient({
     });
   };
 
+  async function handleAnswerCall(callId: string) {
+    await supabase.from("table_calls").update({
+      status: "acknowledged",
+      acknowledged_at: new Date().toISOString(),
+      acknowledged_by: userId,
+    }).eq("id", callId);
+    setTableCalls(prev => prev.filter(c => c.id !== callId));
+    if (newCall?.id === callId) setNewCall(null);
+  }
+
+  async function handleDismissCall(callId: string) {
+    await supabase.from("table_calls").update({ status: "dismissed" }).eq("id", callId);
+    setTableCalls(prev => prev.filter(c => c.id !== callId));
+    if (newCall?.id === callId) setNewCall(null);
+  }
+
   const queue = orders.filter((o) => !o.waiter_status || o.waiter_status === "pending");
   const active = orders.filter((o) => o.waiter_status && o.waiter_status !== "pending" && o.waiter_status !== "delivered");
 
@@ -355,6 +381,26 @@ export default function WaiterClient({
                 {readyCount} pronto{readyCount > 1 ? "s" : ""}
               </span>
             )}
+            <div style={{ position: "relative", display: "inline-flex" }}>
+              <button
+                onClick={() => setShowCalls(s => !s)}
+                style={{
+                  width: 36, height: 36, borderRadius: 10, border: "none", cursor: "pointer",
+                  background: pendingCalls.length > 0 ? "rgba(251,191,36,0.1)" : "rgba(255,255,255,0.04)",
+                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16,
+                }}
+              >🔔</button>
+              {pendingCalls.length > 0 && (
+                <div style={{
+                  position: "absolute", top: -4, right: -4,
+                  minWidth: 16, height: 16, borderRadius: 8, padding: "0 3px",
+                  background: "#fbbf24", color: "#000",
+                  fontSize: 9, fontWeight: 900,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  pointerEvents: "none",
+                }}>{pendingCalls.length}</div>
+              )}
+            </div>
             <button
               onClick={() => setQrOpen(true)}
               style={{ padding: "6px 12px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.08)", cursor: "pointer", background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.6)", fontSize: 10, fontWeight: 600 }}
@@ -397,7 +443,7 @@ export default function WaiterClient({
       </header>
 
       <main style={{ maxWidth: 700, margin: "0 auto", padding: "16px" }}>
-        {/* Chamados pendentes */}
+        {/* Chamados pendentes (inline) */}
         {pendingCalls.length > 0 && (
           <div style={{ marginBottom: 12 }}>
             {pendingCalls.map(call => (
@@ -407,24 +453,24 @@ export default function WaiterClient({
                 background: "rgba(251,191,36,0.06)", border: "1px solid rgba(251,191,36,0.2)",
               }}>
                 <div>
-                  <div style={{ color: "#fbbf24", fontSize: 13, fontWeight: 800 }}>🖐️ Mesa {call.table_number} chamando!</div>
+                  <div style={{ color: "#fbbf24", fontSize: 13, fontWeight: 800 }}>
+                    🖐️ Mesa {call.mesa_number ?? call.table_number} chamando!
+                  </div>
                   <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 10, marginTop: 2 }}>
+                    {call.customer_name ? `${call.customer_name} · ` : ""}
                     {new Date(call.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                   </div>
                 </div>
-                <button
-                  onClick={async () => {
-                    await supabase.from("table_calls").update({
-                      status: "resolved",
-                      acknowledged_by: unitName,
-                      acknowledged_at: new Date().toISOString(),
-                      resolved_at: new Date().toISOString(),
-                    }).eq("id", call.id);
-                  }}
-                  style={{ padding: "8px 14px", borderRadius: 10, border: "none", cursor: "pointer", background: "rgba(0,255,174,0.1)", color: "#00ffae", fontSize: 11, fontWeight: 700 }}
-                >
-                  ✓ Atender
-                </button>
+                <div style={{ display: "flex", gap: 6 }}>
+                  <button
+                    onClick={() => handleAnswerCall(call.id)}
+                    style={{ padding: "8px 14px", borderRadius: 10, border: "none", cursor: "pointer", background: "rgba(0,255,174,0.1)", color: "#00ffae", fontSize: 11, fontWeight: 700 }}
+                  >✓ Atender</button>
+                  <button
+                    onClick={() => handleDismissCall(call.id)}
+                    style={{ padding: "8px 10px", borderRadius: 10, border: "none", cursor: "pointer", background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.3)", fontSize: 11 }}
+                  >✕</button>
+                </div>
               </div>
             ))}
           </div>
@@ -682,6 +728,113 @@ export default function WaiterClient({
           </>
         )}
       </main>
+
+      {/* Popup: novo chamado */}
+      {newCall && (
+        <div style={{
+          position: "fixed", top: 16, left: 16, right: 16,
+          padding: 18, borderRadius: 18,
+          background: "rgba(251,191,36,0.12)",
+          border: "1px solid rgba(251,191,36,0.25)",
+          backdropFilter: "blur(20px)",
+          boxShadow: "0 8px 32px rgba(251,191,36,0.15), 0 0 0 1px rgba(251,191,36,0.1) inset",
+          zIndex: 9999,
+          animation: "callSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
+        }}>
+          <div style={{
+            position: "absolute", top: -4, right: -4,
+            width: 12, height: 12, borderRadius: "50%",
+            background: "#fbbf24",
+            animation: "callPulse 1s ease infinite",
+          }} />
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{
+              width: 44, height: 44, borderRadius: 14,
+              background: "rgba(251,191,36,0.15)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 22, flexShrink: 0,
+            }}>🔔</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 15, fontWeight: 900, color: "#fbbf24" }}>
+                Mesa {newCall.mesa_number ?? newCall.table_number} chamando!
+              </div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginTop: 2 }}>
+                {newCall.customer_name || "Cliente"} · {newCall.type === "waiter" ? "Garçom" : "Gerente"}
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 6 }}>
+              <button onClick={() => handleAnswerCall(newCall.id)} style={{
+                padding: "10px 16px", borderRadius: 12, border: "none", cursor: "pointer",
+                background: "rgba(0,255,174,0.12)", color: "#00ffae",
+                fontSize: 12, fontWeight: 800,
+                boxShadow: "0 1px 0 rgba(0,255,174,0.1) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
+              }}>Atender</button>
+              <button onClick={() => handleDismissCall(newCall.id)} style={{
+                padding: "10px 12px", borderRadius: 12, border: "none", cursor: "pointer",
+                background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.3)",
+                fontSize: 12,
+              }}>✕</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Dropdown: lista de chamados pendentes */}
+      {showCalls && pendingCalls.length > 0 && (
+        <div style={{
+          position: "fixed", top: 60, right: 16, width: 280,
+          padding: 14, borderRadius: 18,
+          background: "rgba(10,10,10,0.95)",
+          border: "1px solid rgba(255,255,255,0.06)",
+          backdropFilter: "blur(20px)",
+          boxShadow: "0 16px 48px rgba(0,0,0,0.4)",
+          zIndex: 9998, maxHeight: 400, overflowY: "auto",
+        }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.4)", marginBottom: 10 }}>
+            Chamados pendentes ({pendingCalls.length})
+          </div>
+          {pendingCalls.map(call => (
+            <div key={call.id} style={{
+              display: "flex", alignItems: "center", gap: 10,
+              padding: "10px 12px", borderRadius: 12,
+              background: "rgba(251,191,36,0.04)",
+              border: "1px solid rgba(251,191,36,0.08)",
+              marginBottom: 6,
+            }}>
+              <div style={{
+                width: 32, height: 32, borderRadius: 10,
+                background: "rgba(251,191,36,0.1)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 16, flexShrink: 0,
+              }}>🔔</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#fbbf24" }}>
+                  Mesa {call.mesa_number ?? call.table_number}
+                </div>
+                <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)" }}>
+                  {call.customer_name || "Cliente"} · {new Date(call.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                </div>
+              </div>
+              <button onClick={() => { handleAnswerCall(call.id); setShowCalls(false); }} style={{
+                padding: "6px 10px", borderRadius: 8, border: "none", cursor: "pointer",
+                background: "rgba(0,255,174,0.08)", color: "#00ffae",
+                fontSize: 10, fontWeight: 700,
+              }}>Atender</button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <style>{`
+        @keyframes callSlideIn {
+          from { transform: translateY(-100%); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes callPulse {
+          0%, 100% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.5); opacity: 0.5; }
+        }
+      `}</style>
 
       {editOrder && (
         <EditOrderModal
