@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 type Stats = {
@@ -72,6 +72,7 @@ interface Props {
     orders: Array<{ total: string; created_at: string; unit_id: string; status: string }>;
     plans: Array<{ plan: string; status: string; free_access: boolean }>;
   };
+  userRole: string;
   supportStaff: Array<{ id: string; email: string; name: string; role: string; is_active: boolean; permissions: Record<string, boolean>; created_at?: string; last_login_at?: string | null }>;
   photoData: {
     cities: Array<{ id: string; city: string; state: string; is_active: boolean }>;
@@ -431,7 +432,7 @@ function ActionBtn({
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function AdminClient({
   stats, restaurants, payments, topProducts,
-  planCounts, statusCounts, cities, unitsByRestaurant, unitFeatures, user, analyticsData, crmData, consumerData, financeData, supportStaff: initialSupportStaff, photoData, partnerData,
+  planCounts, statusCounts, cities, unitsByRestaurant, unitFeatures, user, analyticsData, crmData, consumerData, financeData, userRole, supportStaff: initialSupportStaff, photoData, partnerData,
 }: Props) {
   const supabase = createClient();
   const [tab, setTab] = useState<Tab>("Visão Geral");
@@ -510,6 +511,18 @@ export default function AdminClient({
   const [partnerNotes, setPartnerNotes] = useState("");
   const [partnerPassword, setPartnerPassword] = useState("");
   const [partnerError, setPartnerError] = useState<string | null>(null);
+  // Coupon / partner permission flags
+  const canEditCouponCode = ["super_admin", "support"].includes(userRole);
+  const canEditCommission  = ["super_admin", "manager"].includes(userRole);
+  const canToggleCoupon    = ["super_admin", "manager"].includes(userRole);
+
+  // Inline edit states — coupons
+  const [expandedCouponId, setExpandedCouponId] = useState<string | null>(null);
+  const [editCouponCodeValue, setEditCouponCodeValue] = useState("");
+  // Inline edit states — partner commission
+  const [expandedPartnerId, setExpandedPartnerId] = useState<string | null>(null);
+  const [editPartnerCommission, setEditPartnerCommission] = useState("");
+
   // Add coupon form
   const [showAddCoupon, setShowAddCoupon] = useState(false);
   const [couponPartnerId, setCouponPartnerId] = useState("");
@@ -794,6 +807,22 @@ export default function AdminClient({
     if (!confirm("Remover este cupom?")) return;
     const res = await partnerApi({ action: "delete_coupon", id });
     if (res.ok) setCouponsState((prev) => prev.filter((c) => c.id !== id));
+  }
+
+  async function handleSaveCouponCode(id: string) {
+    const code = editCouponCodeValue.toUpperCase().replace(/\s/g, "");
+    if (!code) return;
+    await partnerApi({ action: "update_coupon", id, code });
+    setCouponsState((prev) => prev.map((c) => c.id === id ? { ...c, code } : c));
+    setExpandedCouponId(null);
+  }
+
+  async function handleSavePartnerCommission(id: string) {
+    const commission = parseFloat(editPartnerCommission);
+    if (isNaN(commission) || commission < 0 || commission > 100) return;
+    await partnerApi({ action: "update_partner", id, commission_percent: commission });
+    setPartnersState((prev) => prev.map((p) => p.id === id ? { ...p, commission_percent: commission } : p));
+    setExpandedPartnerId(null);
   }
 
   async function handleAddPayout() {
@@ -1969,25 +1998,64 @@ export default function AdminClient({
                           {partnersState.map((p) => {
                             const partnerReferralCount = referralsState.filter((r) => r.partner_id === p.id).length;
                             return (
-                              <tr key={p.id} className="border-b border-gray-800/50 hover:bg-gray-800/30">
-                                <td className="px-4 py-3 text-white font-medium">{p.name}</td>
-                                <td className="px-4 py-3 text-gray-400 text-xs">{p.email}</td>
-                                <td className="px-4 py-3 text-gray-300">{p.commission_percent}%</td>
-                                <td className="px-4 py-3 text-right text-gray-300">{partnerReferralCount}</td>
-                                <td className="px-4 py-3 text-right text-green-400 font-semibold">{fmtBRL(p.total_earned)}</td>
-                                <td className="px-4 py-3">
-                                  {p.is_photographer && <span className="px-2 py-0.5 rounded text-xs bg-blue-900/40 text-blue-300 border border-blue-700/50">📸 Fotógrafo</span>}
-                                </td>
-                                <td className="px-4 py-3">
-                                  <button onClick={() => handleTogglePartner(p.id, !p.is_active)}
-                                    className={`px-2 py-0.5 rounded text-xs font-semibold ${p.is_active ? "bg-green-900/40 text-green-300" : "bg-red-900/40 text-red-300"}`}>
-                                    {p.is_active ? "Ativo" : "Inativo"}
-                                  </button>
-                                </td>
-                                <td className="px-4 py-3">
-                                  <button onClick={() => handleDeletePartner(p.id)} className="text-red-400 text-xs hover:text-red-300">Remover</button>
-                                </td>
-                              </tr>
+                              <React.Fragment key={p.id}>
+                                <tr className="border-b border-gray-800/50 hover:bg-gray-800/30">
+                                  <td className="px-4 py-3 text-white font-medium">{p.name}</td>
+                                  <td className="px-4 py-3 text-gray-400 text-xs">{p.email}</td>
+                                  <td className="px-4 py-3">
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="text-gray-300">{p.commission_percent}%</span>
+                                      {canEditCommission && (
+                                        <button
+                                          onClick={() => { setExpandedPartnerId(expandedPartnerId === p.id ? null : p.id); setEditPartnerCommission(String(p.commission_percent)); }}
+                                          className="text-purple-400 text-xs hover:text-purple-300">
+                                          ✎
+                                        </button>
+                                      )}
+                                    </div>
+                                  </td>
+                                  <td className="px-4 py-3 text-right text-gray-300">{partnerReferralCount}</td>
+                                  <td className="px-4 py-3 text-right text-green-400 font-semibold">{fmtBRL(p.total_earned)}</td>
+                                  <td className="px-4 py-3">
+                                    {p.is_photographer && <span className="px-2 py-0.5 rounded text-xs bg-blue-900/40 text-blue-300 border border-blue-700/50">📸 Fotógrafo</span>}
+                                  </td>
+                                  <td className="px-4 py-3">
+                                    <button onClick={() => handleTogglePartner(p.id, !p.is_active)}
+                                      className={`px-2 py-0.5 rounded text-xs font-semibold ${p.is_active ? "bg-green-900/40 text-green-300" : "bg-red-900/40 text-red-300"}`}>
+                                      {p.is_active ? "Ativo" : "Inativo"}
+                                    </button>
+                                  </td>
+                                  <td className="px-4 py-3">
+                                    <button onClick={() => handleDeletePartner(p.id)} className="text-red-400 text-xs hover:text-red-300">Remover</button>
+                                  </td>
+                                </tr>
+                                {expandedPartnerId === p.id && (
+                                  <tr className="bg-gray-800/40">
+                                    <td colSpan={8} className="px-4 py-3">
+                                      <div className="flex flex-col gap-2 max-w-xs">
+                                        <div className="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1">Editar comissão</div>
+                                        <div className="flex gap-2 items-center">
+                                          <div className="relative flex-1">
+                                            <input
+                                              type="number" min={0} max={100} step={0.5}
+                                              value={editPartnerCommission}
+                                              onChange={(e) => setEditPartnerCommission(e.target.value)}
+                                              className="w-full px-3 py-2 pr-7 rounded-lg bg-gray-900/80 border border-purple-700/50 text-white font-bold text-sm outline-none"
+                                              onKeyDown={(e) => e.key === "Enter" && handleSavePartnerCommission(p.id)}
+                                            />
+                                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">%</span>
+                                          </div>
+                                          <button onClick={() => handleSavePartnerCommission(p.id)} className="px-3 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold">Salvar</button>
+                                          <button onClick={() => setExpandedPartnerId(null)} className="px-3 py-2 rounded-lg border border-gray-700 text-gray-400 text-xs">Cancelar</button>
+                                        </div>
+                                        {!canEditCouponCode && (
+                                          <div className="text-xs text-gray-500">O código do cupom só pode ser editado por Super Admin e Suporte.</div>
+                                        )}
+                                      </div>
+                                    </td>
+                                  </tr>
+                                )}
+                              </React.Fragment>
                             );
                           })}
                         </tbody>
@@ -2067,25 +2135,61 @@ export default function AdminClient({
                         </thead>
                         <tbody>
                           {couponsState.map((c) => (
-                            <tr key={c.id} className="border-b border-gray-800/50 hover:bg-gray-800/30">
-                              <td className="px-4 py-3 text-white font-mono font-bold tracking-wider">{c.code}</td>
-                              <td className="px-4 py-3 text-gray-300">{c.partners?.name ?? "—"}</td>
-                              <td className="px-4 py-3 text-gray-400 text-xs capitalize">{c.discount_type}</td>
-                              <td className="px-4 py-3 text-gray-300">
-                                {c.discount_type === "trial_days" ? `+${c.trial_extra_days}d` : c.discount_type === "percent" ? `${c.discount_value}%` : fmtBRL(c.discount_value)}
-                              </td>
-                              <td className="px-4 py-3 text-gray-400">{c.current_uses}{c.max_uses ? `/${c.max_uses}` : ""}</td>
-                              <td className="px-4 py-3 text-gray-400 text-xs">{fmtDate(c.expires_at)}</td>
-                              <td className="px-4 py-3">
-                                <button onClick={() => handleToggleCoupon(c.id, !c.is_active)}
-                                  className={`px-2 py-0.5 rounded text-xs font-semibold ${c.is_active ? "bg-green-900/40 text-green-300" : "bg-red-900/40 text-red-300"}`}>
-                                  {c.is_active ? "Ativo" : "Inativo"}
-                                </button>
-                              </td>
-                              <td className="px-4 py-3">
-                                <button onClick={() => handleDeleteCoupon(c.id)} className="text-red-400 text-xs hover:text-red-300">Remover</button>
-                              </td>
-                            </tr>
+                            <React.Fragment key={c.id}>
+                              <tr className="border-b border-gray-800/50 hover:bg-gray-800/30">
+                                <td className="px-4 py-3 text-white font-mono font-bold tracking-wider">{c.code}</td>
+                                <td className="px-4 py-3 text-gray-300">{c.partners?.name ?? "—"}</td>
+                                <td className="px-4 py-3 text-gray-400 text-xs capitalize">{c.discount_type}</td>
+                                <td className="px-4 py-3 text-gray-300">
+                                  {c.discount_type === "trial_days" ? `+${c.trial_extra_days}d` : c.discount_type === "percent" ? `${c.discount_value}%` : fmtBRL(c.discount_value)}
+                                </td>
+                                <td className="px-4 py-3 text-gray-400">{c.current_uses}{c.max_uses ? `/${c.max_uses}` : ""}</td>
+                                <td className="px-4 py-3 text-gray-400 text-xs">{fmtDate(c.expires_at)}</td>
+                                <td className="px-4 py-3">
+                                  <button
+                                    onClick={() => canToggleCoupon && handleToggleCoupon(c.id, !c.is_active)}
+                                    disabled={!canToggleCoupon}
+                                    title={!canToggleCoupon ? "Apenas Super Admin e Gerente podem alterar" : undefined}
+                                    className={`px-2 py-0.5 rounded text-xs font-semibold ${c.is_active ? "bg-green-900/40 text-green-300" : "bg-red-900/40 text-red-300"} ${!canToggleCoupon ? "opacity-40 cursor-not-allowed" : ""}`}>
+                                    {c.is_active ? "Ativo" : "Inativo"}
+                                  </button>
+                                </td>
+                                <td className="px-4 py-3 flex items-center gap-2">
+                                  {canEditCouponCode && (
+                                    <button
+                                      onClick={() => { setExpandedCouponId(expandedCouponId === c.id ? null : c.id); setEditCouponCodeValue(c.code); }}
+                                      className="text-purple-400 text-xs hover:text-purple-300">
+                                      {expandedCouponId === c.id ? "Fechar" : "Editar"}
+                                    </button>
+                                  )}
+                                  <button onClick={() => handleDeleteCoupon(c.id)} className="text-red-400 text-xs hover:text-red-300">Remover</button>
+                                </td>
+                              </tr>
+                              {expandedCouponId === c.id && (
+                                <tr className="bg-gray-800/40">
+                                  <td colSpan={8} className="px-4 py-3">
+                                    <div className="flex flex-col gap-2 max-w-sm">
+                                      <div className="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1">Editar código do cupom</div>
+                                      <div className="flex gap-2 items-center">
+                                        <input
+                                          value={editCouponCodeValue}
+                                          onChange={(e) => setEditCouponCodeValue(e.target.value.toUpperCase().replace(/\s/g, ""))}
+                                          placeholder="CÓDIGO"
+                                          className="px-3 py-2 rounded-lg bg-gray-900/80 border border-purple-700/50 text-white font-mono font-bold tracking-widest text-sm outline-none flex-1"
+                                          style={{ textTransform: "uppercase", letterSpacing: 3 }}
+                                          onKeyDown={(e) => e.key === "Enter" && handleSaveCouponCode(c.id)}
+                                        />
+                                        <button onClick={() => handleSaveCouponCode(c.id)} className="px-3 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold">Salvar</button>
+                                        <button onClick={() => setExpandedCouponId(null)} className="px-3 py-2 rounded-lg border border-gray-700 text-gray-400 text-xs">Cancelar</button>
+                                      </div>
+                                      {!canEditCommission && (
+                                        <div className="text-xs text-gray-500">A % de comissão só pode ser editada por Super Admin e Gerente.</div>
+                                      )}
+                                    </div>
+                                  </td>
+                                </tr>
+                              )}
+                            </React.Fragment>
                           ))}
                         </tbody>
                       </table>

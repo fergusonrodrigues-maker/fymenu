@@ -178,6 +178,10 @@ export default async function AdminPage() {
     }
   }
 
+  // Determine role of currently logged-in user
+  const staffMember = supportStaffData?.find((s) => s.email === user.email);
+  const userRole = staffMember ? staffMember.role : "super_admin";
+
   return (
     <AdminClient
       stats={{
@@ -214,6 +218,7 @@ export default async function AdminPage() {
         orders: financeOrders ?? [],
         plans: financePlans ?? [],
       }}
+      userRole={userRole}
       supportStaff={supportStaffData ?? []}
       photoData={{
         cities: photoCitiesData ?? [],
