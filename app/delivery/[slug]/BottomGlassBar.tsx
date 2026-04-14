@@ -103,12 +103,12 @@ interface Props {
   cartTotal?: number;
   onUpdateQty?: (productId: string, qty: number) => void;
   onClearCart?: () => void;
-  onOpenProduct?: (productId: string) => void;
+  onAddSuggestion?: (id: string, name: string, price: number) => void;
 }
 
 export default function BottomGlassBar({
   unit, visible, onIfoodClick,
-  cart = [], cartTotal = 0, onUpdateQty, onClearCart, onOpenProduct,
+  cart = [], cartTotal = 0, onUpdateQty, onClearCart, onAddSuggestion,
 }: Props) {
   const [glassExpanded, setGlassExpanded] = useState(false);
   const [glassView, setGlassView] = useState<"info" | "cart">("info");
@@ -123,6 +123,7 @@ export default function BottomGlassBar({
   const [sending, setSending] = useState(false);
   const [upsellData, setUpsellData] = useState<UpsellData>({ combos: [], suggestions: [] });
   const [loadingUpsell, setLoadingUpsell] = useState(false);
+  const [addedSuggestions, setAddedSuggestions] = useState<Set<string>>(new Set());
 
   // Drag-to-minimize (refs for handler values, state for rendering)
   const dragStartYRef = useRef(0);
@@ -808,21 +809,30 @@ export default function BottomGlassBar({
                         <div style={{ fontSize: 11, color: textSecondary, padding: "8px 0" }}>Carregando sugestões...</div>
                       ) : (
                         <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4, scrollbarWidth: "none" }}>
-                          {upsellData.suggestions.map(s => (
-                            <div key={s.id}
-                              onClick={() => onOpenProduct?.(s.id)}
-                              style={{
-                                minWidth: 120, padding: 12, borderRadius: 12, flexShrink: 0,
-                                background: cardBg, border: `1px solid ${cardBorder}`,
-                                cursor: onOpenProduct ? "pointer" : "default",
-                              }}>
-                              <div style={{ fontSize: 11, fontWeight: 700, color: textPrimary, marginBottom: 2 }}>{s.name}</div>
-                              {s.reason && <div style={{ fontSize: 9, color: textSecondary, marginBottom: 4, lineHeight: 1.3 }}>{s.reason}</div>}
-                              <div style={{ fontSize: 12, fontWeight: 900, color: isDark ? "#00ffae" : "#00a06a" }}>
-                                + R${s.price?.toFixed(2).replace(".", ",")}
+                          {upsellData.suggestions.map(s => {
+                            const isAdded = addedSuggestions.has(s.id);
+                            return (
+                              <div key={s.id}
+                                onClick={() => {
+                                  if (isAdded) return;
+                                  onAddSuggestion?.(s.id, s.name, s.price);
+                                  setAddedSuggestions(prev => new Set(prev).add(s.id));
+                                }}
+                                style={{
+                                  minWidth: 120, padding: 12, borderRadius: 12, flexShrink: 0,
+                                  background: isAdded ? (isDark ? "rgba(0,255,174,0.08)" : "rgba(0,160,106,0.07)") : cardBg,
+                                  border: `1px solid ${isAdded ? (isDark ? "rgba(0,255,174,0.3)" : "rgba(0,160,106,0.25)") : cardBorder}`,
+                                  cursor: isAdded ? "default" : "pointer",
+                                  transition: "all 0.2s ease",
+                                }}>
+                                <div style={{ fontSize: 11, fontWeight: 700, color: textPrimary, marginBottom: 2 }}>{s.name}</div>
+                                {s.reason && <div style={{ fontSize: 9, color: textSecondary, marginBottom: 4, lineHeight: 1.3 }}>{s.reason}</div>}
+                                <div style={{ fontSize: 12, fontWeight: 900, color: isDark ? "#00ffae" : "#00a06a" }}>
+                                  {isAdded ? "✓ Adicionado" : `+ R$${s.price?.toFixed(2).replace(".", ",")}`}
+                                </div>
                               </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       )}
                     </div>

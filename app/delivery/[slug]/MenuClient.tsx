@@ -446,9 +446,16 @@ export default function MenuClient({
     setTimeout(() => { isScrollingTo.current = false; }, 800);
   }, []);
 
-  function handleOpenProductById(productId: string) {
-    const product = products.find((p) => p.id === productId);
-    if (product) handleOpenProduct(product);
+  function handleAddSuggestion(id: string, name: string, price: number) {
+    setCart((prev) => {
+      const existing = prev.find((i) => i.product_id === id);
+      if (existing) {
+        return prev.map((i) => i.product_id === id ? { ...i, qty: i.qty + 1 } : i);
+      }
+      return [...prev, { product_id: id, name, qty: 1, unit_price: price }];
+    });
+    setAddedToast(name);
+    setTimeout(() => setAddedToast(null), 2000);
   }
 
   function handleOpenProduct(product: Product) {
@@ -1241,7 +1248,7 @@ export default function MenuClient({
           cartTotal={cartTotal}
           onUpdateQty={updateCartQty}
           onClearCart={clearCart}
-          onOpenProduct={handleOpenProductById}
+          onAddSuggestion={handleAddSuggestion}
         />
       )}
 
