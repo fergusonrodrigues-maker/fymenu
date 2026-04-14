@@ -9,9 +9,24 @@ const supabase = createClient();
 const FYMENU_SUPPORT_WHATSAPP = "https://wa.me/5562982301642?text=Olá! Preciso de suporte com o FyMenu.";
 
 const PLANS = [
-  { key: "menu", name: "Menu", price: "R$ 199,90/mês" },
-  { key: "menupro", name: "MenuPro", price: "R$ 399,90/mês" },
-  { key: "business", name: "Business", price: "R$ 1.599/mês" },
+  {
+    key: "menu", name: "Menu", icon: "🍽️", units: "1 unidade",
+    price: "199,90", badge: null, highlight: false,
+    accent: "#a78bfa", accentRgb: "139,92,246",
+    features: ["Cardápio de vídeo 9:16", "Pedidos via WhatsApp", "Link público + QR Code", "Modo TV", "Analytics básico"],
+  },
+  {
+    key: "menupro", name: "MenuPro", icon: "⭐", units: "Até 3 unidades",
+    price: "399,90", badge: "MAIS VENDIDO", highlight: true,
+    accent: "#00ffae", accentRgb: "0,255,174",
+    features: ["Tudo do Menu +", "Comanda Digital", "Cozinha + Garçom em tempo real", "CRM de clientes", "Analytics avançado com IA", "Relatórios em PDF", "Estoque básico"],
+  },
+  {
+    key: "business", name: "Business", icon: "🏢", units: "Até 4 unidades",
+    price: "1.599", badge: "7 DIAS GRÁTIS", highlight: false,
+    accent: "#d4af37", accentRgb: "212,175,55",
+    features: ["Tudo do MenuPro +", "Gestão completa de equipe + ponto", "Estoque completo com IA", "CRM com disparo de mensagens", "Financeiro com custos e margens", "Relatórios financeiros com IA", "Hub do gerente"],
+  },
 ];
 
 const inp: React.CSSProperties = {
@@ -215,64 +230,158 @@ export default function ConfigModal({ profile, restaurant }: { profile: Profile;
 
       {/* ── TAB PLANO ── */}
       {tab === "plano" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {/* Plano atual */}
-          <div style={{ padding: 16, borderRadius: 14, background: "var(--dash-accent-soft)", boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
-            <div style={{ fontSize: 11, color: "var(--dash-text-muted)" }}>Plano atual</div>
-            <div style={{ fontSize: 20, fontWeight: 800, color: "var(--dash-text)", marginTop: 4 }}>
-              {currentPlan === "menu" ? "Menu" : currentPlan === "menupro" ? "MenuPro" : currentPlan === "business" ? "Business" : currentPlan}
-            </div>
-            {restaurant?.free_access && <div style={{ fontSize: 11, color: "var(--dash-accent)", marginTop: 4 }}>Acesso gratuito ativo</div>}
-            {restaurant?.status === "trial" && <div style={{ fontSize: 11, color: "var(--dash-warning)", marginTop: 4 }}>Período de teste</div>}
-          </div>
-
-          {/* Lista de planos */}
-          <div style={{ fontSize: 13, fontWeight: 700, color: "var(--dash-text)" }}>Alterar plano</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <style>{`@keyframes cfgGoldSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
 
           {PLANS.map((plan, idx) => {
             const isCurrent = currentPlan === plan.key;
             const isUpgrade = idx > currentPlanIdx;
             const isDowngrade = idx < currentPlanIdx;
+            const isGold = plan.key === "business";
+            const { accent, accentRgb } = plan;
+
+            const cardBg = plan.highlight
+              ? `rgba(${accentRgb},0.06)`
+              : isGold
+                ? "rgba(255,255,255,0.03)"
+                : "var(--dash-card)";
+
+            const cardBorder = isCurrent
+              ? `2px solid ${accent}`
+              : isGold
+                ? "2px solid rgba(212,175,55,0.25)"
+                : `1px solid rgba(${accentRgb},0.12)`;
+
+            const btnBg = isCurrent
+              ? `rgba(${accentRgb},0.12)`
+              : plan.highlight
+                ? `linear-gradient(135deg, #00ffae, #00d9ff)`
+                : isGold
+                  ? `rgba(212,175,55,0.1)`
+                  : `rgba(${accentRgb},0.12)`;
+
+            const btnColor = isCurrent
+              ? accent
+              : plan.highlight
+                ? "#000"
+                : accent;
+
+            const btnBorder = isCurrent
+              ? `1px solid ${accent}`
+              : isGold
+                ? `2px solid rgba(212,175,55,0.45)`
+                : plan.highlight
+                  ? "none"
+                  : `1px solid rgba(${accentRgb},0.3)`;
+
+            const btnLabel = isCurrent
+              ? "✓ Plano atual"
+              : isUpgrade
+                ? isGold ? "Testar 7 dias grátis" : `Upgrade → ${plan.name}`
+                : `Downgrade → ${plan.name}`;
 
             return (
               <div key={plan.key} style={{
-                display: "flex", alignItems: "center", justifyContent: "space-between",
-                padding: "14px 16px", borderRadius: 14,
-                background: isCurrent ? "var(--dash-accent-soft)" : "var(--dash-card)",
-                boxShadow: isCurrent
-                  ? "0 1px 0 rgba(0,255,174,0.06) inset, 0 -1px 0 rgba(0,0,0,0.15) inset"
-                  : "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
+                borderRadius: 20, padding: 20,
+                background: cardBg,
+                backdropFilter: "blur(40px)", WebkitBackdropFilter: "blur(40px)",
+                border: cardBorder,
+                position: "relative", overflow: "hidden",
+                boxShadow: isGold
+                  ? `0 0 40px rgba(212,175,55,0.04), 0 1px 0 rgba(255,255,255,0.03) inset`
+                  : `0 0 40px rgba(${accentRgb},0.03), 0 1px 0 rgba(255,255,255,0.03) inset`,
               }}>
-                <div>
-                  <div style={{ color: "var(--dash-text)", fontSize: 14, fontWeight: 700 }}>{plan.name}</div>
-                  <div style={{ color: "var(--dash-text-muted)", fontSize: 12, marginTop: 2 }}>{plan.price}</div>
+                {/* Gold animated border — Business only */}
+                {isGold && (
+                  <div style={{ position: "absolute", inset: -2, borderRadius: "inherit", overflow: "hidden", pointerEvents: "none", zIndex: 0 }}>
+                    <div style={{
+                      position: "absolute", width: "200%", height: "200%", top: "-50%", left: "-50%",
+                      background: "conic-gradient(from 0deg, transparent 0%, transparent 35%, rgba(180,140,20,0.25) 42%, rgba(212,175,55,0.5) 50%, rgba(255,215,0,0.7) 51%, rgba(212,175,55,0.5) 58%, rgba(180,140,20,0.25) 65%, transparent 70%, transparent 100%)",
+                      animation: "cfgGoldSpin 3.5s linear infinite",
+                    }} />
+                    <div style={{ position: "absolute", inset: 2, borderRadius: 18, background: "var(--dash-bg, #0a0a0a)" }} />
+                  </div>
+                )}
+
+                {/* Top radial glow */}
+                <div style={{
+                  position: "absolute", top: 0, left: 0, right: 0, height: 80, pointerEvents: "none",
+                  background: `radial-gradient(ellipse at top, rgba(${accentRgb},0.08) 0%, transparent 70%)`,
+                }} />
+
+                {/* Content */}
+                <div style={{ position: "relative", zIndex: 2 }}>
+                  {/* Badge row */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, minHeight: 20 }}>
+                    {plan.badge ? (
+                      <span style={{
+                        fontSize: 9, fontWeight: 800, letterSpacing: "1px",
+                        padding: "3px 8px", borderRadius: 6,
+                        background: isGold ? "rgba(212,175,55,0.12)" : `rgba(${accentRgb},0.1)`,
+                        color: accent,
+                        border: `1px solid rgba(${accentRgb},0.2)`,
+                      }}>{plan.badge}</span>
+                    ) : <span />}
+                    {isCurrent && (
+                      <span style={{
+                        fontSize: 9, fontWeight: 800, letterSpacing: "0.5px",
+                        padding: "3px 8px", borderRadius: 6,
+                        background: `rgba(${accentRgb},0.12)`, color: accent,
+                      }}>ATUAL</span>
+                    )}
+                  </div>
+
+                  {/* Icon + name + subtitle */}
+                  <div style={{ textAlign: "center", marginBottom: 14 }}>
+                    <div style={{ fontSize: 26, marginBottom: 4 }}>{plan.icon}</div>
+                    <div style={{ fontSize: 18, fontWeight: 900, color: isGold ? "#d4af37" : "var(--dash-text)" }}>{plan.name}</div>
+                    <div style={{ fontSize: 11, color: "var(--dash-text-muted)", marginTop: 2 }}>{plan.units}</div>
+                  </div>
+
+                  {/* Price */}
+                  <div style={{ textAlign: "center", marginBottom: 16 }}>
+                    <span style={{ fontSize: 32, fontWeight: 900, color: isGold ? "var(--dash-text)" : accent }}>
+                      R${plan.price}
+                    </span>
+                    <span style={{ fontSize: 12, color: "var(--dash-text-muted)" }}>/mês</span>
+                  </div>
+
+                  {/* Features */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 16 }}>
+                    {plan.features.map((f) => (
+                      <div key={f} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "var(--dash-text-muted)" }}>
+                        <span style={{ color: accent, fontSize: 11, flexShrink: 0 }}>✓</span>
+                        {f}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Action button */}
+                  <button
+                    onClick={isCurrent ? undefined : () => handleChangePlan(plan.key)}
+                    disabled={isCurrent}
+                    style={{
+                      width: "100%", padding: "12px", borderRadius: 12,
+                      background: btnBg, color: btnColor,
+                      border: btnBorder, cursor: isCurrent ? "default" : "pointer",
+                      fontSize: 13, fontWeight: 800, fontFamily: "inherit",
+                      opacity: isCurrent ? 0.8 : 1,
+                      transition: "all 0.2s",
+                    }}
+                  >
+                    {btnLabel}
+                  </button>
                 </div>
-                {isCurrent ? (
-                  <span style={{ padding: "4px 12px", borderRadius: 8, background: "var(--dash-accent-soft)", color: "var(--dash-accent)", fontSize: 11, fontWeight: 700 }}>Atual</span>
-                ) : isUpgrade ? (
-                  <button onClick={() => handleChangePlan(plan.key)} style={{
-                    padding: "8px 16px", borderRadius: 10, border: "none", cursor: "pointer",
-                    background: "var(--dash-accent-soft)", color: "var(--dash-accent)",
-                    fontSize: 12, fontWeight: 700, fontFamily: "inherit",
-                    boxShadow: "0 1px 0 rgba(0,255,174,0.12) inset, 0 -1px 0 rgba(0,0,0,0.2) inset",
-                  }}>⬆️ Upgrade</button>
-                ) : isDowngrade ? (
-                  <button onClick={() => handleChangePlan(plan.key)} style={{
-                    padding: "8px 16px", borderRadius: 10, border: "none", cursor: "pointer",
-                    background: "var(--dash-card-hover)", color: "var(--dash-text-muted)",
-                    fontSize: 12, fontWeight: 600, fontFamily: "inherit",
-                  }}>⬇️ Downgrade</button>
-                ) : null}
               </div>
             );
           })}
 
           {/* Cancelar plano */}
-          <div style={{ marginTop: 8 }}>
+          <div style={{ marginTop: 4 }}>
             {!showCancelConfirm ? (
               <button onClick={() => setShowCancelConfirm(true)} style={{
-                width: "100%", padding: 12, borderRadius: 14, border: "none", cursor: "pointer",
-                background: "var(--dash-danger-soft)", color: "var(--dash-danger-soft)",
+                width: "100%", padding: 12, borderRadius: 14, border: "1px solid var(--dash-border)", cursor: "pointer",
+                background: "transparent", color: "var(--dash-text-muted)",
                 fontSize: 12, fontWeight: 600, fontFamily: "inherit",
               }}>
                 Cancelar plano
