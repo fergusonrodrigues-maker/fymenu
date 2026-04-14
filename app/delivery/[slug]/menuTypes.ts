@@ -31,6 +31,7 @@ export type Category = {
   available_days?: string[];
   start_time?: string | null;
   end_time?: string | null;
+  availability?: string | null; // 'both' | 'delivery' | 'mesa'
 };
 export type ProductVariation = {
   id: string;
@@ -52,6 +53,8 @@ export type Product = {
   is_active: boolean;
   order_index: number | null;
   is_age_restricted?: boolean;
+  upsell_mode?: string | null; // 'auto' | 'manual' | 'off'
+  avail_mode?: string | null;  // 'both' | 'delivery' | 'mesa'
 };
 
 // Categoria com produtos embutidos (usado em CategoryPillsTop e similares)

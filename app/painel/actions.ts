@@ -276,6 +276,9 @@ export async function updateCategory(formData: FormData): Promise<void> {
   updatePayload.start_time = scheduleEnabled ? startTime : null;
   updatePayload.end_time = scheduleEnabled ? endTime : null;
 
+  const availabilityRaw = String(formData.get("availability") ?? "").trim();
+  if (availabilityRaw) updatePayload.availability = availabilityRaw;
+
   const { error } = await supabase.from("categories").update(updatePayload).eq("id", id);
   if (error) throw new Error(error.message);
 
@@ -386,6 +389,9 @@ export async function updateProduct(formData: FormData): Promise<void> {
 
   const base_price = Math.round((parsePrice(basePriceInput) ?? 0) * 100);
 
+  const upsellModeRaw = String(formData.get("upsell_mode") ?? "auto").trim();
+  const availModeRaw = String(formData.get("avail_mode") ?? "both").trim();
+
   const { error } = await supabase
     .from("products")
     .update({
@@ -398,6 +404,8 @@ export async function updateProduct(formData: FormData): Promise<void> {
       video_url: videoUrl || null,
       is_age_restricted: isAgeRestricted,
       is_alcoholic: isAlcoholic,
+      upsell_mode: upsellModeRaw || "auto",
+      avail_mode: availModeRaw || "both",
     })
     .eq("id", id);
 

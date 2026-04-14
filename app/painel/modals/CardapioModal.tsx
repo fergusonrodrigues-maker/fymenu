@@ -151,6 +151,8 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
   const [editDays, setEditDays] = useState<string[]>(["seg","ter","qua","qui","sex","sab","dom"]);
   const [editStartTime, setEditStartTime] = useState("11:00");
   const [editEndTime, setEditEndTime] = useState("23:00");
+  // Category availability state
+  const [editCatAvailability, setEditCatAvailability] = useState<Record<string, string>>({});
 
   // AI suggestion states
   const [generatingAISuggestion, setGeneratingAISuggestion] = useState(false);
@@ -1406,6 +1408,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                   setEditDays((cat.available_days as string[]) || ["seg","ter","qua","qui","sex","sab","dom"]);
                   setEditStartTime(cat.start_time?.slice(0,5) || "11:00");
                   setEditEndTime(cat.end_time?.slice(0,5) || "23:00");
+                  setEditCatAvailability(prev => ({ ...prev, [cat.id]: (cat as any).availability ?? "both" }));
                 }}
               >
                 <span
@@ -1461,6 +1464,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                 <input type="hidden" name="available_days" value={JSON.stringify(editDays)} />
                 <input type="hidden" name="start_time" value={editStartTime} />
                 <input type="hidden" name="end_time" value={editEndTime} />
+                <input type="hidden" name="availability" value={editCatAvailability[cat.id] ?? (cat as any).availability ?? "both"} />
 
                 {/* Row 1: Name + Salvar + X + Toggle */}
                 <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 12 }}>
@@ -1570,6 +1574,31 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                       </div>
                     </div>
                   )}
+                </div>
+
+                {/* Disponibilidade: Delivery / Mesa / Ambos */}
+                <div style={{ marginTop: 8 }}>
+                  <div style={{ fontSize: 10, color: "var(--dash-text-muted)", marginBottom: 4 }}>Disponível em:</div>
+                  <div style={{ display: "flex", gap: 4 }}>
+                    {[
+                      { value: "both", label: "📋 Ambos" },
+                      { value: "delivery", label: "🛵 Só delivery" },
+                      { value: "mesa", label: "🍽️ Só mesa" },
+                    ].map((opt) => {
+                      const cur = editCatAvailability[cat.id] ?? (cat as any).availability ?? "both";
+                      return (
+                        <button key={opt.value} type="button"
+                          onClick={() => setEditCatAvailability(prev => ({ ...prev, [cat.id]: opt.value }))}
+                          style={{
+                            flex: 1, padding: "5px 6px", borderRadius: 7, border: "none", cursor: "pointer",
+                            background: cur === opt.value ? "var(--dash-accent-soft)" : "var(--dash-card)",
+                            color: cur === opt.value ? "var(--dash-accent)" : "var(--dash-text-muted)",
+                            fontSize: 10, fontWeight: 600, whiteSpace: "nowrap",
+                          }}
+                        >{opt.label}</button>
+                      );
+                    })}
+                  </div>
                 </div>
               </form>
               {/* Row 6: Excluir categoria — separate form (no nesting), visually inside section */}

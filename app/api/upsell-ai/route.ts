@@ -15,7 +15,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ combos: [], suggestions: [] });
   }
 
-  // ─── 1) Check plan — AI only for menupro/business ─────────────────────────
+  // ─── 1) Fetch product's upsell_mode from DB ────────────────────────────────
+  const { data: productRow } = await admin
+    .from("products")
+    .select("upsell_mode")
+    .eq("id", productId)
+    .single();
+
+  const upsellMode: string = productRow?.upsell_mode ?? "auto";
+
+  // ─── Off → return nothing ──────────────────────────────────────────────────
+  if (upsellMode === "off") {
+    return NextResponse.json({ combos: [], suggestions: [] });
+  }
+
+  // ─── 2) Check plan — AI only for menupro/business ─────────────────────────
   const { data: unitRow } = await admin
     .from("units")
     .select("restaurant_id")
@@ -33,7 +47,7 @@ export async function POST(req: NextRequest) {
     aiEnabled = plan === "menupro" || plan === "business";
   }
 
-  // ─── 2) Manual combos for this product ────────────────────────────────────
+  // ─── 3) Manual combos for this product ────────────────────────────────────
   const { data: manualCombos } = await admin
     .from("product_combo_suggestions")
     .select(
@@ -48,7 +62,15 @@ export async function POST(req: NextRequest) {
       .map((c: any) => c.product_combos)
       .filter(Boolean) ?? [];
 
-  // ─── 3) If plan doesn't support AI, return just combos ────────────────────
+  // ─── Manual mode WITH combos → return only combos (no AI) ─────────────────
+  if (upsellMode === "manual" && activeCombos.length > 0) {
+    return NextResponse.json({ combos: activeCombos, suggestions: [] });
+  }
+
+  // ─── Manual mode WITHOUT combos → fallback to AI (continue below)
+  // ─── Auto mode → call AI
+
+  // ─── 4) If plan doesn't support AI, return just combos ────────────────────
   if (!aiEnabled) {
     return NextResponse.json({ combos: activeCombos, suggestions: [] });
   }

@@ -520,7 +520,7 @@ export default function BottomGlassBar({
               color: glassView === "info" ? textPrimary : textSecondary,
               fontSize: 12, fontWeight: 700,
               transition: "all 200ms",
-            }}>Sobre</button>
+            }}>Links</button>
             <button onClick={() => setGlassView("cart")} style={{
               flex: 1, padding: "8px 10px", borderRadius: 10, border: "none", cursor: "pointer",
               background: glassView === "cart"

@@ -127,6 +127,7 @@ export default async function Page({
     available_days: c.available_days ?? [],
     start_time: c.start_time ?? null,
     end_time: c.end_time ?? null,
+    availability: c.availability ?? null,
   }));
 
   if (!categories.length) {
@@ -146,6 +147,8 @@ export default async function Page({
       is_active: p.is_active,
       is_age_restricted: p.is_age_restricted ?? false,
       order_index: null,
+      upsell_mode: p.upsell_mode ?? null,
+      avail_mode: p.avail_mode ?? null,
     }))
   );
 

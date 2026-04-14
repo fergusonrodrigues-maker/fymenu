@@ -26,6 +26,8 @@ type Product = {
   is_age_restricted?: boolean | null;
   is_alcoholic?: boolean | null;
   is_active?: boolean | null;
+  upsell_mode?: string | null;
+  avail_mode?: string | null;
 };
 
 
@@ -256,6 +258,8 @@ export default function ProductRow({
   });
   const [isAlcoholic, setIsAlcoholic] = useState(product.is_alcoholic ?? false);
   const [isActive, setIsActive] = useState(product.is_active !== false);
+  const [upsellMode, setUpsellMode] = useState(product.upsell_mode ?? "auto");
+  const [availMode, setAvailMode] = useState(product.avail_mode ?? "both");
   const sectionConfig = getSectionConfig(section, customSections);
   const [uploading, setUploading] = useState<"thumb" | "video" | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -370,6 +374,8 @@ export default function ProductRow({
               style={{ padding: "12px 16px 16px", display: "flex", flexDirection: "column", gap: 10 }}
             >
               <input type="hidden" name="id" value={product.id} />
+              <input type="hidden" name="upsell_mode" value={upsellMode} />
+              <input type="hidden" name="avail_mode" value={availMode} />
               <input name="name" value={productName} onChange={(e) => setProductName(e.target.value)} placeholder="Nome do produto" style={inputStyle} />
               <input type="hidden" name="description_source" value={descriptionSource} />
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -587,6 +593,48 @@ export default function ProductRow({
               )}
 
               {uploadError && <p style={{ color: "#f87171", fontSize: 12, margin: 0 }}>{uploadError}</p>}
+
+              {/* Upsell mode */}
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.4)", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.04em" }}>Upsell</div>
+                <div style={{ display: "flex", gap: 4 }}>
+                  {[
+                    { value: "auto", label: "✨ Auto (IA)" },
+                    { value: "manual", label: "📋 Manual" },
+                    { value: "off", label: "🚫 Off" },
+                  ].map((opt) => (
+                    <button key={opt.value} type="button" onClick={() => setUpsellMode(opt.value)}
+                      style={{
+                        flex: 1, padding: "7px 6px", borderRadius: 9, border: "none", cursor: "pointer",
+                        background: upsellMode === opt.value ? "rgba(0,255,174,0.12)" : "rgba(255,255,255,0.05)",
+                        color: upsellMode === opt.value ? "#00ffae" : "rgba(255,255,255,0.45)",
+                        fontSize: 11, fontWeight: 600, transition: "all 0.15s",
+                      }}
+                    >{opt.label}</button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Disponibilidade */}
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.4)", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.04em" }}>Disponível em</div>
+                <div style={{ display: "flex", gap: 4 }}>
+                  {[
+                    { value: "both", label: "📋 Ambos" },
+                    { value: "delivery", label: "🛵 Delivery" },
+                    { value: "mesa", label: "🍽️ Mesa" },
+                  ].map((opt) => (
+                    <button key={opt.value} type="button" onClick={() => setAvailMode(opt.value)}
+                      style={{
+                        flex: 1, padding: "7px 6px", borderRadius: 9, border: "none", cursor: "pointer",
+                        background: availMode === opt.value ? "rgba(0,255,174,0.12)" : "rgba(255,255,255,0.05)",
+                        color: availMode === opt.value ? "#00ffae" : "rgba(255,255,255,0.45)",
+                        fontSize: 11, fontWeight: 600, transition: "all 0.15s",
+                      }}
+                    >{opt.label}</button>
+                  ))}
+                </div>
+              </div>
 
               <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
                 <button type="submit" disabled={isPending || uploading !== null} style={{ flex: 1, padding: "10px 0", background: "#10b981", color: "#fff", border: "none", borderRadius: 8, fontWeight: 600, fontSize: 14, cursor: isPending ? "not-allowed" : "pointer", opacity: isPending ? 0.6 : 1 }}>

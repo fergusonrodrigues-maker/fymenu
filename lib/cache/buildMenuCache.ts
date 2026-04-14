@@ -21,6 +21,7 @@ export interface MenuCacheData {
     available_days?: string[];
     start_time?: string | null;
     end_time?: string | null;
+    availability?: string | null;
     products: Array<{
       id: string;
       name: string;
@@ -30,6 +31,8 @@ export interface MenuCacheData {
       video_url?: string;
       is_active: boolean;
       is_age_restricted: boolean;
+      upsell_mode?: string | null;
+      avail_mode?: string | null;
       variations: Array<{
         id: string;
         name: string;
@@ -60,7 +63,7 @@ export async function buildMenuCache(unitId: string): Promise<{ menu_json: MenuC
 
   const { data: categories, error: catError } = await supabase
     .from("categories")
-    .select("id, name, order_index, is_featured, schedule_enabled, available_days, start_time, end_time")
+    .select("id, name, order_index, is_featured, schedule_enabled, available_days, start_time, end_time, availability")
     .eq("unit_id", unitId)
     .order("order_index", { ascending: true });
 
@@ -70,7 +73,7 @@ export async function buildMenuCache(unitId: string): Promise<{ menu_json: MenuC
     (categories || []).map(async (category) => {
       const { data: products } = await supabase
         .from("products")
-        .select("id, name, description, base_price, thumbnail_url, video_url, is_active, is_age_restricted, order_index")
+        .select("id, name, description, base_price, thumbnail_url, video_url, is_active, is_age_restricted, order_index, upsell_mode, avail_mode")
         .eq("category_id", category.id)
         .eq("is_active", true)
         .order("order_index", { ascending: true });
@@ -104,6 +107,7 @@ export async function buildMenuCache(unitId: string): Promise<{ menu_json: MenuC
         available_days: (category.available_days as string[] | null) ?? [],
         start_time: category.start_time ?? null,
         end_time: category.end_time ?? null,
+        availability: (category as any).availability ?? null,
         products: productsWithDetails,
       };
     })

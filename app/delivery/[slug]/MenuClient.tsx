@@ -329,12 +329,24 @@ export default function MenuClient({
     return true;
   }
 
+  function isCatVisibleForMode(cat: Category) {
+    if (mode === "presencial" && cat.availability === "delivery") return false;
+    if (mode === "delivery" && cat.availability === "mesa") return false;
+    return true;
+  }
+
+  function isProdVisibleForMode(p: Product) {
+    if (mode === "presencial" && p.avail_mode === "delivery") return false;
+    if (mode === "delivery" && p.avail_mode === "mesa") return false;
+    return true;
+  }
+
   const featuredCategories = categories.filter(
-    (c) => c.is_featured && isCategoryAvailable(c) && products.some((p) => p.category_id === c.id && p.is_active)
+    (c) => c.is_featured && isCategoryAvailable(c) && isCatVisibleForMode(c) && products.some((p) => p.category_id === c.id && p.is_active && isProdVisibleForMode(p))
   );
   const regularCategories  = categories.filter((c) => !c.is_featured);
   const visibleRegularCategories = regularCategories.filter(
-    (cat) => products.some((p) => p.category_id === cat.id && p.is_active) && isCategoryAvailable(cat)
+    (cat) => isCategoryAvailable(cat) && isCatVisibleForMode(cat) && products.some((p) => p.category_id === cat.id && p.is_active && isProdVisibleForMode(p))
   );
   const allCategoriesHidden = featuredCategories.length === 0 && visibleRegularCategories.length === 0;
 
@@ -455,7 +467,7 @@ export default function MenuClient({
   }
 
   const productsByCategory = (categoryId: string) =>
-    products.filter((p) => p.category_id === categoryId && p.is_active);
+    products.filter((p) => p.category_id === categoryId && p.is_active && isProdVisibleForMode(p));
 
   const searchResults = searchQuery.trim()
     ? products.filter(
