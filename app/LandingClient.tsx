@@ -1005,12 +1005,13 @@ export default function LandingPage() {
             <h1
               className="hero-title"
               style={{
-                fontSize: 64,
+                fontSize: 48,
                 fontWeight: 900,
                 lineHeight: 1.05,
                 letterSpacing: "-2px",
                 maxWidth: 800,
                 margin: "0 auto 24px",
+                textAlign: "justify",
               }}
             >
               Primeiro cardápio de vídeo{" "}
@@ -1026,9 +1027,10 @@ export default function LandingPage() {
                 maxWidth: 560,
                 margin: "0 auto 48px",
                 lineHeight: 1.6,
+                textAlign: "justify",
               }}
             >
-              Sistema de pedidos com análise completa de dados, parte financeira completa, implementação de IA e infraestrutura interna para sua empresa.
+              Sistema de pedidos com análise de dados, gestão financeira, implementação de IA e infraestrutura interna completa para sua empresa.
             </p>
 
             <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
