@@ -446,6 +446,7 @@ export async function updateProductVariations(
       name: v.name.trim(),
       price: v.price,
       order_index: i,
+      is_active: true,
     }));
     const { error } = await supabase.from("product_variations").insert(rows);
     if (error) throw new Error(error.message);
@@ -456,6 +457,16 @@ export async function updateProductVariations(
   const productSync: Record<string, any> = { price_type: effectivePriceType };
   if (effectivePriceType === "variable") productSync.base_price = 0;
   await supabase.from("products").update(productSync).eq("id", productId);
+
+  // Rebuild menu_cache so the public menu reflects the change immediately
+  try {
+    const { data: prod } = await supabase
+      .from("products")
+      .select("unit_id")
+      .eq("id", productId)
+      .maybeSingle();
+    if (prod?.unit_id) await invalidateMenuCache(prod.unit_id);
+  } catch {}
 
   revalidatePath("/painel");
   revalidatePath("/u");
