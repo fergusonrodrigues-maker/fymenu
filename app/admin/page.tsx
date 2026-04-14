@@ -47,6 +47,9 @@ export default async function AdminPage() {
     { data: partnerCoupons },
     { data: partnerReferrals },
     { data: partnerPayouts },
+    { data: subscriptionsData },
+    { data: subscriptionPaymentsData },
+    { data: crmCustomersData },
   ] = await Promise.all([
     admin.from("restaurants").select("*", { count: "exact", head: true }),
     admin
@@ -129,6 +132,20 @@ export default async function AdminPage() {
     admin.from("partner_coupons").select("*, partners(name)").order("created_at", { ascending: false }),
     admin.from("partner_referrals").select("*, partners(name), restaurants(name, plan, status)").order("created_at", { ascending: false }),
     admin.from("partner_payouts").select("*, partners(name)").order("created_at", { ascending: false }),
+    admin
+      .from("subscriptions")
+      .select("id, restaurant_id, asaas_subscription_id, plan, cycle, billing_type, value, status, started_at, next_due_date, created_at, restaurants(name)")
+      .order("created_at", { ascending: false }),
+    admin
+      .from("subscription_payments")
+      .select("asaas_payment_id, subscription_id, amount, status, billing_type, due_date, paid_at, invoice_url")
+      .order("due_date", { ascending: false })
+      .limit(300),
+    admin
+      .from("crm_customers")
+      .select("id, name, phone, email, source, total_orders, total_spent, last_order_at, city, is_active, created_at, unit_id, units(id, slug, city, restaurant_id, restaurants(name))")
+      .order("last_order_at", { ascending: false, nullsFirst: false })
+      .limit(500),
   ]);
 
   const revenue30d = payments30d?.reduce((s, p) => s + (p.amount ?? 0), 0) ?? 0;
@@ -231,6 +248,11 @@ export default async function AdminPage() {
         referrals: partnerReferrals ?? [],
         payouts: partnerPayouts ?? [],
       }}
+      subscriptionData={{
+        subscriptions: (subscriptionsData ?? []) as any[],
+        payments: (subscriptionPaymentsData ?? []) as any[],
+      }}
+      crmConsumers={(crmCustomersData ?? []) as any[]}
     />
   );
 }

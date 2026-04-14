@@ -115,9 +115,30 @@ interface Props {
       partners: { name: string } | null;
     }>;
   };
+  subscriptionData: {
+    subscriptions: Array<{
+      id: string; restaurant_id: string; asaas_subscription_id: string | null;
+      plan: string; cycle: string | null; billing_type: string | null;
+      value: number; status: string; started_at: string | null;
+      next_due_date: string | null; created_at: string;
+      restaurants: { name: string } | null;
+    }>;
+    payments: Array<{
+      asaas_payment_id: string; subscription_id: string | null;
+      amount: number; status: string | null; billing_type: string | null;
+      due_date: string | null; paid_at: string | null; invoice_url: string | null;
+    }>;
+  };
+  crmConsumers: Array<{
+    id: string; name: string | null; phone: string | null; email: string | null;
+    source: string | null; total_orders: number; total_spent: number;
+    last_order_at: string | null; city: string | null; is_active: boolean;
+    created_at: string; unit_id: string;
+    units: { id: string; slug: string; city: string | null; restaurant_id: string; restaurants: { name: string } | null } | null;
+  }>;
 }
 
-const TABS = ["Visão Geral", "Usuários", "Faturamento", "Analytics", "CRM", "Parceiros", "Fotos", "Controle", "Chats"] as const;
+const TABS = ["Visão Geral", "Usuários", "FyMenu Financeiro", "Restaurantes Financeiro", "CRM FyMenu", "CRM Restaurantes", "Analytics", "Parceiros", "Fotos", "Controle", "Chats"] as const;
 type Tab = (typeof TABS)[number];
 
 const PLAN_PRICES: Record<string, number> = {
@@ -166,6 +187,44 @@ const STATUS_BADGE: Record<string, string> = {
   confirmed: "bg-[#00ffae]/10 text-[#00ffae] border border-[#00ffae]/20",
   pending: "bg-amber-500/10 text-amber-400 border border-amber-500/20",
 };
+
+// ─── CSV Export ──────────────────────────────────────────────────────────────
+function exportToCSV(data: Record<string, unknown>[], columns: { label: string; key: string }[], filename: string) {
+  const header = columns.map((c) => c.label).join(",");
+  const rows = data.map((row) =>
+    columns.map((c) => {
+      const val = row[c.key] ?? "";
+      const str = String(val);
+      if (str.includes(",") || str.includes('"') || str.includes("\n")) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    }).join(",")
+  ).join("\n");
+  const csv = "\uFEFF" + header + "\n" + rows;
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function CSVButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      title="Exportar CSV"
+      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+      style={{ background: "transparent", border: "1px solid rgba(0,255,174,0.3)", color: "#00ffae" }}
+      onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(0,255,174,0.1)")}
+      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+    >
+      ⬇ CSV
+    </button>
+  );
+}
 
 // ─── Manage Panel ────────────────────────────────────────────────────────────
 function ManagePanel({
@@ -439,6 +498,7 @@ function ActionBtn({
 export default function AdminClient({
   stats, restaurants, payments, topProducts,
   planCounts, statusCounts, cities, unitsByRestaurant, unitFeatures, user, analyticsData, crmData, consumerData, financeData, userRole, supportStaff: initialSupportStaff, photoData, partnerData,
+  subscriptionData, crmConsumers,
 }: Props) {
   const supabase = createClient();
   const [tab, setTab] = useState<Tab>("Visão Geral");
@@ -460,6 +520,14 @@ export default function AdminClient({
 
   // CRM state
   const [crmSearch, setCrmSearch] = useState("");
+  const [crmConsumerSearch, setCrmConsumerSearch] = useState("");
+  const [crmConsumerRestaurantFilter, setCrmConsumerRestaurantFilter] = useState("all");
+
+  // Financeiro state
+  const [finRestaurantFilter, setFinRestaurantFilter] = useState("all");
+  const [finPeriod, setFinPeriod] = useState("30");
+  const [finPage, setFinPage] = useState(1);
+  const FIN_PAGE_SIZE = 20;
 
   // Support staff state
   const [supportStaff, setSupportStaff] = useState(initialSupportStaff);
@@ -962,7 +1030,7 @@ export default function AdminClient({
       </header>
 
       {/* Tabs */}
-      <div className="px-6 flex gap-1 sticky top-[73px] z-10" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(8,8,8,0.8)", backdropFilter: "blur(20px)" }}>
+      <div className="px-6 flex gap-1 sticky top-[73px] z-10 overflow-x-auto scrollbar-none" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(8,8,8,0.8)", backdropFilter: "blur(20px)" }}>
         {TABS.map((t) => (
           <button
             key={t}
@@ -1113,103 +1181,80 @@ export default function AdminClient({
           </div>
         )}
 
-        {/* BILLING */}
-        {tab === "Faturamento" && (() => {
-          const BILLING_PRICES: Record<string, number> = {
-            menu: 19990,
-            menupro: 39990,
-            business: 159900,
-          };
+        {/* FYMENU FINANCEIRO */}
+        {tab === "FyMenu Financeiro" && (() => {
+          const BILLING_PRICES: Record<string, number> = { menu: 19990, menupro: 39990, business: 159900 };
 
-          // MRR
           const payingClients = financeData.plans.filter((p) => p.status === "active" && !p.free_access);
           const mrr = payingClients.reduce((sum, p) => sum + (BILLING_PRICES[p.plan] ?? 0), 0);
           const payingCount = payingClients.length;
+          const ticketMedioMRR = payingCount > 0 ? Math.round(mrr / payingCount) : 0;
 
-          // MRR por plano
           const mrrByPlan: Record<string, { count: number; revenue: number }> = {};
           for (const p of payingClients) {
             if (!mrrByPlan[p.plan]) mrrByPlan[p.plan] = { count: 0, revenue: 0 };
             mrrByPlan[p.plan].count++;
             mrrByPlan[p.plan].revenue += BILLING_PRICES[p.plan] ?? 0;
           }
-          const mrrPlanEntries = ["business", "menupro", "menu"]
-            .filter((k) => mrrByPlan[k])
-            .map((k) => ({ plan: k, ...mrrByPlan[k] }));
+          const mrrPlanEntries = ["business", "menupro", "menu"].filter((k) => mrrByPlan[k]).map((k) => ({ plan: k, ...mrrByPlan[k] }));
           const maxMrrPlan = Math.max(...mrrPlanEntries.map((e) => e.revenue), 1);
 
-          // Receita dos clientes por mês
-          const revenueByMonth: Record<string, number> = {};
-          for (const o of financeData.orders) {
-            const month = o.created_at.substring(0, 7);
-            revenueByMonth[month] = (revenueByMonth[month] ?? 0) + parseFloat(String(o.total));
-          }
-          const sortedMonths = Object.keys(revenueByMonth).sort().slice(-12);
-          const monthChartData = sortedMonths.map((m) => ({
-            label: new Date(m + "-01").toLocaleDateString("pt-BR", { month: "short", year: "2-digit" }),
-            value: revenueByMonth[m],
-          }));
-          const maxMonthVal = Math.max(...monthChartData.map((d) => d.value), 1);
-
-          // Receita 30d e total
-          const cutoff30 = Date.now() - 30 * 24 * 60 * 60 * 1000;
-          const revenue30dFin = financeData.orders
-            .filter((o) => new Date(o.created_at).getTime() >= cutoff30)
-            .reduce((s, o) => s + parseFloat(String(o.total)), 0);
-          const totalClientRevenue = financeData.orders.reduce((s, o) => s + parseFloat(String(o.total)), 0);
-
-          // Projeção (taxa crescimento baseada nos 2 últimos meses disponíveis)
-          let growthRate = 0.10;
-          if (sortedMonths.length >= 2) {
-            const last = revenueByMonth[sortedMonths[sortedMonths.length - 1]] ?? 0;
-            const prev = revenueByMonth[sortedMonths[sortedMonths.length - 2]] ?? 0;
-            if (prev > 0) growthRate = (last - prev) / prev;
-            growthRate = Math.max(-0.5, Math.min(growthRate, 1));
-          }
-          const projections = [1, 2, 3].map((m) => ({
-            month: m,
-            mrr: Math.round(mrr * Math.pow(1 + growthRate, m)),
-          }));
-          const projMonthNames = [1, 2, 3].map((offset) => {
-            const d = new Date();
-            d.setMonth(d.getMonth() + offset);
-            return d.toLocaleDateString("pt-BR", { month: "long" });
-          });
-
-          // Churn: canceled + paused
           const churned = financeData.plans.filter((p) => p.status === "canceled" || p.status === "paused").length;
-          const totalPlans = financeData.plans.length || 1;
-          const churnRate = ((churned / totalPlans) * 100).toFixed(1);
+          const cutoff30d = Date.now() - 30 * 24 * 60 * 60 * 1000;
+          const active30d = financeData.plans.filter((p) => ["active", "trial", "canceled", "paused"].includes(p.status)).length || 1;
+          const churnRate = ((churned / active30d) * 100).toFixed(1);
 
-          const planColors: Record<string, string> = {
-            menu: "bg-white/20",
-            menupro: "bg-[#00ffae]/60",
-            business: "bg-[#d4af37]/60",
-          };
+          // Receita de assinaturas por mês (subscription_payments)
+          const subPayByMonth: Record<string, number> = {};
+          for (const sp of subscriptionData.payments) {
+            if (!sp.due_date) continue;
+            const month = sp.due_date.substring(0, 7);
+            subPayByMonth[month] = (subPayByMonth[month] ?? 0) + (sp.amount ?? 0);
+          }
+          const subMonths = Object.keys(subPayByMonth).sort().slice(-12);
+          const subChartData = subMonths.map((m) => ({
+            label: new Date(m + "-01").toLocaleDateString("pt-BR", { month: "short", year: "2-digit" }),
+            value: subPayByMonth[m],
+          }));
+          const maxSubVal = Math.max(...subChartData.map((d) => d.value), 1);
 
-          // PDV stats
-          const pdvTotal = payments.reduce((s, p) => s + (p.amount ?? 0), 0);
-          const pdvCount = payments.length;
-          const pdvTicket = pdvCount > 0 ? Math.round(pdvTotal / pdvCount) : 0;
-          const pdvPix = payments.filter((p) => p.method === "pix").length;
-          const pdvCard = payments.filter((p) => p.method === "card").length;
-          const pdvCash = payments.filter((p) => p.method === "cash").length;
+          // Receita confirmada 30d (subscription_payments pagas)
+          const subRevenue30d = subscriptionData.payments
+            .filter((sp) => sp.paid_at && new Date(sp.paid_at).getTime() >= cutoff30d)
+            .reduce((s, sp) => s + (sp.amount ?? 0), 0);
+
+          // Build sub lookup: asaas_subscription_id → subscription info
+          const subLookup: Record<string, { plan: string; cycle: string | null; restaurant: string }> = {};
+          for (const s of subscriptionData.subscriptions) {
+            if (s.asaas_subscription_id) {
+              subLookup[s.asaas_subscription_id] = {
+                plan: s.plan,
+                cycle: s.cycle,
+                restaurant: s.restaurants?.name ?? "—",
+              };
+            }
+          }
+
+          // Assinaturas ativas
+          const activeSubs = subscriptionData.subscriptions.filter((s) => s.status === "active" || s.status === "pending");
+
+          const today = new Date().toISOString().split("T")[0];
 
           return (
             <div className="space-y-6">
-              {/* ── SEÇÃO 1: FyMenu Assinaturas ─────────────────── */}
               <div>
-                <h2 className="text-lg font-bold text-gray-200 mb-1">💎 Faturamento FyMenu (Assinaturas)</h2>
+                <h2 className="text-lg font-bold text-gray-200 mb-1">💎 FyMenu Financeiro — Receita da Plataforma</h2>
                 <p className="text-gray-500 text-sm mb-4">Receita recorrente gerada pelos planos contratados pelos restaurantes.</p>
               </div>
 
-              {/* A. Resumo */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Cards */}
+              <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
                 {[
-                  { icon: "💎", label: "MRR Estimado", value: fmt(mrr), sub: "receita recorrente mensal", color: "text-[#00ffae]" },
-                  { icon: "📦", label: "Receita Clientes 30d", value: fmt(Math.round(revenue30dFin)), sub: "pedidos confirmados", color: "text-green-400" },
-                  { icon: "📊", label: "Receita Clientes Total", value: fmt(Math.round(totalClientRevenue)), sub: "todos os pedidos", color: "text-blue-400" },
-                  { icon: "💳", label: "Clientes Pagantes", value: String(payingCount), sub: "ativos sem free access", color: "text-yellow-400" },
+                  { icon: "💎", label: "MRR Estimado", value: fmt(mrr), sub: "planos ativos × preço", color: "text-[#00ffae]" },
+                  { icon: "✅", label: "Receita 30d", value: fmt(subRevenue30d), sub: "assinaturas pagas", color: "text-green-400" },
+                  { icon: "💳", label: "Clientes Pagantes", value: String(payingCount), sub: "ativos sem free access", color: "text-blue-400" },
+                  { icon: "📉", label: "Churn Rate", value: `${churnRate}%`, sub: "cancelados + pausados", color: "text-red-400" },
+                  { icon: "🎯", label: "Ticket Médio", value: fmt(ticketMedioMRR), sub: "MRR / clientes", color: "text-yellow-400" },
                 ].map(({ icon, label, value, sub, color }) => (
                   <div key={label} className="bg-gray-900/60 rounded-2xl border border-gray-800 p-5">
                     <div className="text-2xl mb-2">{icon}</div>
@@ -1219,23 +1264,17 @@ export default function AdminClient({
                   </div>
                 ))}
               </div>
-              <p className="text-gray-600 text-xs -mt-4">
-                ⚠️ MRR estimado baseado nos planos ativos. Faturamento real será calculado após integração com gateway de pagamento.
-              </p>
 
-              {/* B. Gráfico mensal */}
+              {/* Gráfico receita assinaturas */}
               <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
-                <h3 className="font-bold text-gray-200 mb-4">📈 Receita dos Restaurantes por Mês</h3>
-                {monthChartData.length === 0 ? (
-                  <p className="text-gray-600 text-sm">Sem dados suficientes.</p>
+                <h3 className="font-bold text-gray-200 mb-4">📈 Receita de Assinaturas por Mês</h3>
+                {subChartData.length === 0 ? (
+                  <p className="text-gray-600 text-sm">Sem pagamentos de assinatura registrados ainda.</p>
                 ) : (
                   <div className="flex items-end gap-1" style={{ height: 140 }}>
-                    {monthChartData.map((d, i) => (
+                    {subChartData.map((d, i) => (
                       <div key={i} className="flex-1 flex flex-col items-center">
-                        <div
-                          className="w-full bg-[#00ffae]/50 rounded-t"
-                          style={{ height: `${(d.value / maxMonthVal) * 100}%`, minHeight: d.value > 0 ? 2 : 0 }}
-                        />
+                        <div className="w-full bg-[#00ffae]/50 rounded-t" style={{ height: `${(d.value / maxSubVal) * 100}%`, minHeight: d.value > 0 ? 2 : 0 }} />
                         <span className="text-gray-600 text-[9px] mt-1 truncate w-full text-center">{d.label}</span>
                       </div>
                     ))}
@@ -1243,15 +1282,14 @@ export default function AdminClient({
                 )}
               </div>
 
-              {/* C. Distribuição MRR por plano */}
-              <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
-                <h3 className="font-bold text-gray-200 mb-4">💰 Distribuição MRR por Plano</h3>
-                {mrrPlanEntries.length === 0 ? (
-                  <p className="text-gray-600 text-sm">Sem clientes pagantes.</p>
-                ) : (
+              {/* Distribuição MRR por plano */}
+              {mrrPlanEntries.length > 0 && (
+                <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
+                  <h3 className="font-bold text-gray-200 mb-4">💰 Distribuição MRR por Plano</h3>
                   <div className="space-y-4">
                     {mrrPlanEntries.map(({ plan, count, revenue }) => {
                       const pct = mrr > 0 ? Math.round((revenue / mrr) * 100) : 0;
+                      const barColor = plan === "business" ? "bg-[#d4af37]/60" : plan === "menupro" ? "bg-[#00ffae]/60" : "bg-white/20";
                       return (
                         <div key={plan}>
                           <div className="flex justify-between text-sm mb-1">
@@ -1259,124 +1297,386 @@ export default function AdminClient({
                             <span className="text-gray-300">{fmt(revenue)} <span className="text-gray-500">({pct}%)</span></span>
                           </div>
                           <div className="h-2.5 bg-gray-800 rounded-full overflow-hidden">
-                            <div className={`h-full rounded-full ${planColors[plan] ?? "bg-gray-500"}`} style={{ width: `${(revenue / maxMrrPlan) * 100}%` }} />
+                            <div className={`h-full rounded-full ${barColor}`} style={{ width: `${(revenue / maxMrrPlan) * 100}%` }} />
                           </div>
                         </div>
                       );
                     })}
                   </div>
-                )}
-              </div>
-
-              {/* D. Projeção */}
-              <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
-                <h3 className="font-bold text-gray-200 mb-1">🔮 Projeção de MRR (próximos 3 meses)</h3>
-                <p className="text-gray-600 text-xs mb-4">
-                  Taxa de crescimento aplicada: {growthRate >= 0 ? "+" : ""}{(growthRate * 100).toFixed(1)}% ao mês.
-                  Baseado na taxa de crescimento atual. Não considera churn.
-                </p>
-                <div className="grid grid-cols-3 gap-4">
-                  {projections.map(({ month, mrr: proj }, i) => (
-                    <div key={month} className="rounded-2xl border border-dashed border-gray-700 p-4 text-center">
-                      <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">{projMonthNames[i]}</p>
-                      <p className="text-xl font-black text-[#00ffae]">{fmt(proj)}</p>
-                      <p className="text-gray-600 text-xs mt-0.5">MRR projetado</p>
-                    </div>
-                  ))}
                 </div>
-              </div>
+              )}
 
-              {/* E. Churn */}
-              <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
-                <h3 className="font-bold text-gray-200 mb-4">📉 Análise de Churn</h3>
-                {churned === 0 ? (
-                  <p className="text-gray-600 text-sm">Nenhum cancelamento ou pausa registrada.</p>
-                ) : (
-                  <div className="flex gap-6 flex-wrap">
-                    <div>
-                      <p className="text-gray-500 text-xs uppercase tracking-wider">Churned</p>
-                      <p className="text-2xl font-black text-red-400 mt-1">{churned}</p>
-                      <p className="text-gray-600 text-xs">cancelados + pausados</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-500 text-xs uppercase tracking-wider">Taxa de Churn</p>
-                      <p className="text-2xl font-black text-orange-400 mt-1">{churnRate}%</p>
-                      <p className="text-gray-600 text-xs">do total de contas</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* ── SEPARADOR: Vendas dos Restaurantes ───────────── */}
-              <div className="border-t border-gray-800 pt-6 mt-6">
-                <h2 className="text-lg font-bold text-gray-200 mb-1">💰 Vendas dos Restaurantes (PDV)</h2>
-                <p className="text-gray-500 text-sm mb-4">Pagamentos registrados pelos restaurantes aos seus clientes finais via PDV.</p>
-              </div>
-
-              {/* PDV metric cards */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-5">
-                  <div className="text-2xl mb-2">🧾</div>
-                  <p className="text-gray-500 text-xs uppercase tracking-wider">Total de Vendas</p>
-                  <p className="text-2xl font-black mt-1 text-green-400">{fmt(pdvTotal)}</p>
-                  <p className="text-gray-600 text-xs mt-0.5">{pdvCount} registros</p>
-                </div>
-                <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-5">
-                  <div className="text-2xl mb-2">🎯</div>
-                  <p className="text-gray-500 text-xs uppercase tracking-wider">Ticket Médio</p>
-                  <p className="text-2xl font-black mt-1 text-yellow-400">{fmt(pdvTicket)}</p>
-                  <p className="text-gray-600 text-xs mt-0.5">por venda</p>
-                </div>
-                <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-5">
-                  <div className="text-2xl mb-2">💳</div>
-                  <p className="text-gray-500 text-xs uppercase tracking-wider">Métodos</p>
-                  <div className="flex gap-2 mt-2 flex-wrap">
-                    {pdvCount > 0 && [
-                      { label: "📲 PIX", count: pdvPix, color: "bg-blue-900/40 text-blue-300" },
-                      { label: "💳 Cartão", count: pdvCard, color: "bg-[#00d9ff]/10 text-[#00d9ff]" },
-                      { label: "💵 Dinheiro", count: pdvCash, color: "bg-green-900/40 text-green-300" },
-                    ].filter((m) => m.count > 0).map((m) => (
-                      <span key={m.label} className={`px-2 py-0.5 rounded text-xs font-semibold ${m.color}`}>
-                        {m.label} {Math.round((m.count / pdvCount) * 100)}%
-                      </span>
-                    ))}
-                    {pdvCount === 0 && <span className="text-gray-600 text-xs">Sem dados</span>}
-                  </div>
-                </div>
-              </div>
-
-              {/* F. Tabela de vendas */}
+              {/* Tabela Assinaturas Ativas */}
               <div className="bg-gray-900/60 rounded-2xl border border-gray-800 overflow-hidden">
                 <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
-                  <h3 className="font-bold text-gray-200">Vendas Registradas no PDV</h3>
-                  <span className="text-gray-500 text-sm">{payments.length} registros</span>
+                  <h3 className="font-bold text-gray-200">Assinaturas Ativas</h3>
+                  <CSVButton onClick={() => exportToCSV(
+                    activeSubs.map((s) => ({
+                      restaurante: s.restaurants?.name ?? "—",
+                      plano: s.plan,
+                      ciclo: s.cycle ?? "—",
+                      valor: (s.value / 100).toFixed(2),
+                      status: s.status,
+                      inicio: s.started_at ? fmtDate(s.started_at) : "—",
+                      proximo_vencimento: s.next_due_date ?? "—",
+                    })),
+                    [
+                      { label: "Restaurante", key: "restaurante" },
+                      { label: "Plano", key: "plano" },
+                      { label: "Ciclo", key: "ciclo" },
+                      { label: "Valor", key: "valor" },
+                      { label: "Status", key: "status" },
+                      { label: "Início", key: "inicio" },
+                      { label: "Próximo Vencimento", key: "proximo_vencimento" },
+                    ],
+                    `fymenu_assinaturas_${today}.csv`
+                  )} />
                 </div>
-                {payments.length === 0 ? (
-                  <p className="text-gray-600 text-sm p-6">Nenhuma venda registrada ainda.</p>
+                {activeSubs.length === 0 ? (
+                  <p className="text-gray-600 text-sm p-6">Nenhuma assinatura ativa encontrada.</p>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="border-b border-gray-800 text-gray-500 text-xs uppercase tracking-wider">
-                          <th className="px-6 py-3 text-left">Data</th>
-                          <th className="px-6 py-3 text-left">Método</th>
-                          <th className="px-6 py-3 text-left">Status</th>
-                          <th className="px-6 py-3 text-right">Valor</th>
+                          <th className="px-4 py-3 text-left">Restaurante</th>
+                          <th className="px-4 py-3 text-left">Plano</th>
+                          <th className="px-4 py-3 text-left">Ciclo</th>
+                          <th className="px-4 py-3 text-right">Valor</th>
+                          <th className="px-4 py-3 text-left">Status</th>
+                          <th className="px-4 py-3 text-left">Início</th>
+                          <th className="px-4 py-3 text-left">Próx. Venc.</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {payments.map((p) => (
-                          <tr key={p.id} className="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors">
-                            <td className="px-6 py-3 text-gray-400">{fmtDate(p.processed_at)}</td>
-                            <td className="px-6 py-3 text-gray-300">
-                              {p.method === "cash" ? "💵 Dinheiro" : p.method === "card" ? "💳 Cartão" : p.method === "pix" ? "📲 PIX" : p.method ?? "—"}
+                        {activeSubs.map((s) => (
+                          <tr key={s.id} className="border-b border-gray-800/50 hover:bg-gray-800/30">
+                            <td className="px-4 py-2.5 text-gray-200 font-medium">{s.restaurants?.name ?? "—"}</td>
+                            <td className="px-4 py-2.5">
+                              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${PLAN_BADGE[s.plan] ?? "bg-gray-700 text-gray-300"}`}>{s.plan}</span>
                             </td>
-                            <td className="px-6 py-3">
-                              <span className={`px-2 py-0.5 rounded text-xs font-semibold ${STATUS_BADGE[p.status ?? "confirmed"] ?? "bg-gray-700 text-gray-400"}`}>
-                                {p.status ?? "confirmed"}
-                              </span>
+                            <td className="px-4 py-2.5 text-gray-400 text-xs">{s.cycle ?? "—"}</td>
+                            <td className="px-4 py-2.5 text-right text-[#00ffae] font-semibold">{fmt(s.value)}</td>
+                            <td className="px-4 py-2.5">
+                              <span className={`text-xs px-2 py-0.5 rounded font-semibold ${STATUS_BADGE[s.status] ?? "bg-gray-700 text-gray-400"}`}>{s.status}</span>
                             </td>
-                            <td className="px-6 py-3 text-right font-semibold text-green-400">{fmt(p.amount)}</td>
+                            <td className="px-4 py-2.5 text-gray-500 text-xs">{fmtDate(s.started_at)}</td>
+                            <td className="px-4 py-2.5 text-gray-400 text-xs">{s.next_due_date ?? "—"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              {/* Histórico de Pagamentos */}
+              <div className="bg-gray-900/60 rounded-2xl border border-gray-800 overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
+                  <h3 className="font-bold text-gray-200">Histórico de Pagamentos de Assinaturas</h3>
+                  <CSVButton onClick={() => exportToCSV(
+                    subscriptionData.payments.map((sp) => {
+                      const info = sp.subscription_id ? subLookup[sp.subscription_id] : null;
+                      return {
+                        data: sp.due_date ?? "—",
+                        restaurante: info?.restaurant ?? "—",
+                        plano: info?.plan ?? "—",
+                        metodo: sp.billing_type ?? "—",
+                        valor: ((sp.amount ?? 0) / 100).toFixed(2),
+                        status: sp.status ?? "—",
+                      };
+                    }),
+                    [
+                      { label: "Data", key: "data" },
+                      { label: "Restaurante", key: "restaurante" },
+                      { label: "Plano", key: "plano" },
+                      { label: "Método", key: "metodo" },
+                      { label: "Valor", key: "valor" },
+                      { label: "Status", key: "status" },
+                    ],
+                    `fymenu_pagamentos_${today}.csv`
+                  )} />
+                </div>
+                {subscriptionData.payments.length === 0 ? (
+                  <p className="text-gray-600 text-sm p-6">Nenhum pagamento de assinatura registrado.</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-gray-800 text-gray-500 text-xs uppercase tracking-wider">
+                          <th className="px-4 py-3 text-left">Data</th>
+                          <th className="px-4 py-3 text-left">Restaurante</th>
+                          <th className="px-4 py-3 text-left">Plano</th>
+                          <th className="px-4 py-3 text-left">Método</th>
+                          <th className="px-4 py-3 text-right">Valor</th>
+                          <th className="px-4 py-3 text-left">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {subscriptionData.payments.slice(0, 100).map((sp, i) => {
+                          const info = sp.subscription_id ? subLookup[sp.subscription_id] : null;
+                          return (
+                            <tr key={sp.asaas_payment_id ?? i} className="border-b border-gray-800/50 hover:bg-gray-800/30">
+                              <td className="px-4 py-2.5 text-gray-400 text-xs">{sp.due_date ?? "—"}</td>
+                              <td className="px-4 py-2.5 text-gray-300">{info?.restaurant ?? "—"}</td>
+                              <td className="px-4 py-2.5">
+                                {info?.plan ? <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${PLAN_BADGE[info.plan] ?? "bg-gray-700 text-gray-300"}`}>{info.plan}</span> : <span className="text-gray-600">—</span>}
+                              </td>
+                              <td className="px-4 py-2.5 text-gray-400 text-xs">{sp.billing_type ?? "—"}</td>
+                              <td className="px-4 py-2.5 text-right text-[#00ffae] font-semibold">{fmt(sp.amount ?? 0)}</td>
+                              <td className="px-4 py-2.5">
+                                <span className={`text-xs px-2 py-0.5 rounded font-semibold ${sp.status === "paid" ? "bg-[#00ffae]/10 text-[#00ffae] border border-[#00ffae]/20" : "bg-amber-500/10 text-amber-400 border border-amber-500/20"}`}>
+                                  {sp.status ?? "—"}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* RESTAURANTES FINANCEIRO */}
+        {tab === "Restaurantes Financeiro" && (() => {
+          // Build unit→restaurant map
+          const unitToRest: Record<string, { id: string; name: string }> = {};
+          for (const u of crmData.unitMapping) {
+            const owner = crmData.owners.find((o) => o.id === u.restaurant_id);
+            if (owner) unitToRest[u.id] = { id: u.restaurant_id, name: owner.name };
+          }
+
+          // Period filter
+          const periodDays = parseInt(finPeriod) || 30;
+          const periodCutoff = Date.now() - periodDays * 24 * 60 * 60 * 1000;
+
+          let filteredOrders = consumerData.orders.filter((o) => {
+            const t = new Date(o.created_at).getTime();
+            if (t < periodCutoff) return false;
+            if (finRestaurantFilter !== "all") {
+              const rest = unitToRest[o.unit_id];
+              if (!rest || rest.id !== finRestaurantFilter) return false;
+            }
+            return true;
+          });
+
+          // Metrics
+          const totalVendas = filteredOrders.reduce((s, o) => s + (parseFloat(String(o.total)) || 0), 0);
+          const totalPedidos = filteredOrders.length;
+          const ticketMedioRest = totalPedidos > 0 ? totalVendas / totalPedidos : 0;
+
+          const metodosCount: Record<string, number> = {};
+          for (const o of filteredOrders) {
+            const m = o.payment_method ?? "Não informado";
+            metodosCount[m] = (metodosCount[m] ?? 0) + 1;
+          }
+
+          // Summary by restaurant
+          const restSummary: Record<string, { name: string; total: number; orders: number; lastOrder: string | null }> = {};
+          for (const o of filteredOrders) {
+            const rest = unitToRest[o.unit_id];
+            if (!rest) continue;
+            if (!restSummary[rest.id]) restSummary[rest.id] = { name: rest.name, total: 0, orders: 0, lastOrder: null };
+            restSummary[rest.id].total += parseFloat(String(o.total)) || 0;
+            restSummary[rest.id].orders++;
+            if (!restSummary[rest.id].lastOrder || o.created_at > restSummary[rest.id].lastOrder!) {
+              restSummary[rest.id].lastOrder = o.created_at;
+            }
+          }
+          const restSummaryArr = Object.values(restSummary).sort((a, b) => b.total - a.total);
+
+          // Pagination
+          const totalPages = Math.ceil(filteredOrders.length / FIN_PAGE_SIZE);
+          const pageOrders = filteredOrders.slice((finPage - 1) * FIN_PAGE_SIZE, finPage * FIN_PAGE_SIZE);
+
+          const uniqueRests = [...new Map(
+            Object.values(unitToRest).map((r) => [r.id, r])
+          ).values()].sort((a, b) => a.name.localeCompare(b.name));
+
+          const today = new Date().toISOString().split("T")[0];
+
+          return (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-lg font-bold text-gray-200 mb-1">💰 Restaurantes Financeiro — Vendas dos Restaurantes</h2>
+                <p className="text-gray-500 text-sm mb-4">Vendas realizadas pelos restaurantes aos seus clientes finais via PDV/delivery.</p>
+              </div>
+
+              {/* Cards */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-5">
+                  <div className="text-2xl mb-2">🧾</div>
+                  <p className="text-gray-500 text-xs uppercase tracking-wider">Total de Vendas</p>
+                  <p className="text-2xl font-black mt-1 text-green-400">{fmt(Math.round(totalVendas))}</p>
+                  <p className="text-gray-600 text-xs mt-0.5">pedidos confirmados</p>
+                </div>
+                <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-5">
+                  <div className="text-2xl mb-2">🎯</div>
+                  <p className="text-gray-500 text-xs uppercase tracking-wider">Ticket Médio</p>
+                  <p className="text-2xl font-black mt-1 text-yellow-400">{fmt(Math.round(ticketMedioRest))}</p>
+                  <p className="text-gray-600 text-xs mt-0.5">por pedido</p>
+                </div>
+                <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-5">
+                  <div className="text-2xl mb-2">📦</div>
+                  <p className="text-gray-500 text-xs uppercase tracking-wider">Total de Pedidos</p>
+                  <p className="text-2xl font-black mt-1 text-blue-400">{totalPedidos.toLocaleString("pt-BR")}</p>
+                  <p className="text-gray-600 text-xs mt-0.5">confirmados</p>
+                </div>
+                <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-5">
+                  <div className="text-2xl mb-2">💳</div>
+                  <p className="text-gray-500 text-xs uppercase tracking-wider">Métodos</p>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {Object.entries(metodosCount).slice(0, 3).map(([m, c]) => (
+                      <span key={m} className="text-xs px-1.5 py-0.5 rounded bg-gray-700 text-gray-300">
+                        {m === "pix" ? "PIX" : m === "card" ? "Cartão" : m === "cash" ? "Dinheiro" : m} {totalPedidos > 0 ? Math.round((c / totalPedidos) * 100) : 0}%
+                      </span>
+                    ))}
+                    {totalPedidos === 0 && <span className="text-gray-600 text-xs">Sem dados</span>}
+                  </div>
+                </div>
+              </div>
+
+              {/* Filtros */}
+              <div className="flex flex-wrap gap-3 items-center">
+                <select
+                  value={finRestaurantFilter}
+                  onChange={(e) => { setFinRestaurantFilter(e.target.value); setFinPage(1); }}
+                  className="bg-gray-900 border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-white"
+                >
+                  <option value="all">Todos os Restaurantes</option>
+                  {uniqueRests.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+                </select>
+                <select
+                  value={finPeriod}
+                  onChange={(e) => { setFinPeriod(e.target.value); setFinPage(1); }}
+                  className="bg-gray-900 border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-white"
+                >
+                  <option value="7">Últimos 7 dias</option>
+                  <option value="30">Últimos 30 dias</option>
+                  <option value="90">Últimos 90 dias</option>
+                  <option value="365">Último ano</option>
+                  <option value="9999">Todos os períodos</option>
+                </select>
+                <span className="text-gray-500 text-sm">{filteredOrders.length} pedidos</span>
+              </div>
+
+              {/* Tabela Vendas */}
+              <div className="bg-gray-900/60 rounded-2xl border border-gray-800 overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
+                  <h3 className="font-bold text-gray-200">Vendas Registradas</h3>
+                  <CSVButton onClick={() => exportToCSV(
+                    filteredOrders.map((o) => ({
+                      data: fmtDate(o.created_at),
+                      restaurante: unitToRest[o.unit_id]?.name ?? "—",
+                      unidade: o.unit_id,
+                      metodo: o.payment_method ?? "—",
+                      status: o.status,
+                      valor: ((parseFloat(String(o.total)) || 0)).toFixed(2),
+                    })),
+                    [
+                      { label: "Data", key: "data" },
+                      { label: "Restaurante", key: "restaurante" },
+                      { label: "Unidade", key: "unidade" },
+                      { label: "Método", key: "metodo" },
+                      { label: "Status", key: "status" },
+                      { label: "Valor", key: "valor" },
+                    ],
+                    `restaurantes_vendas_${today}.csv`
+                  )} />
+                </div>
+                {filteredOrders.length === 0 ? (
+                  <p className="text-gray-600 text-sm p-6">Nenhuma venda no período selecionado.</p>
+                ) : (
+                  <>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-gray-800 text-gray-500 text-xs uppercase tracking-wider">
+                            <th className="px-4 py-3 text-left">Data</th>
+                            <th className="px-4 py-3 text-left">Restaurante</th>
+                            <th className="px-4 py-3 text-left">Método</th>
+                            <th className="px-4 py-3 text-left">Status</th>
+                            <th className="px-4 py-3 text-right">Valor</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {pageOrders.map((o) => (
+                            <tr key={o.id} className="border-b border-gray-800/50 hover:bg-gray-800/30">
+                              <td className="px-4 py-2.5 text-gray-400 text-xs">{fmtDate(o.created_at)}</td>
+                              <td className="px-4 py-2.5 text-gray-300">{unitToRest[o.unit_id]?.name ?? "—"}</td>
+                              <td className="px-4 py-2.5 text-gray-400 text-xs">
+                                {o.payment_method === "pix" ? "📲 PIX" : o.payment_method === "card" ? "💳 Cartão" : o.payment_method === "cash" ? "💵 Dinheiro" : o.payment_method ?? "—"}
+                              </td>
+                              <td className="px-4 py-2.5">
+                                <span className={`text-xs px-2 py-0.5 rounded font-semibold ${STATUS_BADGE[o.status] ?? "bg-gray-700 text-gray-400"}`}>{o.status}</span>
+                              </td>
+                              <td className="px-4 py-2.5 text-right font-semibold text-green-400">{fmt(Math.round(parseFloat(String(o.total)) * 100))}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    {totalPages > 1 && (
+                      <div className="flex items-center justify-between px-6 py-3 border-t border-gray-800">
+                        <span className="text-gray-500 text-xs">Página {finPage} de {totalPages}</span>
+                        <div className="flex gap-2">
+                          <button onClick={() => setFinPage((p) => Math.max(1, p - 1))} disabled={finPage === 1} className="px-3 py-1 rounded text-xs text-gray-400 border border-gray-700 disabled:opacity-40 hover:bg-gray-800">Anterior</button>
+                          <button onClick={() => setFinPage((p) => Math.min(totalPages, p + 1))} disabled={finPage === totalPages} className="px-3 py-1 rounded text-xs text-gray-400 border border-gray-700 disabled:opacity-40 hover:bg-gray-800">Próxima</button>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+
+              {/* Resumo por restaurante */}
+              <div className="bg-gray-900/60 rounded-2xl border border-gray-800 overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
+                  <h3 className="font-bold text-gray-200">Resumo por Restaurante</h3>
+                  <CSVButton onClick={() => exportToCSV(
+                    restSummaryArr.map((r) => ({
+                      restaurante: r.name,
+                      total_vendas: r.total.toFixed(2),
+                      pedidos: r.orders,
+                      ticket_medio: r.orders > 0 ? (r.total / r.orders).toFixed(2) : "0.00",
+                      ultimo_pedido: r.lastOrder ? fmtDate(r.lastOrder) : "—",
+                    })),
+                    [
+                      { label: "Restaurante", key: "restaurante" },
+                      { label: "Total Vendas", key: "total_vendas" },
+                      { label: "Pedidos", key: "pedidos" },
+                      { label: "Ticket Médio", key: "ticket_medio" },
+                      { label: "Último Pedido", key: "ultimo_pedido" },
+                    ],
+                    `restaurantes_resumo_${today}.csv`
+                  )} />
+                </div>
+                {restSummaryArr.length === 0 ? (
+                  <p className="text-gray-600 text-sm p-6">Nenhum dado no período.</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-gray-800 text-gray-500 text-xs uppercase tracking-wider">
+                          <th className="px-4 py-3 text-left">Restaurante</th>
+                          <th className="px-4 py-3 text-right">Total Vendas</th>
+                          <th className="px-4 py-3 text-right">Pedidos</th>
+                          <th className="px-4 py-3 text-right">Ticket Médio</th>
+                          <th className="px-4 py-3 text-left">Último Pedido</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {restSummaryArr.map((r) => (
+                          <tr key={r.name} className="border-b border-gray-800/50 hover:bg-gray-800/30">
+                            <td className="px-4 py-2.5 text-gray-200 font-medium">{r.name}</td>
+                            <td className="px-4 py-2.5 text-right text-green-400 font-semibold">{fmt(Math.round(r.total))}</td>
+                            <td className="px-4 py-2.5 text-right text-gray-300">{r.orders}</td>
+                            <td className="px-4 py-2.5 text-right text-gray-400">{fmt(Math.round(r.orders > 0 ? r.total / r.orders : 0))}</td>
+                            <td className="px-4 py-2.5 text-gray-500 text-xs">{r.lastOrder ? fmtDate(r.lastOrder) : "—"}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -1611,8 +1911,8 @@ export default function AdminClient({
           );
         })()}
 
-        {/* CRM */}
-        {tab === "CRM" && (() => {
+        {/* CRM FYMENU */}
+        {tab === "CRM FyMenu" && (() => {
           const unitToRestaurant: Record<string, string> = {};
           for (const u of crmData.unitMapping) unitToRestaurant[u.id] = u.restaurant_id;
 
@@ -1650,15 +1950,27 @@ export default function AdminClient({
           const uniqueCities = new Set(Object.values(cityByRestaurant).filter(Boolean)).size;
           const totalRevenue = Object.values(revenueByRestaurant).reduce((s, v) => s + v, 0);
 
+          const cutoff30crm = Date.now() - 30 * 24 * 60 * 60 * 1000;
+          const newLast30 = crmData.owners.filter((o) => new Date(o.created_at).getTime() >= cutoff30crm).length;
+          const active = crmData.owners.filter((o) => o.status === "active").length;
+          const trial = crmData.owners.filter((o) => o.status === "trial").length;
+          const canceled = crmData.owners.filter((o) => o.status === "canceled").length;
+          const today = new Date().toISOString().split("T")[0];
+
           return (
             <div className="space-y-6">
-              {/* Resumo rápido */}
+              <div>
+                <h2 className="text-lg font-bold text-gray-200 mb-1">🏢 CRM FyMenu — Clientes da Plataforma</h2>
+                <p className="text-gray-500 text-sm mb-4">Restaurantes que contrataram o FyMenu.</p>
+              </div>
+
+              {/* Cards */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
-                  { icon: "👤", label: "Total de Donos", value: String(totalOwners), sub: "com cadastro", color: "text-[#00ffae]" },
-                  { icon: "📞", label: "Com Telefone", value: String(withPhone), sub: "contato disponível", color: "text-green-400" },
-                  { icon: "🏙️", label: "Cidades", value: String(uniqueCities), sub: "cobertura", color: "text-blue-400" },
-                  { icon: "💵", label: "Faturamento Total", value: fmt(totalRevenue), sub: "pedidos confirmados", color: "text-yellow-400" },
+                  { icon: "🏪", label: "Total Restaurantes", value: String(crmData.owners.length), sub: "cadastrados", color: "text-[#00ffae]" },
+                  { icon: "✅", label: "Ativos / Trial", value: `${active} / ${trial}`, sub: `${canceled} cancelados`, color: "text-green-400" },
+                  { icon: "📅", label: "Novos (30d)", value: String(newLast30), sub: "novos cadastros", color: "text-blue-400" },
+                  { icon: "📞", label: "Com Telefone", value: String(withPhone), sub: `${uniqueCities} cidades`, color: "text-yellow-400" },
                 ].map(({ icon, label, value, sub, color }) => (
                   <div key={label} className="bg-gray-900/60 rounded-2xl border border-gray-800 p-5">
                     <div className="text-2xl mb-2">{icon}</div>
@@ -1682,7 +1994,34 @@ export default function AdminClient({
               <div className="bg-gray-900/60 rounded-2xl border border-gray-800 overflow-hidden">
                 <div className="px-6 py-4 border-b border-gray-800 flex justify-between items-center">
                   <h3 className="font-bold text-gray-200">Clientes FyMenu</h3>
-                  <span className="text-gray-500 text-xs">{filteredOwners.length} registros</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-gray-500 text-xs">{filteredOwners.length} registros</span>
+                    <CSVButton onClick={() => exportToCSV(
+                      filteredOwners.map((o) => ({
+                        restaurante: o.name,
+                        dono: [o.owner_first_name, o.owner_last_name].filter(Boolean).join(" ") || "—",
+                        telefone: o.owner_phone || o.whatsapp || "—",
+                        plano: o.plan ?? "basic",
+                        status: o.status,
+                        cidade: cityByRestaurant[o.id] ?? "—",
+                        faturamento: ((revenueByRestaurant[o.id] ?? 0) / 100).toFixed(2),
+                        pedidos: String(orderCountByRestaurant[o.id] ?? 0),
+                        desde: fmtDate(o.created_at),
+                      })),
+                      [
+                        { label: "Restaurante", key: "restaurante" },
+                        { label: "Dono", key: "dono" },
+                        { label: "Telefone", key: "telefone" },
+                        { label: "Plano", key: "plano" },
+                        { label: "Status", key: "status" },
+                        { label: "Cidade", key: "cidade" },
+                        { label: "Faturamento", key: "faturamento" },
+                        { label: "Pedidos", key: "pedidos" },
+                        { label: "Desde", key: "desde" },
+                      ],
+                      `fymenu_clientes_${today}.csv`
+                    )} />
+                  </div>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
@@ -1731,275 +2070,161 @@ export default function AdminClient({
                 </div>
               </div>
 
-              {/* Top Produtos */}
-              <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
-                <h3 className="font-bold text-gray-200 mb-4">🏆 Top 20 Produtos (geral)</h3>
-                {topProducts.length === 0 ? (
-                  <p className="text-gray-600 text-sm">Nenhum pedido registrado ainda.</p>
+            </div>
+          );
+        })()}
+
+        {/* CRM RESTAURANTES */}
+        {tab === "CRM Restaurantes" && (() => {
+          const cutoff30 = Date.now() - 30 * 24 * 60 * 60 * 1000;
+
+          // Unique restaurants from crmConsumers
+          const restOptions = [...new Map(
+            crmConsumers
+              .filter((c) => c.units?.restaurants?.name)
+              .map((c) => [c.units!.restaurant_id, c.units!.restaurants!.name])
+          ).entries()].sort((a, b) => a[1].localeCompare(b[1]));
+
+          const filteredConsumers = crmConsumers.filter((c) => {
+            if (crmConsumerRestaurantFilter !== "all" && c.units?.restaurant_id !== crmConsumerRestaurantFilter) return false;
+            if (!crmConsumerSearch) return true;
+            const s = crmConsumerSearch.toLowerCase();
+            return (
+              (c.name ?? "").toLowerCase().includes(s) ||
+              (c.phone ?? "").includes(s) ||
+              (c.email ?? "").toLowerCase().includes(s) ||
+              (c.city ?? "").toLowerCase().includes(s)
+            );
+          });
+
+          // Metrics
+          const totalConsumers = filteredConsumers.length;
+          const recurring = filteredConsumers.filter((c) => c.total_orders > 1).length;
+          const newLast30 = filteredConsumers.filter((c) => new Date(c.created_at).getTime() >= cutoff30).length;
+          const totalSpentAll = filteredConsumers.reduce((s, c) => s + (c.total_spent ?? 0), 0);
+          const totalOrdersAll = filteredConsumers.reduce((s, c) => s + (c.total_orders ?? 0), 0);
+          const ticketMedioConsumer = totalOrdersAll > 0 ? totalSpentAll / totalOrdersAll : 0;
+
+          const today = new Date().toISOString().split("T")[0];
+
+          return (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-lg font-bold text-gray-200 mb-1">👥 CRM Restaurantes — Clientes dos Restaurantes</h2>
+                <p className="text-gray-500 text-sm mb-4">Consumidores finais que fizeram pedidos/comandas nos restaurantes.</p>
+              </div>
+
+              {/* Cards */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                {[
+                  { icon: "👥", label: "Total de Clientes", value: totalConsumers.toLocaleString("pt-BR"), sub: "no filtro atual", color: "text-[#00ffae]" },
+                  { icon: "🔁", label: "Recorrentes", value: recurring.toLocaleString("pt-BR"), sub: "total_orders > 1", color: "text-green-400" },
+                  { icon: "🎯", label: "Ticket Médio", value: fmt(Math.round(ticketMedioConsumer)), sub: "gasto / pedidos", color: "text-yellow-400" },
+                  { icon: "📅", label: "Novos (30d)", value: newLast30.toLocaleString("pt-BR"), sub: "novos clientes", color: "text-blue-400" },
+                ].map(({ icon, label, value, sub, color }) => (
+                  <div key={label} className="bg-gray-900/60 rounded-2xl border border-gray-800 p-5">
+                    <div className="text-2xl mb-2">{icon}</div>
+                    <p className="text-gray-500 text-xs uppercase tracking-wider">{label}</p>
+                    <p className={`text-2xl font-black mt-1 ${color}`}>{value}</p>
+                    <p className="text-gray-600 text-xs mt-0.5">{sub}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Filtros */}
+              <div className="flex flex-wrap gap-3 items-center">
+                <select
+                  value={crmConsumerRestaurantFilter}
+                  onChange={(e) => setCrmConsumerRestaurantFilter(e.target.value)}
+                  className="bg-gray-900 border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-white"
+                >
+                  <option value="all">Todos os Restaurantes</option>
+                  {restOptions.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+                </select>
+                <input
+                  type="text"
+                  placeholder="Buscar por nome, telefone, email..."
+                  value={crmConsumerSearch}
+                  onChange={(e) => setCrmConsumerSearch(e.target.value)}
+                  className="flex-1 min-w-48 px-4 py-2.5 rounded-xl bg-gray-800/60 border border-gray-700 text-white text-sm outline-none focus:border-[#00ffae]/50"
+                />
+                <span className="text-gray-500 text-sm whitespace-nowrap">{filteredConsumers.length} clientes</span>
+              </div>
+
+              {/* Tabela */}
+              <div className="bg-gray-900/60 rounded-2xl border border-gray-800 overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
+                  <h3 className="font-bold text-gray-200">Clientes dos Restaurantes</h3>
+                  <CSVButton onClick={() => exportToCSV(
+                    filteredConsumers.map((c) => ({
+                      nome: c.name ?? "—",
+                      telefone: c.phone ?? "—",
+                      email: c.email ?? "—",
+                      restaurante: c.units?.restaurants?.name ?? "—",
+                      cidade: c.city ?? c.units?.city ?? "—",
+                      total_pedidos: String(c.total_orders ?? 0),
+                      total_gasto: ((c.total_spent ?? 0) / 100).toFixed(2),
+                      ultimo_pedido: c.last_order_at ? fmtDate(c.last_order_at) : "—",
+                      source: c.source ?? "—",
+                      cadastro: fmtDate(c.created_at),
+                    })),
+                    [
+                      { label: "Nome", key: "nome" },
+                      { label: "Telefone", key: "telefone" },
+                      { label: "Email", key: "email" },
+                      { label: "Restaurante", key: "restaurante" },
+                      { label: "Cidade", key: "cidade" },
+                      { label: "Total Pedidos", key: "total_pedidos" },
+                      { label: "Total Gasto", key: "total_gasto" },
+                      { label: "Último Pedido", key: "ultimo_pedido" },
+                      { label: "Source", key: "source" },
+                      { label: "Cadastro", key: "cadastro" },
+                    ],
+                    `restaurante_clientes_${today}.csv`
+                  )} />
+                </div>
+                {filteredConsumers.length === 0 ? (
+                  <p className="text-gray-600 text-sm p-6">Nenhum cliente encontrado.</p>
                 ) : (
-                  <div className="space-y-3">
-                    {topProducts.map((p, i) => {
-                      const maxCount = topProducts[0]?.count ?? 1;
-                      const pct = Math.round((p.count / maxCount) * 100);
-                      return (
-                        <div key={p.name}>
-                          <div className="flex justify-between text-sm mb-1">
-                            <span className="text-gray-300"><span className="text-gray-500 mr-2">#{i + 1}</span>{p.name}</span>
-                            <span className="text-gray-400 font-medium">{p.count} pedidos</span>
-                          </div>
-                          <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
-                            <div className="h-full bg-[#00ffae]/70 rounded-full transition-all" style={{ width: `${pct}%` }} />
-                          </div>
-                        </div>
-                      );
-                    })}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-gray-800 text-gray-500 text-xs uppercase tracking-wider">
+                          <th className="px-4 py-3 text-left">Nome</th>
+                          <th className="px-4 py-3 text-left">Telefone</th>
+                          <th className="px-4 py-3 text-left">Restaurante</th>
+                          <th className="px-4 py-3 text-right">Pedidos</th>
+                          <th className="px-4 py-3 text-right">Total Gasto</th>
+                          <th className="px-4 py-3 text-left">Último Pedido</th>
+                          <th className="px-4 py-3 text-left">Source</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredConsumers.slice(0, 200).map((c) => (
+                          <tr key={c.id} className="border-b border-gray-800/50 hover:bg-gray-800/30">
+                            <td className="px-4 py-2.5 text-gray-200 font-medium">{c.name ?? "—"}</td>
+                            <td className="px-4 py-2.5">
+                              {c.phone ? (
+                                <a href={`tel:${c.phone}`} className="text-green-400 hover:text-green-300 text-xs">{c.phone}</a>
+                              ) : (
+                                <span className="text-gray-600 text-xs">—</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-2.5 text-gray-400 text-xs truncate max-w-[140px]">{c.units?.restaurants?.name ?? "—"}</td>
+                            <td className="px-4 py-2.5 text-right text-gray-300 font-medium">{c.total_orders ?? 0}</td>
+                            <td className="px-4 py-2.5 text-right text-[#00ffae] font-semibold">{fmt(c.total_spent ?? 0)}</td>
+                            <td className="px-4 py-2.5 text-gray-500 text-xs">{c.last_order_at ? fmtDate(c.last_order_at) : "—"}</td>
+                            <td className="px-4 py-2.5 text-gray-600 text-xs">{c.source ?? "—"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    {filteredConsumers.length > 200 && (
+                      <p className="text-gray-600 text-xs p-4 text-center">Mostrando 200 de {filteredConsumers.length}. Use os filtros para refinar.</p>
+                    )}
                   </div>
                 )}
               </div>
-
-              {/* ── DADOS DE CONSUMO ─────────────────────────────────── */}
-              {(() => {
-                const orders = consumerData.orders;
-                const events = consumerData.events;
-
-                // A. Resumo
-                const totalPedidos = orders.length;
-                const totalFat = orders.reduce((s, o) => s + (parseFloat(String(o.total)) || 0), 0);
-                const ticketMedioConsumer = totalPedidos > 0 ? totalFat / totalPedidos : 0;
-                const pedidosMesa = orders.filter((o) => o.table_number && o.table_number > 0).length;
-                const pedidosDelivery = totalPedidos - pedidosMesa;
-
-                // B. Horários de pico
-                const hourCount = new Array(24).fill(0);
-                for (const o of orders) hourCount[new Date(o.created_at).getHours()]++;
-                const maxHour = Math.max(...hourCount, 1);
-                const peakHour = hourCount.indexOf(Math.max(...hourCount));
-
-                // C. Dias da semana
-                const dayNames = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
-                const dayCount = new Array(7).fill(0);
-                for (const o of orders) dayCount[new Date(o.created_at).getDay()]++;
-                const maxDay = Math.max(...dayCount, 1);
-                const peakDay = dayCount.indexOf(Math.max(...dayCount));
-
-                // D. Top 20 produtos
-                const productCount: Record<string, number> = {};
-                for (const o of orders) {
-                  const items = Array.isArray(o.items) ? o.items : [];
-                  for (const item of items) {
-                    const name: string = item.name ?? item.code_name ?? "Sem nome";
-                    productCount[name] = (productCount[name] ?? 0) + (item.qty ?? 1);
-                  }
-                }
-                const topConsumerProducts = Object.entries(productCount)
-                  .map(([name, count]) => ({ name, count }))
-                  .sort((a, b) => b.count - a.count)
-                  .slice(0, 20);
-                const maxProd = topConsumerProducts[0]?.count ?? 1;
-
-                // E. Métodos de pagamento
-                const payMap: Record<string, number> = {};
-                for (const o of orders) {
-                  const m = o.payment_method ?? "Não informado";
-                  payMap[m] = (payMap[m] ?? 0) + 1;
-                }
-                const payEntries = Object.entries(payMap).sort((a, b) => b[1] - a[1]);
-                const maxPay = payEntries[0]?.[1] ?? 1;
-
-                // F. Comportamento no cardápio
-                const menuViews = events.filter((e) => e.event === "menu_view").length;
-                const productClicks = events.filter((e) => e.event === "product_click").length;
-                const waClicks = events.filter((e) => e.event === "whatsapp_click").length;
-                const convRate = menuViews > 0 ? ((totalPedidos / menuViews) * 100).toFixed(1) : "0.0";
-
-                // G. Pedidos por restaurante
-                const unitToRestName: Record<string, string> = {};
-                const unitToRestId: Record<string, string> = {};
-                for (const u of crmData.unitMapping) {
-                  unitToRestId[u.id] = u.restaurant_id;
-                }
-                for (const o of crmData.owners) unitToRestName[o.id] = o.name;
-                const restOrderCount: Record<string, number> = {};
-                const restRevenue: Record<string, number> = {};
-                for (const o of orders) {
-                  const rid = unitToRestId[o.unit_id];
-                  if (!rid) continue;
-                  restOrderCount[rid] = (restOrderCount[rid] ?? 0) + 1;
-                  restRevenue[rid] = (restRevenue[rid] ?? 0) + (parseFloat(String(o.total)) || 0);
-                }
-                const restActivity = Object.entries(restRevenue)
-                  .map(([id, rev]) => ({
-                    name: unitToRestName[id] ?? id.slice(0, 8),
-                    orders: restOrderCount[id] ?? 0,
-                    revenue: rev,
-                    ticket: restOrderCount[id] ? rev / restOrderCount[id] : 0,
-                  }))
-                  .sort((a, b) => b.revenue - a.revenue)
-                  .slice(0, 20);
-
-                return (
-                  <>
-                    <div className="border-t border-gray-800 pt-2">
-                      <h2 className="text-lg font-bold text-gray-200 mb-4">📊 Dados de Consumo (clientes dos restaurantes)</h2>
-                    </div>
-
-                    {/* A. Resumo */}
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                      {[
-                        { icon: "🛒", label: "Total de Pedidos", value: String(totalPedidos), sub: "confirmados", color: "text-[#00ffae]" },
-                        { icon: "💰", label: "Ticket Médio", value: fmt(Math.round(ticketMedioConsumer)), sub: "por pedido", color: "text-yellow-400" },
-                        { icon: "🚚", label: "Delivery", value: String(pedidosDelivery), sub: "sem mesa", color: "text-blue-400" },
-                        { icon: "🪑", label: "Mesa", value: String(pedidosMesa), sub: "com mesa", color: "text-green-400" },
-                      ].map(({ icon, label, value, sub, color }) => (
-                        <div key={label} className="bg-gray-900/60 rounded-2xl border border-gray-800 p-5">
-                          <div className="text-2xl mb-2">{icon}</div>
-                          <p className="text-gray-500 text-xs uppercase tracking-wider">{label}</p>
-                          <p className={`text-2xl font-black mt-1 ${color}`}>{value}</p>
-                          <p className="text-gray-600 text-xs mt-0.5">{sub}</p>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* B. Horários de pico */}
-                    <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
-                      <h3 className="font-bold text-gray-200 mb-1">⏰ Horários de Pico</h3>
-                      <p className="text-gray-500 text-xs mb-4">Pico: {peakHour}h ({hourCount[peakHour]} pedidos)</p>
-                      <div className="flex items-end gap-0.5" style={{ height: 100 }}>
-                        {hourCount.map((count, h) => (
-                          <div key={h} className="flex-1 flex flex-col items-center">
-                            <div
-                              className="w-full rounded-t transition-all"
-                              style={{
-                                height: `${(count / maxHour) * 100}%`,
-                                minHeight: count > 0 ? 2 : 0,
-                                backgroundColor: h === peakHour ? "#a855f7" : "#6b21a8",
-                              }}
-                            />
-                            {h % 3 === 0 && (
-                              <span className="text-gray-600 text-[8px] mt-0.5">{h}h</span>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* C. Dias da semana */}
-                    <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
-                      <h3 className="font-bold text-gray-200 mb-4">📅 Pedidos por Dia da Semana</h3>
-                      <div className="space-y-2">
-                        {dayNames.map((day, i) => (
-                          <div key={day} className="flex items-center gap-3">
-                            <span className={`text-xs w-7 ${i === peakDay ? "text-[#00ffae] font-bold" : "text-gray-500"}`}>{day}</span>
-                            <div className="flex-1 h-2 bg-gray-800 rounded-full overflow-hidden">
-                              <div
-                                className="h-full rounded-full"
-                                style={{
-                                  width: `${(dayCount[i] / maxDay) * 100}%`,
-                                  backgroundColor: i === peakDay ? "#a855f7" : "#6b21a8",
-                                }}
-                              />
-                            </div>
-                            <span className="text-gray-400 text-xs w-8 text-right">{dayCount[i]}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* D. Top 20 produtos */}
-                    <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
-                      <h3 className="font-bold text-gray-200 mb-4">🏆 Top 20 Produtos Mais Pedidos</h3>
-                      {topConsumerProducts.length === 0 ? (
-                        <p className="text-gray-600 text-sm">Sem dados.</p>
-                      ) : (
-                        <div className="space-y-2">
-                          {topConsumerProducts.map((p, i) => (
-                            <div key={p.name}>
-                              <div className="flex justify-between text-sm mb-0.5">
-                                <span className="text-gray-300 truncate"><span className="text-gray-500 mr-2">#{i + 1}</span>{p.name}</span>
-                                <span className="text-gray-400 font-medium ml-2 shrink-0">{p.count}</span>
-                              </div>
-                              <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
-                                <div className="h-full bg-[#00ffae]/60 rounded-full" style={{ width: `${(p.count / maxProd) * 100}%` }} />
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* E. Métodos de pagamento */}
-                    <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
-                      <h3 className="font-bold text-gray-200 mb-4">💳 Métodos de Pagamento</h3>
-                      {payEntries.length === 0 ? (
-                        <p className="text-gray-600 text-sm">Sem dados.</p>
-                      ) : (
-                        <div className="space-y-3">
-                          {payEntries.map(([method, count]) => {
-                            const pct = Math.round((count / (totalPedidos || 1)) * 100);
-                            return (
-                              <div key={method}>
-                                <div className="flex justify-between text-sm mb-1">
-                                  <span className="text-gray-300 capitalize">{method}</span>
-                                  <span className="text-gray-400">{count} <span className="text-gray-600">({pct}%)</span></span>
-                                </div>
-                                <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
-                                  <div className="h-full bg-[#00ffae]/50 rounded-full" style={{ width: `${(count / maxPay) * 100}%` }} />
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* F. Comportamento no cardápio */}
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                      {[
-                        { icon: "👁️", label: "Visualizações", value: String(menuViews), sub: "menu_view", color: "text-blue-400" },
-                        { icon: "👆", label: "Cliques Produto", value: String(productClicks), sub: "product_click", color: "text-[#00ffae]" },
-                        { icon: "💬", label: "Cliques WhatsApp", value: String(waClicks), sub: "whatsapp_click", color: "text-green-400" },
-                        { icon: "📈", label: "Taxa Conversão", value: `${convRate}%`, sub: "pedidos / views", color: "text-yellow-400" },
-                      ].map(({ icon, label, value, sub, color }) => (
-                        <div key={label} className="bg-gray-900/60 rounded-2xl border border-gray-800 p-5">
-                          <div className="text-2xl mb-2">{icon}</div>
-                          <p className="text-gray-500 text-xs uppercase tracking-wider">{label}</p>
-                          <p className={`text-2xl font-black mt-1 ${color}`}>{value}</p>
-                          <p className="text-gray-600 text-xs mt-0.5">{sub}</p>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* G. Pedidos por restaurante */}
-                    <div className="bg-gray-900/60 rounded-2xl border border-gray-800 overflow-hidden">
-                      <div className="px-6 py-4 border-b border-gray-800">
-                        <h3 className="font-bold text-gray-200">📦 Pedidos por Restaurante</h3>
-                      </div>
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                          <thead>
-                            <tr className="border-b border-gray-800 text-gray-500 text-xs uppercase tracking-wider">
-                              <th className="px-4 py-3 text-left">Restaurante</th>
-                              <th className="px-4 py-3 text-right">Pedidos</th>
-                              <th className="px-4 py-3 text-right">Faturamento</th>
-                              <th className="px-4 py-3 text-right">Ticket Médio</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {restActivity.map((r) => (
-                              <tr key={r.name} className="border-b border-gray-800/50 hover:bg-gray-800/30">
-                                <td className="px-4 py-2.5 text-gray-300 truncate max-w-[200px]">{r.name}</td>
-                                <td className="px-4 py-2.5 text-right text-gray-300 font-medium">{r.orders}</td>
-                                <td className="px-4 py-2.5 text-right text-gray-300">{fmt(Math.round(r.revenue))}</td>
-                                <td className="px-4 py-2.5 text-right text-gray-400">{fmt(Math.round(r.ticket))}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  </>
-                );
-              })()}
             </div>
           );
         })()}
