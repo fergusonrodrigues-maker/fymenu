@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { createClient } from "@/lib/supabase/client";
 import FyLoader from "@/components/FyLoader";
 
@@ -78,12 +79,13 @@ const LABEL: React.CSSProperties = {
 };
 
 // ─── Modal overlay wrapper ────────────────────────────────────────────────────
+// Uses createPortal so position:fixed escapes the parent modal's backdropFilter stacking context
 function ModalOverlay({ onClose, children }: { onClose: () => void; children: React.ReactNode }) {
-  return (
+  return createPortal(
     <div
       onClick={onClose}
       style={{
-        position: "fixed", inset: 0, zIndex: 9999,
+        position: "fixed", inset: 0, zIndex: 10100,
         background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)",
         display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
       }}
@@ -96,7 +98,8 @@ function ModalOverlay({ onClose, children }: { onClose: () => void; children: Re
       }}>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

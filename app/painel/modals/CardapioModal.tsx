@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { createCategory, updateCategory, deleteCategory, createProduct } from "../actions";
 import { createClient as createSupabaseClient } from "@/lib/supabase/client";
@@ -1071,9 +1072,9 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
           )}
 
           {/* Modal criar/editar combo */}
-          {(showCreateCombo || editingCombo) && (
+          {(showCreateCombo || editingCombo) && createPortal(
             <div style={{
-              position: "fixed", inset: 0, zIndex: 10000,
+              position: "fixed", inset: 0, zIndex: 10100,
               background: "rgba(0,0,0,0.6)",
               backdropFilter: "blur(4px)",
               display: "flex", alignItems: "center", justifyContent: "center",
@@ -1346,7 +1347,8 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                   opacity: savingCombo || !comboName.trim() || comboItems.length === 0 ? 0.4 : 1,
                 }}>{savingCombo ? "Salvando..." : editingCombo ? "Salvar alterações" : "Criar combo"}</button>
               </div>
-            </div>
+            </div>,
+            document.body
           )}
         </div>
       )}

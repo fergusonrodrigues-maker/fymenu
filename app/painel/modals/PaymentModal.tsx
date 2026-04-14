@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 
 type CycleKey = "monthly" | "quarterly" | "semiannual";
 type Step = "cycle" | "method" | "pix" | "card";
@@ -186,8 +187,8 @@ export default function PaymentModal({ planKey, planName, accent, accentRgb, onC
   const cInfo = cycleMap[cycle];
   const isPaid = pixStatus === "CONFIRMED" || pixStatus === "RECEIVED";
 
-  return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 300, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+  return createPortal(
+    <div style={{ position: "fixed", inset: 0, zIndex: 10100, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
       {/* Backdrop */}
       <div onClick={onClose} style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)" }} />
 
@@ -555,6 +556,7 @@ export default function PaymentModal({ planKey, planName, accent, accentRgb, onC
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
