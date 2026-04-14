@@ -266,6 +266,7 @@ const GRID_LAYOUTS: Record<string, Array<{ id: string; cols: number; mobileCols:
     { id: "unidade",     cols: 1, mobileCols: 1 },
     { id: "equipe",      cols: 1, mobileCols: 1 },
     { id: "estoque",     cols: 1, mobileCols: 1 },
+    { id: "crm",         cols: 1, mobileCols: 1 },
     { id: "tv",          cols: 1, mobileCols: 1 },
     { id: "suporte",     cols: 1, mobileCols: 1 },
     { id: "config",      cols: 2, mobileCols: 2 },
