@@ -146,6 +146,20 @@ export default function BottomGlassBar({
 
   useEffect(() => { glassExpandedRef.current = glassExpanded; }, [glassExpanded]);
 
+  // InitiateCheckout pixel — fires when cart panel opens with items
+  useEffect(() => {
+    if (!glassExpanded || glassView !== "cart" || cart.length === 0) return;
+    if (typeof window !== "undefined" && (window as any).fbq) {
+      (window as any).fbq("track", "InitiateCheckout", {
+        content_ids: cart.map((i) => i.product_id.split("__")[0]),
+        num_items: cart.reduce((s, i) => s + i.qty, 0),
+        value: cartTotal > 500 ? cartTotal / 100 : cartTotal,
+        currency: "BRL",
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [glassExpanded, glassView]);
+
   // Lock body scroll when expanded
   useEffect(() => {
     if (glassExpanded) {
@@ -253,6 +267,14 @@ export default function BottomGlassBar({
     const phone = (unit.whatsapp || "").replace(/\D/g, "");
     if (!phone) return;
     try { localStorage.setItem(CUST_KEY, JSON.stringify({ name: custName, phone: custPhone })); } catch {}
+    if (typeof window !== "undefined" && (window as any).fbq) {
+      (window as any).fbq("track", "Lead", {
+        content_name: "WhatsApp Order",
+        content_ids: cart.map((i) => i.product_id.split("__")[0]),
+        value: cartTotal > 500 ? cartTotal / 100 : cartTotal,
+        currency: "BRL",
+      });
+    }
     const url = buildCartWhatsAppMessage(
       cart.map(i => ({ name: i.name, qty: i.qty, unit_price: i.unit_price })),
       unit.whatsapp || "",
