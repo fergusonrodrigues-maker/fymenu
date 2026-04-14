@@ -123,6 +123,12 @@ export default function BottomGlassBar({
   const [upsellData, setUpsellData] = useState<UpsellData>({ combos: [], suggestions: [] });
   const [loadingUpsell, setLoadingUpsell] = useState(false);
 
+  // Drag-to-minimize (refs for handler values, state for rendering)
+  const dragStartYRef = useRef(0);
+  const dragDeltaRef = useRef(0);
+  const [dragDeltaY, setDragDeltaY] = useState(0);
+  const isDraggingRef = useRef(false);
+
   const [isDark, setIsDark] = useState(true);
   useEffect(() => {
     const check = () => setIsDark(document.documentElement.classList.contains("dark"));
@@ -139,6 +145,32 @@ export default function BottomGlassBar({
   }, []);
 
   useEffect(() => { glassExpandedRef.current = glassExpanded; }, [glassExpanded]);
+
+  // Lock body scroll when expanded
+  useEffect(() => {
+    if (glassExpanded) {
+      document.body.style.overflow = "hidden";
+      document.body.style.touchAction = "none";
+    } else {
+      document.body.style.overflow = "";
+      document.body.style.touchAction = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+      document.body.style.touchAction = "";
+    };
+  }, [glassExpanded]);
+
+  function toggleTheme() {
+    const html = document.documentElement;
+    if (html.classList.contains("dark")) {
+      html.classList.remove("dark");
+      try { localStorage.setItem("fy_theme", "light"); } catch {}
+    } else {
+      html.classList.add("dark");
+      try { localStorage.setItem("fy_theme", "dark"); } catch {}
+    }
+  }
 
   // Load upsell suggestions when cart tab opens
   useEffect(() => {
@@ -161,25 +193,23 @@ export default function BottomGlassBar({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [glassExpanded, glassView, cart.length]);
 
-  // Scroll-driven expand/collapse
+  // Scroll-driven expand — ONLY at bottom of page
   useEffect(() => {
     if (!visible) return;
-    const lastYRef = { current: window.scrollY };
+    let ticking = false;
 
     const handleScroll = () => {
-      const currentY = window.scrollY;
-      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-      const atBottom = maxScroll > 0 && currentY >= maxScroll - 50;
-      const scrolledUpEnough = currentY < lastYRef.current - 10;
-      const farFromBottom = currentY < maxScroll - 200;
-
-      if (atBottom && !glassExpandedRef.current) {
-        setGlassView(cartRef.current.length > 0 ? "cart" : "info");
-        setGlassExpanded(true);
-      } else if (scrolledUpEnough && glassExpandedRef.current && farFromBottom) {
-        setGlassExpanded(false);
-      }
-      lastYRef.current = currentY;
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+        const isAtBottom = maxScroll > 0 && window.scrollY >= maxScroll - 30;
+        if (isAtBottom && !glassExpandedRef.current) {
+          setGlassView(cartRef.current.length > 0 ? "cart" : "info");
+          setGlassExpanded(true);
+        }
+        ticking = false;
+      });
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
@@ -190,6 +220,32 @@ export default function BottomGlassBar({
   const backToTop = useCallback(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
     setGlassExpanded(false);
+  }, []);
+
+  // Drag-to-minimize handlers
+  const handleDragStart = useCallback((e: React.TouchEvent | React.MouseEvent) => {
+    const clientY = "touches" in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
+    dragStartYRef.current = clientY;
+    dragDeltaRef.current = 0;
+    setDragDeltaY(0);
+    isDraggingRef.current = true;
+  }, []);
+
+  const handleDragMove = useCallback((e: React.TouchEvent | React.MouseEvent) => {
+    if (!isDraggingRef.current) return;
+    const clientY = "touches" in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
+    const delta = Math.max(0, clientY - dragStartYRef.current);
+    dragDeltaRef.current = delta;
+    setDragDeltaY(delta);
+  }, []);
+
+  const handleDragEnd = useCallback(() => {
+    if (!isDraggingRef.current) return;
+    isDraggingRef.current = false;
+    const delta = dragDeltaRef.current;
+    dragDeltaRef.current = 0;
+    setDragDeltaY(0);
+    if (delta > 80) setGlassExpanded(false);
   }, []);
 
   const handleSendOrder = useCallback(() => {
@@ -236,9 +292,32 @@ export default function BottomGlassBar({
 
   return (
     <>
+      {/* ── Theme toggle — fixed left, same level as pill ── */}
+      <button
+        onClick={toggleTheme}
+        style={{
+          position: "fixed",
+          bottom: `calc(18px + env(safe-area-inset-bottom, 0px))`,
+          left: 16,
+          width: 36, height: 36, borderRadius: 12,
+          background: isDark ? "rgba(10,10,10,0.85)" : "rgba(255,255,255,0.85)",
+          backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
+          border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 16, cursor: "pointer",
+          zIndex: 100,
+          boxShadow: isDark ? "0 4px 16px rgba(0,0,0,0.3)" : "0 4px 16px rgba(0,0,0,0.1)",
+          opacity: visible && !glassExpanded ? 1 : 0,
+          pointerEvents: visible && !glassExpanded ? "auto" : "none",
+          transition: `opacity 300ms ${EASE}`,
+        }}
+        aria-label="Alternar tema"
+      >
+        {isDark ? "☀️" : "🌙"}
+      </button>
+
       {/* ── MINIMIZED pill ── */}
       <div
-        onClick={() => { setGlassView("info"); setGlassExpanded(true); }}
         style={{
           position: "fixed",
           bottom: `calc(12px + env(safe-area-inset-bottom, 0px))`,
@@ -256,7 +335,7 @@ export default function BottomGlassBar({
           opacity: visible && !glassExpanded ? 1 : 0,
           pointerEvents: visible && !glassExpanded ? "auto" : "none",
           transition: `opacity 300ms ${EASE}, transform 300ms ${EASE}`,
-          whiteSpace: "nowrap", cursor: "pointer",
+          whiteSpace: "nowrap", cursor: "default",
         }}
       >
         {/* Maps */}
@@ -366,40 +445,65 @@ export default function BottomGlassBar({
       />
 
       {/* ── EXPANDED bottom sheet ── */}
-      <div style={{
-        position: "fixed",
-        bottom: 0, left: 0, right: 0,
-        zIndex: 103,
-        maxHeight: "85dvh",
-        display: "flex", flexDirection: "column",
-        opacity: glassExpanded ? 1 : 0,
-        transform: glassExpanded ? "translateY(0)" : "translateY(100%)",
-        transition: `opacity 350ms ${EASE}, transform 350ms ${EASE}`,
-        pointerEvents: glassExpanded ? "auto" : "none",
-        borderRadius: "24px 24px 0 0",
-        background: isDark ? "rgba(10,10,10,0.97)" : "rgba(255,255,255,0.97)",
-        backdropFilter: "blur(30px)", WebkitBackdropFilter: "blur(30px)",
-        border, borderBottom: "none",
-        boxShadow: isDark ? "0 -8px 40px rgba(0,0,0,0.5)" : "0 -8px 40px rgba(0,0,0,0.15)",
-      }}>
+      <div
+        onTouchStart={handleDragStart}
+        onTouchMove={handleDragMove}
+        onTouchEnd={handleDragEnd}
+        style={{
+          position: "fixed",
+          bottom: 0, left: 0, right: 0,
+          zIndex: 103,
+          maxHeight: "85dvh",
+          display: "flex", flexDirection: "column",
+          opacity: glassExpanded ? Math.max(0.3, 1 - dragDeltaY / 300) : 0,
+          transform: glassExpanded ? `translateY(${dragDeltaY}px)` : "translateY(100%)",
+          transition: isDraggingRef.current ? "none" : `opacity 350ms ${EASE}, transform 350ms ${EASE}`,
+          pointerEvents: glassExpanded ? "auto" : "none",
+          borderRadius: "24px 24px 0 0",
+          background: isDark ? "rgba(10,10,10,0.97)" : "rgba(255,255,255,0.97)",
+          backdropFilter: "blur(30px)", WebkitBackdropFilter: "blur(30px)",
+          border, borderBottom: "none",
+          boxShadow: isDark ? "0 -8px 40px rgba(0,0,0,0.5)" : "0 -8px 40px rgba(0,0,0,0.15)",
+        }}
+      >
         {/* Non-scrollable header */}
         <div style={{ padding: "16px 16px 0", flexShrink: 0 }}>
-          {/* Handle row */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", position: "relative", marginBottom: 14 }}>
-            <div onClick={collapse} style={{
-              width: 36, height: 4, borderRadius: 2,
-              background: isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.1)",
-              cursor: "pointer",
+          {/* Handle pill — drag indicator */}
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 12, cursor: "grab" }}
+            onMouseDown={handleDragStart}
+            onMouseMove={handleDragMove}
+            onMouseUp={handleDragEnd}
+            onMouseLeave={handleDragEnd}
+          >
+            <div style={{
+              width: 40, height: 5, borderRadius: 3,
+              background: isDark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.12)",
             }} />
-            <button onClick={backToTop} style={{
-              position: "absolute", right: 0, top: "50%", transform: "translateY(-50%)",
-              width: 36, height: 36, borderRadius: 12,
-              background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
-              border: `1px solid ${isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"}`,
-              color: isDark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.4)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 16, cursor: "pointer",
-            }} aria-label="Voltar ao topo">↑</button>
+          </div>
+
+          {/* Back-to-top button row */}
+          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 10 }}>
+            <button
+              onClick={backToTop}
+              style={{
+                width: 40, height: 40, borderRadius: 12,
+                background: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)",
+                border: `1px solid ${isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.08)"}`,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                cursor: "pointer",
+                boxShadow: isDark
+                  ? "0 1px 0 rgba(255,255,255,0.03) inset, 0 -1px 0 rgba(0,0,0,0.15) inset"
+                  : "0 1px 3px rgba(0,0,0,0.08)",
+              }}
+              aria-label="Voltar ao topo"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke={isDark ? "#ffffff" : "#1a1a1a"}
+                strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 19V5" />
+                <path d="M5 12l7-7 7 7" />
+              </svg>
+            </button>
           </div>
 
           {/* Tabs */}
