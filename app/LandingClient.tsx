@@ -209,14 +209,14 @@ const PLANS = {
 
 // ── Plan Card (with hover effects) ───────────────────────────────────────────
 type PlanKey = keyof typeof PLANS;
-function PlanCard({ planKey, plan, cycle, theme }: {
+function PlanCard({ planKey, plan, theme }: {
   planKey: PlanKey;
   plan: typeof PLANS[PlanKey];
-  cycle: "MONTHLY" | "QUARTERLY" | "SEMIANNUALLY";
   theme: "dark" | "light";
 }) {
   const [hovered, setHovered] = useState(false);
   const [pressed, setPressed] = useState(false);
+  const [cycle, setCycle] = useState<"MONTHLY" | "QUARTERLY" | "SEMIANNUALLY">("QUARTERLY");
   const isAccent = plan.highlight; // menupro → cyan/green gradient
   const isPurple = planKey === "menu";
   const isGreen = planKey === "business";
@@ -373,14 +373,50 @@ function PlanCard({ planKey, plan, cycle, theme }: {
           <div style={{ fontSize: 12, color: "var(--lp-text-secondary)", marginTop: 2 }}>{plan.units}</div>
         </div>
 
+        {/* Per-card cycle selector */}
+        <div style={{
+          display: "flex",
+          background: dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)",
+          borderRadius: 10, padding: 3, marginBottom: 16, gap: 2,
+        }}>
+          {([
+            { key: "MONTHLY", label: "Mensal" },
+            { key: "QUARTERLY", label: "Trimestral" },
+            { key: "SEMIANNUALLY", label: "Semestral" },
+          ] as const).map((c) => (
+            <button
+              key={c.key}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCycle(c.key); }}
+              style={{
+                flex: 1, border: "none", cursor: "pointer", fontFamily: "inherit",
+                padding: "6px 4px", borderRadius: 7, fontSize: 11, fontWeight: 700,
+                background: cycle === c.key
+                  ? (hex ? `rgba(${rgb},0.2)` : (dark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)"))
+                  : "transparent",
+                color: cycle === c.key
+                  ? (hex ?? (dark ? "#fff" : "#222"))
+                  : (dark ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.35)"),
+                transition: "all 0.2s ease",
+              }}
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
+
         <div style={{ textAlign: "center", marginBottom: 20 }}>
-          <div style={{ fontSize: 36, fontWeight: 900, color: isGreen ? "var(--lp-price-color)" : hex ?? "var(--lp-price-color)" }}>
+          <div style={{ fontSize: 36, fontWeight: 900, color: isGreen ? "var(--lp-price-color)" : hex ?? "var(--lp-price-color)", transition: "all 0.2s ease" }}>
             R${plan.prices[cycle]}
             <span style={{ fontSize: 14, fontWeight: 400, color: "var(--lp-text-secondary)" }}>/mês</span>
           </div>
           {cycle !== "MONTHLY" && (
-            <div style={{ fontSize: 12, color: "var(--lp-text-muted)", marginTop: 4 }}>
-              R${plan.totals[cycle]} total · Economia de {plan.savings[cycle]}
+            <div style={{
+              display: "inline-flex", alignItems: "center", marginTop: 6,
+              background: hex ? `rgba(${rgb},0.12)` : "rgba(0,255,174,0.1)",
+              color: hex ?? "#00ffae",
+              fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 999,
+            }}>
+              Economia de {(plan.savings as Record<string, string>)[cycle]}
             </div>
           )}
         </div>
@@ -423,7 +459,6 @@ export default function LandingPage() {
   const [loading, setLoading] = useState(true);
   const [heroVisible, setHeroVisible] = useState(false);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
-  const [cycle, setCycle] = useState<"MONTHLY" | "QUARTERLY" | "SEMIANNUALLY">("QUARTERLY");
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -1177,30 +1212,10 @@ export default function LandingPage() {
             </p>
           </div>
 
-          {/* Cycle toggle */}
-          <div style={{ display: "flex", justifyContent: "center", gap: 4, marginBottom: 32, background: "rgba(255,255,255,0.04)", borderRadius: 14, padding: 4, width: "fit-content", margin: "0 auto 32px" }}>
-            {([
-              { key: "MONTHLY", label: "Mensal" },
-              { key: "QUARTERLY", label: "Trimestral" },
-              { key: "SEMIANNUALLY", label: "Semestral" },
-            ] as const).map((c) => (
-              <button key={c.key} onClick={() => setCycle(c.key)} style={{
-                padding: "8px 20px", borderRadius: 10, border: "none", cursor: "pointer",
-                background: cycle === c.key ? "rgba(255,255,255,0.12)" : "transparent",
-                color: cycle === c.key ? "#fff" : "rgba(255,255,255,0.4)",
-                fontSize: 13, fontWeight: 700, transition: "all 0.2s", fontFamily: "inherit",
-                display: "flex", alignItems: "center", gap: 4,
-              }}>
-                {c.label}
-                {c.key !== "MONTHLY" && <span style={{ fontSize: 10, color: "#00ffae" }}>Economize</span>}
-              </button>
-            ))}
-          </div>
-
           {/* Plan cards */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16, maxWidth: 960, margin: "0 auto", padding: "0 16px" }}>
             {(Object.keys(PLANS) as PlanKey[]).map((key) => (
-              <PlanCard key={key} planKey={key} plan={PLANS[key]} cycle={cycle} theme={theme} />
+              <PlanCard key={key} planKey={key} plan={PLANS[key]} theme={theme} />
             ))}
           </div>
         </section>
