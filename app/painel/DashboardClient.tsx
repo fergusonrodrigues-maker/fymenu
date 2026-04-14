@@ -1054,8 +1054,8 @@ export default function DashboardClient({
           box-shadow: 0 0 10px rgba(0,255,174,0.03), inset 0 1px 0 rgba(255,255,255,0.02);
           transition: border-color 0.3s ease, box-shadow 0.3s ease;
           background: rgba(255,255,255,0.02) !important;
-          backdrop-filter: blur(16px);
-          -webkit-backdrop-filter: blur(16px);
+          backdrop-filter: blur(60px);
+          -webkit-backdrop-filter: blur(60px);
         }
         .dark .modal-neon-card:hover {
           border-color: rgba(0,255,174,0.15) !important;
@@ -1066,8 +1066,8 @@ export default function DashboardClient({
           box-shadow: 0 0 10px rgba(213,22,89,0.02), inset 0 1px 0 rgba(0,0,0,0.01);
           transition: border-color 0.3s ease, box-shadow 0.3s ease;
           background: rgba(0,0,0,0.01) !important;
-          backdrop-filter: blur(16px);
-          -webkit-backdrop-filter: blur(16px);
+          backdrop-filter: blur(60px);
+          -webkit-backdrop-filter: blur(60px);
         }
         html:not(.dark) .modal-neon-card:hover {
           border-color: rgba(213,22,89,0.12) !important;
@@ -1350,6 +1350,8 @@ export default function DashboardClient({
             background: "var(--dash-card)",
             border: "1px solid var(--dash-border)",
             boxShadow: "var(--dash-shadow)",
+            backdropFilter: "blur(60px)",
+            WebkitBackdropFilter: "blur(60px)",
             cursor: "pointer",
             display: "flex",
             flexDirection: "column",
