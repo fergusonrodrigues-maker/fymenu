@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import StepPersonal from "./StepPersonal";
 import StepCompany from "./StepCompany";
 import StepMenu from "./StepMenu";
@@ -27,6 +27,17 @@ export default function OnboardingClient({
   restaurantId: string;
   userEmail: string;
 }) {
+  useEffect(() => {
+    const pendingCoupon = localStorage.getItem("fy_pending_coupon");
+    if (!pendingCoupon || !restaurantId) return;
+    localStorage.removeItem("fy_pending_coupon");
+    fetch("/api/coupon/apply", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: pendingCoupon, restaurant_id: restaurantId }),
+    });
+  }, [restaurantId]);
+
   const [step, setStep] = useState(1);
   const [data, setData] = useState<OnboardingData>({
     first_name: "", last_name: "", phone: "",

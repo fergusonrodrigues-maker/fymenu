@@ -5,7 +5,7 @@ import MouseGlow from "@/components/MouseGlow";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ err?: string; ok?: string }>;
+  searchParams?: Promise<{ err?: string; ok?: string; pending?: string }>;
 }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -17,6 +17,7 @@ export default async function LoginPage({
   const sp = (await searchParams) || {};
   const err = sp.err ? decodeURIComponent(sp.err) : "";
   const ok = sp.ok ? decodeURIComponent(sp.ok) : "";
+  const pending = sp.pending || "";
 
   async function loginAction(formData: FormData) {
     "use server";
@@ -297,6 +298,15 @@ export default async function LoginPage({
 
         {err && <div className="error-message">{err}</div>}
         {ok && <div className="success-message">{ok}</div>}
+        {pending === "email" && (
+          <div style={{
+            padding: "14px 18px", borderRadius: 14,
+            background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.15)",
+            color: "#fbbf24", fontSize: 13, marginBottom: 16, textAlign: "center",
+          }}>
+            Verifique seu email para confirmar a conta. Depois faça login aqui.
+          </div>
+        )}
 
         <form action={loginAction} style={{ display: "grid", gap: 0 }}>
           <div className="form-group">

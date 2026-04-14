@@ -72,15 +72,30 @@ export default function SignupPage() {
       const { error: signupError, data: authData } = await supabase.auth.signUp({ email, password });
       if (signupError) { setError(signupError.message); return; }
 
+      if (!authData.session) {
+        // Confirmação de email ativa — sem token de auth para RLS permitir insert.
+        // Salvar cupom pendente para aplicar em /configurar após login.
+        if (couponCode.trim() && couponStatus?.valid) {
+          localStorage.setItem("fy_pending_coupon", couponCode.trim());
+        }
+        router.push("/entrar?pending=email");
+        return;
+      }
+
       if (authData.user?.id) {
         const restaurantName = email.split("@")[0];
-        const { data: restaurant } = await supabase
+        const { data: restaurant, error: restaurantError } = await supabase
           .from("restaurants")
           .insert({ owner_id: authData.user.id, name: restaurantName, onboarding_completed: false })
           .select("id")
           .single();
 
-        if (couponCode.trim() && couponStatus?.valid && restaurant?.id) {
+        if (restaurantError || !restaurant) {
+          setError("Erro ao criar conta. Tente novamente.");
+          return;
+        }
+
+        if (couponCode.trim() && couponStatus?.valid) {
           await fetch("/api/coupon/apply", {
             method: "POST",
             headers: { "Content-Type": "application/json" },

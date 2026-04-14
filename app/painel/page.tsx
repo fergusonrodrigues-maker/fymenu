@@ -76,7 +76,7 @@ export default async function DashboardPage({ searchParams }: { searchParams?: P
     .eq("owner_id", user.id)
     .single();
 
-  if (!restaurant) redirect("/entrar");
+  if (!restaurant) redirect("/configurar");
   if (!restaurant.onboarding_completed) redirect("/configurar");
 
   const sp = searchParams ? await searchParams : {};
