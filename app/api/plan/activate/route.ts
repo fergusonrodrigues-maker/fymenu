@@ -11,11 +11,29 @@ export async function POST(req: NextRequest) {
 
   const { restaurantId, plan } = await req.json();
 
-  if (!restaurantId || plan !== "menu") {
+  if (!restaurantId || !["menu", "cancel"].includes(plan)) {
     return NextResponse.json({ error: "Dados inválidos" }, { status: 400 });
   }
 
   const admin = createAdminClient();
+
+  // Cancelamento de plano
+  if (plan === "cancel") {
+    const { error } = await admin
+      .from("restaurants")
+      .update({
+        plan: null,
+        status: "canceled",
+        onboarding_completed: true,
+      })
+      .eq("id", restaurantId)
+      .eq("owner_id", user.id);
+
+    if (error) {
+      return NextResponse.json({ error: "Erro ao cancelar plano" }, { status: 500 });
+    }
+    return NextResponse.json({ success: true });
+  }
 
   const { data: restaurant } = await admin
     .from("restaurants")
