@@ -123,8 +123,8 @@ function TR({ children }: { children: React.ReactNode }) {
   );
 }
 
-function TD({ children }: { children: React.ReactNode }) {
-  return <td style={{ padding: "9px 14px", color: "rgba(255,255,255,0.75)", borderBottom: "1px solid rgba(255,255,255,0.05)", verticalAlign: "middle" }}>{children}</td>;
+function TD({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
+  return <td style={{ padding: "9px 14px", color: "rgba(255,255,255,0.75)", borderBottom: "1px solid rgba(255,255,255,0.05)", verticalAlign: "middle", ...style }}>{children}</td>;
 }
 
 function Pagination({ page, total, limit, onChange }: { page: number; total: number; limit: number; onChange: (p: number) => void }) {
