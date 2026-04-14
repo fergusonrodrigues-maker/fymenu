@@ -8,7 +8,7 @@ export async function PATCH(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
-    const { unitId, auto_notifications, notify_order_received, notify_order_preparing, notify_order_ready, notify_order_delivering } = await req.json();
+    const { unitId, auto_notifications, notify_order_received, notify_order_preparing, notify_order_ready, notify_order_delivering, chatbot_enabled } = await req.json();
     const admin = createAdminClient();
 
     const { data: unit } = await admin
@@ -27,6 +27,7 @@ export async function PATCH(req: NextRequest) {
     if (notify_order_preparing !== undefined) updates.notify_order_preparing = notify_order_preparing;
     if (notify_order_ready !== undefined) updates.notify_order_ready = notify_order_ready;
     if (notify_order_delivering !== undefined) updates.notify_order_delivering = notify_order_delivering;
+    if (chatbot_enabled !== undefined) updates.chatbot_enabled = chatbot_enabled;
 
     const { error } = await admin
       .from("whatsapp_instances")

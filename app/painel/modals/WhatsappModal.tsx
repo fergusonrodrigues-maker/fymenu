@@ -17,6 +17,7 @@ interface WaInstance {
   notify_order_preparing: boolean;
   notify_order_ready: boolean;
   notify_order_delivering: boolean;
+  chatbot_enabled: boolean;
 }
 
 interface Template {
@@ -74,6 +75,7 @@ const TRIGGER_LABELS: Record<string, string> = {
   auto_order_ready:      "Auto · Pronto",
   auto_order_delivering: "Auto · Saiu",
   auto_order_delivered:  "Auto · Entregue",
+  auto_chatbot:          "Chatbot IA",
 };
 
 const MSG_STATUS_ICON: Record<string, string> = {
@@ -349,6 +351,17 @@ function SettingsTab({
         <Toggle field="notify_order_ready" label="Pedido pronto" />
         <Toggle field="notify_order_delivering" label="Saiu para entrega" />
       </div>
+
+      {/* Chatbot IA */}
+      <div style={{ fontSize: 11, fontWeight: 700, color: "var(--dash-text-muted)", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 8, marginTop: 24 }}>
+        Chatbot IA
+      </div>
+      <Toggle field="chatbot_enabled" label="Chatbot IA ativo" />
+      {local.chatbot_enabled && (
+        <div style={{ fontSize: 11, color: "var(--dash-text-muted)", lineHeight: 1.6, padding: "8px 0 4px" }}>
+          O assistente virtual responde automaticamente perguntas sobre cardápio, preços e horários usando IA.
+        </div>
+      )}
     </div>
   );
 }
