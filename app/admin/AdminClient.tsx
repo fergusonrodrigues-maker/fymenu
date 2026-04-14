@@ -467,6 +467,18 @@ export default function AdminClient({
   });
   const [addingStaff, setAddingStaff] = useState(false);
   const [staffError, setStaffError] = useState<string | null>(null);
+  // Edit staff modal
+  const [editingStaff, setEditingStaff] = useState<typeof initialSupportStaff[0] | null>(null);
+  const [editStaffName, setEditStaffName] = useState("");
+  const [editStaffEmail, setEditStaffEmail] = useState("");
+  const [editStaffRole, setEditStaffRole] = useState("");
+  const [editStaffPerms, setEditStaffPerms] = useState<Record<string, boolean>>({});
+  const [editStaffPassword, setEditStaffPassword] = useState("");
+  const [editStaffPasswordConfirm, setEditStaffPasswordConfirm] = useState("");
+  const [editStaffShowPw, setEditStaffShowPw] = useState(false);
+  const [editStaffSaving, setEditStaffSaving] = useState(false);
+  const [editStaffError, setEditStaffError] = useState<string | null>(null);
+  const [editStaffSuccess, setEditStaffSuccess] = useState<string | null>(null);
 
   // Photo sessions state
   const [photoTab, setPhotoTab] = useState<"sessoes" | "pacotes" | "cidades">("sessoes");
@@ -688,6 +700,70 @@ export default function AdminClient({
       body: JSON.stringify({ action: "remove", id }),
     });
     if (res.ok) setSupportStaff((prev) => prev.filter((s) => s.id !== id));
+  }
+
+  function openEditStaff(s: typeof initialSupportStaff[0]) {
+    setEditingStaff(s);
+    setEditStaffName(s.name);
+    setEditStaffEmail(s.email);
+    setEditStaffRole(s.role);
+    setEditStaffPerms(s.permissions ?? {});
+    setEditStaffPassword("");
+    setEditStaffPasswordConfirm("");
+    setEditStaffError(null);
+    setEditStaffSuccess(null);
+  }
+
+  async function handleSaveEditStaff() {
+    if (!editingStaff) return;
+    setEditStaffSaving(true);
+    setEditStaffError(null);
+    setEditStaffSuccess(null);
+    try {
+      const res = await fetch("/api/admin/support-staff", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "edit",
+          id: editingStaff.id,
+          name: editStaffName,
+          email: editStaffEmail,
+          role: editStaffRole,
+          permissions: editStaffPerms,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error);
+      setSupportStaff((prev) =>
+        prev.map((s) => s.id === editingStaff.id
+          ? { ...s, name: editStaffName, email: editStaffEmail, role: editStaffRole, permissions: editStaffPerms }
+          : s)
+      );
+      setEditStaffSuccess("Alterações salvas.");
+    } catch (err: any) { setEditStaffError(err.message); }
+    finally { setEditStaffSaving(false); }
+  }
+
+  async function handleSetStaffPassword() {
+    if (!editingStaff) return;
+    if (editStaffPassword.length < 6) { setEditStaffError("Senha deve ter pelo menos 6 caracteres."); return; }
+    if (editStaffPassword !== editStaffPasswordConfirm) { setEditStaffError("As senhas não coincidem."); return; }
+    setEditStaffSaving(true);
+    setEditStaffError(null);
+    setEditStaffSuccess(null);
+    try {
+      const res = await fetch("/api/admin/support-staff", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "set_password", id: editingStaff.id, password: editStaffPassword }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error);
+      setEditStaffPassword("");
+      setEditStaffPasswordConfirm("");
+      setEditStaffSuccess("Senha definida com sucesso.");
+    } catch (err: any) { setEditStaffError(err.message); }
+    finally { setEditStaffSaving(false); }
   }
 
   async function handleChangePassword() {
@@ -2833,6 +2909,10 @@ export default function AdminClient({
                         <span className={`px-2 py-0.5 rounded text-xs font-semibold ${s.is_active ? "bg-green-900/40 text-green-300" : "bg-red-900/40 text-red-300"}`}>
                           {s.is_active ? "Ativo" : "Inativo"}
                         </span>
+                        <button onClick={() => openEditStaff(s)}
+                          className="px-2 py-1 rounded text-xs border border-gray-700 text-gray-400 hover:text-white">
+                          Editar
+                        </button>
                         <button onClick={() => handleToggleStaff(s.id, !s.is_active)}
                           className="px-2 py-1 rounded text-xs border border-gray-700 text-gray-400 hover:text-white">
                           {s.is_active ? "Desativar" : "Ativar"}
@@ -2850,6 +2930,149 @@ export default function AdminClient({
           </div>
         )}
       </div>
+
+      {/* Edit Support Staff Modal */}
+      {editingStaff && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 60,
+          background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)",
+          display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
+        }}>
+          <div style={{
+            width: "100%", maxWidth: 480,
+            background: "rgba(15,15,20,0.95)",
+            backdropFilter: "blur(20px)",
+            borderRadius: 20,
+            border: "1px solid rgba(255,255,255,0.1)",
+            padding: 28,
+            display: "flex", flexDirection: "column", gap: 18,
+            maxHeight: "90vh", overflowY: "auto",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <h3 style={{ color: "#fff", fontWeight: 700, fontSize: 16, margin: 0 }}>Editar Funcionário</h3>
+              <button onClick={() => setEditingStaff(null)} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer", fontSize: 20, padding: 0 }}>×</button>
+            </div>
+
+            {/* Name */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <label style={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}>Nome completo</label>
+              <input
+                value={editStaffName}
+                onChange={(e) => setEditStaffName(e.target.value)}
+                style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.06)", color: "#fff", fontSize: 14, outline: "none" }}
+              />
+            </div>
+
+            {/* Email */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <label style={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}>Email</label>
+              <input
+                type="email"
+                value={editStaffEmail}
+                onChange={(e) => setEditStaffEmail(e.target.value)}
+                style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.06)", color: "#fff", fontSize: 14, outline: "none" }}
+              />
+            </div>
+
+            {/* Role */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <label style={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}>Cargo / Role</label>
+              <select
+                value={editStaffRole}
+                onChange={(e) => setEditStaffRole(e.target.value)}
+                style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.12)", background: "rgba(15,15,20,0.95)", color: "#fff", fontSize: 14, outline: "none" }}
+              >
+                <option value="viewer">Viewer (somente leitura)</option>
+                <option value="support">Suporte</option>
+                <option value="moderator">Moderador</option>
+                <option value="manager">Gerente</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+
+            {/* Permissions */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <label style={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}>Permissões</label>
+              {[
+                { key: "view_orders", label: "Ver pedidos dos clientes" },
+                { key: "view_products", label: "Ver produtos/cardápios" },
+                { key: "view_units", label: "Ver unidades dos clientes" },
+                { key: "view_crm", label: "Ver CRM (dados dos donos)" },
+                { key: "view_financial", label: "Ver financeiro" },
+                { key: "edit_products", label: "Editar produtos dos clientes" },
+                { key: "manage_features", label: "Gerenciar feature flags" },
+              ].map((perm) => (
+                <label key={perm.key} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "rgba(255,255,255,0.7)", cursor: "pointer" }}>
+                  <input
+                    type="checkbox"
+                    checked={editStaffPerms[perm.key] ?? false}
+                    onChange={(e) => setEditStaffPerms((prev) => ({ ...prev, [perm.key]: e.target.checked }))}
+                    style={{ accentColor: "#7c3aed" }}
+                  />
+                  {perm.label}
+                </label>
+              ))}
+            </div>
+
+            {/* Save info button */}
+            <button
+              onClick={handleSaveEditStaff}
+              disabled={editStaffSaving}
+              style={{ padding: "12px", borderRadius: 12, border: "none", cursor: editStaffSaving ? "not-allowed" : "pointer", background: "linear-gradient(135deg, #7c3aed, #4c1d95)", color: "#fff", fontSize: 14, fontWeight: 700, opacity: editStaffSaving ? 0.6 : 1 }}
+            >
+              {editStaffSaving ? "Salvando..." : "Salvar alterações"}
+            </button>
+
+            <hr style={{ border: "none", borderTop: "1px solid rgba(255,255,255,0.08)", margin: "4px 0" }} />
+
+            {/* Password section */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <label style={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}>Definir / Resetar senha</label>
+              <div style={{ position: "relative" }}>
+                <input
+                  type={editStaffShowPw ? "text" : "password"}
+                  value={editStaffPassword}
+                  onChange={(e) => setEditStaffPassword(e.target.value)}
+                  placeholder="Nova senha"
+                  style={{ width: "100%", padding: "10px 44px 10px 14px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.06)", color: "#fff", fontSize: 14, outline: "none", boxSizing: "border-box" }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setEditStaffShowPw((v) => !v)}
+                  style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.4)", fontSize: 15, padding: 0 }}
+                >
+                  {editStaffShowPw ? "🙈" : "👁️"}
+                </button>
+              </div>
+              <input
+                type={editStaffShowPw ? "text" : "password"}
+                value={editStaffPasswordConfirm}
+                onChange={(e) => setEditStaffPasswordConfirm(e.target.value)}
+                placeholder="Confirmar nova senha"
+                style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.06)", color: "#fff", fontSize: 14, outline: "none" }}
+              />
+              <button
+                onClick={handleSetStaffPassword}
+                disabled={editStaffSaving || !editStaffPassword}
+                style={{ padding: "10px", borderRadius: 10, border: "1px solid rgba(124,58,237,0.4)", background: "rgba(124,58,237,0.1)", color: "#c4b5fd", fontSize: 13, fontWeight: 600, cursor: (editStaffSaving || !editStaffPassword) ? "not-allowed" : "pointer", opacity: (editStaffSaving || !editStaffPassword) ? 0.5 : 1 }}
+              >
+                Definir senha
+              </button>
+            </div>
+
+            {editStaffError && (
+              <div style={{ padding: "10px 14px", borderRadius: 10, background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.2)", color: "#f87171", fontSize: 13 }}>
+                {editStaffError}
+              </div>
+            )}
+            {editStaffSuccess && (
+              <div style={{ padding: "10px 14px", borderRadius: 10, background: "rgba(52,211,153,0.08)", border: "1px solid rgba(52,211,153,0.2)", color: "#6ee7b7", fontSize: 13 }}>
+                {editStaffSuccess}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Manage slide-over */}
       {managingRestaurant && (
