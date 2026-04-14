@@ -437,12 +437,25 @@ export async function updateProductVariations(
 ): Promise<void> {
   const supabase = await createClient();
 
+  // Fetch unit_id first — needed for RLS policies on product_variations
+  const { data: prod } = await supabase
+    .from("products")
+    .select("unit_id")
+    .eq("id", productId)
+    .maybeSingle();
+  const unitId = prod?.unit_id ?? null;
+
   // Delete existing variations and reinsert (simpler than upsert with partial ids)
-  await supabase.from("product_variations").delete().eq("product_id", productId);
+  const { error: delError } = await supabase
+    .from("product_variations")
+    .delete()
+    .eq("product_id", productId);
+  if (delError) throw new Error(delError.message);
 
   if (variations.length > 0) {
     const rows = variations.map((v, i) => ({
       product_id: productId,
+      unit_id: unitId,
       name: v.name.trim(),
       price: v.price,
       order_index: i,
@@ -458,14 +471,8 @@ export async function updateProductVariations(
   if (effectivePriceType === "variable") productSync.base_price = 0;
   await supabase.from("products").update(productSync).eq("id", productId);
 
-  // Rebuild menu_cache so the public menu reflects the change immediately
   try {
-    const { data: prod } = await supabase
-      .from("products")
-      .select("unit_id")
-      .eq("id", productId)
-      .maybeSingle();
-    if (prod?.unit_id) await invalidateMenuCache(prod.unit_id);
+    if (unitId) await invalidateMenuCache(unitId);
   } catch {}
 
   revalidatePath("/painel");
