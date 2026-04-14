@@ -36,7 +36,7 @@ function CopyLinkRow({ label, url }: { label: string; url: string }) {
   );
 }
 
-export default function UnidadeModal({ unit, canAddUnit, plan, onClose, onOpenPlans }: { unit: Unit | null; canAddUnit: boolean; plan: string; onClose: () => void; onOpenPlans?: () => void }) {
+export default function UnidadeModal({ unit, canAddUnit, plan, restaurantStatus, onClose, onOpenPlans }: { unit: Unit | null; canAddUnit: boolean; plan: string; restaurantStatus?: string; onClose: () => void; onOpenPlans?: () => void }) {
   const [isPublished, setIsPublished] = useState(unit?.is_published ?? false);
   const [showNewUnit, setShowNewUnit] = useState(false);
 
@@ -64,6 +64,12 @@ export default function UnidadeModal({ unit, canAddUnit, plan, onClose, onOpenPl
   const [forceStatus, setForceStatus] = useState(unit?.force_status || "auto");
 
   if (!unit) return <div style={{ color: "var(--dash-text-muted)", paddingTop: 16 }}>Nenhuma unidade encontrada.</div>;
+
+  const hasActivePlan =
+    !!plan &&
+    restaurantStatus !== "pending" &&
+    restaurantStatus !== "canceled";
+
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const unitId = unit.id;
 
@@ -128,6 +134,8 @@ export default function UnidadeModal({ unit, canAddUnit, plan, onClose, onOpenPl
           currentDomain={unit.custom_domain}
           slug={unit.slug}
           restaurantName={unit.name}
+          hasActivePlan={hasActivePlan}
+          onOpenPlans={onOpenPlans}
         />
 
         <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>

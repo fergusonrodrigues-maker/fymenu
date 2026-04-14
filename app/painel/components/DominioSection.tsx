@@ -14,11 +14,15 @@ export default function DominioSection({
   currentDomain,
   slug,
   restaurantName,
+  hasActivePlan = true,
+  onOpenPlans,
 }: {
   unitId: string;
   currentDomain: string | null;
   slug: string;
   restaurantName: string;
+  hasActivePlan?: boolean;
+  onOpenPlans?: () => void;
 }) {
   const supabase = createClient();
   const activeDomain = currentDomain ?? slug;
@@ -46,6 +50,7 @@ export default function DominioSection({
   };
 
   const handleEdit = () => {
+    if (!hasActivePlan) { onOpenPlans?.(); return; }
     setEditing(true);
     setError("");
     setSaved(false);
@@ -94,18 +99,55 @@ export default function DominioSection({
           )}
         </div>
         {!editing && (
-          <button
-            onClick={handleEdit}
-            style={{
-              padding: "7px 14px", borderRadius: 10, border: "1px solid var(--dash-btn-border)",
-              background: "transparent", color: "var(--dash-text-dim)", fontSize: 12, fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            ✎ Editar
-          </button>
+          hasActivePlan ? (
+            <button
+              onClick={handleEdit}
+              style={{
+                padding: "7px 14px", borderRadius: 10, border: "1px solid var(--dash-btn-border)",
+                background: "transparent", color: "var(--dash-text-dim)", fontSize: 12, fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              ✎ Editar
+            </button>
+          ) : (
+            <button
+              onClick={onOpenPlans}
+              style={{
+                padding: "5px 10px", borderRadius: 8, border: "1px solid rgba(251,191,36,0.2)",
+                background: "rgba(251,191,36,0.06)", color: "#fbbf24",
+                fontSize: 10, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap",
+              }}
+            >
+              🔒 Assinar
+            </button>
+          )
         )}
       </div>
+
+      {/* Aviso sem plano */}
+      {!hasActivePlan && (
+        <div style={{
+          padding: "10px 16px",
+          background: "rgba(251,191,36,0.04)",
+          borderTop: "1px solid rgba(251,191,36,0.08)",
+          display: "flex", alignItems: "center", gap: 8,
+        }}>
+          <span style={{ fontSize: 13 }}>⚠️</span>
+          <span style={{ fontSize: 11, color: "#fbbf24", flex: 1 }}>
+            Assine um plano pra personalizar e publicar seu cardápio
+          </span>
+          {onOpenPlans && (
+            <button onClick={onOpenPlans} style={{
+              padding: "4px 10px", borderRadius: 6, border: "none", cursor: "pointer",
+              background: "rgba(251,191,36,0.12)", color: "#fbbf24",
+              fontSize: 10, fontWeight: 700, flexShrink: 0,
+            }}>
+              Ver planos
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Edit form */}
       {editing && (

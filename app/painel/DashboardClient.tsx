@@ -1509,7 +1509,7 @@ export default function DashboardClient({
         <FinanceiroModal unit={unit} analytics={analytics} reportData={reportData} restaurant={restaurantState} onOpenPlano={() => open("plano")} />
       </Modal>
       <Modal open={modal === "unidade"} onClose={close} title="Unidade">
-        <UnidadeModal unit={unit} canAddUnit={canAddUnit} plan={restaurantState.plan} onClose={close} onOpenPlans={() => open("plano")} />
+        <UnidadeModal unit={unit} canAddUnit={canAddUnit} plan={restaurantState.plan} restaurantStatus={restaurantState.status} onClose={close} onOpenPlans={() => open("plano")} />
       </Modal>
       <Modal open={modal === "tv"} onClose={close} title="Modo TV">
         <TVModal unit={unit} tvCount={tvCount} />
