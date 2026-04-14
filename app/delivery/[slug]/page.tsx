@@ -1,7 +1,6 @@
-// FILE: /app/u/[slug]/page.tsx
-
 import { createClient } from "@/lib/supabase/server";
 import { getOrBuildMenuCache } from "@/lib/cache/buildMenuCache";
+import type { MenuCacheData } from "@/lib/cache/buildMenuCache";
 import MenuClient from "./MenuClient";
 import type { Category, Product, ProductVariation, Unit } from "./menuTypes";
 import { normalizePublicSlug, slugify, toNumberOrNull } from "./menuTypes";
@@ -9,6 +8,39 @@ import type { UpsellSuggestion } from "./UpsellModal";
 import type { Metadata } from "next";
 
 export const revalidate = 0;
+
+// ─── Storage-first cache helper ───────────────────────────────────────────────
+// Priority: 1) Supabase Storage CDN  2) menu_cache table  3) rebuild from DB
+// The Storage JSON is served by the Supabase CDN — it stays available even
+// during Next.js deploys / cold starts.
+
+async function fetchMenuCache(slug: string, unitId: string): Promise<MenuCacheData> {
+  // 1) Try the public Storage CDN URL
+  const storageUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/menu-cache/${slug}.json`;
+
+  try {
+    const res = await fetch(storageUrl, {
+      // Cache the CDN response for 30 s within the Next.js data cache.
+      // The file itself is updated on every dashboard save, so stale window ≤ 30 s.
+      next: { revalidate: 30 },
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      // Basic validation: must have categories array
+      if (data && Array.isArray(data.categories)) {
+        return data as MenuCacheData;
+      }
+    }
+  } catch {
+    // Storage unreachable — fall through to DB cache
+  }
+
+  // 2) Fallback to menu_cache table + rebuild
+  return getOrBuildMenuCache(unitId);
+}
+
+// ─── Metadata ─────────────────────────────────────────────────────────────────
 
 export async function generateMetadata({
   params,
@@ -51,6 +83,8 @@ export async function generateMetadata({
   }
 }
 
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
 export default async function Page({
   params,
   searchParams,
@@ -61,16 +95,16 @@ export default async function Page({
   const { slug } = await params;
   const sp = searchParams ? await searchParams : {};
   const tableNumber = sp.mesa ? parseInt(sp.mesa) || null : null;
-  const mode = sp.mode === "mesa"
-    ? "mesa"
-    : sp.mode === "presencial" || sp.mesa
-    ? "presencial"
-    : "delivery";
-  const showWhatsApp = sp.mode === "with-whatsapp";
+  const mode =
+    sp.mode === "mesa"
+      ? "mesa"
+      : sp.mode === "presencial" || sp.mesa
+      ? "presencial"
+      : "delivery";
   const publicSlug = normalizePublicSlug(slug);
   const supabase = await createClient();
 
-  // ─── 1) UNIT ──────────────────────────────────────────────────────────────
+  // ─── 1) UNIT — always from DB (needed for access control) ─────────────────
   const { data: unitData, error: unitErr } = await supabase
     .from("units")
     .select(
@@ -82,7 +116,7 @@ export default async function Page({
   if (unitErr) return <ErrorScreen message={unitErr.message} />;
   if (!unitData) return <NotFoundScreen slug={publicSlug} />;
 
-  // ─── Access control: cardápio só visível se payment_active ou free_access ──
+  // ─── Access control ────────────────────────────────────────────────────────
   if (unitData.payment_active === false && unitData.restaurant_id) {
     const { data: restaurantData } = await supabase
       .from("restaurants")
@@ -116,9 +150,10 @@ export default async function Page({
     force_status: unitData.force_status ?? "auto",
   };
 
-  // ─── 2–4) CATEGORIES + PRODUCTS + VARIATIONS (via cache) ──────────────────
-  const cachedMenu = await getOrBuildMenuCache(unit.id);
+  // ─── 2) MENU DATA — Storage CDN first, table fallback, DB rebuild last ─────
+  const cachedMenu = await fetchMenuCache(unit.slug, unit.id);
 
+  // ─── 3) Map categories ─────────────────────────────────────────────────────
   const categories: Category[] = cachedMenu.categories.map((c, idx) => ({
     id: c.id,
     unit_id: unit.id,
@@ -138,30 +173,34 @@ export default async function Page({
     return <MenuClient unit={unit} categories={[]} products={[]} variations={{}} upsells={{}} />;
   }
 
+  // ─── 4) Map products ───────────────────────────────────────────────────────
   const products: Product[] = cachedMenu.categories.flatMap((c) =>
-    c.products.filter((p) => p.is_active !== false).map((p) => ({
-      id: p.id,
-      category_id: c.id,
-      name: p.name,
-      description: p.description ?? null,
-      price_type: (p.variations.length > 0 ? "variable" : "fixed") as "fixed" | "variable",
-      base_price: toNumberOrNull(p.base_price),
-      thumbnail_url: p.thumbnail_url ?? null,
-      video_url: p.video_url ?? null,
-      is_active: p.is_active,
-      is_age_restricted: p.is_age_restricted ?? false,
-      order_index: null,
-      upsell_mode: p.upsell_mode ?? null,
-      avail_mode: p.avail_mode ?? null,
-    }))
+    c.products
+      .filter((p) => p.is_active !== false)
+      .map((p) => ({
+        id: p.id,
+        category_id: c.id,
+        name: p.name,
+        description: p.description ?? null,
+        price_type: (p.variations.length > 0 ? "variable" : "fixed") as "fixed" | "variable",
+        base_price: toNumberOrNull(p.base_price),
+        thumbnail_url: p.thumbnail_url ?? null,
+        video_url: p.video_url ?? null,
+        is_active: p.is_active,
+        is_age_restricted: p.is_age_restricted ?? false,
+        order_index: null,
+        upsell_mode: p.upsell_mode ?? null,
+        avail_mode: p.avail_mode ?? null,
+      }))
   );
 
-  const productIds = products.map((p) => p.id);
-
-  if (!productIds.length) {
-    return <MenuClient unit={unit} categories={categories} products={[]} variations={{}} upsells={{}} />;
+  if (!products.length) {
+    return (
+      <MenuClient unit={unit} categories={categories} products={[]} variations={{}} upsells={{}} />
+    );
   }
 
+  // ─── 5) Map variations ─────────────────────────────────────────────────────
   const variations: Record<string, ProductVariation[]> = {};
   for (const cat of cachedMenu.categories) {
     for (const product of cat.products) {
@@ -177,65 +216,28 @@ export default async function Page({
     }
   }
 
-  // ─── 5) UPSELLS ───────────────────────────────────────────────────────────
-  // product_upsells: { id, product_id } — o grupo de upsell de um produto
-  // product_upsell_items: { upsell_id, product_id (do item sugerido), position }
-  // Só buscamos upsells se o destino for WhatsApp (único fluxo que usa upsell completo)
+  // ─── 6) Upsells — read from cache (no extra DB round-trip) ────────────────
+  // The cache already has resolved upsell suggestions (name + price + image).
+  // We only populate them when the unit has a WhatsApp number (the only flow
+  // that shows the upsell modal).
   const upsells: Record<string, UpsellSuggestion[]> = {};
 
   if (unit.whatsapp) {
-    const { data: upsellGroups } = await supabase
-      .from("product_upsells")
-      .select("id, product_id")
-      .in("product_id", productIds);
-
-    const upsellGroupIds = (upsellGroups ?? []).map((u: any) => u.id);
-
-    if (upsellGroupIds.length > 0) {
-      const { data: upsellItems } = await supabase
-        .from("product_upsell_items")
-        .select("upsell_id, product_id, position")
-        .in("upsell_id", upsellGroupIds)
-        .order("position", { ascending: true });
-
-      // Mapa upsell_id → product_id do grupo
-      const upsellGroupMap = new Map<string, string>(
-        (upsellGroups ?? []).map((u: any) => [u.id, u.product_id])
-      );
-
-      // Mapa product_id → produto (para pegar nome e preço do item sugerido)
-      const productMap = new Map<string, Product>(products.map((p) => [p.id, p]));
-
-      for (const item of upsellItems ?? []) {
-        const ownerProductId = upsellGroupMap.get(item.upsell_id);
-        if (!ownerProductId) continue;
-
-        const suggestedProduct = productMap.get(item.product_id);
-        if (!suggestedProduct) continue;
-
-        if (!upsells[ownerProductId]) upsells[ownerProductId] = [];
-
-        // Evita duplicata
-        if (upsells[ownerProductId].some((u) => u.id === suggestedProduct.id)) continue;
-
-        // Preço do item sugerido: base_price ou menor variação
-        const itemVariations = variations[suggestedProduct.id] ?? [];
-        const suggestedPrice =
-          suggestedProduct.price_type === "variable" && itemVariations.length > 0
-            ? Math.min(...itemVariations.map((v) => v.price))
-            : (suggestedProduct.base_price ?? 0);
-
-        upsells[ownerProductId].push({
-          id: suggestedProduct.id,
-          name: suggestedProduct.name,
-          price: suggestedPrice,
-          image_path: suggestedProduct.thumbnail_url ?? undefined,
-        });
+    for (const cat of cachedMenu.categories) {
+      for (const product of cat.products) {
+        if (product.upsells && product.upsells.length > 0) {
+          upsells[product.id] = product.upsells.map((u) => ({
+            id: u.id,
+            name: u.name,
+            price: u.price,
+            image_path: u.image_path,
+          }));
+        }
       }
     }
   }
 
-  // ─── 6) RENDER ────────────────────────────────────────────────────────────
+  // ─── 7) Render ─────────────────────────────────────────────────────────────
   return (
     <MenuClient
       unit={unit}
@@ -249,7 +251,7 @@ export default async function Page({
   );
 }
 
-// ─── Telas de erro/404 ────────────────────────────────────────────────────────
+// ─── Error screens ────────────────────────────────────────────────────────────
 
 function ErrorScreen({ message }: { message: string }) {
   return (

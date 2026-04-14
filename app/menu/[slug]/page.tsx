@@ -4,11 +4,25 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { getOrBuildMenuCache } from "@/lib/cache/buildMenuCache";
+import type { MenuCacheData } from "@/lib/cache/buildMenuCache";
 import MenuClient from "@/app/delivery/[slug]/MenuClient";
 import type { Category, Product, ProductVariation, Unit } from "@/app/delivery/[slug]/menuTypes";
 import { normalizePublicSlug, slugify, toNumberOrNull } from "@/app/delivery/[slug]/menuTypes";
 
 export const revalidate = 0;
+
+// ─── Storage-first cache helper (same logic as /delivery/[slug]) ─────────────
+async function fetchMenuCache(slug: string, unitId: string): Promise<MenuCacheData> {
+  const storageUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/menu-cache/${slug}.json`;
+  try {
+    const res = await fetch(storageUrl, { next: { revalidate: 30 } });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && Array.isArray(data.categories)) return data as MenuCacheData;
+    }
+  } catch {}
+  return getOrBuildMenuCache(unitId);
+}
 
 export default async function MenuPresencialPage({
   params,
@@ -62,8 +76,8 @@ export default async function MenuPresencialPage({
     force_status: unitData.force_status ?? "auto",
   };
 
-  // ─── 2–4) CATEGORIES + PRODUCTS + VARIATIONS (via cache) ──────────────────
-  const cachedMenu = await getOrBuildMenuCache(unit.id);
+  // ─── 2) MENU DATA — Storage CDN first, table fallback, DB rebuild last ─────
+  const cachedMenu = await fetchMenuCache(unit.slug, unit.id);
 
   const categories: Category[] = cachedMenu.categories.map((c, idx) => ({
     id: c.id,

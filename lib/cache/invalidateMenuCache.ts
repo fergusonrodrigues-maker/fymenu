@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { buildMenuCache } from "./buildMenuCache";
+import { buildMenuCache, uploadMenuCacheToStorage } from "./buildMenuCache";
 
 export async function invalidateMenuCache(unitId: string) {
   const supabase = await createClient();
@@ -23,17 +23,16 @@ export async function invalidateMenuCache(unitId: string) {
     { onConflict: "unit_id" }
   );
 
-  const { data: unit } = await supabase
-    .from("units")
-    .select("slug")
-    .eq("id", unitId)
-    .single();
+  // Also write to Supabase Storage so the CDN JSON is always fresh.
+  // Wrapped in try/catch — a Storage failure must never block a client save.
+  try {
+    await uploadMenuCacheToStorage(menu_json.unit.slug, menu_json);
+  } catch {}
 
-  if (unit?.slug) {
-    revalidatePath(`/delivery/${unit.slug}`);
-    revalidatePath(`/menu/${unit.slug}`);
-    revalidatePath(`/tv/${unit.slug}`);
-  }
+  const slug = menu_json.unit.slug;
+  revalidatePath(`/delivery/${slug}`);
+  revalidatePath(`/menu/${slug}`);
+  revalidatePath(`/tv/${slug}`);
 
   return { success: true };
 }
