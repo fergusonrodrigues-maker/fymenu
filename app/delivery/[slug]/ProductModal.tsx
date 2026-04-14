@@ -13,7 +13,7 @@ interface ProductModalProps {
   onClose: () => void;
   onOrder: (payload: OrderPayload) => void;
   allProducts?: Product[];
-  mode?: "delivery" | "presencial";
+  mode?: "delivery" | "presencial" | "mesa";
   unitId?: string;
 }
 
@@ -541,7 +541,7 @@ export default function ProductModal({
             </div>
           )}
 
-          {(mode === "delivery" || mode === "presencial") && (
+          {mode !== "mesa" && (
             <button
               onClick={handleOrder}
               disabled={!canOrder}

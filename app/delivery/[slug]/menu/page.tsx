@@ -64,7 +64,7 @@ export default async function MenuPresencialPage({
   });
 
   if (!categories.length) {
-    return <MenuClient unit={unit} categories={[]} products={[]} variations={{}} upsells={{}} mode="presencial" />;
+    return <MenuClient unit={unit} categories={[]} products={[]} variations={{}} upsells={{}} mode="mesa" />;
   }
 
   const validCategoryIds = new Set(categories.map((c) => c.id));
@@ -96,7 +96,7 @@ export default async function MenuPresencialPage({
   const productIds = products.map((p) => p.id);
 
   if (!productIds.length) {
-    return <MenuClient unit={unit} categories={categories} products={[]} variations={{}} upsells={{}} mode="presencial" />;
+    return <MenuClient unit={unit} categories={categories} products={[]} variations={{}} upsells={{}} mode="mesa" />;
   }
 
   const { data: variationsData } = await supabase
@@ -125,7 +125,7 @@ export default async function MenuPresencialPage({
       products={products}
       variations={variations}
       upsells={{}}
-      mode="presencial"
+      mode="mesa"
     />
   );
 }

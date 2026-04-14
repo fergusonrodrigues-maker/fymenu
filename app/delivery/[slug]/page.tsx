@@ -61,7 +61,11 @@ export default async function Page({
   const { slug } = await params;
   const sp = searchParams ? await searchParams : {};
   const tableNumber = sp.mesa ? parseInt(sp.mesa) || null : null;
-  const mode = sp.mode === "presencial" || sp.mesa ? "presencial" : "delivery";
+  const mode = sp.mode === "mesa"
+    ? "mesa"
+    : sp.mode === "presencial" || sp.mesa
+    ? "presencial"
+    : "delivery";
   const showWhatsApp = sp.mode === "with-whatsapp";
   const publicSlug = normalizePublicSlug(slug);
   const supabase = await createClient();

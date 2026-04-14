@@ -18,7 +18,7 @@ interface MenuClientProps {
   products: Product[];
   variations: Record<string, ProductVariation[]>;
   upsells: Record<string, UpsellSuggestion[]>;
-  mode?: "delivery" | "presencial";
+  mode?: "delivery" | "presencial" | "mesa";
   initialTable?: number | null;
 }
 
@@ -330,13 +330,13 @@ export default function MenuClient({
   }
 
   function isCatVisibleForMode(cat: Category) {
-    if (mode === "presencial" && cat.availability === "delivery") return false;
+    if ((mode === "presencial" || mode === "mesa") && cat.availability === "delivery") return false;
     if (mode === "delivery" && cat.availability === "mesa") return false;
     return true;
   }
 
   function isProdVisibleForMode(p: Product) {
-    if (mode === "presencial" && p.avail_mode === "delivery") return false;
+    if ((mode === "presencial" || mode === "mesa") && p.avail_mode === "delivery") return false;
     if (mode === "delivery" && p.avail_mode === "mesa") return false;
     return true;
   }
@@ -1205,7 +1205,7 @@ export default function MenuClient({
       </div>
 
       {/* Toast — item adicionado ao carrinho */}
-      {addedToast && (
+      {addedToast && mode !== "mesa" && (
         <div style={{
           position: "fixed", top: 20, left: "50%",
           transform: "translateX(-50%)",
