@@ -223,8 +223,8 @@ function PlanCard({ planKey, plan, cycle, theme }: {
   const dark = theme === "dark";
 
   // Per-plan accent color tokens
-  const rgb = isAccent ? "0,255,174" : isPurple ? "139,92,246" : isGreen ? "0,255,174" : null;
-  const hex = isAccent ? "#00ffae" : isPurple ? "#a78bfa" : isGreen ? "#00ffae" : null;
+  const rgb = isAccent ? "0,255,174" : isPurple ? "139,92,246" : isGreen ? "212,175,55" : null;
+  const hex = isAccent ? "#00ffae" : isPurple ? "#a78bfa" : isGreen ? "#d4af37" : null;
   const hasAccent = isAccent || isPurple || isGreen;
 
   const shadowBase = hasAccent
@@ -265,7 +265,7 @@ function PlanCard({ planKey, plan, cycle, theme }: {
       onMouseUp={() => setPressed(false)}
       style={{
         borderRadius: 24, padding: 28,
-        background: isAccent ? "var(--lp-highlight-bg)" : "var(--lp-card-bg)",
+        background: isAccent ? "var(--lp-highlight-bg)" : isGreen ? "rgba(255,255,255,0.04)" : "var(--lp-card-bg)",
         backdropFilter: "blur(80px)", WebkitBackdropFilter: "blur(80px)",
         position: "relative", overflow: "hidden",
         transform: pressed
@@ -277,7 +277,7 @@ function PlanCard({ planKey, plan, cycle, theme }: {
         boxShadow: isGreen
           ? (hovered ? shadowHover + ", 0 0 40px rgba(212,175,55,0.08)" : shadowBase + ", 0 0 40px rgba(212,175,55,0.04)")
           : (hovered ? shadowHover : shadowBase),
-        border: isGreen ? "1px solid rgba(212,175,55,0.15)" : undefined,
+        border: isGreen ? "3px solid rgba(212,175,55,0.3)" : undefined,
         transition: "all 0.5s cubic-bezier(0.16, 1, 0.3, 1)",
         cursor: "pointer",
       }}
@@ -291,19 +291,19 @@ function PlanCard({ planKey, plan, cycle, theme }: {
           }
         `}</style>
         <div style={{
-          position: "absolute", inset: -1, borderRadius: "inherit",
+          position: "absolute", inset: -3, borderRadius: "inherit",
           overflow: "hidden", pointerEvents: "none", zIndex: 0,
         }}>
           <div style={{
             position: "absolute",
             width: "200%", height: "200%",
             top: "-50%", left: "-50%",
-            background: "conic-gradient(from 0deg, transparent 0%, transparent 38%, rgba(180,140,20,0.25) 44%, rgba(212,175,55,0.5) 50%, rgba(255,215,0,0.7) 51%, rgba(212,175,55,0.5) 56%, rgba(180,140,20,0.25) 62%, transparent 68%, transparent 100%)",
+            background: "conic-gradient(from 0deg, transparent 0%, transparent 35%, rgba(180,140,20,0.25) 42%, rgba(212,175,55,0.5) 50%, rgba(255,215,0,0.7) 51%, rgba(212,175,55,0.5) 58%, rgba(180,140,20,0.25) 65%, transparent 70%, transparent 100%)",
             animation: "goldBorderSpin 3.5s linear infinite",
           }} />
           <div style={{
-            position: "absolute", inset: 1, borderRadius: 23,
-            background: dark ? "rgba(10,10,10,0.96)" : "rgba(250,250,250,0.96)",
+            position: "absolute", inset: 3, borderRadius: 21,
+            background: dark ? "rgba(10,10,10,1)" : "rgba(245,245,245,1)",
           }} />
         </div>
       </>)}
@@ -369,12 +369,12 @@ function PlanCard({ planKey, plan, cycle, theme }: {
 
         <div style={{ textAlign: "center", marginBottom: 20 }}>
           <div style={{ fontSize: 28, marginBottom: 4 }}>{plan.icon}</div>
-          <div style={{ fontSize: 20, fontWeight: 900, color: "var(--lp-price-color)" }}>{plan.name}</div>
+          <div style={{ fontSize: 20, fontWeight: 900, color: isGreen ? "#d4af37" : "var(--lp-price-color)" }}>{plan.name}</div>
           <div style={{ fontSize: 12, color: "var(--lp-text-secondary)", marginTop: 2 }}>{plan.units}</div>
         </div>
 
         <div style={{ textAlign: "center", marginBottom: 20 }}>
-          <div style={{ fontSize: 36, fontWeight: 900, color: hex ?? "var(--lp-price-color)" }}>
+          <div style={{ fontSize: 36, fontWeight: 900, color: isGreen ? "var(--lp-price-color)" : hex ?? "var(--lp-price-color)" }}>
             R${plan.prices[cycle]}
             <span style={{ fontSize: 14, fontWeight: 400, color: "var(--lp-text-secondary)" }}>/mês</span>
           </div>
@@ -405,7 +405,7 @@ function PlanCard({ planKey, plan, cycle, theme }: {
                   : "var(--lp-btn-bg)",
             color: isAccent ? "#000" : hex ?? "var(--lp-btn-color)",
             fontWeight: 800, fontSize: 15, textDecoration: "none",
-            border: (isPurple || isGreen) ? `1px solid rgba(${rgb},0.3)` : "none",
+            border: isGreen ? `2px solid rgba(${rgb},0.4)` : isPurple ? `1px solid rgba(${rgb},0.3)` : "none",
             boxShadow: hovered ? btnShadowHover : btnShadowBase,
             transform: hovered ? "scale(1.02)" : "scale(1)",
             transition: "all 0.4s ease",
