@@ -6,7 +6,7 @@ import { asaasRequest, AsaasError } from "@/lib/asaas";
 // ── [DEBUG] log Asaas config on module load ──────────────────────────────────
 const _asaasBase = process.env.ASAAS_SANDBOX === "true"
   ? "https://sandbox.asaas.com/api/v3"
-  : "https://api.asaas.com/api/v3";
+  : "https://api.asaas.com/v3";
 const _keyPrefix = process.env.ASAAS_API_KEY?.substring(0, 10) ?? "MISSING";
 console.log(`[billing/subscribe] ASAAS_BASE=${_asaasBase} ASAAS_KEY_PREFIX=${_keyPrefix} SANDBOX=${process.env.ASAAS_SANDBOX}`);
 
