@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import FyLoader from "@/components/FyLoader";
@@ -9,6 +9,7 @@ type OrderItem = { qty: number; code_name?: string; unit_price: number; total: n
 
 type DriverOrder = {
   id: string;
+  unit_id: string;
   table_number: number | null;
   items: OrderItem[];
   total: number;
@@ -41,6 +42,297 @@ function formatPrice(cents: number) {
   return `R$ ${(cents / 100).toFixed(2).replace(".", ",")}`;
 }
 
+function generateTrackingCode(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "";
+  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
+}
+
+// ── GPS Tracker component ─────────────────────────────────────────────────────
+
+type TrackingRecord = {
+  id: string;
+  tracking_code: string;
+  tracking_status: string;
+};
+
+function GPSTracker({
+  orderId,
+  unitId,
+  driverName,
+}: {
+  orderId: string;
+  unitId: string;
+  driverName: string;
+}) {
+  const supabase = createClient();
+  const [tracking, setTracking] = useState<TrackingRecord | null>(null);
+  const [active, setActive] = useState(false);
+  const [position, setPosition] = useState<{ lat: number; lng: number } | null>(null);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
+  const watchIdRef = useRef<number | null>(null);
+
+  // Load or create tracking record
+  useEffect(() => {
+    async function loadTracking() {
+      const { data } = await supabase
+        .from("delivery_tracking")
+        .select("id, tracking_code, tracking_status")
+        .eq("order_intent_id", orderId)
+        .eq("tracking_status", "active")
+        .maybeSingle();
+
+      if (data) {
+        setTracking(data);
+        setLoading(false);
+        return;
+      }
+
+      // No active record — create one
+      const code = generateTrackingCode();
+      const { data: created } = await supabase
+        .from("delivery_tracking")
+        .insert({
+          order_intent_id: orderId,
+          unit_id: unitId,
+          driver_name: driverName || "Entregador",
+          tracking_status: "active",
+          tracking_code: code,
+          started_at: new Date().toISOString(),
+        })
+        .select("id, tracking_code, tracking_status")
+        .single();
+
+      if (created) setTracking(created);
+      setLoading(false);
+    }
+
+    loadTracking();
+
+    return () => {
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+      }
+    };
+  }, [orderId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function startTracking() {
+    if (!navigator.geolocation) {
+      setError("GPS não disponível neste dispositivo");
+      return;
+    }
+    if (!tracking) return;
+
+    setActive(true);
+    setError("");
+
+    watchIdRef.current = navigator.geolocation.watchPosition(
+      async (pos) => {
+        const { latitude, longitude, speed, heading } = pos.coords;
+        setPosition({ lat: latitude, lng: longitude });
+
+        await supabase
+          .from("delivery_tracking")
+          .update({
+            lat: latitude,
+            lng: longitude,
+            speed: speed ?? 0,
+            heading: heading ?? 0,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", tracking.id);
+      },
+      (err) => {
+        console.error("GPS error:", err);
+        if (err.code === 1) {
+          setError("Permissão de localização negada. Ative nas configurações do navegador.");
+        } else {
+          setError("Erro ao obter localização");
+        }
+        setActive(false);
+      },
+      { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
+    );
+  }
+
+  async function stopTracking() {
+    if (watchIdRef.current !== null) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+      watchIdRef.current = null;
+    }
+    setActive(false);
+
+    if (tracking) {
+      await supabase
+        .from("delivery_tracking")
+        .update({
+          tracking_status: "completed",
+          completed_at: new Date().toISOString(),
+        })
+        .eq("id", tracking.id);
+    }
+  }
+
+  function copyTrackingLink() {
+    if (!tracking) return;
+    const url = `${window.location.origin}/rastreio/${tracking.tracking_code}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  if (loading) return null;
+
+  const trackingUrl = tracking
+    ? `${typeof window !== "undefined" ? window.location.origin : "https://fymenu.com"}/rastreio/${tracking.tracking_code}`
+    : null;
+
+  return (
+    <div
+      style={{
+        padding: 16,
+        borderRadius: 16,
+        background: "rgba(255,255,255,0.02)",
+        border: "1px solid rgba(255,255,255,0.06)",
+      }}
+    >
+      <div
+        style={{ fontSize: 13, fontWeight: 700, color: "#fff", marginBottom: 12 }}
+      >
+        🛵 Rastreio em tempo real
+      </div>
+
+      {error && (
+        <div
+          style={{
+            padding: "10px 14px",
+            borderRadius: 10,
+            background: "rgba(248,113,113,0.08)",
+            color: "#f87171",
+            fontSize: 12,
+            marginBottom: 12,
+          }}
+        >
+          {error}
+        </div>
+      )}
+
+      {/* Tracking link */}
+      {trackingUrl && (
+        <button
+          onClick={copyTrackingLink}
+          style={{
+            width: "100%",
+            padding: "10px 14px",
+            borderRadius: 10,
+            border: "1px solid rgba(255,255,255,0.06)",
+            background: copied ? "rgba(0,255,174,0.06)" : "rgba(255,255,255,0.02)",
+            color: copied ? "#00ffae" : "rgba(255,255,255,0.4)",
+            fontSize: 11,
+            cursor: "pointer",
+            textAlign: "left",
+            marginBottom: 12,
+            fontFamily: "monospace",
+            wordBreak: "break-all",
+          }}
+        >
+          {copied ? "✓ Link copiado!" : `📋 ${trackingUrl}`}
+        </button>
+      )}
+
+      {!active ? (
+        <button
+          onClick={startTracking}
+          style={{
+            width: "100%",
+            padding: 14,
+            borderRadius: 12,
+            border: "none",
+            cursor: "pointer",
+            background: "rgba(0,255,174,0.08)",
+            color: "#00ffae",
+            fontSize: 14,
+            fontWeight: 800,
+          }}
+        >
+          📍 Iniciar compartilhamento de localização
+        </button>
+      ) : (
+        <div>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "10px 14px",
+              borderRadius: 10,
+              marginBottom: 12,
+              background: "rgba(0,255,174,0.06)",
+              border: "1px solid rgba(0,255,174,0.1)",
+            }}
+          >
+            <div
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: "50%",
+                background: "#00ffae",
+                animation: "pulse 1.5s ease infinite",
+                boxShadow: "0 0 8px rgba(0,255,174,0.5)",
+                flexShrink: 0,
+              }}
+            />
+            <span style={{ fontSize: 12, color: "#00ffae", fontWeight: 600 }}>
+              Compartilhando localização...
+            </span>
+          </div>
+
+          {position && (
+            <div
+              style={{
+                fontSize: 10,
+                color: "rgba(255,255,255,0.2)",
+                marginBottom: 12,
+                fontFamily: "monospace",
+              }}
+            >
+              {position.lat.toFixed(5)}, {position.lng.toFixed(5)}
+            </div>
+          )}
+
+          <button
+            onClick={stopTracking}
+            style={{
+              width: "100%",
+              padding: 12,
+              borderRadius: 12,
+              border: "1px solid rgba(248,113,113,0.2)",
+              cursor: "pointer",
+              background: "rgba(248,113,113,0.06)",
+              color: "#f87171",
+              fontSize: 13,
+              fontWeight: 700,
+            }}
+          >
+            ⏹ Parar rastreio (entrega concluída)
+          </button>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.4; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
 // ── Order-detail view (UUID) ──────────────────────────────────────────────────
 
 function OrderDetailView({ orderId }: { orderId: string }) {
@@ -48,12 +340,17 @@ function OrderDetailView({ orderId }: { orderId: string }) {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [driverName, setDriverName] = useState("Entregador");
   const supabase = createClient();
+
+  useEffect(() => {
+    setDriverName(localStorage.getItem("fy_employee_name") ?? "Entregador");
+  }, []);
 
   useEffect(() => {
     supabase
       .from("order_intents")
-      .select("id, table_number, items, total, notes, delivery_status, delivery_picked_at, delivery_completed_at, created_at, customer_name, customer_address")
+      .select("id, unit_id, table_number, items, total, notes, delivery_status, delivery_picked_at, delivery_completed_at, created_at, customer_name, customer_address")
       .eq("id", orderId)
       .single()
       .then(({ data, error: err }) => {
@@ -176,6 +473,15 @@ function OrderDetailView({ orderId }: { orderId: string }) {
               </button>
             )}
 
+            {/* GPS Tracker — show when in transit */}
+            {(current === "in_transit" || current === "picked_up") && order.unit_id && (
+              <GPSTracker
+                orderId={orderId}
+                unitId={order.unit_id}
+                driverName={driverName}
+              />
+            )}
+
             {current === "delivered" && (
               <div style={{ textAlign: "center", padding: 12, color: "#00ffae", fontSize: 14, fontWeight: 700 }}>🎉 Entrega concluída! Obrigado.</div>
             )}
@@ -276,12 +582,20 @@ function SlugPortalView({ slug }: { slug: string }) {
                   {(order.items as any[]).length} item{(order.items as any[]).length !== 1 ? "s" : ""}
                   {order.notes ? ` · ${order.notes}` : ""}
                 </div>
-                <button
-                  onClick={() => markDelivered(order.id)}
-                  style={{ width: "100%", padding: 12, borderRadius: 12, border: "none", cursor: "pointer", background: "rgba(251,146,60,0.1)", color: "#fb923c", fontSize: 13, fontWeight: 700, boxShadow: "0 1px 0 rgba(251,146,60,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}
-                >
-                  ✅ Marcar como entregue
-                </button>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button
+                    onClick={() => router.push(`/entrega/${order.id}`)}
+                    style={{ flex: 1, padding: 12, borderRadius: 12, border: "1px solid rgba(0,255,174,0.15)", cursor: "pointer", background: "rgba(0,255,174,0.06)", color: "#00ffae", fontSize: 12, fontWeight: 700 }}
+                  >
+                    🛵 GPS
+                  </button>
+                  <button
+                    onClick={() => markDelivered(order.id)}
+                    style={{ flex: 2, padding: 12, borderRadius: 12, border: "none", cursor: "pointer", background: "rgba(251,146,60,0.1)", color: "#fb923c", fontSize: 13, fontWeight: 700 }}
+                  >
+                    ✅ Entregue
+                  </button>
+                </div>
               </div>
             ))}
           </div>

@@ -114,6 +114,13 @@ const DELIVERY_STEPS: Array<{
 
 const STEP_IDS = DELIVERY_STEPS.map((s) => s.id);
 
+function generateTrackingCode(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "";
+  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function PedidosModal({ unitId, unit }: { unitId: string; unit?: Unit }) {
@@ -199,12 +206,45 @@ export default function PedidosModal({ unitId, unit }: { unitId: string; unit?: 
       delivery_status: newStatus,
       updated_at: new Date().toISOString(),
     };
-    // Sync waiter_status when order is fully delivered
     if (newStatus === "delivered") updates.waiter_status = "delivered";
 
     await supabase.from("order_intents").update(updates).eq("id", order.id);
 
     const phone = (order.customer_phone || "").replace(/\D/g, "");
+
+    // When status becomes "delivering", create tracking record + send WA with tracking link
+    if (newStatus === "delivering") {
+      const trackingCode = generateTrackingCode();
+      const { data: tracking } = await supabase
+        .from("delivery_tracking")
+        .insert({
+          order_intent_id: order.id,
+          unit_id: unitId,
+          driver_name: "Entregador",
+          tracking_status: "active",
+          tracking_code: trackingCode,
+          started_at: new Date().toISOString(),
+        })
+        .select("id, tracking_code")
+        .single();
+
+      if (tracking && phone.length >= 10) {
+        const fullPhone = phone.startsWith("55") ? phone : `55${phone}`;
+        const trackingUrl = `${window.location.origin}/rastreio/${tracking.tracking_code}`;
+        const shortId = order.id.slice(-6).toUpperCase();
+        const msg = encodeURIComponent(
+          `🛵 *${unit?.name || "Restaurante"}*\n\n` +
+            `Seu pedido saiu pra entrega!\n\n` +
+            `📍 Acompanhe em tempo real:\n👉 ${trackingUrl}\n\n` +
+            `📋 Pedido: #${shortId}\n` +
+            `💰 Total: R$ ${Number(order.total || 0).toFixed(2).replace(".", ",")}\n\n` +
+            `_Rastreio via FyMenu_`
+        );
+        window.open(`https://wa.me/${fullPhone}?text=${msg}`, "_blank");
+      }
+      return; // Skip generic notification for "delivering"
+    }
+
     if (phone.length >= 10) {
       const step = DELIVERY_STEPS.find((s) => s.id === newStatus);
       if (step) openWaNotification(order, step);
