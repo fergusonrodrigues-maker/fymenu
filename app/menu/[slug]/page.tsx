@@ -1,8 +1,9 @@
 // app/menu/[slug]/page.tsx
-// Cardápio presencial — sem botão PEDIR, sem upsell
-// Accessed via: empresa.fymenu.com/menu (middleware rewrites to /menu/slug)
+// Cardápio presencial — ancora.fymenu.com/menu → middleware → /menu/[slug]
+// Usa o mesmo cache que /delivery/[slug]
 
 import { createClient } from "@/lib/supabase/server";
+import { getOrBuildMenuCache } from "@/lib/cache/buildMenuCache";
 import MenuClient from "@/app/delivery/[slug]/MenuClient";
 import type { Category, Product, ProductVariation, Unit } from "@/app/delivery/[slug]/menuTypes";
 import { normalizePublicSlug, slugify, toNumberOrNull } from "@/app/delivery/[slug]/menuTypes";
@@ -18,14 +19,27 @@ export default async function MenuPresencialPage({
   const publicSlug = normalizePublicSlug(slug);
   const supabase = await createClient();
 
+  // ─── 1) UNIT ──────────────────────────────────────────────────────────────
   const { data: unitData, error: unitErr } = await supabase
     .from("units")
-    .select("id, restaurant_id, name, slug, city, neighborhood, whatsapp, instagram, maps_url, logo_url, cover_url, banner_url, description")
+    .select(
+      "id, restaurant_id, name, slug, city, neighborhood, whatsapp, instagram, maps_url, logo_url, cover_url, banner_url, description, payment_active, facebook_pixel_id, ifood_url, ifood_platform, business_hours, force_status"
+    )
     .eq("slug", publicSlug)
     .maybeSingle();
 
   if (unitErr) return <ErrorScreen message={unitErr.message} />;
   if (!unitData) return <NotFoundScreen slug={publicSlug} />;
+
+  // ─── Access control ────────────────────────────────────────────────────────
+  if (unitData.payment_active === false && unitData.restaurant_id) {
+    const { data: restaurantData } = await supabase
+      .from("restaurants")
+      .select("free_access")
+      .eq("id", unitData.restaurant_id)
+      .single();
+    if (!restaurantData?.free_access) return <InactiveScreen />;
+  }
 
   const unit: Unit = {
     id: unitData.id,
@@ -41,79 +55,70 @@ export default async function MenuPresencialPage({
     cover_url: unitData.cover_url ?? null,
     banner_url: unitData.banner_url ?? null,
     description: unitData.description ?? null,
+    facebook_pixel_id: unitData.facebook_pixel_id ?? null,
+    ifood_url: unitData.ifood_url ?? null,
+    ifood_platform: unitData.ifood_platform ?? null,
+    business_hours: unitData.business_hours ?? null,
+    force_status: unitData.force_status ?? "auto",
   };
 
-  const { data: categoriesData } = await supabase
-    .from("categories")
-    .select("id, unit_id, name, order_index, type")
-    .eq("unit_id", unit.id)
-    .order("order_index", { ascending: true, nullsFirst: false });
+  // ─── 2–4) CATEGORIES + PRODUCTS + VARIATIONS (via cache) ──────────────────
+  const cachedMenu = await getOrBuildMenuCache(unit.id);
 
-  const categories: Category[] = (categoriesData ?? []).map((c: any, idx: number) => {
-    const name = (c?.name ?? "").toString();
-    return {
-      id: c.id,
-      unit_id: c.unit_id,
-      name,
-      order_index: typeof c.order_index === "number" ? c.order_index : idx,
-      is_featured: false,
-      slug: slugify(name || `categoria-${idx + 1}`),
-      type: c.type ?? null,
-    };
-  });
+  const categories: Category[] = cachedMenu.categories.map((c, idx) => ({
+    id: c.id,
+    unit_id: unit.id,
+    name: c.name,
+    order_index: c.position,
+    is_featured: c.is_featured ?? false,
+    slug: slugify(c.name || `categoria-${idx + 1}`),
+    type: null,
+    schedule_enabled: c.schedule_enabled ?? false,
+    available_days: c.available_days ?? [],
+    start_time: c.start_time ?? null,
+    end_time: c.end_time ?? null,
+    availability: c.availability ?? null,
+  }));
 
   if (!categories.length) {
     return <MenuClient unit={unit} categories={[]} products={[]} variations={{}} upsells={{}} mode="presencial" />;
   }
 
-  const validCategoryIds = new Set(categories.map((c) => c.id));
+  const products: Product[] = cachedMenu.categories.flatMap((c) =>
+    c.products.filter((p) => p.is_active !== false).map((p) => ({
+      id: p.id,
+      category_id: c.id,
+      name: p.name,
+      description: p.description ?? null,
+      price_type: (p.variations.length > 0 ? "variable" : "fixed") as "fixed" | "variable",
+      base_price: toNumberOrNull(p.base_price),
+      thumbnail_url: p.thumbnail_url ?? null,
+      video_url: p.video_url ?? null,
+      is_active: p.is_active,
+      is_age_restricted: p.is_age_restricted ?? false,
+      order_index: null,
+      upsell_mode: p.upsell_mode ?? null,
+      avail_mode: p.avail_mode ?? null,
+    }))
+  );
 
-  const { data: productsData, error: prodErr } = await supabase
-    .from("products")
-    .select("id, category_id, name, description, price_type, base_price, thumbnail_url, video_url, is_active, order_index, is_age_restricted")
-    .in("category_id", Array.from(validCategoryIds))
-    .eq("is_active", true)
-    .order("order_index", { ascending: true, nullsFirst: false });
-
-  if (prodErr) return <ErrorScreen message={prodErr.message} />;
-
-  const products: Product[] = (productsData ?? []).map((p: any) => ({
-    id: p.id,
-    category_id: p.category_id,
-    name: (p.name ?? "").toString(),
-    description: p.description ?? null,
-    price_type: p.price_type === "variable" ? "variable" : "fixed",
-    base_price: toNumberOrNull(p.base_price),
-    thumbnail_url: p.thumbnail_url ?? null,
-    video_url: p.video_url ?? null,
-    is_active: p.is_active !== false,
-    order_index: typeof p.order_index === "number" ? p.order_index : null,
-    is_age_restricted: p.is_age_restricted ?? false,
-  }));
-
-  const productIds = products.map((p) => p.id);
-
-  if (!productIds.length) {
+  if (!products.length) {
     return <MenuClient unit={unit} categories={categories} products={[]} variations={{}} upsells={{}} mode="presencial" />;
   }
 
-  const { data: variationsData } = await supabase
-    .from("product_variations")
-    .select("id, product_id, name, price, order_index")
-    .in("product_id", productIds)
-    .eq("is_active", true)
-    .order("order_index", { ascending: true, nullsFirst: false });
-
   const variations: Record<string, ProductVariation[]> = {};
-  for (const v of variationsData ?? []) {
-    if (!variations[v.product_id]) variations[v.product_id] = [];
-    variations[v.product_id].push({
-      id: v.id,
-      product_id: v.product_id,
-      name: (v.name ?? "").toString(),
-      price: toNumberOrNull(v.price) ?? 0,
-      order_index: typeof v.order_index === "number" ? v.order_index : null,
-    });
+  for (const cat of cachedMenu.categories) {
+    for (const product of cat.products) {
+      if (product.variations.length > 0) {
+        variations[product.id] = product.variations.map((v, idx) => ({
+          id: v.id,
+          product_id: product.id,
+          name: v.name,
+          price: v.price,
+          order_index: idx,
+        }));
+      }
+    }
   }
 
   return (
@@ -130,10 +135,10 @@ export default async function MenuPresencialPage({
 
 function ErrorScreen({ message }: { message: string }) {
   return (
-    <div style={{ minHeight: "100vh", background: "#000", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
-      <div>
-        <p style={{ fontSize: 18, fontWeight: 600 }}>Erro ao carregar cardápio</p>
-        <p style={{ marginTop: 8, fontSize: 14, opacity: 0.6 }}>{message}</p>
+    <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
+      <div className="max-w-md w-full">
+        <p className="text-lg font-semibold">Erro ao carregar cardápio</p>
+        <p className="mt-2 text-sm text-white/60">{message}</p>
       </div>
     </div>
   );
@@ -141,10 +146,26 @@ function ErrorScreen({ message }: { message: string }) {
 
 function NotFoundScreen({ slug }: { slug: string }) {
   return (
-    <div style={{ minHeight: "100vh", background: "#000", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
-      <div>
-        <p style={{ fontSize: 18, fontWeight: 600 }}>Cardápio não encontrado</p>
-        <p style={{ marginTop: 8, fontSize: 14, opacity: 0.6 }}>Slug: {slug}</p>
+    <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
+      <div className="max-w-md w-full">
+        <p className="text-lg font-semibold">Cardápio não encontrado</p>
+        <p className="mt-2 text-sm text-white/60">
+          Slug: <span className="text-white">{slug}</span>
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function InactiveScreen() {
+  return (
+    <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
+      <div className="max-w-md w-full text-center">
+        <div style={{ fontSize: 48, marginBottom: 16 }}>🔒</div>
+        <p className="text-lg font-semibold">Cardápio inativo</p>
+        <p className="mt-2 text-sm text-white/60">
+          Este cardápio está inativo. O proprietário precisa ativar um plano.
+        </p>
       </div>
     </div>
   );
