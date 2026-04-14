@@ -984,9 +984,9 @@ export default function LandingPage() {
                 margin: "0 auto 24px",
               }}
             >
-              Seu cardápio.{" "}
+              Primeiro cardápio de vídeo{" "}
               <span className={theme === "dark" ? "gradient-text-dark" : "gradient-text-light"}>
-                Inteligente.
+                para restaurantes
               </span>
             </h1>
 
@@ -999,8 +999,7 @@ export default function LandingPage() {
                 lineHeight: 1.6,
               }}
             >
-              Cardápio digital com vídeo, swipe, analytics e IA.
-              Feito para restaurantes que querem converter mais.
+              Sistema de pedidos com análise completa de dados, parte financeira completa, implementação de IA e infraestrutura interna para sua empresa.
             </p>
 
             <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
