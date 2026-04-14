@@ -151,20 +151,20 @@ function fmtBRL(value: number) {
 }
 
 const PLAN_BADGE: Record<string, string> = {
-  basic: "bg-gray-700 text-gray-300",
-  menu: "bg-gray-700 text-gray-300",
-  menupro: "bg-blue-900/60 text-blue-300 border border-blue-700/50",
-  pro: "bg-blue-900/60 text-blue-300 border border-blue-700/50",
-  business: "bg-purple-900/60 text-purple-300 border border-purple-700/50",
+  basic: "bg-white/10 text-white/70 border border-white/10",
+  menu: "bg-white/10 text-white/70 border border-white/10",
+  menupro: "bg-[#00ffae]/10 text-[#00ffae] border border-[#00ffae]/20",
+  pro: "bg-[#00ffae]/10 text-[#00ffae] border border-[#00ffae]/20",
+  business: "bg-[#d4af37]/10 text-[#d4af37] border border-[#d4af37]/25",
 };
 
 const STATUS_BADGE: Record<string, string> = {
-  active: "bg-green-900/40 text-green-300",
-  trial: "bg-yellow-900/40 text-yellow-300",
-  paused: "bg-orange-900/40 text-orange-300",
-  canceled: "bg-red-900/40 text-red-300",
-  confirmed: "bg-green-900/40 text-green-300",
-  pending: "bg-yellow-900/40 text-yellow-300",
+  active: "bg-[#00ffae]/10 text-[#00ffae] border border-[#00ffae]/20",
+  trial: "bg-amber-500/10 text-amber-400 border border-amber-500/20",
+  paused: "bg-white/8 text-white/50 border border-white/10",
+  canceled: "bg-red-500/10 text-red-400 border border-red-500/20",
+  confirmed: "bg-[#00ffae]/10 text-[#00ffae] border border-[#00ffae]/20",
+  pending: "bg-amber-500/10 text-amber-400 border border-amber-500/20",
 };
 
 // ─── Manage Panel ────────────────────────────────────────────────────────────
@@ -258,12 +258,12 @@ function ManagePanel({
       className="fixed inset-0 z-50 flex justify-end"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="w-full max-w-md bg-gray-950 border-l border-gray-800 h-full overflow-y-auto shadow-2xl flex flex-col">
+      <div className="w-full max-w-md h-full overflow-y-auto shadow-2xl flex flex-col" style={{ background: "rgba(10,10,10,0.97)", borderLeft: "1px solid rgba(0,255,174,0.1)", backdropFilter: "blur(40px)" }}>
         {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between sticky top-0 bg-gray-950 z-10">
+        <div className="px-6 py-4 flex items-center justify-between sticky top-0 z-10" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(10,10,10,0.98)", backdropFilter: "blur(20px)" }}>
           <div>
             <h2 className="font-black text-white text-lg">{restaurant.name}</h2>
-            <p className="text-gray-500 text-xs mt-0.5">{restaurant.id}</p>
+            <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.3)" }}>{restaurant.id}</p>
           </div>
           <button onClick={onClose} style={{
             width: 32, height: 32, borderRadius: 10, border: "none", cursor: "pointer",
@@ -276,7 +276,7 @@ function ManagePanel({
         <div className="p-6 space-y-6 flex-1">
           {/* Feedback msg */}
           {msg && (
-            <div className={`px-4 py-2.5 rounded-xl text-sm font-medium ${msg.ok ? "bg-green-900/40 text-green-300 border border-green-800/50" : "bg-red-900/40 text-red-300 border border-red-800/50"}`}>
+            <div className="px-4 py-2.5 rounded-xl text-sm font-medium" style={msg.ok ? { background: "rgba(0,255,174,0.08)", color: "#00ffae", border: "1px solid rgba(0,255,174,0.2)" } : { background: "rgba(239,68,68,0.1)", color: "#f87171", border: "1px solid rgba(239,68,68,0.2)" }}>
               {msg.text}
             </div>
           )}
@@ -286,7 +286,8 @@ function ManagePanel({
             <select
               value={plan}
               onChange={(e) => setPlan(e.target.value)}
-              className="w-full bg-gray-900 border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-white"
+              className="w-full rounded-xl px-3 py-2.5 text-sm text-white"
+              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}
             >
               <option value="menu">menu</option>
               <option value="menupro">menupro</option>
@@ -304,7 +305,8 @@ function ManagePanel({
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="w-full bg-gray-900 border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-white"
+              className="w-full rounded-xl px-3 py-2.5 text-sm text-white"
+              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}
             >
               <option value="active">active</option>
               <option value="trial">trial</option>
@@ -323,9 +325,10 @@ function ManagePanel({
               <button
                 onClick={() => toggleFreeAccess(!freeAccess)}
                 disabled={saving === "free"}
-                className={`relative w-11 h-6 rounded-full transition-colors ${freeAccess ? "bg-green-600" : "bg-gray-700"}`}
+                className="relative w-11 h-6 rounded-full transition-colors"
+                style={{ background: freeAccess ? "#00ffae" : "rgba(255,255,255,0.12)" }}
               >
-                <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${freeAccess ? "translate-x-5" : "translate-x-0.5"}`} />
+                <span className={`absolute top-0.5 w-5 h-5 rounded-full shadow transition-transform ${freeAccess ? "translate-x-5" : "translate-x-0.5"}`} style={{ background: freeAccess ? "#050505" : "rgba(255,255,255,0.7)" }} />
               </button>
             </label>
             <p className="text-xs text-gray-600 mt-1">Quando ativado, seta status = active e marca free_access = true</p>
@@ -335,7 +338,8 @@ function ManagePanel({
           <Section title="Detalhes">
             <a
               href={`/admin/${restaurant.id}`}
-              className="block w-full text-center py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 border border-gray-700 text-sm font-semibold text-gray-200 transition-colors"
+              className="block w-full text-center py-2.5 rounded-xl text-sm font-semibold transition-colors"
+              style={{ border: "1px solid rgba(0,255,174,0.25)", color: "#00ffae", background: "rgba(0,255,174,0.05)" }}
             >
               Ver página do restaurante →
             </a>
@@ -350,9 +354,10 @@ function ManagePanel({
                     <span className="text-sm text-gray-300 font-mono">{feat}</span>
                     <button
                       onClick={() => toggleFeature(feat, !localFeatures[feat])}
-                      className={`relative w-10 h-5 rounded-full transition-colors ${localFeatures[feat] ? "bg-purple-600" : "bg-gray-700"}`}
+                      className="relative w-10 h-5 rounded-full transition-colors"
+                      style={{ background: localFeatures[feat] ? "#00ffae" : "rgba(255,255,255,0.12)" }}
                     >
-                      <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${localFeatures[feat] ? "translate-x-5" : "translate-x-0.5"}`} />
+                      <span className={`absolute top-0.5 w-4 h-4 rounded-full shadow transition-transform ${localFeatures[feat] ? "translate-x-5" : "translate-x-0.5"}`} style={{ background: localFeatures[feat] ? "#050505" : "rgba(255,255,255,0.7)" }} />
                     </button>
                   </label>
                 ))}
@@ -362,7 +367,7 @@ function ManagePanel({
           )}
 
           {/* Desativar */}
-          <Section title="Zona de Perigo">
+          <Section title="Zona de Perigo" danger>
             {!confirmDeactivate ? (
               <button
                 onClick={() => setConfirmDeactivate(true)}
@@ -397,11 +402,11 @@ function ManagePanel({
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, children, danger }: { title: string; children: React.ReactNode; danger?: boolean }) {
   return (
     <div className="space-y-2">
-      <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">{title}</h3>
-      <div className="bg-gray-900/60 rounded-xl border border-gray-800 p-4 space-y-3">
+      <h3 className="text-xs font-bold uppercase tracking-wider" style={{ color: danger ? "rgba(239,68,68,0.7)" : "rgba(255,255,255,0.3)" }}>{title}</h3>
+      <div className="rounded-xl p-4 space-y-3" style={danger ? { background: "rgba(239,68,68,0.04)", border: "1px solid rgba(239,68,68,0.15)" } : { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
         {children}
       </div>
     </div>
@@ -413,16 +418,17 @@ function ActionBtn({
 }: {
   onClick: () => void; loading: boolean; color: "purple" | "green" | "red"; children: React.ReactNode;
 }) {
-  const colors = {
-    purple: "bg-purple-700 hover:bg-purple-600 text-white",
-    green: "bg-green-700 hover:bg-green-600 text-white",
-    red: "bg-red-700 hover:bg-red-600 text-white",
+  const styles: Record<string, React.CSSProperties> = {
+    purple: { background: "linear-gradient(135deg, #00ffae, #00d9ff)", color: "#050505", fontWeight: 800 },
+    green: { background: "linear-gradient(135deg, #00ffae, #00d9ff)", color: "#050505", fontWeight: 800 },
+    red: { background: "rgba(239,68,68,0.15)", color: "#f87171", border: "1px solid rgba(239,68,68,0.25)" },
   };
   return (
     <button
       onClick={onClick}
       disabled={loading}
-      className={`w-full py-2.5 rounded-xl text-sm font-bold transition-colors disabled:opacity-50 ${colors[color]}`}
+      className="w-full py-2.5 rounded-xl text-sm font-bold transition-colors disabled:opacity-50"
+      style={styles[color]}
     >
       {loading ? "Salvando..." : children}
     </button>
@@ -931,15 +937,15 @@ export default function AdminClient({
   const uniqueStatuses = [...new Set(localRestaurants.map((r) => r.status))];
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
+    <div className="min-h-screen text-white" style={{ background: "#050505" }}>
       {/* Header */}
-      <header className="bg-gray-900 border-b border-gray-800 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
+      <header className="border-b px-6 py-4 flex items-center justify-between sticky top-0 z-10" style={{ background: "rgba(8,8,8,0.95)", borderColor: "rgba(255,255,255,0.06)", backdropFilter: "blur(20px)" }}>
         <div>
           <h1 className="text-2xl font-black tracking-tight">📊 Painel Admin</h1>
-          <p className="text-gray-400 text-sm">Plataforma FyMenu — painel administrativo</p>
+          <p className="text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>Plataforma FyMenu — painel administrativo</p>
         </div>
         <div className="flex items-center gap-3">
-          <span className="px-3 py-1.5 rounded-full bg-purple-900/40 text-purple-300 border border-purple-700/50 text-xs font-bold uppercase tracking-widest">
+          <span className="px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest" style={{ background: "rgba(0,255,174,0.12)", color: "#00ffae", border: "1px solid rgba(0,255,174,0.25)" }}>
             ADMIN
           </span>
           <button
@@ -948,7 +954,7 @@ export default function AdminClient({
               await supabase.auth.signOut();
               window.location.href = "/admin/login";
             }}
-            className="px-3 py-1.5 rounded-lg border border-gray-700 bg-transparent text-gray-500 hover:text-gray-300 hover:border-gray-600 text-xs transition-colors cursor-pointer"
+            className="px-3 py-1.5 rounded-lg text-xs transition-colors cursor-pointer" style={{ border: "1px solid rgba(255,255,255,0.08)", background: "transparent", color: "rgba(255,255,255,0.4)" }}
           >
             Sair
           </button>
@@ -956,16 +962,15 @@ export default function AdminClient({
       </header>
 
       {/* Tabs */}
-      <div className="border-b border-gray-800 bg-gray-900/50 px-6 flex gap-1 sticky top-[73px] z-10">
+      <div className="px-6 flex gap-1 sticky top-[73px] z-10" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(8,8,8,0.8)", backdropFilter: "blur(20px)" }}>
         {TABS.map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`px-4 py-3 text-sm font-semibold border-b-2 transition-colors ${
-              tab === t
-                ? "border-purple-500 text-white"
-                : "border-transparent text-gray-400 hover:text-gray-200"
-            }`}
+            className="px-4 py-3 text-sm font-semibold transition-colors"
+            style={tab === t
+              ? { borderBottom: "2px solid #00ffae", color: "#00ffae", marginBottom: -1 }
+              : { borderBottom: "2px solid transparent", color: "rgba(255,255,255,0.45)", marginBottom: -1 }}
           >
             {t}
           </button>
@@ -977,30 +982,36 @@ export default function AdminClient({
         {tab === "Visão Geral" && (
           <div className="space-y-6">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <StatCard icon="👥" label="Total de Restaurantes" value={stats.totalRestaurants.toLocaleString("pt-BR")} sub="na plataforma" color="text-blue-400" />
-              <StatCard icon="📈" label="Novos (7 dias)" value={stats.activeRestaurants.toLocaleString("pt-BR")} sub="trial ou ativos recentemente" color="text-green-400" />
-              <StatCard icon="📊" label="Total de Pedidos" value={stats.totalOrders.toLocaleString("pt-BR")} sub="todos os confirmados" color="text-yellow-400" />
-              <StatCard icon="💰" label="Receita (30d)" value={fmt(stats.revenue30d)} sub="via PDV registrado" color="text-purple-400" />
+              <StatCard icon="👥" label="Total de Restaurantes" value={stats.totalRestaurants.toLocaleString("pt-BR")} sub="na plataforma" color="text-[#00ffae]" />
+              <StatCard icon="📈" label="Novos (7 dias)" value={stats.activeRestaurants.toLocaleString("pt-BR")} sub="trial ou ativos recentemente" color="text-[#00ffae]" />
+              <StatCard icon="📊" label="Total de Pedidos" value={stats.totalOrders.toLocaleString("pt-BR")} sub="todos os confirmados" color="text-[#00ffae]" />
+              <StatCard icon="💰" label="Receita (30d)" value={fmt(stats.revenue30d)} sub="via PDV registrado" color="text-[#00ffae]" />
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <StatCard icon="🎯" label="Ticket Médio" value={fmt(ticketMedio)} sub="receita / pedidos" color="text-orange-400" />
-              <StatCard icon="📊" label="Taxa de Atividade" value={`${taxaAtividade}%`} sub="novos / total nos últimos 7d" color="text-cyan-400" />
+              <StatCard icon="🎯" label="Ticket Médio" value={fmt(ticketMedio)} sub="receita / pedidos" color="text-[#00ffae]" />
+              <StatCard icon="📊" label="Taxa de Atividade" value={`${taxaAtividade}%`} sub="novos / total nos últimos 7d" color="text-[#00ffae]" />
             </div>
-            <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
-              <h3 className="font-bold text-gray-200 mb-4">Últimos Pagamentos</h3>
+            <div className="rounded-2xl p-6" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(0,255,174,0.1)" }}>
+              <h3 className="font-bold mb-4" style={{ color: "rgba(255,255,255,0.9)" }}>Últimos Pagamentos</h3>
               {payments.length === 0 ? (
-                <p className="text-gray-600 text-sm">Nenhum pagamento registrado ainda.</p>
+                <p className="text-sm" style={{ color: "rgba(255,255,255,0.3)" }}>Nenhum pagamento registrado ainda.</p>
               ) : (
                 <div className="space-y-2">
                   {payments.slice(0, 5).map((p) => (
                     <div key={p.id} className="flex items-center justify-between text-sm">
                       <div className="flex gap-2 items-center">
-                        <span className="text-gray-400">{fmtDate(p.processed_at)}</span>
-                        <span className="text-gray-500">
+                        <span style={{ color: "rgba(255,255,255,0.4)" }}>{fmtDate(p.processed_at)}</span>
+                        <span className="px-2 py-0.5 rounded text-xs font-semibold" style={
+                          p.method === "pix"
+                            ? { background: "rgba(0,255,174,0.1)", color: "#00ffae", border: "1px solid rgba(0,255,174,0.2)" }
+                            : p.method === "card"
+                            ? { background: "rgba(0,217,255,0.1)", color: "#00d9ff", border: "1px solid rgba(0,217,255,0.2)" }
+                            : { background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.5)", border: "1px solid rgba(255,255,255,0.08)" }
+                        }>
                           {p.method === "cash" ? "💵 Dinheiro" : p.method === "card" ? "💳 Cartão" : "📲 PIX"}
                         </span>
                       </div>
-                      <span className="text-green-400 font-semibold">{fmt(p.amount)}</span>
+                      <span className="font-semibold" style={{ color: "#00ffae" }}>{fmt(p.amount)}</span>
                     </div>
                   ))}
                 </div>
@@ -1069,7 +1080,7 @@ export default function AdminClient({
                           <td className="px-6 py-3 font-medium text-white">
                             {r.name}
                             {r.free_access && (
-                              <span className="ml-2 px-1.5 py-0.5 rounded text-xs bg-green-900/40 text-green-400 border border-green-800/50">grátis</span>
+                              <span className="ml-2 px-1.5 py-0.5 rounded text-xs" style={{ background: "rgba(0,255,174,0.08)", color: "#00ffae", border: "1px solid rgba(0,255,174,0.18)" }}>grátis</span>
                             )}
                           </td>
                           <td className="px-6 py-3">
@@ -1086,7 +1097,8 @@ export default function AdminClient({
                           <td className="px-6 py-3">
                             <button
                               onClick={() => setManagingId(r.id)}
-                              className="px-3 py-1.5 rounded-lg bg-purple-900/40 hover:bg-purple-800/50 border border-purple-700/50 text-purple-300 text-xs font-semibold transition-colors"
+                              className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+                              style={{ background: "rgba(0,255,174,0.08)", border: "1px solid rgba(0,255,174,0.2)", color: "#00ffae" }}
                             >
                               Gerenciar
                             </button>
@@ -1170,9 +1182,9 @@ export default function AdminClient({
           const churnRate = ((churned / totalPlans) * 100).toFixed(1);
 
           const planColors: Record<string, string> = {
-            menu: "bg-gray-500",
-            menupro: "bg-blue-500",
-            business: "bg-purple-500",
+            menu: "bg-white/20",
+            menupro: "bg-[#00ffae]/60",
+            business: "bg-[#d4af37]/60",
           };
 
           // PDV stats
@@ -1194,7 +1206,7 @@ export default function AdminClient({
               {/* A. Resumo */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
-                  { icon: "💎", label: "MRR Estimado", value: fmt(mrr), sub: "receita recorrente mensal", color: "text-purple-400" },
+                  { icon: "💎", label: "MRR Estimado", value: fmt(mrr), sub: "receita recorrente mensal", color: "text-[#00ffae]" },
                   { icon: "📦", label: "Receita Clientes 30d", value: fmt(Math.round(revenue30dFin)), sub: "pedidos confirmados", color: "text-green-400" },
                   { icon: "📊", label: "Receita Clientes Total", value: fmt(Math.round(totalClientRevenue)), sub: "todos os pedidos", color: "text-blue-400" },
                   { icon: "💳", label: "Clientes Pagantes", value: String(payingCount), sub: "ativos sem free access", color: "text-yellow-400" },
@@ -1221,7 +1233,7 @@ export default function AdminClient({
                     {monthChartData.map((d, i) => (
                       <div key={i} className="flex-1 flex flex-col items-center">
                         <div
-                          className="w-full bg-purple-500/70 rounded-t"
+                          className="w-full bg-[#00ffae]/50 rounded-t"
                           style={{ height: `${(d.value / maxMonthVal) * 100}%`, minHeight: d.value > 0 ? 2 : 0 }}
                         />
                         <span className="text-gray-600 text-[9px] mt-1 truncate w-full text-center">{d.label}</span>
@@ -1267,7 +1279,7 @@ export default function AdminClient({
                   {projections.map(({ month, mrr: proj }, i) => (
                     <div key={month} className="rounded-2xl border border-dashed border-gray-700 p-4 text-center">
                       <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">{projMonthNames[i]}</p>
-                      <p className="text-xl font-black text-purple-300">{fmt(proj)}</p>
+                      <p className="text-xl font-black text-[#00ffae]">{fmt(proj)}</p>
                       <p className="text-gray-600 text-xs mt-0.5">MRR projetado</p>
                     </div>
                   ))}
@@ -1321,7 +1333,7 @@ export default function AdminClient({
                   <div className="flex gap-2 mt-2 flex-wrap">
                     {pdvCount > 0 && [
                       { label: "📲 PIX", count: pdvPix, color: "bg-blue-900/40 text-blue-300" },
-                      { label: "💳 Cartão", count: pdvCard, color: "bg-purple-900/40 text-purple-300" },
+                      { label: "💳 Cartão", count: pdvCard, color: "bg-[#00d9ff]/10 text-[#00d9ff]" },
                       { label: "💵 Dinheiro", count: pdvCash, color: "bg-green-900/40 text-green-300" },
                     ].filter((m) => m.count > 0).map((m) => (
                       <span key={m.label} className={`px-2 py-0.5 rounded text-xs font-semibold ${m.color}`}>
@@ -1474,7 +1486,7 @@ export default function AdminClient({
                   {planTenureAvg.map(({ plan, avg }) => (
                     <div key={plan} className="bg-gray-800/60 rounded-xl p-4 text-center">
                       <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">{plan}</p>
-                      <p className="text-2xl font-black text-purple-300">{avg}</p>
+                      <p className="text-2xl font-black text-[#00ffae]">{avg}</p>
                       <p className="text-gray-500 text-xs">dias</p>
                     </div>
                   ))}
@@ -1526,7 +1538,7 @@ export default function AdminClient({
                             <span className="text-gray-400 font-medium">{count}</span>
                           </div>
                           <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
-                            <div className="h-full bg-purple-500/70 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                            <div className="h-full bg-[#00ffae]/60 rounded-full transition-all" style={{ width: `${pct}%` }} />
                           </div>
                         </div>
                       );
@@ -1587,7 +1599,7 @@ export default function AdminClient({
                             <span className="text-gray-400 font-medium">{p.count} pedidos</span>
                           </div>
                           <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
-                            <div className="h-full bg-purple-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                            <div className="h-full bg-[#00ffae]/70 rounded-full transition-all" style={{ width: `${pct}%` }} />
                           </div>
                         </div>
                       );
@@ -1643,7 +1655,7 @@ export default function AdminClient({
               {/* Resumo rápido */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
-                  { icon: "👤", label: "Total de Donos", value: String(totalOwners), sub: "com cadastro", color: "text-purple-400" },
+                  { icon: "👤", label: "Total de Donos", value: String(totalOwners), sub: "com cadastro", color: "text-[#00ffae]" },
                   { icon: "📞", label: "Com Telefone", value: String(withPhone), sub: "contato disponível", color: "text-green-400" },
                   { icon: "🏙️", label: "Cidades", value: String(uniqueCities), sub: "cobertura", color: "text-blue-400" },
                   { icon: "💵", label: "Faturamento Total", value: fmt(totalRevenue), sub: "pedidos confirmados", color: "text-yellow-400" },
@@ -1663,7 +1675,7 @@ export default function AdminClient({
                 placeholder="Buscar por nome, telefone ou cidade..."
                 value={crmSearch}
                 onChange={(e) => setCrmSearch(e.target.value)}
-                className="w-full px-4 py-2 rounded-xl bg-gray-800/60 border border-gray-700 text-white text-sm outline-none focus:border-purple-500"
+                className="w-full px-4 py-2 rounded-xl bg-gray-800/60 border border-gray-700 text-white text-sm outline-none focus:border-[#00ffae]/50"
               />
 
               {/* Tabela */}
@@ -1736,7 +1748,7 @@ export default function AdminClient({
                             <span className="text-gray-400 font-medium">{p.count} pedidos</span>
                           </div>
                           <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
-                            <div className="h-full bg-purple-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                            <div className="h-full bg-[#00ffae]/70 rounded-full transition-all" style={{ width: `${pct}%` }} />
                           </div>
                         </div>
                       );
@@ -1834,7 +1846,7 @@ export default function AdminClient({
                     {/* A. Resumo */}
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                       {[
-                        { icon: "🛒", label: "Total de Pedidos", value: String(totalPedidos), sub: "confirmados", color: "text-purple-400" },
+                        { icon: "🛒", label: "Total de Pedidos", value: String(totalPedidos), sub: "confirmados", color: "text-[#00ffae]" },
                         { icon: "💰", label: "Ticket Médio", value: fmt(Math.round(ticketMedioConsumer)), sub: "por pedido", color: "text-yellow-400" },
                         { icon: "🚚", label: "Delivery", value: String(pedidosDelivery), sub: "sem mesa", color: "text-blue-400" },
                         { icon: "🪑", label: "Mesa", value: String(pedidosMesa), sub: "com mesa", color: "text-green-400" },
@@ -1877,7 +1889,7 @@ export default function AdminClient({
                       <div className="space-y-2">
                         {dayNames.map((day, i) => (
                           <div key={day} className="flex items-center gap-3">
-                            <span className={`text-xs w-7 ${i === peakDay ? "text-purple-300 font-bold" : "text-gray-500"}`}>{day}</span>
+                            <span className={`text-xs w-7 ${i === peakDay ? "text-[#00ffae] font-bold" : "text-gray-500"}`}>{day}</span>
                             <div className="flex-1 h-2 bg-gray-800 rounded-full overflow-hidden">
                               <div
                                 className="h-full rounded-full"
@@ -1907,7 +1919,7 @@ export default function AdminClient({
                                 <span className="text-gray-400 font-medium ml-2 shrink-0">{p.count}</span>
                               </div>
                               <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
-                                <div className="h-full bg-purple-500/70 rounded-full" style={{ width: `${(p.count / maxProd) * 100}%` }} />
+                                <div className="h-full bg-[#00ffae]/60 rounded-full" style={{ width: `${(p.count / maxProd) * 100}%` }} />
                               </div>
                             </div>
                           ))}
@@ -1931,7 +1943,7 @@ export default function AdminClient({
                                   <span className="text-gray-400">{count} <span className="text-gray-600">({pct}%)</span></span>
                                 </div>
                                 <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
-                                  <div className="h-full bg-purple-500/60 rounded-full" style={{ width: `${(count / maxPay) * 100}%` }} />
+                                  <div className="h-full bg-[#00ffae]/50 rounded-full" style={{ width: `${(count / maxPay) * 100}%` }} />
                                 </div>
                               </div>
                             );
@@ -1944,7 +1956,7 @@ export default function AdminClient({
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                       {[
                         { icon: "👁️", label: "Visualizações", value: String(menuViews), sub: "menu_view", color: "text-blue-400" },
-                        { icon: "👆", label: "Cliques Produto", value: String(productClicks), sub: "product_click", color: "text-purple-400" },
+                        { icon: "👆", label: "Cliques Produto", value: String(productClicks), sub: "product_click", color: "text-[#00ffae]" },
                         { icon: "💬", label: "Cliques WhatsApp", value: String(waClicks), sub: "whatsapp_click", color: "text-green-400" },
                         { icon: "📈", label: "Taxa Conversão", value: `${convRate}%`, sub: "pedidos / views", color: "text-yellow-400" },
                       ].map(({ icon, label, value, sub, color }) => (
@@ -1997,7 +2009,7 @@ export default function AdminClient({
           <div className="space-y-6">
             {/* Resumo */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <StatCard icon="🤝" label="Parceiros Ativos" value={String(activePartners)} sub="total" color="text-purple-400" />
+              <StatCard icon="🤝" label="Parceiros Ativos" value={String(activePartners)} sub="total" color="text-[#00ffae]" />
               <StatCard icon="🎟️" label="Cupons Ativos" value={String(activeCoupons)} sub="em circulação" color="text-blue-400" />
               <StatCard icon="👥" label="Clientes Indicados" value={String(totalReferrals)} sub="restaurantes" color="text-green-400" />
               <StatCard icon="💰" label="Comissões Pendentes" value={fmtBRL(pendingCommissions)} sub="a pagar" color="text-yellow-400" />
@@ -2009,7 +2021,7 @@ export default function AdminClient({
                 const labels = { parceiros: "Parceiros", cupons: "Cupons", indicacoes: "Indicações", comissoes: "Comissões" };
                 return (
                   <button key={t} onClick={() => setPartnerTab(t)}
-                    className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors ${partnerTab === t ? "border-purple-500 text-white" : "border-transparent text-gray-400 hover:text-gray-200"}`}>
+                    className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors ${partnerTab === t ? "border-[#00ffae] text-[#00ffae]" : "border-transparent text-gray-400 hover:text-gray-200"}`}>
                     {labels[t]}
                   </button>
                 );
@@ -2021,7 +2033,7 @@ export default function AdminClient({
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <h3 className="font-bold text-gray-200">Parceiros</h3>
-                  <button onClick={() => setShowAddPartner(true)} className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold transition-colors">+ Novo Parceiro</button>
+                  <button onClick={() => setShowAddPartner(true)} className="px-3 py-1.5 rounded-lg text-[#050505] text-xs font-semibold transition-colors" style={{ background: "linear-gradient(135deg, #00ffae, #00d9ff)" }}>+ Novo Parceiro</button>
                 </div>
 
                 {showAddPartner && (
@@ -2039,7 +2051,7 @@ export default function AdminClient({
                         <input type="number" min={0} max={100} value={partnerCommission} onChange={(e) => setPartnerCommission(Number(e.target.value))} className="w-20 px-2 py-1.5 rounded-lg bg-gray-900/60 border border-gray-700 text-white text-sm outline-none" />
                       </div>
                       <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
-                        <input type="checkbox" checked={partnerIsPhotographer} onChange={(e) => setPartnerIsPhotographer(e.target.checked)} className="accent-purple-500" />
+                        <input type="checkbox" checked={partnerIsPhotographer} onChange={(e) => setPartnerIsPhotographer(e.target.checked)} className="accent-[#00ffae]" />
                         É fotógrafo
                       </label>
                     </div>
@@ -2047,7 +2059,7 @@ export default function AdminClient({
                     {partnerError && <p className="text-red-400 text-xs">{partnerError}</p>}
                     <div className="flex gap-2">
                       <button onClick={() => { setShowAddPartner(false); setPartnerError(null); }} className="flex-1 py-2 rounded-lg border border-gray-700 text-gray-400 text-sm">Cancelar</button>
-                      <button onClick={handleAddPartner} className="flex-1 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold">Adicionar</button>
+                      <button onClick={handleAddPartner} className="flex-1 py-2 rounded-lg text-[#050505] text-sm font-semibold" style={{ background: "linear-gradient(135deg, #00ffae, #00d9ff)" }}>Adicionar</button>
                     </div>
                   </div>
                 )}
@@ -2084,7 +2096,7 @@ export default function AdminClient({
                                       {canEditCommission && (
                                         <button
                                           onClick={() => { setExpandedPartnerId(expandedPartnerId === p.id ? null : p.id); setEditPartnerCommission(String(p.commission_percent)); }}
-                                          className="text-purple-400 text-xs hover:text-purple-300">
+                                          className="text-[#00ffae]/70 text-xs hover:text-[#00ffae]">
                                           ✎
                                         </button>
                                       )}
@@ -2116,12 +2128,12 @@ export default function AdminClient({
                                               type="number" min={0} max={100} step={0.5}
                                               value={editPartnerCommission}
                                               onChange={(e) => setEditPartnerCommission(e.target.value)}
-                                              className="w-full px-3 py-2 pr-7 rounded-lg bg-gray-900/80 border border-purple-700/50 text-white font-bold text-sm outline-none"
+                                              className="w-full px-3 py-2 pr-7 rounded-lg bg-gray-900/80 text-white font-bold text-sm outline-none" style={{ border: "1px solid rgba(0,255,174,0.25)", background: "rgba(255,255,255,0.05)" }}
                                               onKeyDown={(e) => e.key === "Enter" && handleSavePartnerCommission(p.id)}
                                             />
                                             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">%</span>
                                           </div>
-                                          <button onClick={() => handleSavePartnerCommission(p.id)} className="px-3 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold">Salvar</button>
+                                          <button onClick={() => handleSavePartnerCommission(p.id)} className="px-3 py-2 rounded-lg text-[#050505] text-xs font-semibold" style={{ background: "linear-gradient(135deg, #00ffae, #00d9ff)" }}>Salvar</button>
                                           <button onClick={() => setExpandedPartnerId(null)} className="px-3 py-2 rounded-lg border border-gray-700 text-gray-400 text-xs">Cancelar</button>
                                         </div>
                                         {!canEditCouponCode && (
@@ -2147,7 +2159,7 @@ export default function AdminClient({
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <h3 className="font-bold text-gray-200">Cupons de Indicação</h3>
-                  <button onClick={() => setShowAddCoupon(true)} className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold transition-colors">+ Novo Cupom</button>
+                  <button onClick={() => setShowAddCoupon(true)} className="px-3 py-1.5 rounded-lg text-[#050505] text-xs font-semibold transition-colors" style={{ background: "linear-gradient(135deg, #00ffae, #00d9ff)" }}>+ Novo Cupom</button>
                 </div>
 
                 {showAddCoupon && (
@@ -2186,7 +2198,7 @@ export default function AdminClient({
                     {couponError && <p className="text-red-400 text-xs">{couponError}</p>}
                     <div className="flex gap-2">
                       <button onClick={() => { setShowAddCoupon(false); setCouponError(null); }} className="flex-1 py-2 rounded-lg border border-gray-700 text-gray-400 text-sm">Cancelar</button>
-                      <button onClick={handleAddCoupon} className="flex-1 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold">Criar Cupom</button>
+                      <button onClick={handleAddCoupon} className="flex-1 py-2 rounded-lg text-[#050505] text-sm font-semibold" style={{ background: "linear-gradient(135deg, #00ffae, #00d9ff)" }}>Criar Cupom</button>
                     </div>
                   </div>
                 )}
@@ -2234,7 +2246,7 @@ export default function AdminClient({
                                   {canEditCouponCode && (
                                     <button
                                       onClick={() => { setExpandedCouponId(expandedCouponId === c.id ? null : c.id); setEditCouponCodeValue(c.code); }}
-                                      className="text-purple-400 text-xs hover:text-purple-300">
+                                      className="text-[#00ffae]/70 text-xs hover:text-[#00ffae]">
                                       {expandedCouponId === c.id ? "Fechar" : "Editar"}
                                     </button>
                                   )}
@@ -2251,11 +2263,10 @@ export default function AdminClient({
                                           value={editCouponCodeValue}
                                           onChange={(e) => setEditCouponCodeValue(e.target.value.toUpperCase().replace(/\s/g, ""))}
                                           placeholder="CÓDIGO"
-                                          className="px-3 py-2 rounded-lg bg-gray-900/80 border border-purple-700/50 text-white font-mono font-bold tracking-widest text-sm outline-none flex-1"
-                                          style={{ textTransform: "uppercase", letterSpacing: 3 }}
+                                          className="px-3 py-2 rounded-lg text-white font-mono font-bold tracking-widest text-sm outline-none flex-1" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(0,255,174,0.25)", textTransform: "uppercase", letterSpacing: 3 }}
                                           onKeyDown={(e) => e.key === "Enter" && handleSaveCouponCode(c.id)}
                                         />
-                                        <button onClick={() => handleSaveCouponCode(c.id)} className="px-3 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold">Salvar</button>
+                                        <button onClick={() => handleSaveCouponCode(c.id)} className="px-3 py-2 rounded-lg text-[#050505] text-xs font-semibold" style={{ background: "linear-gradient(135deg, #00ffae, #00d9ff)" }}>Salvar</button>
                                         <button onClick={() => setExpandedCouponId(null)} className="px-3 py-2 rounded-lg border border-gray-700 text-gray-400 text-xs">Cancelar</button>
                                       </div>
                                       {!canEditCommission && (
@@ -2334,7 +2345,7 @@ export default function AdminClient({
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <h3 className="font-bold text-gray-200">Comissões e Pagamentos</h3>
-                  <button onClick={() => setShowAddPayout(true)} className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold transition-colors">+ Registrar Pagamento</button>
+                  <button onClick={() => setShowAddPayout(true)} className="px-3 py-1.5 rounded-lg text-[#050505] text-xs font-semibold transition-colors" style={{ background: "linear-gradient(135deg, #00ffae, #00d9ff)" }}>+ Registrar Pagamento</button>
                 </div>
 
                 {showAddPayout && (
@@ -2362,7 +2373,7 @@ export default function AdminClient({
                     {payoutError && <p className="text-red-400 text-xs">{payoutError}</p>}
                     <div className="flex gap-2">
                       <button onClick={() => { setShowAddPayout(false); setPayoutError(null); }} className="flex-1 py-2 rounded-lg border border-gray-700 text-gray-400 text-sm">Cancelar</button>
-                      <button onClick={handleAddPayout} className="flex-1 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold">Registrar</button>
+                      <button onClick={handleAddPayout} className="flex-1 py-2 rounded-lg text-[#050505] text-sm font-semibold" style={{ background: "linear-gradient(135deg, #00ffae, #00d9ff)" }}>Registrar</button>
                     </div>
                   </div>
                 )}
@@ -2422,7 +2433,7 @@ export default function AdminClient({
           <div className="space-y-6">
             {/* Resumo */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <StatCard icon="📸" label="Sessões Realizadas" value={String(photoSessionsState.filter((s) => s.status === "completed").length)} sub="total" color="text-purple-400" />
+              <StatCard icon="📸" label="Sessões Realizadas" value={String(photoSessionsState.filter((s) => s.status === "completed").length)} sub="total" color="text-[#00ffae]" />
               <StatCard icon="⏳" label="Pendentes" value={String(photoSessionsState.filter((s) => s.status === "pending" || s.status === "confirmed").length)} sub="agendadas" color="text-yellow-400" />
               <StatCard icon="💰" label="Faturamento Fotos" value={fmt(photoSessionsState.filter((s) => s.payment_status === "paid").reduce((acc, x) => acc + x.price_charged, 0))} sub="recebido" color="text-green-400" />
               <StatCard icon="🏙️" label="Cidades Ativas" value={String(photoCitiesState.filter((c) => c.is_active).length)} sub="cobertura" color="text-blue-400" />
@@ -2434,7 +2445,7 @@ export default function AdminClient({
                 const labels = { sessoes: "Sessões", pacotes: "Pacotes", cidades: "Cidades" };
                 return (
                   <button key={key} onClick={() => setPhotoTab(key)}
-                    className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors ${photoTab === key ? "border-purple-500 text-white" : "border-transparent text-gray-400 hover:text-gray-200"}`}>
+                    className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors ${photoTab === key ? "border-[#00ffae] text-[#00ffae]" : "border-transparent text-gray-400 hover:text-gray-200"}`}>
                     {labels[key]}
                   </button>
                 );
@@ -2446,7 +2457,7 @@ export default function AdminClient({
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <h3 className="font-bold text-gray-200">Sessões de Fotos</h3>
-                  <button onClick={() => setShowAddSession(true)} className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold transition-colors">+ Nova Sessão</button>
+                  <button onClick={() => setShowAddSession(true)} className="px-3 py-1.5 rounded-lg text-[#050505] text-xs font-semibold transition-colors" style={{ background: "linear-gradient(135deg, #00ffae, #00d9ff)" }}>+ Nova Sessão</button>
                 </div>
 
                 {showAddSession && (
@@ -2473,7 +2484,7 @@ export default function AdminClient({
                     {photoError && <p className="text-red-400 text-xs">{photoError}</p>}
                     <div className="flex gap-2">
                       <button onClick={() => { setShowAddSession(false); setPhotoError(null); }} className="flex-1 py-2 rounded-lg border border-gray-700 text-gray-400 text-sm">Cancelar</button>
-                      <button onClick={handleAddSession} className="flex-1 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold">Agendar</button>
+                      <button onClick={handleAddSession} className="flex-1 py-2 rounded-lg text-[#050505] text-sm font-semibold" style={{ background: "linear-gradient(135deg, #00ffae, #00d9ff)" }}>Agendar</button>
                     </div>
                   </div>
                 )}
@@ -2544,7 +2555,7 @@ export default function AdminClient({
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <h3 className="font-bold text-gray-200">Pacotes de Foto</h3>
-                  <button onClick={() => setShowAddPackage(true)} className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold transition-colors">+ Adicionar Pacote</button>
+                  <button onClick={() => setShowAddPackage(true)} className="px-3 py-1.5 rounded-lg text-[#050505] text-xs font-semibold transition-colors" style={{ background: "linear-gradient(135deg, #00ffae, #00d9ff)" }}>+ Adicionar Pacote</button>
                 </div>
 
                 {showAddPackage && (
@@ -2566,13 +2577,13 @@ export default function AdminClient({
                       <input type="number" min={0} placeholder="29900" value={pkgPrice} onChange={(e) => setPkgPrice(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 text-white text-sm outline-none" />
                     </div>
                     <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
-                      <input type="checkbox" checked={pkgVideo} onChange={(e) => setPkgVideo(e.target.checked)} className="accent-purple-500" />
+                      <input type="checkbox" checked={pkgVideo} onChange={(e) => setPkgVideo(e.target.checked)} className="accent-[#00ffae]" />
                       Inclui vídeo
                     </label>
                     {photoError && <p className="text-red-400 text-xs">{photoError}</p>}
                     <div className="flex gap-2">
                       <button onClick={() => { setShowAddPackage(false); setPhotoError(null); }} className="flex-1 py-2 rounded-lg border border-gray-700 text-gray-400 text-sm">Cancelar</button>
-                      <button onClick={handleAddPackage} className="flex-1 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold">Adicionar</button>
+                      <button onClick={handleAddPackage} className="flex-1 py-2 rounded-lg text-[#050505] text-sm font-semibold" style={{ background: "linear-gradient(135deg, #00ffae, #00d9ff)" }}>Adicionar</button>
                     </div>
                   </div>
                 )}
@@ -2630,7 +2641,7 @@ export default function AdminClient({
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <h3 className="font-bold text-gray-200">Cidades Disponíveis</h3>
-                  <button onClick={() => setShowAddCity(true)} className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold transition-colors">+ Adicionar Cidade</button>
+                  <button onClick={() => setShowAddCity(true)} className="px-3 py-1.5 rounded-lg text-[#050505] text-xs font-semibold transition-colors" style={{ background: "linear-gradient(135deg, #00ffae, #00d9ff)" }}>+ Adicionar Cidade</button>
                 </div>
 
                 {showAddCity && (
@@ -2644,7 +2655,7 @@ export default function AdminClient({
                     {photoError && <p className="text-red-400 text-xs">{photoError}</p>}
                     <div className="flex gap-2">
                       <button onClick={() => { setShowAddCity(false); setPhotoError(null); }} className="flex-1 py-2 rounded-lg border border-gray-700 text-gray-400 text-sm">Cancelar</button>
-                      <button onClick={handleAddCity} className="flex-1 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold">Adicionar</button>
+                      <button onClick={handleAddCity} className="flex-1 py-2 rounded-lg text-[#050505] text-sm font-semibold" style={{ background: "linear-gradient(135deg, #00ffae, #00d9ff)" }}>Adicionar</button>
                     </div>
                   </div>
                 )}
@@ -2698,28 +2709,28 @@ export default function AdminClient({
                       placeholder="Senha atual"
                       value={currentPassword}
                       onChange={(e) => setCurrentPassword(e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg bg-gray-800/60 border border-gray-700 text-white text-sm outline-none focus:border-purple-500"
+                      className="w-full px-3 py-2 rounded-lg bg-gray-800/60 border border-gray-700 text-white text-sm outline-none focus:border-[#00ffae]/50"
                     />
                     <input
                       type="password"
                       placeholder="Nova senha"
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg bg-gray-800/60 border border-gray-700 text-white text-sm outline-none focus:border-purple-500"
+                      className="w-full px-3 py-2 rounded-lg bg-gray-800/60 border border-gray-700 text-white text-sm outline-none focus:border-[#00ffae]/50"
                     />
                     <input
                       type="password"
                       placeholder="Confirmar nova senha"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg bg-gray-800/60 border border-gray-700 text-white text-sm outline-none focus:border-purple-500"
+                      className="w-full px-3 py-2 rounded-lg bg-gray-800/60 border border-gray-700 text-white text-sm outline-none focus:border-[#00ffae]/50"
                     />
                     {passwordError && <p className="text-red-400 text-xs">{passwordError}</p>}
                     {passwordSuccess && <p className="text-green-400 text-xs">{passwordSuccess}</p>}
                     <button
                       onClick={handleChangePassword}
                       disabled={changingPassword}
-                      className="w-full py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold disabled:opacity-50 transition-colors"
+                      className="w-full py-2 rounded-lg text-[#050505] text-sm font-semibold disabled:opacity-50 transition-colors" style={{ background: "linear-gradient(135deg, #00ffae, #00d9ff)" }}
                     >
                       {changingPassword ? "Salvando..." : "Alterar Senha"}
                     </button>
@@ -2751,7 +2762,8 @@ export default function AdminClient({
                   <span className="text-gray-500 text-sm self-center">dias</span>
                   <button
                     onClick={addTrialDays}
-                    className="flex-1 py-2.5 rounded-xl bg-purple-700 hover:bg-purple-600 text-white text-sm font-bold transition-colors"
+                    className="flex-1 py-2.5 rounded-xl text-[#050505] text-sm font-bold transition-colors"
+                    style={{ background: "linear-gradient(135deg, #00ffae, #00d9ff)" }}
                   >
                     Adicionar
                   </button>
@@ -2785,7 +2797,7 @@ export default function AdminClient({
             <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-bold text-gray-200">📦 Distribuição por Plano</h3>
-                <span className="text-purple-400 font-black text-lg">{fmt(mrr)} <span className="text-gray-500 text-sm font-normal">MRR est.</span></span>
+                <span className="text-[#00ffae] font-black text-lg">{fmt(mrr)} <span className="text-gray-500 text-sm font-normal">MRR est.</span></span>
               </div>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 {Object.entries(planCounts).sort((a, b) => b[1] - a[1]).map(([plan, count]) => (
@@ -2825,7 +2837,7 @@ export default function AdminClient({
                           <span className="text-gray-500">{count}</span>
                         </div>
                         <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
-                          <div className="h-full bg-purple-500/60 rounded-full" style={{ width: `${pct}%` }} />
+                          <div className="h-full bg-[#00ffae]/50 rounded-full" style={{ width: `${pct}%` }} />
                         </div>
                       </div>
                     );
@@ -2840,7 +2852,7 @@ export default function AdminClient({
                 <h3 className="font-bold text-gray-200">👨‍💼 Funcionários de Suporte</h3>
                 <button
                   onClick={() => setShowAddStaff(true)}
-                  className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold transition-colors"
+                  className="px-3 py-1.5 rounded-lg text-[#050505] text-xs font-semibold transition-colors" style={{ background: "linear-gradient(135deg, #00ffae, #00d9ff)" }}
                 >
                   + Adicionar
                 </button>
@@ -2875,7 +2887,7 @@ export default function AdminClient({
                           type="checkbox"
                           checked={staffPermissions[perm.key] ?? false}
                           onChange={(e) => setStaffPermissions((prev) => ({ ...prev, [perm.key]: e.target.checked }))}
-                          className="accent-purple-500"
+                          className="accent-[#00ffae]"
                         />
                         {perm.label}
                       </label>
@@ -2888,7 +2900,8 @@ export default function AdminClient({
                     <button onClick={() => setShowAddStaff(false)}
                       className="flex-1 py-2 rounded-lg border border-gray-700 text-gray-400 text-sm">Cancelar</button>
                     <button onClick={handleAddStaff} disabled={addingStaff}
-                      className="flex-1 py-2 rounded-lg bg-purple-600 text-white text-sm font-semibold disabled:opacity-50">
+                      className="flex-1 py-2 rounded-lg text-[#050505] text-sm font-semibold disabled:opacity-50"
+                      style={{ background: "linear-gradient(135deg, #00ffae, #00d9ff)" }}>
                       {addingStaff ? "Salvando..." : "Adicionar"}
                     </button>
                   </div>
@@ -3235,7 +3248,8 @@ function AdminChatsTab() {
             const st = STATUS_L[c.status] ?? STATUS_L.open;
             return (
               <button key={c.id} onClick={() => openConv(c)}
-                className={`w-full p-3 text-left border-b border-gray-900 transition-colors ${active?.id === c.id ? "bg-purple-900/20 border-l-2 border-l-purple-500" : "hover:bg-gray-900/50"}`}>
+                className={`w-full p-3 text-left border-b border-gray-900 transition-colors ${active?.id === c.id ? "border-l-2" : "hover:bg-gray-900/50"}`}
+                style={active?.id === c.id ? { background: "rgba(0,255,174,0.06)", borderLeftColor: "#00ffae" } : {}}>
                 <div className="flex items-start justify-between mb-1">
                   <span className="text-xs font-bold text-gray-200 truncate flex-1 mr-2">{c.restaurants?.name ?? "—"}</span>
                   {c.unread > 0 && <span className="w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-black flex items-center justify-center flex-shrink-0">{c.unread}</span>}
@@ -3265,7 +3279,7 @@ function AdminChatsTab() {
               <div className="flex items-start justify-between gap-3 mb-3">
                 <div>
                   <h4 className="font-bold text-gray-200 text-sm">{active.subject}</h4>
-                  <p className="text-gray-500 text-xs">{active.restaurants?.name} · <span className="text-purple-400">{active.restaurants?.plan}</span></p>
+                  <p className="text-gray-500 text-xs">{active.restaurants?.name} · <span className="text-[#00ffae]">{active.restaurants?.plan}</span></p>
                 </div>
                 <div className="flex gap-2 flex-shrink-0">
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: `${STATUS_L[active.status]?.color ?? "#fff"}18`, color: STATUS_L[active.status]?.color }}>{STATUS_L[active.status]?.label}</span>
@@ -3302,7 +3316,7 @@ function AdminChatsTab() {
                 return (
                   <div key={m.id} className={`flex flex-col ${isClient ? "items-start" : "items-end"}`}>
                     <span className="text-gray-500 text-[11px] mb-1">{m.sender_name}</span>
-                    <div className={`max-w-xs px-3 py-2 rounded-2xl text-sm leading-relaxed break-words ${isClient ? "bg-gray-800 text-gray-100 rounded-tl-sm" : "bg-purple-900/40 text-gray-100 border border-purple-800/50 rounded-tr-sm"}`}>
+                    <div className={`max-w-xs px-3 py-2 rounded-2xl text-sm leading-relaxed break-words ${isClient ? "bg-gray-800 text-gray-100 rounded-tl-sm" : "text-gray-100 rounded-tr-sm"}`} style={isClient ? {} : { background: "rgba(0,255,174,0.12)", border: "1px solid rgba(0,255,174,0.2)" }}>
                       {m.message}
                     </div>
                     <span className="text-gray-700 text-[10px] mt-1">{new Date(m.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span>
@@ -3319,10 +3333,12 @@ function AdminChatsTab() {
                   onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendReply(); } }}
                   placeholder="Responder... (Enter para enviar)"
                   rows={2}
-                  className="flex-1 px-3 py-2 rounded-xl bg-gray-900 border border-gray-700 text-white text-sm resize-none outline-none focus:border-purple-500 font-inherit"
+                  className="flex-1 px-3 py-2 rounded-xl text-white text-sm resize-none outline-none font-inherit"
+                  style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}
                 />
                 <button onClick={sendReply} disabled={sending || !reply.trim()}
-                  className="px-4 py-2 rounded-xl bg-purple-700 hover:bg-purple-600 text-white text-sm font-semibold disabled:opacity-40 transition-colors">
+                  className="px-4 py-2 rounded-xl text-[#050505] text-sm font-semibold disabled:opacity-40 transition-colors"
+                  style={{ background: "linear-gradient(135deg, #00ffae, #00d9ff)" }}>
                   {sending ? "…" : "Enviar"}
                 </button>
               </div>
@@ -3336,11 +3352,11 @@ function AdminChatsTab() {
 
 function StatCard({ icon, label, value, sub, color }: { icon: string; label: string; value: string; sub: string; color: string }) {
   return (
-    <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-5">
-      <div className="text-2xl mb-2">{icon}</div>
+    <div className="rounded-2xl p-5" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(0,255,174,0.1)" }}>
+      <div className="text-2xl mb-3 w-10 h-10 flex items-center justify-center rounded-xl" style={{ background: "rgba(0,255,174,0.08)" }}>{icon}</div>
       <div className={`text-2xl font-black ${color}`}>{value}</div>
-      <div className="text-gray-300 text-sm font-semibold mt-1">{label}</div>
-      <div className="text-gray-600 text-xs mt-0.5">{sub}</div>
+      <div className="text-sm font-semibold mt-1" style={{ color: "rgba(255,255,255,0.8)" }}>{label}</div>
+      <div className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.3)" }}>{sub}</div>
     </div>
   );
 }
@@ -3352,8 +3368,8 @@ function BarChart({ data }: { data: Array<{ label: string; value: number }> }) {
       {data.map((d, i) => (
         <div key={i} className="flex-1 flex flex-col items-center">
           <div
-            className="w-full bg-purple-500/60 rounded-t"
-            style={{ height: `${(d.value / max) * 100}%`, minHeight: d.value > 0 ? 2 : 0 }}
+            className="w-full rounded-t"
+            style={{ height: `${(d.value / max) * 100}%`, minHeight: d.value > 0 ? 2 : 0, background: "rgba(0,255,174,0.45)" }}
           />
           <span className="text-gray-500 text-[9px] mt-1 truncate w-full text-center">{d.label}</span>
         </div>
@@ -3368,7 +3384,7 @@ function ChartPlaceholder({ title }: { title: string }) {
       <h3 className="font-bold text-gray-300 mb-4 text-sm">{title}</h3>
       <div className="h-32 flex items-end gap-2">
         {[40, 65, 45, 80, 55, 90, 70].map((h, i) => (
-          <div key={i} className="flex-1 bg-purple-900/40 border border-purple-800/50 rounded-t" style={{ height: `${h}%` }} />
+          <div key={i} className="flex-1 rounded-t" style={{ height: `${h}%`, background: "rgba(0,255,174,0.12)", border: "1px solid rgba(0,255,174,0.2)" }} />
         ))}
       </div>
       <p className="text-gray-600 text-xs mt-3 text-center">Gráfico detalhado disponível com integração de analytics</p>
