@@ -25,6 +25,9 @@ type Order = {
   status: string;
   waiter_status: string | null;
   kitchen_status: string | null;
+  delivery_status: string | null;
+  customer_name: string | null;
+  customer_phone: string | null;
   notes: string | null;
   payment_method: string | null;
   created_at: string;
@@ -71,6 +74,46 @@ const STATUS_COLOR: Record<string, string> = {
   delivered: "#00ffae",
 };
 
+const DELIVERY_STEPS: Array<{
+  id: string;
+  emoji: string;
+  label: string;
+  message: string;
+}> = [
+  {
+    id: "pending",
+    emoji: "⏳",
+    label: "Aguardando",
+    message: "Recebemos seu pedido! Em breve começaremos a preparar.",
+  },
+  {
+    id: "preparing",
+    emoji: "🔥",
+    label: "Preparando",
+    message: "Seu pedido está sendo preparado com carinho!",
+  },
+  {
+    id: "ready",
+    emoji: "✅",
+    label: "Pronto",
+    message: "Seu pedido está pronto! Saindo pra entrega em instantes.",
+  },
+  {
+    id: "delivering",
+    emoji: "🛵",
+    label: "Saiu pra entrega",
+    message: "Seu pedido saiu pra entrega! Em breve estará com você.",
+  },
+  {
+    id: "delivered",
+    emoji: "🎉",
+    label: "Entregue",
+    message: "Pedido entregue! Bom apetite! Avalie-nos no Google ⭐",
+  },
+];
+
+const STEP_IDS = DELIVERY_STEPS.map((s) => s.id);
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function PedidosModal({ unitId, unit }: { unitId: string; unit?: Unit }) {
@@ -106,7 +149,7 @@ export default function PedidosModal({ unitId, unit }: { unitId: string; unit?: 
     const fetchOrders = async () => {
       const { data } = await supabase
         .from("order_intents")
-        .select("id, table_number, items, total, status, waiter_status, kitchen_status, notes, payment_method, created_at")
+        .select("id, table_number, items, total, status, waiter_status, kitchen_status, delivery_status, customer_name, customer_phone, notes, payment_method, created_at")
         .eq("unit_id", unitId)
         .gte("created_at", todayStart())
         .order("created_at", { ascending: false });
@@ -150,6 +193,43 @@ export default function PedidosModal({ unitId, unit }: { unitId: string; unit?: 
     ativos: orders.filter((o) => o.waiter_status !== "delivered").length,
     entregues: orders.filter((o) => o.waiter_status === "delivered").length,
   };
+
+  async function handleChangeDeliveryStatus(order: Order, newStatus: string) {
+    const updates: Record<string, string> = {
+      delivery_status: newStatus,
+      updated_at: new Date().toISOString(),
+    };
+    // Sync waiter_status when order is fully delivered
+    if (newStatus === "delivered") updates.waiter_status = "delivered";
+
+    await supabase.from("order_intents").update(updates).eq("id", order.id);
+
+    const phone = (order.customer_phone || "").replace(/\D/g, "");
+    if (phone.length >= 10) {
+      const step = DELIVERY_STEPS.find((s) => s.id === newStatus);
+      if (step) openWaNotification(order, step);
+    }
+  }
+
+  function openWaNotification(
+    order: Order,
+    step: (typeof DELIVERY_STEPS)[number]
+  ) {
+    const phone = (order.customer_phone || "").replace(/\D/g, "");
+    if (phone.length < 10) return;
+    const fullPhone = phone.startsWith("55") ? phone : `55${phone}`;
+    const shortId = order.id.slice(-6).toUpperCase();
+    const msg = encodeURIComponent(
+      `${step.emoji} *${unit?.name || "Restaurante"}*\n\n` +
+        `${step.message}\n\n` +
+        `📋 Pedido: #${shortId}\n` +
+        `💰 Total: R$ ${Number(order.total || 0)
+          .toFixed(2)
+          .replace(".", ",")}\n\n` +
+        `_Atualização automática via FyMenu_`
+    );
+    window.open(`https://wa.me/${fullPhone}?text=${msg}`, "_blank");
+  }
 
   const revenueDelivered = orders
     .filter((o) => o.waiter_status === "delivered")
@@ -249,6 +329,11 @@ export default function PedidosModal({ unitId, unit }: { unitId: string; unit?: 
                     const statusColor = STATUS_COLOR[ws] ?? "#888";
                     const isExpanded = expanded === order.id;
 
+                    const ds = order.delivery_status ?? "pending";
+                    const dsIndex = STEP_IDS.indexOf(ds);
+                    const currentStep = DELIVERY_STEPS.find((s) => s.id === ds) ?? DELIVERY_STEPS[0];
+                    const hasPhone = (order.customer_phone || "").replace(/\D/g, "").length >= 10;
+
                     return (
                       <div
                         key={order.id}
@@ -261,16 +346,16 @@ export default function PedidosModal({ unitId, unit }: { unitId: string; unit?: 
                         onClick={() => setExpanded(isExpanded ? null : order.id)}
                       >
                         {/* Header row */}
-                        <div style={{ padding: "12px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <div style={{ padding: "12px 14px 8px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                             <div style={{ fontSize: 15, fontWeight: 800, color: "var(--dash-text)" }}>
-                              {order.table_number ? `Mesa ${order.table_number}` : "Sem mesa"}
+                              {order.customer_name || (order.table_number ? `Mesa ${order.table_number}` : "Pedido")}
                             </div>
                             <span style={{
                               fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 20,
                               background: `${statusColor}18`, color: statusColor, border: `1px solid ${statusColor}35`,
                             }}>
-                              {WAITER_LABEL[ws]}
+                              {WAITER_LABEL[ws] ?? ws}
                             </span>
                           </div>
                           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -286,13 +371,41 @@ export default function PedidosModal({ unitId, unit }: { unitId: string; unit?: 
                           </div>
                         </div>
 
+                        {/* Delivery progress bar */}
+                        <div style={{ padding: "0 14px 10px", display: "flex", gap: 3 }} onClick={(e) => e.stopPropagation()}>
+                          {DELIVERY_STEPS.map((step, i) => (
+                            <div
+                              key={step.id}
+                              title={step.label}
+                              style={{
+                                flex: 1, height: 3, borderRadius: 2,
+                                background: i <= dsIndex ? "#00ffae" : "rgba(255,255,255,0.06)",
+                                transition: "background 0.3s",
+                              }}
+                            />
+                          ))}
+                        </div>
+
+                        {/* Current delivery status label */}
+                        <div style={{ padding: "0 14px 8px" }} onClick={(e) => e.stopPropagation()}>
+                          <span style={{ fontSize: 10, color: ds === "delivered" ? "#00ffae" : "var(--dash-text-muted)", fontWeight: 600 }}>
+                            {currentStep.emoji} {currentStep.label}
+                            {order.customer_name && order.customer_phone && (
+                              <span style={{ color: "rgba(255,255,255,0.2)", marginLeft: 6 }}>· {order.customer_phone}</span>
+                            )}
+                          </span>
+                        </div>
+
                         {/* Expanded details */}
                         {isExpanded && (
-                          <div style={{
-                            borderTop: "1px solid var(--dash-card-border)",
-                            padding: "12px 14px",
-                            background: "var(--dash-card)",
-                          }}>
+                          <div
+                            style={{
+                              borderTop: "1px solid var(--dash-card-border)",
+                              padding: "12px 14px",
+                              background: "var(--dash-card)",
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             {/* Kitchen status */}
                             <div style={{ marginBottom: 10 }}>
                               <span style={{
@@ -300,9 +413,66 @@ export default function PedidosModal({ unitId, unit }: { unitId: string; unit?: 
                                 background: "var(--dash-card-hover)", color: "var(--dash-text-muted)",
                                 border: "1px solid var(--dash-card-border)",
                               }}>
-                                🍳 {KITCHEN_LABEL[ks]}
+                                🍳 {KITCHEN_LABEL[ks] ?? ks}
                               </span>
                             </div>
+
+                            {/* Delivery status buttons */}
+                            <div style={{ marginBottom: 12 }}>
+                              <div style={{ fontSize: 10, fontWeight: 700, color: "var(--dash-text-muted)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 1 }}>
+                                Status do pedido
+                              </div>
+                              <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                                {DELIVERY_STEPS.map((step, i) => {
+                                  const isCurrent = ds === step.id;
+                                  const isPast = i < dsIndex;
+                                  return (
+                                    <button
+                                      key={step.id}
+                                      onClick={() => !isCurrent && handleChangeDeliveryStatus(order, step.id)}
+                                      disabled={isCurrent}
+                                      style={{
+                                        padding: "6px 10px", borderRadius: 8,
+                                        border: isCurrent ? "1px solid var(--dash-accent)" : "1px solid var(--dash-card-border)",
+                                        cursor: isCurrent ? "default" : "pointer",
+                                        background: isCurrent
+                                          ? "var(--dash-accent-soft)"
+                                          : isPast
+                                          ? "rgba(0,255,174,0.03)"
+                                          : "var(--dash-card-hover)",
+                                        color: isCurrent
+                                          ? "var(--dash-accent)"
+                                          : isPast
+                                          ? "rgba(0,255,174,0.4)"
+                                          : "var(--dash-text-muted)",
+                                        fontSize: 11, fontWeight: 700,
+                                        transition: "all 0.15s",
+                                      }}
+                                    >
+                                      {step.emoji} {step.label}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+
+                            {/* Notify client button */}
+                            {hasPhone && ds !== "pending" && (
+                              <button
+                                onClick={() => openWaNotification(order, currentStep)}
+                                style={{
+                                  display: "flex", alignItems: "center", gap: 6,
+                                  padding: "8px 12px", borderRadius: 10,
+                                  border: "1px solid rgba(37,211,102,0.2)",
+                                  background: "rgba(37,211,102,0.06)",
+                                  color: "#25d366", fontSize: 11, fontWeight: 700,
+                                  cursor: "pointer", marginBottom: 12, width: "100%",
+                                  justifyContent: "center",
+                                }}
+                              >
+                                💬 Notificar cliente via WhatsApp
+                              </button>
+                            )}
 
                             {/* Items */}
                             <div style={{ marginBottom: 10 }}>

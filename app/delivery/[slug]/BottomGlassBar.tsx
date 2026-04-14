@@ -282,13 +282,33 @@ export default function BottomGlassBar({
       custPhone
     );
     window.open(url, "_blank", "noreferrer");
+
+    // Save order so PedidosModal can track delivery status + notify client (fire-and-forget)
+    import("@/lib/supabase/client").then(({ createClient }) => {
+      createClient().from("order_intents").insert({
+        unit_id: unit.id,
+        customer_name: custName.trim() || null,
+        customer_phone: custPhone.replace(/\D/g, "") || null,
+        status: "pending",
+        delivery_status: "pending",
+        total: cartTotal,
+        source: "whatsapp",
+        items: cart.map((i) => ({
+          code_name: i.name,
+          qty: i.qty,
+          unit_price: i.unit_price,
+          total: i.unit_price * i.qty,
+        })),
+      });
+    }).catch(() => {});
+
     setSending(true);
     setTimeout(() => {
       onClearCart?.();
       setSending(false);
       setGlassExpanded(false);
     }, 1500);
-  }, [cart, unit.whatsapp, custName, custPhone, onClearCart]);
+  }, [cart, unit.id, unit.whatsapp, custName, custPhone, cartTotal, onClearCart]);
 
   const wa = normalizeWhatsapp(unit.whatsapp || "");
   const ig = normalizeInstagram(unit.instagram || "");

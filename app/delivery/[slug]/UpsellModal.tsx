@@ -205,6 +205,9 @@ export default function UpsellModal({
     try {
       const { createClient } = await import("@/lib/supabase/client");
       const supabase = createClient();
+      const nameTrimmed = customerName.trim() || null;
+      const phoneClean = customerPhone.replace(/\D/g, "") || null;
+
       await supabase.from("menu_events").insert({
         event: "whatsapp_order",
         unit_id: unit.id,
@@ -214,9 +217,34 @@ export default function UpsellModal({
           variation: finalPayload.variation?.name ?? null,
           upsells: finalPayload.upsells.map((u) => u.name),
           total: finalPayload.total,
-          customer_name: customerName.trim() || null,
-          customer_phone: customerPhone.replace(/\D/g, "") || null,
+          customer_name: nameTrimmed,
+          customer_phone: phoneClean,
         },
+      });
+
+      // Save order so PedidosModal can track delivery status + notify client
+      void supabase.from("order_intents").insert({
+        unit_id: unit.id,
+        customer_name: nameTrimmed,
+        customer_phone: phoneClean,
+        status: "pending",
+        delivery_status: "pending",
+        total: finalPayload.total,
+        source: "whatsapp",
+        items: [
+          {
+            code_name: finalPayload.product.name + (finalPayload.variation ? ` (${finalPayload.variation.name})` : ""),
+            qty: 1,
+            unit_price: finalPayload.total,
+            total: finalPayload.total,
+          },
+          ...finalPayload.upsells.map((u) => ({
+            code_name: u.name,
+            qty: 1,
+            unit_price: u.price,
+            total: u.price,
+          })),
+        ],
       });
     } catch {
       // Event errors never block the order
