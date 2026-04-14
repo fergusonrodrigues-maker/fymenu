@@ -971,9 +971,9 @@ export default function LandingPage() {
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            justifyContent: "center",
+            justifyContent: "flex-start",
             textAlign: "center",
-            padding: "40px 24px 80px",
+            padding: "16px 24px 80px",
             position: "relative",
             zIndex: 1,
           }}
