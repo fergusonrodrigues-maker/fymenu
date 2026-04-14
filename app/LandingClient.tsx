@@ -274,11 +274,40 @@ function PlanCard({ planKey, plan, cycle, theme }: {
             ? `translateY(-8px)${isAccent ? " scale(1.02)" : ""}`
             : isAccent ? "scale(1.02)" : "none",
         display: "flex", flexDirection: "column",
-        boxShadow: hovered ? shadowHover : shadowBase,
+        boxShadow: isGreen
+          ? (hovered ? shadowHover + ", 0 0 40px rgba(212,175,55,0.08)" : shadowBase + ", 0 0 40px rgba(212,175,55,0.04)")
+          : (hovered ? shadowHover : shadowBase),
+        border: isGreen ? "1px solid rgba(212,175,55,0.15)" : undefined,
         transition: "all 0.5s cubic-bezier(0.16, 1, 0.3, 1)",
         cursor: "pointer",
       }}
     >
+      {/* Gold animated border — Business card only */}
+      {isGreen && (<>
+        <style>{`
+          @keyframes goldBorderSpin {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
+          }
+        `}</style>
+        <div style={{
+          position: "absolute", inset: -1, borderRadius: "inherit",
+          overflow: "hidden", pointerEvents: "none", zIndex: 0,
+        }}>
+          <div style={{
+            position: "absolute",
+            width: "200%", height: "200%",
+            top: "-50%", left: "-50%",
+            background: "conic-gradient(from 0deg, transparent 0%, transparent 38%, rgba(180,140,20,0.25) 44%, rgba(212,175,55,0.5) 50%, rgba(255,215,0,0.7) 51%, rgba(212,175,55,0.5) 56%, rgba(180,140,20,0.25) 62%, transparent 68%, transparent 100%)",
+            animation: "goldBorderSpin 3.5s linear infinite",
+          }} />
+          <div style={{
+            position: "absolute", inset: 1, borderRadius: 23,
+            background: dark ? "rgba(10,10,10,0.96)" : "rgba(250,250,250,0.96)",
+          }} />
+        </div>
+      </>)}
+
       {/* Hover glow radial — top */}
       <div style={{
         position: "absolute", inset: -10, pointerEvents: "none",
