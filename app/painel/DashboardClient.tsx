@@ -312,6 +312,114 @@ const GRID_LAYOUTS: Record<string, Array<{ id: string; cols: number; mobileCols:
   ],
 };
 
+// ─── Plan access gate ─────────────────────────────────────────────────────────
+const PLAN_ACCESS: Record<string, string[]> = {
+  menu:     ["cardapio", "pedidos", "unidade", "configuracoes", "suporte"],
+  menupro:  ["cardapio", "pedidos", "unidade", "configuracoes", "suporte", "financeiro", "operacoes", "equipe", "modo_tv", "impressoras"],
+  business: ["cardapio", "pedidos", "unidade", "configuracoes", "suporte", "financeiro", "operacoes", "equipe", "modo_tv", "impressoras", "estoque", "crm", "whatsapp"],
+};
+
+// Maps card id → module id for PLAN_ACCESS lookup (cards not listed are always accessible)
+const CARD_TO_MODULE: Record<string, string> = {
+  cardapio:    "cardapio",
+  pedidos:     "pedidos",
+  unidade:     "unidade",
+  config:      "configuracoes",
+  suporte:     "suporte",
+  financeiro:  "financeiro",
+  operacoes:   "operacoes",
+  equipe:      "equipe",
+  tv:          "modo_tv",
+  impressoras: "impressoras",
+  estoque:     "estoque",
+  crm:         "crm",
+  whatsapp:    "whatsapp",
+};
+
+const MODULE_INFO: Record<string, { name: string; plan: string; desc: string }> = {
+  financeiro:  { name: "Financeiro",  plan: "MenuPro",  desc: "Relatórios de receita, custos e margens" },
+  operacoes:   { name: "Operações",   plan: "MenuPro",  desc: "Cozinha, garçom e acompanhamento em tempo real" },
+  equipe:      { name: "Equipe",      plan: "MenuPro",  desc: "Gestão de funcionários e avaliações" },
+  modo_tv:     { name: "Modo TV",     plan: "MenuPro",  desc: "Exibição do cardápio em telas e TVs" },
+  impressoras: { name: "Impressoras", plan: "MenuPro",  desc: "Impressão automática de pedidos por categoria" },
+  estoque:     { name: "Estoque",     plan: "Business", desc: "Controle completo de estoque com IA" },
+  crm:         { name: "CRM",         plan: "Business", desc: "Gestão de clientes e contatos" },
+  whatsapp:    { name: "WhatsApp",    plan: "Business", desc: "Mensagens automáticas e disparo em massa" },
+};
+
+// ─── Upgrade Gate Popup ───────────────────────────────────────────────────────
+function UpgradeGatePopup({
+  moduleId, icon, onClose, onViewPlans,
+}: {
+  moduleId: string; icon: string; onClose: () => void; onViewPlans: () => void;
+}) {
+  const info = MODULE_INFO[moduleId];
+  if (!info) return null;
+
+  useEffect(() => {
+    const t = setTimeout(onClose, 5000);
+    return () => clearTimeout(t);
+  }, [onClose]);
+
+  return (
+    <div
+      style={{
+        position: "fixed", inset: 0, zIndex: 10000,
+        background: "rgba(0,0,0,0.4)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        padding: "0 20px",
+      }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div style={{
+        background: "var(--dash-modal-bg, rgba(15,15,15,0.97))",
+        border: "1px solid rgba(255,255,255,0.09)",
+        borderRadius: 22,
+        padding: "32px 28px 24px",
+        maxWidth: 400,
+        width: "100%",
+        boxShadow: "0 32px 80px rgba(0,0,0,0.65)",
+        animation: "upgradePopupIn 0.2s cubic-bezier(0.16,1,0.3,1)",
+      }}>
+        <div style={{ textAlign: "center", marginBottom: 24 }}>
+          <div style={{ fontSize: 44, marginBottom: 14, lineHeight: 1 }}>{icon}</div>
+          <div style={{ fontSize: 18, fontWeight: 800, color: "var(--dash-text, #fff)", marginBottom: 10, letterSpacing: "-0.3px" }}>
+            Recurso do plano {info.plan}
+          </div>
+          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>
+            O módulo <strong style={{ color: "rgba(255,255,255,0.8)", fontWeight: 700 }}>{info.name}</strong> está disponível
+            a partir do plano <strong style={{ color: "rgba(255,255,255,0.8)", fontWeight: 700 }}>{info.plan}</strong>.
+            Faça upgrade para desbloquear.
+          </div>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <button
+            onClick={onViewPlans}
+            className="btn-gradient"
+            style={{ width: "100%", padding: "13px", fontSize: 14, fontWeight: 700, borderRadius: 12, cursor: "pointer", border: "none", fontFamily: "inherit" }}
+          >
+            Ver planos
+          </button>
+          <button
+            onClick={onClose}
+            style={{
+              width: "100%", padding: "12px",
+              background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)",
+              borderRadius: 12, color: "rgba(255,255,255,0.5)", fontSize: 14, fontWeight: 600,
+              cursor: "pointer", fontFamily: "inherit",
+              transition: "background 0.15s",
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.1)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; }}
+          >
+            Voltar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Component ──────────────────────────────────────────────────────────
 export default function DashboardClient({
   restaurant, unit, profile, categories, products, upsellItems, analytics, tvCount, stockStats, reportData,
@@ -327,6 +435,10 @@ export default function DashboardClient({
   const [chatOpen, setChatOpen] = useState(false);
   const open = (m: typeof modal) => setModal(m);
   const close = () => setModal(null);
+
+  // ── Plan gate state ──
+  const [deniedCardId, setDeniedCardId] = useState<string | null>(null);
+  const [upgradePopup, setUpgradePopup] = useState<{ moduleId: string; icon: string } | null>(null);
 
   const trialDays = Math.max(0, Math.ceil((new Date(restaurant.trial_ends_at).getTime() - Date.now()) / 86400000));
   const [restaurantState, setRestaurantState] = useState<Restaurant>(restaurant);
@@ -514,6 +626,23 @@ export default function DashboardClient({
     return () => document.removeEventListener("click", handler);
   }, [showUnitSelector]);
 
+  // ── Plan gate helpers ──
+  const hasCardAccess = useCallback((cardId: string): boolean => {
+    if (restaurantState.free_access) return true;
+    const moduleId = CARD_TO_MODULE[cardId];
+    if (!moduleId) return true; // analytics, delivery, plano, links — always accessible
+    const plan = restaurantState.plan ?? "menu";
+    return PLAN_ACCESS[plan]?.includes(moduleId) ?? true;
+  }, [restaurantState.free_access, restaurantState.plan]);
+
+  const triggerDenied = useCallback((cardId: string, icon: string) => {
+    const moduleId = CARD_TO_MODULE[cardId];
+    if (!moduleId) return;
+    setDeniedCardId(cardId);
+    setUpgradePopup({ moduleId, icon });
+    setTimeout(() => setDeniedCardId(null), 600);
+  }, []);
+
   const CARD_CONFIGS: Record<string, { icon: string; label: string; sub: string | (() => string); modalKey: string }> = useMemo(() => ({
     analytics: { icon: "📊", label: "Analytics", sub: () => `${analytics.views} visitas · ${analytics.clicks} cliques`, modalKey: "analytics" },
     cardapio: { icon: "📋", label: "Cardápio", sub: () => `${products.length} produto${products.length !== 1 ? "s" : ""}`, modalKey: "cardapio" },
@@ -542,8 +671,21 @@ export default function DashboardClient({
         body { margin: 0; background: var(--dash-bg); }
         @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:0.5 } }
         @keyframes fadeIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes card-denied {
+          0%   { border-color: rgba(255,255,255,0.08); }
+          20%  { border-color: rgba(239,68,68,0.6); }
+          40%  { border-color: rgba(255,255,255,0.08); }
+          60%  { border-color: rgba(239,68,68,0.6); }
+          80%  { border-color: rgba(255,255,255,0.08); }
+          100% { border-color: rgba(255,255,255,0.08); }
+        }
+        @keyframes upgradePopupIn {
+          from { opacity: 0; transform: scale(0.9); }
+          to   { opacity: 1; transform: scale(1); }
+        }
         .card { transition: transform 0.25s cubic-bezier(0.16,1,0.3,1), background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease; }
         .card:active { transform: scale(0.97) !important; }
+        .card-denied { animation: card-denied 0.6s ease forwards !important; }
         .dark .card:hover { background: rgba(0,255,174,0.03) !important; border-color: rgba(0,255,174,0.15) !important; box-shadow: 0 8px 32px rgba(0,0,0,0.25) !important; transform: translateY(-2px) !important; }
         html:not(.dark) .card:hover { background: rgba(0,179,126,0.02) !important; border-color: rgba(0,179,126,0.15) !important; box-shadow: 0 4px 20px rgba(0,0,0,0.1) !important; transform: translateY(-2px) !important; }
         .dash-dots {
@@ -1416,11 +1558,39 @@ export default function DashboardClient({
                 const colSpan = isMobile ? item.mobileCols : item.cols;
                 const subText = typeof config.sub === "function" ? config.sub() : config.sub;
 
+                // ── Gate logic ────────────────────────────────────────────
+                const isBlocked = !hasCardAccess(item.id);
+                const isDenied  = deniedCardId === item.id;
+                const blockedClick = isBlocked
+                  ? () => triggerDenied(item.id, config.icon)
+                  : null;
+                const blockedStyle: React.CSSProperties = isBlocked ? { opacity: 0.5 } : {};
+                const cardClass = `card${isDenied ? " card-denied" : ""}`;
+                const moduleIdForCard = CARD_TO_MODULE[item.id];
+                const LockBadge = isBlocked && moduleIdForCard ? (
+                  <div style={{
+                    position: "absolute", top: 8, right: 8,
+                    display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3,
+                    zIndex: 2, pointerEvents: "none",
+                  }}>
+                    <span style={{ fontSize: 12, lineHeight: 1 }}>🔒</span>
+                    <span style={{
+                      fontSize: 10, padding: "2px 6px",
+                      background: "rgba(255,255,255,0.08)",
+                      color: "rgba(255,255,255,0.4)",
+                      borderRadius: 4, fontWeight: 600,
+                    }}>
+                      {MODULE_INFO[moduleIdForCard]?.plan}
+                    </span>
+                  </div>
+                ) : null;
+
                 // ── Analytics — hero full-width card ──────────────────────
                 if (item.id === "analytics") {
                   return (
-                    <div key="analytics" className="card" onClick={() => open("analytics")} style={{
+                    <div key="analytics" className={cardClass} onClick={blockedClick ?? (() => open("analytics"))} style={{
                       ...baseCard,
+                      ...blockedStyle,
                       gridColumn: "1 / -1",
                       padding: "20px 24px",
                       borderRadius: 20,
@@ -1459,6 +1629,7 @@ export default function DashboardClient({
                           </div>
                         ))}
                       </div>
+                      {LockBadge}
                     </div>
                   );
                 }
@@ -1466,8 +1637,9 @@ export default function DashboardClient({
                 // ── Operações — Realtime badge ────────────────────────────
                 if (item.id === "operacoes") {
                   return (
-                    <div key="operacoes" className="card" onClick={() => open("operacoes")} style={{
+                    <div key="operacoes" className={cardClass} onClick={blockedClick ?? (() => open("operacoes"))} style={{
                       ...baseCard,
+                      ...blockedStyle,
                       gridColumn: `span ${colSpan}`,
                       background: "linear-gradient(135deg, var(--dash-card) 0%, rgba(96,165,250,0.04) 100%)",
                     }}>
@@ -1477,6 +1649,7 @@ export default function DashboardClient({
                       </div>
                       <div style={{ color: "var(--dash-text)", fontSize: 14, fontWeight: 700, lineHeight: 1.2 }}>Operações</div>
                       <div style={{ color: "var(--dash-text-secondary)", fontSize: 12, lineHeight: 1.3 }}>Cozinha · Garçom · Andamento</div>
+                      {LockBadge}
                     </div>
                   );
                 }
@@ -1484,13 +1657,14 @@ export default function DashboardClient({
                 // ── Unidade — published status dot ───────────────────────
                 if (item.id === "unidade") {
                   return (
-                    <div key="unidade" className="card" onClick={() => open("unidade")} style={{ ...baseCard, gridColumn: `span ${colSpan}` }}>
+                    <div key="unidade" className={cardClass} onClick={blockedClick ?? (() => open("unidade"))} style={{ ...baseCard, ...blockedStyle, gridColumn: `span ${colSpan}` }}>
                       <IconBox id="unidade" />
                       <div style={{ color: "var(--dash-text)", fontSize: 14, fontWeight: 700, lineHeight: 1.2 }}>Unidade</div>
                       <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                         <span style={{ width: 6, height: 6, borderRadius: "50%", background: unit?.is_published ? "var(--dash-accent)" : "var(--dash-text-subtle)", display: "inline-block", animation: unit?.is_published ? "pulse 2s infinite" : "none", flexShrink: 0 }} />
                         <span style={{ color: unit?.is_published ? "var(--dash-accent)" : "var(--dash-text-muted)", fontSize: 12 }}>{unit?.is_published ? "Publicado" : "Não publicado"}</span>
                       </div>
+                      {LockBadge}
                     </div>
                   );
                 }
@@ -1500,8 +1674,9 @@ export default function DashboardClient({
                   const hasOut = stockStats.out > 0;
                   const hasLow = !hasOut && stockStats.low > 0;
                   return (
-                    <div key="estoque" className="card" onClick={() => open("estoque")} style={{
+                    <div key="estoque" className={cardClass} onClick={blockedClick ?? (() => open("estoque"))} style={{
                       ...baseCard,
+                      ...blockedStyle,
                       gridColumn: `span ${colSpan}`,
                       background: hasOut ? "var(--dash-danger-soft)" : hasLow ? "var(--dash-warning-soft)" : "var(--dash-card)",
                       border: hasOut ? "1px solid rgba(248,113,113,0.15)" : hasLow ? "1px solid rgba(251,191,36,0.15)" : "1px solid var(--dash-border)",
@@ -1513,6 +1688,7 @@ export default function DashboardClient({
                         {hasLow && <span style={{ color: "var(--dash-warning)" }}>{stockStats.low} baixo{stockStats.low !== 1 ? "s" : ""}</span>}
                         {!hasOut && !hasLow && <span style={{ color: "var(--dash-text-secondary)" }}>Tudo em ordem</span>}
                       </div>
+                      {LockBadge}
                     </div>
                   );
                 }
@@ -1520,8 +1696,8 @@ export default function DashboardClient({
                 // ── WhatsApp — Business only ──────────────────────────────
                 if (item.id === "whatsapp") {
                   return (
-                    <div key="whatsapp" className="card" onClick={() => open("whatsapp")} style={{
-                      ...baseCard, gridColumn: `span ${colSpan}`,
+                    <div key="whatsapp" className={cardClass} onClick={blockedClick ?? (() => open("whatsapp"))} style={{
+                      ...baseCard, ...blockedStyle, gridColumn: `span ${colSpan}`,
                       background: "linear-gradient(135deg, var(--dash-card) 0%, rgba(37,211,102,0.04) 100%)",
                     }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
@@ -1539,6 +1715,7 @@ export default function DashboardClient({
                       </div>
                       <div style={{ color: "var(--dash-text)", fontSize: 14, fontWeight: 700, lineHeight: 1.2 }}>WhatsApp</div>
                       <div style={{ color: "var(--dash-text-secondary)", fontSize: 12, lineHeight: 1.3 }}>Mensagens e notificações</div>
+                      {LockBadge}
                     </div>
                   );
                 }
@@ -1546,20 +1723,22 @@ export default function DashboardClient({
                 // ── Suporte — chat widget ─────────────────────────────────
                 if (item.id === "suporte") {
                   return (
-                    <div key="suporte" className="card" onClick={() => setChatOpen(true)} style={{ ...baseCard, gridColumn: `span ${colSpan}`, background: "linear-gradient(135deg, var(--dash-card) 0%, rgba(0,255,174,0.03) 100%)" }}>
+                    <div key="suporte" className={cardClass} onClick={blockedClick ?? (() => setChatOpen(true))} style={{ ...baseCard, ...blockedStyle, gridColumn: `span ${colSpan}`, background: "linear-gradient(135deg, var(--dash-card) 0%, rgba(0,255,174,0.03) 100%)" }}>
                       <IconBox id="suporte" />
                       <div style={{ color: "var(--dash-text)", fontSize: 14, fontWeight: 700, lineHeight: 1.2 }}>Suporte</div>
                       <div style={{ color: "var(--dash-accent)", fontSize: 12 }}>Falar com equipe</div>
+                      {LockBadge}
                     </div>
                   );
                 }
 
                 // ── Card padrão ───────────────────────────────────────────
                 return (
-                  <div key={item.id} className="card" onClick={() => open(config.modalKey as any)} style={{ ...baseCard, gridColumn: `span ${colSpan}` }}>
+                  <div key={item.id} className={cardClass} onClick={blockedClick ?? (() => open(config.modalKey as any))} style={{ ...baseCard, ...blockedStyle, gridColumn: `span ${colSpan}` }}>
                     <IconBox id={item.id} />
                     <div style={{ color: "var(--dash-text)", fontSize: 14, fontWeight: 700, lineHeight: 1.2 }}>{config.label}</div>
                     <div style={{ color: "var(--dash-text-secondary)", fontSize: 12, lineHeight: 1.3 }}>{subText}</div>
+                    {LockBadge}
                   </div>
                 );
               })}
@@ -1677,6 +1856,14 @@ export default function DashboardClient({
       <Modal open={modal === "delivery"} onClose={close} title="Delivery" size="lg">
         {unit && <DeliveryModal unitId={unit.id} />}
       </Modal>
+      {upgradePopup && (
+        <UpgradeGatePopup
+          moduleId={upgradePopup.moduleId}
+          icon={upgradePopup.icon}
+          onClose={() => setUpgradePopup(null)}
+          onViewPlans={() => { setUpgradePopup(null); open("plano"); }}
+        />
+      )}
       <ChatWidget
         restaurantId={restaurant.id}
         open={chatOpen}
