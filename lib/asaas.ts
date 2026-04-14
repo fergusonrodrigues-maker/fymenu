@@ -26,7 +26,8 @@ export const CYCLE_LABELS: Record<string, string> = {
 };
 
 export async function asaasRequest(method: string, endpoint: string, body?: any) {
-  const res = await fetch(`${ASAAS_BASE}${endpoint}`, {
+  const url = `${ASAAS_BASE}${endpoint}`;
+  const res = await fetch(url, {
     method,
     headers: {
       "Content-Type": "application/json",
@@ -34,8 +35,24 @@ export async function asaasRequest(method: string, endpoint: string, body?: any)
     },
     body: body ? JSON.stringify(body) : undefined,
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.errors?.[0]?.description || JSON.stringify(data));
+
+  const rawText = await res.text();
+  console.log(`[ASAAS] ${method} ${endpoint} → ${res.status}`, rawText.substring(0, 500));
+
+  let data: any;
+  try {
+    data = JSON.parse(rawText);
+  } catch {
+    console.error("[ASAAS] Non-JSON response:", rawText.substring(0, 500));
+    throw new Error(rawText || "Resposta inválida do gateway de pagamento");
+  }
+
+  if (!res.ok) {
+    const msg = data?.errors?.[0]?.description || data?.message || JSON.stringify(data);
+    console.error("[ASAAS] Error response:", data);
+    throw new Error(msg);
+  }
+
   return data;
 }
 

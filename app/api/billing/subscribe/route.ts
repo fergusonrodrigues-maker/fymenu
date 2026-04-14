@@ -27,18 +27,29 @@ export async function POST(req: NextRequest) {
 
   const admin = createAdminClient();
 
+  // ── Lookup restaurant by owner_id ────────────────────────────────────────
   const { data: restaurant } = await admin
     .from("restaurants")
-    .select("id, name, whatsapp, owner_document, owner_phone, asaas_customer_id")
+    .select("id, name, whatsapp, owner_document, owner_phone")
     .eq("owner_id", user.id)
     .single();
 
   if (!restaurant) return NextResponse.json({ error: "Restaurante não encontrado" }, { status: 404 });
 
   try {
-    // ── Get or create Asaas customer ────────────────────────────────────────
-    let customerId: string = restaurant.asaas_customer_id || "";
+    // ── Get existing customer ID from subscriptions table ────────────────
+    const { data: existingSub } = await admin
+      .from("subscriptions")
+      .select("asaas_customer_id")
+      .eq("restaurant_id", restaurant.id)
+      .not("asaas_customer_id", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
+    let customerId: string = existingSub?.asaas_customer_id || "";
+
+    // ── Get or create Asaas customer ────────────────────────────────────────
     if (!customerId) {
       const customer = await asaasRequest("POST", "/customers", {
         name: restaurant.name,
@@ -47,9 +58,6 @@ export async function POST(req: NextRequest) {
         externalReference: restaurant.id,
       });
       customerId = customer.id;
-      await admin.from("restaurants")
-        .update({ asaas_customer_id: customerId })
-        .eq("id", restaurant.id);
     }
 
     const dueDateStr = new Date(Date.now() + 86_400_000).toISOString().split("T")[0]; // tomorrow
@@ -90,15 +98,17 @@ export async function POST(req: NextRequest) {
     // ── Create payment in Asaas ──────────────────────────────────────────────
     const payment = await asaasRequest("POST", "/payments", paymentBody);
 
-    const dbRow: Record<string, unknown> = {
+    const subRow: Record<string, unknown> = {
       restaurant_id: restaurant.id,
-      asaas_payment_id: payment.id,
+      asaas_subscription_id: payment.id,
       asaas_customer_id: customerId,
       plan: planId,
       cycle,
-      amount,
-      payment_method: paymentMethod,
+      billing_type: paymentMethod,
+      value: amount,
       status: payment.status || "PENDING",
+      next_due_date: dueDateStr,
+      started_at: new Date().toISOString(),
     };
 
     // ── PIX ──────────────────────────────────────────────────────────────────
@@ -112,14 +122,11 @@ export async function POST(req: NextRequest) {
         pixQrCode = pixData.encodedImage || "";
         pixPayload = pixData.payload || "";
         expirationDate = pixData.expirationDate || null;
-        dbRow.pix_qr_code = pixQrCode;
-        dbRow.pix_payload = pixPayload;
-        dbRow.pix_expiration = expirationDate ? new Date(expirationDate).toISOString() : null;
       } catch (e) {
         console.warn("[billing/subscribe] PIX QR fetch failed:", e);
       }
 
-      await admin.from("payments").insert(dbRow);
+      await admin.from("subscriptions").insert(subRow);
 
       return NextResponse.json({
         success: true,
@@ -131,7 +138,7 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Credit Card ──────────────────────────────────────────────────────────
-    await admin.from("payments").insert(dbRow);
+    await admin.from("subscriptions").insert(subRow);
 
     if (payment.status === "CONFIRMED" || payment.status === "RECEIVED") {
       await admin.from("restaurants")
