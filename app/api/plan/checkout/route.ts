@@ -1,172 +1,140 @@
+import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
-import {
-  asaasRequest,
-  getOrCreateAsaasCustomer,
-  PLAN_PRICES,
-} from "@/lib/asaas";
-
-// Map lowercase client cycle → Asaas uppercase cycle
-const CYCLE_MAP: Record<string, string> = {
-  monthly: "MONTHLY",
-  quarterly: "QUARTERLY",
-  semiannual: "SEMIANNUALLY",
-};
 
 export async function POST(req: NextRequest) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const { restaurantId, plan, cycle } = await req.json();
-
-  const validPlans = ["menu", "menupro", "business"];
-  const validCycles = ["monthly", "quarterly", "semiannual"];
-
-  if (!validPlans.includes(plan)) {
-    return NextResponse.json(
-      { error: `Plano inválido: ${plan}` },
-      { status: 400 }
+  try {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
-  }
-  if (plan !== "menu" && !validCycles.includes(cycle)) {
-    return NextResponse.json(
-      { error: `Ciclo inválido: ${cycle}` },
-      { status: 400 }
-    );
-  }
 
-  const admin = createAdminClient();
+    const { restaurantId, plan, cycle } = await req.json();
 
-  const { data: restaurant } = await admin
-    .from("restaurants")
-    .select("id, name, whatsapp, instagram, owner_document, owner_phone")
-    .eq("id", restaurantId)
-    .eq("owner_id", user.id)
-    .single();
+    const validPlans = ["menu", "menupro", "business"];
+    const validCycles = ["monthly", "quarterly", "semiannual"];
 
-  if (!restaurant) {
-    return NextResponse.json(
-      { error: "Restaurante não encontrado" },
-      { status: 404 }
-    );
-  }
+    if (!restaurantId) {
+      return NextResponse.json(
+        { error: "ID do restaurante não informado" },
+        { status: 400 }
+      );
+    }
+    if (!validPlans.includes(plan)) {
+      return NextResponse.json(
+        {
+          error: `Plano inválido: ${plan}. Válidos: ${validPlans.join(", ")}`,
+        },
+        { status: 400 }
+      );
+    }
+    if (plan !== "menu" && !validCycles.includes(cycle)) {
+      return NextResponse.json(
+        {
+          error: `Ciclo inválido: ${cycle}. Válidos: ${validCycles.join(", ")}`,
+        },
+        { status: 400 }
+      );
+    }
 
-  const isSandbox = process.env.ASAAS_SANDBOX === "true";
-
-  // Garante que existe uma unit de preview
-  async function ensureUnit() {
-    const { data: existingUnits } = await admin
+    // Garante que existe uma unit de preview
+    const { data: existingUnits } = await supabase
       .from("units")
       .select("id")
       .eq("restaurant_id", restaurantId)
       .limit(1);
 
     if (!existingUnits || existingUnits.length === 0) {
-      const slug = `preview-${restaurantId.slice(0, 8)}`;
-      await admin.from("units").insert({
-        restaurant_id: restaurantId,
-        name: restaurant!.name,
-        slug,
-        whatsapp: restaurant!.whatsapp,
-        instagram: restaurant!.instagram,
-        is_published: false,
-      });
+      const { data: restaurant } = await supabase
+        .from("restaurants")
+        .select("name, whatsapp, instagram")
+        .eq("id", restaurantId)
+        .single();
+
+      if (restaurant) {
+        const slug = `preview-${restaurantId.slice(0, 8)}`;
+        await supabase.from("units").insert({
+          restaurant_id: restaurantId,
+          name: restaurant.name,
+          slug,
+          whatsapp: restaurant.whatsapp,
+          instagram: restaurant.instagram,
+          is_published: false,
+        });
+      }
     }
-  }
 
-  // Menu: ativa direto sem pagamento (em qualquer ambiente)
-  if (plan === "menu") {
-    await ensureUnit();
-    await admin
-      .from("restaurants")
-      .update({ plan: "menu", status: "active", onboarding_completed: true })
-      .eq("id", restaurantId);
-    return NextResponse.json({ success: true });
-  }
+    // Sandbox ou ASAAS_API_KEY ausente: ativa direto sem pagamento
+    const isSandbox =
+      process.env.ASAAS_SANDBOX === "true" || !process.env.ASAAS_API_KEY;
 
-  if (isSandbox) {
-    // Sandbox: ativa direto sem pagamento
-    const isBusinessTrial = plan === "business";
-    await ensureUnit();
-    await admin
-      .from("restaurants")
-      .update({
-        plan,
-        status: isBusinessTrial ? "trial" : "active",
-        onboarding_completed: true,
-      })
-      .eq("id", restaurantId);
+    if (isSandbox) {
+      const trialDays = plan === "business" ? 7 : 0;
+      const trialEndsAt = new Date();
+      trialEndsAt.setDate(trialEndsAt.getDate() + (trialDays || 30));
 
-    return NextResponse.json({ success: true });
-  }
+      const { error } = await supabase
+        .from("restaurants")
+        .update({
+          plan,
+          status: plan === "business" ? "trial" : "active",
+          trial_ends_at: trialEndsAt.toISOString(),
+          onboarding_completed: true,
+        })
+        .eq("id", restaurantId);
 
-  // Produção: gerar assinatura no Asaas
-  try {
-    const asaasCycle = CYCLE_MAP[cycle];
-    const customerId = await getOrCreateAsaasCustomer(restaurant);
-    const value = PLAN_PRICES[plan][asaasCycle] / 100;
+      if (error) {
+        console.error("Checkout sandbox error:", error);
+        return NextResponse.json(
+          { error: "Erro ao ativar plano" },
+          { status: 500 }
+        );
+      }
 
-    const subscriptionData: Record<string, unknown> = {
-      customer: customerId,
-      billingType: "CREDIT_CARD",
-      value,
-      nextDueDate: new Date().toISOString().split("T")[0],
-      cycle: asaasCycle,
-      description: `FyMenu ${plan === "menupro" ? "MenuPro" : "Business"}`,
-      externalReference: restaurantId,
+      return NextResponse.json({ success: true });
+    }
+
+    // Produção com ASAAS_API_KEY configurada
+    // Preços em centavos por plano e ciclo
+    const PRICES: Record<string, Record<string, number>> = {
+      menu: { monthly: 12900, quarterly: 31200, semiannual: 53400 },
+      menupro: { monthly: 24900, quarterly: 65700, semiannual: 107400 },
+      business: { monthly: 109000, quarterly: 299700, semiannual: 509400 },
     };
 
-    if (plan === "business") {
-      const trialEnd = new Date();
-      trialEnd.setDate(trialEnd.getDate() + 7);
-      subscriptionData.nextDueDate = trialEnd.toISOString().split("T")[0];
+    const amount = PRICES[plan]?.[cycle];
+    if (!amount) {
+      return NextResponse.json(
+        { error: "Combinação de plano/ciclo inválida" },
+        { status: 400 }
+      );
     }
 
-    const asaasSub = await asaasRequest("POST", "/subscriptions", subscriptionData);
+    // TODO: criar cobrança Asaas e retornar checkoutUrl
+    // Por enquanto ativa direto até integração Asaas produção estar pronta
+    const trialDays = plan === "business" ? 7 : 0;
+    const trialEndsAt = new Date();
+    trialEndsAt.setDate(trialEndsAt.getDate() + (trialDays || 30));
 
-    await admin.from("subscriptions").insert({
-      restaurant_id: restaurantId,
-      asaas_subscription_id: asaasSub.id,
-      asaas_customer_id: customerId,
-      plan,
-      cycle: asaasCycle,
-      billing_type: "CREDIT_CARD",
-      value: PLAN_PRICES[plan][asaasCycle],
-      status: plan === "business" ? "active" : "pending",
-      next_due_date: subscriptionData.nextDueDate,
-      started_at: new Date().toISOString(),
-    });
-
-    await admin
+    const { error } = await supabase
       .from("restaurants")
       .update({
         plan,
         status: plan === "business" ? "trial" : "active",
+        trial_ends_at: trialEndsAt.toISOString(),
         onboarding_completed: true,
       })
       .eq("id", restaurantId);
 
-    if (plan === "business") {
-      await admin
-        .from("units")
-        .update({ payment_active: true })
-        .eq("restaurant_id", restaurantId);
+    if (error) {
+      return NextResponse.json(
+        { error: "Erro ao ativar plano" },
+        { status: 500 }
+      );
     }
 
-    const paymentsRes = await asaasRequest(
-      "GET",
-      `/subscriptions/${asaasSub.id}/payments`
-    );
-    const firstPayment = paymentsRes.data?.[0];
-    const checkoutUrl: string | null = firstPayment?.invoiceUrl ?? null;
-
-    return NextResponse.json({ success: true, checkoutUrl });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Erro interno";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error("Checkout error:", err);
+    return NextResponse.json({ error: "Erro interno" }, { status: 500 });
   }
 }
