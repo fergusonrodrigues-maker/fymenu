@@ -244,6 +244,7 @@ export default function ProductRow({
   const [thumbnailUrl, setThumbnailUrl] = useState(product.thumbnail_url ?? "");
   const [videoUrl, setVideoUrl] = useState(product.video_url ?? "");
   const [priceType, setPriceType] = useState(product.price_type ?? "fixed");
+  const [basePriceStr, setBasePriceStr] = useState<string | undefined>(undefined);
   const [variations, setVariations] = useState<{ id?: string; name: string; price: number; priceStr?: string }[]>([]);
   const [variationsLoaded, setVariationsLoaded] = useState(false);
   const [description, setDescription] = useState(product.description ?? "");
@@ -448,9 +449,20 @@ export default function ProductRow({
                     name="base_price"
                     type="text"
                     inputMode="decimal"
-                    defaultValue={product.base_price != null ? (product.base_price / 100).toFixed(2).replace(".", ",") : ""}
+                    value={basePriceStr !== undefined ? basePriceStr : (product.base_price != null ? (product.base_price / 100).toFixed(2).replace(".", ",") : "")}
                     placeholder="0,00"
                     style={{ ...inputStyle, paddingLeft: 36 }}
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(/[^\d,\.]/g, "");
+                      setBasePriceStr(raw);
+                    }}
+                    onBlur={(e) => {
+                      const raw = e.target.value.replace(/[^\d,\.]/g, "");
+                      const normalized = raw.replace(",", ".");
+                      const cents = Math.round(parseFloat(normalized) * 100) || 0;
+                      const formatted = cents ? (cents / 100).toFixed(2).replace(".", ",") : "";
+                      setBasePriceStr(formatted);
+                    }}
                   />
                 </div>
               )}
