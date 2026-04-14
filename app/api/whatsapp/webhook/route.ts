@@ -37,26 +37,28 @@ export async function POST(req: NextRequest) {
     // ── Inbound message ───────────────────────────────────────────────────────
     const payload = body as ZApiInboundPayload;
 
-    // Ignore outgoing, group, broadcast, and status messages
-    if (payload.fromMe) return NextResponse.json({ ok: true });
-    if (payload.isGroup) return NextResponse.json({ ok: true });
+    if (payload.fromMe)    return NextResponse.json({ ok: true });
+    if (payload.isGroup)   return NextResponse.json({ ok: true });
     if (payload.broadcast) return NextResponse.json({ ok: true });
 
-    const phone = payload.phone;
+    const phone      = payload.phone;
     const instanceId = payload.instanceId;
     const incomingMessageId = payload.messageId ?? "";
-    const messageText = payload.text?.message?.trim();
 
-    // Only handle text messages with a valid phone and instance
-    if (!phone || !instanceId || !messageText) {
+    // Determine message type
+    const messageText     = payload.text?.message?.trim();
+    const locationData    = payload.location;
+
+    const hasText     = !!messageText;
+    const hasLocation = !!(locationData?.latitude != null && locationData?.longitude != null);
+
+    // Must have phone + instance + at least one message type
+    if (!phone || !instanceId || (!hasText && !hasLocation)) {
       return NextResponse.json({ ok: true });
     }
 
     const admin = createAdminClient();
 
-    // Look up the instance by zapi_instance_id
-    // Cast to any because chatbot_* columns were added via migration and
-    // are not yet reflected in the generated Supabase types.
     const { data: instance } = await admin
       .from("whatsapp_instances")
       .select(
@@ -71,35 +73,34 @@ export async function POST(req: NextRequest) {
     if (instance.status !== "connected") return NextResponse.json({ ok: true });
     if (!instance.chatbot_enabled) return NextResponse.json({ ok: true });
 
-    // Get the unit slug for fallback messages
     const { data: unit } = await admin
       .from("units")
       .select("slug")
       .eq("id", instance.unit_id)
       .single();
 
-    // Fire-and-forget: process asynchronously so webhook returns fast
+    // Fire-and-forget
     import("@/lib/whatsapp-chatbot").then(({ processIncomingMessage }) => {
       processIncomingMessage({
-        unitId:        instance.unit_id,
+        unitId:       instance.unit_id,
         phone,
-        messageText,
-        messageId:     incomingMessageId,
-        instanceId:    instance.zapi_instance_id,
+        messageType:  hasLocation ? "location" : "text",
+        messageText:  hasText ? messageText : undefined,
+        locationData: hasLocation ? { latitude: locationData!.latitude, longitude: locationData!.longitude } : undefined,
+        messageId:    incomingMessageId,
+        instanceId:   instance.zapi_instance_id,
         instanceToken: instance.zapi_instance_token,
-        clientToken:   instance.zapi_client_token ?? undefined,
-        slug:          unit?.slug ?? "",
-        readDelay:     instance.chatbot_read_delay   ?? 3,
-        typingDelay:   instance.chatbot_typing_delay ?? 5,
-        showRead:      instance.chatbot_show_read    ?? true,
-        showTyping:    instance.chatbot_show_typing  ?? true,
-      }).catch(() => {
-        // Intentionally swallowed — chatbot must never crash webhook
-      });
+        clientToken:  instance.zapi_client_token ?? undefined,
+        slug:         unit?.slug ?? "",
+        readDelay:    instance.chatbot_read_delay   ?? 3,
+        typingDelay:  instance.chatbot_typing_delay ?? 5,
+        showRead:     instance.chatbot_show_read    ?? true,
+        showTyping:   instance.chatbot_show_typing  ?? true,
+      }).catch(() => {});
     });
 
     return NextResponse.json({ ok: true });
   } catch {
-    return NextResponse.json({ ok: true }); // never crash webhook
+    return NextResponse.json({ ok: true });
   }
 }

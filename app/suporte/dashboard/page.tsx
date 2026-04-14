@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, Fragment } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -156,8 +156,8 @@ function TR({ children }: { children: React.ReactNode }) {
   );
 }
 
-function TD({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
-  return <td style={{ padding: "9px 14px", color: "rgba(255,255,255,0.75)", borderBottom: "1px solid rgba(255,255,255,0.05)", verticalAlign: "middle", ...style }}>{children}</td>;
+function TD({ children, style, colSpan }: { children: React.ReactNode; style?: React.CSSProperties; colSpan?: number }) {
+  return <td colSpan={colSpan} style={{ padding: "9px 14px", color: "rgba(255,255,255,0.75)", borderBottom: "1px solid rgba(255,255,255,0.05)", verticalAlign: "middle", ...style }}>{children}</td>;
 }
 
 function Pages({ page, total, limit, onChange }: { page: number; total: number; limit: number; onChange: (p: number) => void }) {
@@ -268,13 +268,125 @@ function RestaurantesSection({ token, staff }: { token: string; staff: Staff }) 
   );
 }
 
+// ── Delivery Config Panel (inline, suporte) ───────────────────────────────────
+function DeliveryPanel({ unitId, token }: { unitId: string; token: string }) {
+  const GN = "#22c55e";
+  const inp: React.CSSProperties = {
+    background: "rgba(255,255,255,0.06)", border: `1px solid ${BORDER}`,
+    borderRadius: 6, color: TEXT, fontSize: 12, padding: "6px 8px",
+    outline: "none", width: "100%", boxSizing: "border-box",
+  };
+
+  interface DZone { id?: string; min_km: string; max_km: string; fee: string; _new?: boolean; _dirty?: boolean; }
+  const [enabled, setEnabled] = useState<boolean | null>(null);
+  const [lat, setLat] = useState("");
+  const [lon, setLon] = useState("");
+  const [maxKm, setMaxKm] = useState("10");
+  const [minOrder, setMinOrder] = useState("0,00");
+  const [zones, setZones] = useState<DZone[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  function flash(t: string) { setMsg(t); setTimeout(() => setMsg(null), 3000); }
+  const h = { "Content-Type": "application/json", "x-suporte-token": token };
+
+  useEffect(() => {
+    Promise.all([
+      fetch(`/api/delivery/settings?unit_id=${unitId}`, { headers: h }).then(r => r.json()),
+      fetch(`/api/delivery/zones?unit_id=${unitId}`, { headers: h }).then(r => r.json()),
+    ]).then(([s, z]) => {
+      setEnabled(s.delivery_enabled ?? false);
+      setLat(s.delivery_latitude != null ? String(s.delivery_latitude) : "");
+      setLon(s.delivery_longitude != null ? String(s.delivery_longitude) : "");
+      setMaxKm(s.delivery_max_km != null ? String(s.delivery_max_km) : "10");
+      setMinOrder(s.delivery_min_order != null ? (s.delivery_min_order / 100).toFixed(2).replace(".", ",") : "0,00");
+      setZones((z as any[]).map((row: any) => ({ id: row.id, min_km: String(row.min_km), max_km: String(row.max_km), fee: (row.fee / 100).toFixed(2).replace(".", ",") })));
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [unitId]);
+
+  async function saveSettings() {
+    setSaving(true);
+    await fetch("/api/delivery/settings", {
+      method: "PATCH", headers: h,
+      body: JSON.stringify({ unit_id: unitId, delivery_enabled: enabled, delivery_latitude: lat !== "" ? Number(lat) : null, delivery_longitude: lon !== "" ? Number(lon) : null, delivery_max_km: Number(maxKm) || 10, delivery_min_order: Math.round(parseFloat(minOrder.replace(",", ".")) * 100) || 0 }),
+    });
+    setSaving(false);
+    flash("Salvo!");
+  }
+
+  async function saveZone(idx: number) {
+    const z = zones[idx];
+    if (!z._dirty) return;
+    setSaving(true);
+    const body = { unit_id: unitId, min_km: Number(z.min_km), max_km: Number(z.max_km), fee: Math.round(parseFloat(z.fee.replace(",", ".")) * 100) || 0 };
+    if (z._new || !z.id) {
+      const res = await fetch("/api/delivery/zones", { method: "POST", headers: h, body: JSON.stringify(body) });
+      if (res.ok) { const d = await res.json(); setZones(p => p.map((item, i) => i === idx ? { ...item, id: d.id, _new: false, _dirty: false } : item)); }
+    } else {
+      await fetch(`/api/delivery/zones/${z.id}`, { method: "PATCH", headers: h, body: JSON.stringify({ min_km: body.min_km, max_km: body.max_km, fee: body.fee }) });
+      setZones(p => p.map((item, i) => i === idx ? { ...item, _dirty: false } : item));
+    }
+    setSaving(false);
+  }
+
+  async function deleteZone(idx: number) {
+    const z = zones[idx];
+    if (z._new || !z.id) { setZones(p => p.filter((_, i) => i !== idx)); return; }
+    await fetch(`/api/delivery/zones/${z.id}`, { method: "DELETE", headers: h });
+    setZones(p => p.filter((_, i) => i !== idx));
+  }
+
+  if (enabled === null) return <div style={{ color: MUTED, fontSize: 12, padding: "8px 0" }}>Carregando...</div>;
+
+  return (
+    <div style={{ padding: "12px 0 4px", borderTop: `1px solid ${BORDER}` }}>
+      {msg && <div style={{ fontSize: 11, color: GN, marginBottom: 8 }}>{msg}</div>}
+
+      {/* Toggle + coords */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
+        <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 12, color: TEXT }}>
+          <input type="checkbox" checked={!!enabled} onChange={e => setEnabled(e.target.checked)} />
+          Delivery ativo
+        </label>
+        <div style={{ display: "flex", gap: 6, flex: 1 }}>
+          <input style={{ ...inp, width: 120 }} placeholder="Latitude" value={lat} onChange={e => setLat(e.target.value)} />
+          <input style={{ ...inp, width: 120 }} placeholder="Longitude" value={lon} onChange={e => setLon(e.target.value)} />
+          <input style={{ ...inp, width: 60 }} placeholder="Raio km" value={maxKm} onChange={e => setMaxKm(e.target.value)} />
+          <input style={{ ...inp, width: 70 }} placeholder="Mín R$" value={minOrder} onChange={e => setMinOrder(e.target.value)} />
+        </div>
+        <button onClick={saveSettings} disabled={saving} style={{ padding: "5px 12px", borderRadius: 6, border: "none", background: GN, color: "#000", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+          Salvar
+        </button>
+      </div>
+
+      {/* Zones */}
+      <div style={{ display: "flex", gap: 6, marginBottom: 4 }}>
+        {["De", "Até", "R$", ""].map(h2 => <div key={h2} style={{ flex: h2 === "" ? "0 0 24px" : 1, fontSize: 10, color: MUTED, fontWeight: 700, textTransform: "uppercase" }}>{h2}</div>)}
+      </div>
+      {zones.map((z, idx) => (
+        <div key={idx} style={{ display: "flex", gap: 6, marginBottom: 4, alignItems: "center" }}>
+          <input style={{ ...inp, flex: 1, borderColor: z._dirty ? `${GN}55` : undefined }} type="number" step="0.1" value={z.min_km} onChange={e => setZones(p => p.map((item, i) => i === idx ? { ...item, min_km: e.target.value, _dirty: true } : item))} onBlur={() => saveZone(idx)} />
+          <input style={{ ...inp, flex: 1, borderColor: z._dirty ? `${GN}55` : undefined }} type="number" step="0.1" value={z.max_km} onChange={e => setZones(p => p.map((item, i) => i === idx ? { ...item, max_km: e.target.value, _dirty: true } : item))} onBlur={() => saveZone(idx)} />
+          <input style={{ ...inp, flex: 1, borderColor: z._dirty ? `${GN}55` : undefined }} value={z.fee} onChange={e => setZones(p => p.map((item, i) => i === idx ? { ...item, fee: e.target.value, _dirty: true } : item))} onBlur={() => saveZone(idx)} />
+          <button onClick={() => deleteZone(idx)} style={{ width: 24, height: 24, borderRadius: 4, border: "none", background: "rgba(239,68,68,0.12)", color: "#f87171", cursor: "pointer", fontSize: 11, flexShrink: 0 }}>✕</button>
+        </div>
+      ))}
+      <button onClick={() => { const last = zones[zones.length - 1]; setZones(p => [...p, { min_km: last?.max_km ?? "0", max_km: "", fee: "0,00", _new: true, _dirty: true }]); }} style={{ fontSize: 11, color: GN, background: "none", border: `1px solid ${GN}33`, borderRadius: 6, padding: "4px 10px", cursor: "pointer" }}>+ Faixa</button>
+    </div>
+  );
+}
+
 // ── Unidades ──────────────────────────────────────────────────────────────────
-function UnidadesSection({ token }: { token: string }) {
+function UnidadesSection({ token, staff }: { token: string; staff: Staff }) {
   const [q, setQ] = useState(""); const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all"); const [page, setPage] = useState(1);
+  const [deliveryUnit, setDeliveryUnit] = useState<string | null>(null);
   const { data, loading, error } = useApi("units", { q: search, status, page: String(page) }, token);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   function handleSearch(v: string) { setQ(v); clearTimeout(timer.current); timer.current = setTimeout(() => { setSearch(v); setPage(1); }, 400); }
+
+  const canDelivery = can(staff, "gerenciar_planos");
 
   return (
     <div>
@@ -289,17 +401,36 @@ function UnidadesSection({ token }: { token: string }) {
       {error && <Err msg={error} />}
       {data && (
         <>
-          <Table headers={["Unidade", "Slug", "Restaurante", "Plano", "Cidade", "Status", "Criada em"]} empty={!data.data?.length}>
+          <Table headers={["Unidade", "Slug", "Restaurante", "Plano", "Cidade", "Status", "Criada em", canDelivery ? "🚚" : ""]} empty={!data.data?.length}>
             {data.data?.map((u: any) => (
-              <TR key={u.id}>
-                <TD>{u.name || <span style={{ color: MUTED }}>sem nome</span>}</TD>
-                <TD><code style={{ fontSize: 11, color: "#a78bfa" }}>{u.slug}</code></TD>
-                <TD>{u.restaurants?.name || "—"}</TD>
-                <TD><span style={{ fontSize: 11, textTransform: "uppercase", color: MUTED }}>{u.restaurants?.plan || "—"}</span></TD>
-                <TD>{u.city || "—"}</TD>
-                <TD>{pill(u.is_published, "Publicada", "Rascunho")}</TD>
-                <TD style={{ fontSize: 12 }}>{fmtDate(u.created_at)}</TD>
-              </TR>
+              <Fragment key={u.id}>
+                <TR>
+                  <TD>{u.name || <span style={{ color: MUTED }}>sem nome</span>}</TD>
+                  <TD><code style={{ fontSize: 11, color: "#a78bfa" }}>{u.slug}</code></TD>
+                  <TD>{u.restaurants?.name || "—"}</TD>
+                  <TD><span style={{ fontSize: 11, textTransform: "uppercase", color: MUTED }}>{u.restaurants?.plan || "—"}</span></TD>
+                  <TD>{u.city || "—"}</TD>
+                  <TD>{pill(u.is_published, "Publicada", "Rascunho")}</TD>
+                  <TD style={{ fontSize: 12 }}>{fmtDate(u.created_at)}</TD>
+                  <TD>
+                    {canDelivery && (
+                      <button
+                        onClick={() => setDeliveryUnit(deliveryUnit === u.id ? null : u.id)}
+                        style={{ padding: "3px 8px", borderRadius: 6, border: "1px solid rgba(34,197,94,0.25)", background: deliveryUnit === u.id ? "rgba(34,197,94,0.15)" : "transparent", color: "#22c55e", fontSize: 11, cursor: "pointer", fontWeight: 600 }}
+                      >
+                        🚚
+                      </button>
+                    )}
+                  </TD>
+                </TR>
+                {deliveryUnit === u.id && (
+                  <TR>
+                    <TD colSpan={8} style={{ padding: "0 12px 8px" }}>
+                      <DeliveryPanel unitId={u.id} token={token} />
+                    </TD>
+                  </TR>
+                )}
+              </Fragment>
             ))}
           </Table>
           <Pages page={page} total={data.count ?? 0} limit={20} onChange={setPage} />
@@ -1244,7 +1375,7 @@ export default function SuporteDashboard() {
     if (!authReady && !staff) return null;
     switch (activeSection) {
       case "restaurantes": return <RestaurantesSection token={token!} staff={staff!} />;
-      case "unidades":     return <UnidadesSection token={token!} />;
+      case "unidades":     return <UnidadesSection token={token!} staff={staff!} />;
       case "pedidos":      return <PedidosSection token={token!} />;
       case "cardapios":    return <CardapiosSection token={token!} staff={staff!} />;
       case "crm":          return <CRMSection token={token!} />;

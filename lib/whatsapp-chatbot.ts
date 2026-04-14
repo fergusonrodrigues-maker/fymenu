@@ -4,6 +4,7 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendText, markAsRead, startTyping } from "@/lib/zapi";
+import { calculateDeliveryFee } from "@/lib/delivery-calculator";
 import type { MenuCacheData } from "@/lib/cache/buildMenuCache";
 
 // ─── In-memory context cache (5 min TTL) ────────────────────────────────────
@@ -33,22 +34,17 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/** Estimate typing duration based on reply length. 1s per 20 chars, clamped 2–8s. */
 function estimateTypingMs(text: string): number {
   const ms = Math.round((text.length / 20) * 1_000);
   return Math.min(8_000, Math.max(2_000, ms));
 }
 
-/**
- * Clamp total delay budget to 25s minus openai time budget (10s) minus 2s buffer.
- * Returns adjusted [readDelayMs, typingDelayMs, typingDurationMs].
- */
 function clampDelays(
   readDelayMs: number,
   typingDelayMs: number,
   typingDurationMs: number
 ): [number, number, number] {
-  const BUDGET = 13_000; // 25s total - 10s openai - 2s buffer
+  const BUDGET = 13_000;
   const total = readDelayMs + typingDelayMs + typingDurationMs;
   if (total <= BUDGET) return [readDelayMs, typingDelayMs, typingDurationMs];
   const scale = BUDGET / total;
@@ -69,13 +65,14 @@ async function buildRestaurantContext(unitId: string): Promise<{ context: string
 
   const admin = createAdminClient();
 
-  const { data: cacheRow } = await admin
-    .from("menu_cache")
-    .select("menu_json")
-    .eq("unit_id", unitId)
-    .maybeSingle();
+  // Fetch menu cache + delivery config in parallel
+  const [cacheRes, deliveryRes] = await Promise.all([
+    admin.from("menu_cache").select("menu_json").eq("unit_id", unitId).maybeSingle(),
+    admin.from("units").select("delivery_enabled").eq("id", unitId).single(),
+  ]);
 
-  const menu: MenuCacheData | null = (cacheRow?.menu_json as MenuCacheData) ?? null;
+  const menu: MenuCacheData | null = (cacheRes.data?.menu_json as MenuCacheData) ?? null;
+  const deliveryEnabled = (deliveryRes.data as any)?.delivery_enabled ?? false;
 
   if (!menu) {
     const { data: unit } = await admin
@@ -111,6 +108,10 @@ async function buildRestaurantContext(unitId: string): Promise<{ context: string
 
   const addressParts = [u.neighborhood, u.city].filter(Boolean).join(", ");
 
+  const deliveryInstruction = deliveryEnabled
+    ? `\n- O restaurante faz entregas. Se o cliente perguntar sobre entrega ou taxa de entrega, peça para ele enviar a localização (pin do mapa) para calcular a taxa automaticamente.`
+    : "";
+
   const context = `Você é o assistente virtual do restaurante ${u.name}.
 
 INFORMAÇÕES DO RESTAURANTE:
@@ -130,7 +131,7 @@ REGRAS DE COMPORTAMENTO:
 - Se o cliente quiser fazer um pedido, direcione para o link do cardápio digital
 - Mantenha respostas curtas e diretas (máximo 3-4 frases)
 - Use emojis com moderação
-- Não mencione que você é uma IA — aja como atendente do restaurante`;
+- Não mencione que você é uma IA — aja como atendente do restaurante${deliveryInstruction}`;
 
   contextCache.set(unitId, { context, slug: u.slug, expiresAt: Date.now() + 5 * 60 * 1000 });
   return { context, slug: u.slug };
@@ -215,20 +216,55 @@ async function generateChatbotResponse(
   }
 }
 
+// ─── Human simulation: delay + read + typing before sending ──────────────────
+
+async function sendReplyWithDelay(
+  instanceId: string,
+  instanceToken: string,
+  clientToken: string | undefined,
+  phone: string,
+  messageId: string,
+  reply: string,
+  readDelay: number,
+  typingDelay: number,
+  showRead: boolean,
+  showTyping: boolean
+): Promise<ReturnType<typeof sendText>> {
+  const actualTypingMs = estimateTypingMs(reply);
+  const [safeReadMs, safeTypingMs, safeTypingDurationMs] = clampDelays(
+    readDelay * 1_000,
+    typingDelay * 1_000,
+    actualTypingMs
+  );
+
+  await sleep(safeReadMs);
+  if (showRead) {
+    markAsRead(instanceId, instanceToken, phone, messageId, clientToken).catch(() => {});
+  }
+
+  await sleep(safeTypingMs);
+  if (showTyping) {
+    startTyping(instanceId, instanceToken, phone, safeTypingDurationMs, clientToken).catch(() => {});
+  }
+
+  await sleep(safeTypingDurationMs);
+  return sendText(instanceId, instanceToken, phone, reply, clientToken);
+}
+
 // ─── Process inbound message (main entry point) ──────────────────────────────
 
 export interface InboundMessageData {
   unitId: string;
   phone: string;
-  messageText: string;
+  messageText?: string;
+  messageType: "text" | "location" | "other";
+  locationData?: { latitude: number; longitude: number };
   messageId: string;
   instanceId: string;
   instanceToken: string;
   clientToken?: string;
   slug: string;
-  /** Seconds to wait before marking as read (default 3) */
   readDelay: number;
-  /** Seconds to wait before starting typing indicator (default 5) */
   typingDelay: number;
   showRead: boolean;
   showTyping: boolean;
@@ -236,13 +272,71 @@ export interface InboundMessageData {
 
 export async function processIncomingMessage(data: InboundMessageData): Promise<void> {
   const {
-    unitId, phone, messageText, messageId,
-    instanceId, instanceToken, clientToken, slug,
+    unitId, phone, messageText, messageType, locationData,
+    messageId, instanceId, instanceToken, clientToken, slug,
     readDelay, typingDelay, showRead, showTyping,
   } = data;
   const admin = createAdminClient();
 
-  // 1. Save inbound message
+  // ── Handle location message ──────────────────────────────────────────────
+  if (messageType === "location" && locationData) {
+    // Save inbound location event
+    await admin.from("whatsapp_messages").insert({
+      unit_id: unitId,
+      phone,
+      message: `[Localização: ${locationData.latitude.toFixed(5)}, ${locationData.longitude.toFixed(5)}]`,
+      direction: "inbound",
+      trigger_type: "auto_chatbot",
+      status: "delivered",
+    });
+
+    if (isRateLimited(phone)) return;
+
+    const result = await calculateDeliveryFee(unitId, locationData.latitude, locationData.longitude);
+
+    let reply: string;
+    if (result.available) {
+      reply =
+        `📍 Localização recebida!\n\n` +
+        `📏 Distância: ${result.distanceKm!.toFixed(1)} km\n` +
+        `💰 *Taxa de entrega*: R$ ${(result.fee / 100).toFixed(2).replace(".", ",")}\n\n` +
+        `✅ *Entrega disponível* para este endereço!\n\n` +
+        `Para fazer seu pedido, acesse nosso cardápio digital: https://fymenu.com/delivery/${slug}`;
+    } else {
+      const distStr = result.distanceKm != null ? `${result.distanceKm.toFixed(1)} km` : "—";
+      reply =
+        `📍 Localização recebida!\n\n` +
+        `📏 Distância: ${distStr}\n\n` +
+        `❌ ${result.message}\n\n` +
+        `Infelizmente não conseguimos entregar neste endereço. ` +
+        `Você pode retirar no nosso estabelecimento ou verificar outro endereço.`;
+    }
+
+    const sendResult = await sendReplyWithDelay(
+      instanceId, instanceToken, clientToken, phone, messageId,
+      reply, readDelay, typingDelay, showRead, showTyping
+    );
+
+    await admin.from("whatsapp_messages").insert({
+      unit_id: unitId,
+      phone,
+      message: reply,
+      direction: "outbound",
+      trigger_type: "auto_chatbot",
+      status: sendResult.success ? "sent" : "failed",
+      zapi_message_id: sendResult.success
+        ? (sendResult.data as Record<string, string> | undefined)?.messageId ?? null
+        : null,
+      error_message: sendResult.success ? null : sendResult.error ?? null,
+      sent_at: sendResult.success ? new Date().toISOString() : null,
+    });
+    return;
+  }
+
+  // ── Handle text message ───────────────────────────────────────────────────
+  if (messageType !== "text" || !messageText) return;
+
+  // Save inbound
   await admin.from("whatsapp_messages").insert({
     unit_id: unitId,
     phone,
@@ -252,51 +346,41 @@ export async function processIncomingMessage(data: InboundMessageData): Promise<
     status: "delivered",
   });
 
-  // 2. Rate-limit check
   if (isRateLimited(phone)) return;
-
-  // 3. Skip very short messages ("k", "ok", single emoji, etc.)
   if (messageText.trim().length <= 2) return;
 
-  // 4. Generate reply (parallel with delays below — we await it after human simulation)
+  // Generate reply (parallel with delays)
   const replyPromise = generateChatbotResponse(unitId, phone, messageText);
 
-  // 5. Human simulation sequence
-  //    Calculate typing duration based on expected reply length (150 chars estimate)
-  //    We estimate before knowing the reply; we'll use actual length after OpenAI responds.
+  // Begin delay sequence while OpenAI works
   const estimatedTypingMs = estimateTypingMs("x".repeat(150));
-  const [safeReadMs, safeTypingMs, safeTypingDurationMs] = clampDelays(
+  const [safeReadMs, safeTypingMs] = clampDelays(
     readDelay * 1_000,
     typingDelay * 1_000,
     estimatedTypingMs
   );
 
-  // Step 5a: wait read_delay, then mark as read
   await sleep(safeReadMs);
   if (showRead) {
     markAsRead(instanceId, instanceToken, phone, messageId, clientToken).catch(() => {});
   }
 
-  // Step 5b: wait typing_delay, then start typing indicator
   await sleep(safeTypingMs);
-
-  // Await the OpenAI reply now (it's been running in parallel)
   const reply = await replyPromise;
 
-  // Recalculate typing duration with actual reply length
-  const actualTypingMs = Math.min(safeTypingDurationMs, estimateTypingMs(reply));
+  const actualTypingMs = Math.min(
+    clampDelays(readDelay * 1_000, typingDelay * 1_000, estimateTypingMs(reply))[2],
+    estimateTypingMs(reply)
+  );
 
   if (showTyping) {
     startTyping(instanceId, instanceToken, phone, actualTypingMs, clientToken).catch(() => {});
   }
 
-  // Step 5c: wait typing duration
   await sleep(actualTypingMs);
 
-  // 6. Send via Z-API
   const result = await sendText(instanceId, instanceToken, phone, reply, clientToken);
 
-  // 7. Save outbound reply
   await admin.from("whatsapp_messages").insert({
     unit_id: unitId,
     phone,

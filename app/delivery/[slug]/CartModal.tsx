@@ -10,6 +10,13 @@ export interface CartItem {
   addons?: Array<{ id: string; name: string; price: number }>;
 }
 
+interface DeliveryFeeResult {
+  available: boolean;
+  distanceKm: number | null;
+  fee: number;
+  message: string;
+}
+
 interface CartModalProps {
   items: CartItem[];
   unitId: string;
@@ -17,6 +24,8 @@ interface CartModalProps {
   onClose: () => void;
   onSuccess: () => void;
   onUpdateQty: (productId: string, qty: number) => void;
+  /** If true, show the delivery fee calculation section */
+  deliveryEnabled?: boolean;
 }
 
 function moneyBR(value: number) {
@@ -30,6 +39,7 @@ export default function CartModal({
   onClose,
   onSuccess,
   onUpdateQty,
+  deliveryEnabled = false,
 }: CartModalProps) {
   const [tableNumber, setTableNumber] = useState<string>(
     initialTable ? String(initialTable) : ""
@@ -39,7 +49,49 @@ export default function CartModal({
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
 
-  const total = items.reduce((s, i) => s + i.qty * i.unit_price, 0);
+  // Delivery fee state
+  const [deliveryFee, setDeliveryFee] = useState<DeliveryFeeResult | null>(null);
+  const [calcLoading, setCalcLoading] = useState(false);
+  const [calcError, setCalcError] = useState<string | null>(null);
+
+  const itemsTotal = items.reduce((s, i) => s + i.qty * i.unit_price, 0);
+  const total = itemsTotal + (deliveryFee?.available ? deliveryFee.fee : 0);
+
+  async function calculateDelivery() {
+    if (!navigator.geolocation) {
+      setCalcError("Geolocalização não suportada neste dispositivo.");
+      return;
+    }
+    setCalcLoading(true);
+    setCalcError(null);
+    setDeliveryFee(null);
+
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const res = await fetch("/api/delivery/calculate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              unit_id: unitId,
+              latitude: pos.coords.latitude,
+              longitude: pos.coords.longitude,
+            }),
+          });
+          const data: DeliveryFeeResult = await res.json();
+          setDeliveryFee(data);
+        } catch {
+          setCalcError("Erro ao calcular taxa de entrega.");
+        } finally {
+          setCalcLoading(false);
+        }
+      },
+      () => {
+        setCalcError("Não foi possível obter sua localização. Verifique as permissões.");
+        setCalcLoading(false);
+      }
+    );
+  }
 
   async function handleSubmit() {
     if (items.length === 0) return;
@@ -54,6 +106,7 @@ export default function CartModal({
           unit_id: unitId,
           table_number: tableNumber ? parseInt(tableNumber) : null,
           notes: notes || null,
+          delivery_fee: deliveryFee?.available ? deliveryFee.fee : null,
           items: items.map((i) => ({
             product_id: i.product_id,
             qty: i.qty,
@@ -179,10 +232,78 @@ export default function CartModal({
                 ))}
               </div>
 
+              {/* Delivery fee section */}
+              {deliveryEnabled && (
+                <div className="mt-4 rounded-2xl bg-zinc-900 px-4 py-4">
+                  <p className="text-zinc-300 text-xs font-semibold uppercase tracking-widest mb-3">
+                    Taxa de entrega
+                  </p>
+
+                  {!deliveryFee && !calcLoading && (
+                    <button
+                      onClick={calculateDelivery}
+                      className="w-full py-3 rounded-xl text-sm font-bold border border-green-500/30 bg-green-500/10 text-green-400 flex items-center justify-center gap-2"
+                    >
+                      📍 Calcular taxa de entrega
+                    </button>
+                  )}
+
+                  {calcLoading && (
+                    <div className="text-zinc-400 text-sm text-center py-2 animate-pulse">
+                      Obtendo localização...
+                    </div>
+                  )}
+
+                  {calcError && (
+                    <div className="text-red-400 text-xs py-2">{calcError}</div>
+                  )}
+
+                  {deliveryFee && (
+                    <div className={`rounded-xl px-3 py-3 ${deliveryFee.available ? "bg-green-500/10 border border-green-500/25" : "bg-red-500/10 border border-red-500/25"}`}>
+                      {deliveryFee.distanceKm != null && (
+                        <p className="text-zinc-300 text-xs mb-1">
+                          📏 Distância: <strong>{deliveryFee.distanceKm.toFixed(1)} km</strong>
+                        </p>
+                      )}
+                      <p className={`text-sm font-bold ${deliveryFee.available ? "text-green-400" : "text-red-400"}`}>
+                        {deliveryFee.available
+                          ? `💰 Taxa: ${moneyBR(deliveryFee.fee / 100)}`
+                          : `❌ ${deliveryFee.message}`}
+                      </p>
+                      {!deliveryFee.available && (
+                        <p className="text-zinc-500 text-xs mt-1">
+                          Você pode retirar no estabelecimento.
+                        </p>
+                      )}
+                      <button
+                        onClick={calculateDelivery}
+                        className="text-zinc-500 text-xs mt-2 underline"
+                      >
+                        Recalcular
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Subtotal + taxa */}
+              {deliveryEnabled && deliveryFee?.available && (
+                <div className="flex justify-between items-center px-1 mt-3">
+                  <span className="text-zinc-500 text-xs">Subtotal</span>
+                  <span className="text-zinc-400 text-sm">{moneyBR(itemsTotal / 100)}</span>
+                </div>
+              )}
+              {deliveryEnabled && deliveryFee?.available && (
+                <div className="flex justify-between items-center px-1 mt-1">
+                  <span className="text-zinc-500 text-xs">Taxa de entrega</span>
+                  <span className="text-zinc-400 text-sm">{moneyBR(deliveryFee.fee / 100)}</span>
+                </div>
+              )}
+
               {/* Total */}
               <div className="flex justify-between items-center px-1 mt-4 mb-5">
                 <span className="text-zinc-400 text-sm">Total</span>
-                <span className="text-white font-bold text-xl">{moneyBR(total)}</span>
+                <span className="text-white font-bold text-xl">{moneyBR(total / 100)}</span>
               </div>
 
               {/* Mesa */}

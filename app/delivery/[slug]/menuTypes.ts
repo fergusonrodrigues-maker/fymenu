@@ -18,6 +18,7 @@ export type Unit = {
   ifood_platform?: string | null;
   business_hours?: any[] | null;
   force_status?: string | null;
+  delivery_enabled?: boolean | null;
 };
 export type Category = {
   id: string;

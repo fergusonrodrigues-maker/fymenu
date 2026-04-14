@@ -108,7 +108,7 @@ export default async function Page({
   const { data: unitData, error: unitErr } = await supabase
     .from("units")
     .select(
-      "id, restaurant_id, name, slug, city, neighborhood, whatsapp, instagram, maps_url, logo_url, cover_url, banner_url, description, payment_active, facebook_pixel_id, ifood_url, ifood_platform, business_hours, force_status"
+      "id, restaurant_id, name, slug, city, neighborhood, whatsapp, instagram, maps_url, logo_url, cover_url, banner_url, description, payment_active, facebook_pixel_id, ifood_url, ifood_platform, business_hours, force_status, delivery_enabled"
     )
     .eq("slug", publicSlug)
     .maybeSingle();
@@ -148,6 +148,7 @@ export default async function Page({
     ifood_platform: unitData.ifood_platform ?? null,
     business_hours: unitData.business_hours ?? null,
     force_status: unitData.force_status ?? "auto",
+    delivery_enabled: (unitData as any).delivery_enabled ?? false,
   };
 
   // ─── 2) MENU DATA — Storage CDN first, table fallback, DB rebuild last ─────

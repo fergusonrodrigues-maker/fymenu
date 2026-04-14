@@ -1253,8 +1253,8 @@ export default function MenuClient({
         />
       )}
 
-      {/* Cart bar flutuante (modo presencial) */}
-      {mode === "presencial" && (
+      {/* Cart bar flutuante (presencial + delivery quando habilitado) */}
+      {(mode === "presencial" || (mode === "delivery" && unit.delivery_enabled)) && (
         <CartBar
           itemCount={cartCount}
           total={cartTotal}
@@ -1286,8 +1286,8 @@ export default function MenuClient({
         />
       )}
 
-      {/* Cart modal (presencial) */}
-      {mode === "presencial" && cartOpen && (
+      {/* Cart modal (presencial + delivery quando habilitado) */}
+      {(mode === "presencial" || (mode === "delivery" && unit.delivery_enabled)) && cartOpen && (
         <CartModal
           items={cart}
           unitId={unit.id}
@@ -1295,6 +1295,7 @@ export default function MenuClient({
           onClose={() => setCartOpen(false)}
           onSuccess={clearCart}
           onUpdateQty={updateCartQty}
+          deliveryEnabled={mode === "delivery" && !!unit.delivery_enabled}
         />
       )}
 

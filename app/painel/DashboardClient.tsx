@@ -25,7 +25,8 @@ const EstoqueModal = dynamic(() => import("./modals/EstoqueModal"), { ssr: false
 const ConfigModal = dynamic(() => import("./modals/ConfigModal"), { ssr: false, loading: () => loadingFallback });
 const PrinterModal = dynamic(() => import("./modals/PrinterModal"), { ssr: false, loading: () => loadingFallback });
 const CrmModal = dynamic(() => import("./modals/CrmModal"), { ssr: false, loading: () => loadingFallback });
-const WhatsappModal = dynamic(() => import("./modals/WhatsappModal"), { ssr: false, loading: () => loadingFallback });
+const WhatsappModal  = dynamic(() => import("./modals/WhatsappModal"),  { ssr: false, loading: () => loadingFallback });
+const DeliveryModal  = dynamic(() => import("./modals/DeliveryModal"),  { ssr: false, loading: () => loadingFallback });
 const ChatWidget = dynamic(() => import("./components/ChatWidget"), { ssr: false });
 
 // ─── Modal backdrop ─────────────────────────────────────────────────────────
@@ -285,6 +286,7 @@ const GRID_LAYOUTS: Record<string, Array<{ id: string; cols: number; mobileCols:
     { id: "estoque",     cols: 1, mobileCols: 1 },
     { id: "crm",         cols: 1, mobileCols: 1 },
     { id: "whatsapp",    cols: 2, mobileCols: 2 },
+    { id: "delivery",    cols: 1, mobileCols: 1 },
     { id: "tv",          cols: 1, mobileCols: 1 },
     { id: "suporte",     cols: 1, mobileCols: 1 },
     { id: "config",      cols: 1, mobileCols: 1 },
@@ -303,7 +305,7 @@ export default function DashboardClient({
   reportData: ReportData;
 }) {
   const router = useRouter();
-  const [modal, setModal] = useState<"analytics" | "cardapio" | "pedidos" | "financeiro" | "unidade" | "plano" | "config" | "tv" | "modotv" | "estoque" | "operacoes" | "equipe" | "impressoras" | "links" | "crm" | "whatsapp" | null>(null);
+  const [modal, setModal] = useState<"analytics" | "cardapio" | "pedidos" | "financeiro" | "unidade" | "plano" | "config" | "tv" | "modotv" | "estoque" | "operacoes" | "equipe" | "impressoras" | "links" | "crm" | "whatsapp" | "delivery" | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
   const open = (m: typeof modal) => setModal(m);
   const close = () => setModal(null);
@@ -510,6 +512,7 @@ export default function DashboardClient({
     links: { icon: "🔗", label: "Links Rápidos", sub: "Acessos do sistema", modalKey: "links" },
     crm: { icon: "📇", label: "CRM", sub: "Clientes e contatos", modalKey: "crm" },
     whatsapp: { icon: "💬", label: "WhatsApp", sub: "Mensagens e notificações", modalKey: "whatsapp" },
+    delivery: { icon: "🚚", label: "Delivery", sub: "Taxas de entrega por distância", modalKey: "delivery" },
     suporte: { icon: "🎧", label: "Suporte", sub: "Chat com nossa equipe", modalKey: "suporte" },
   }), [analytics, products.length, unit?.is_published, tvCount, restaurantState, trialDays, stockStats]);
 
@@ -1652,6 +1655,9 @@ export default function DashboardClient({
       </Modal>
       <Modal open={modal === "whatsapp"} onClose={close} title="WhatsApp">
         {unit && <WhatsappModal unit={unit} />}
+      </Modal>
+      <Modal open={modal === "delivery"} onClose={close} title="Delivery">
+        {unit && <DeliveryModal unitId={unit.id} />}
       </Modal>
       <ChatWidget
         restaurantId={restaurant.id}
