@@ -36,8 +36,13 @@ export default function VideoShowcase() {
   useEffect(() => {
     videoRefs.current.forEach((v, i) => {
       if (!v) return;
-      if (i === active) v.play().catch(() => {});
-      else v.pause();
+      if (i === active) {
+        // Ensure preload is "auto" for the active card so playback starts fast
+        v.preload = "auto";
+        v.play().catch(() => {});
+      } else {
+        v.pause();
+      }
     });
   }, [active]);
 
@@ -96,9 +101,9 @@ export default function VideoShowcase() {
             }}>
               <video
                 ref={el => { videoRefs.current[i] = el; }}
-                src={Math.abs(off) <= 1 ? src : undefined}
+                src={Math.abs(off) <= 2 ? src : undefined}
                 muted loop playsInline
-                preload={Math.abs(off) <= 1 ? "metadata" : "none"}
+                preload={isActive ? "auto" : Math.abs(off) === 1 ? "metadata" : "none"}
                 style={{ width: "100%", height: "100%", objectFit: "cover", background: "#0a0a0a" }}
                 onError={(e) => { (e.target as HTMLVideoElement).style.display = "none"; }}
               />
