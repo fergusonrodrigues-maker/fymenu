@@ -22,7 +22,7 @@ export default async function OnboardingPage() {
   if (!restaurantId) {
     const { data: newRestaurant } = await supabase
       .from("restaurants")
-      .insert({ owner_id: user.id, name: user.email?.split("@")[0] ?? "Meu Restaurante" })
+      .insert({ owner_id: user.id, name: user.email?.split("@")[0] ?? "Meu Restaurante", plan: "menu" })
       .select("id")
       .single();
     restaurantId = newRestaurant?.id;

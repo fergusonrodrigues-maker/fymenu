@@ -100,7 +100,7 @@ export default function SignupPage() {
 
       const { data: restaurant, error: restaurantError } = await supabase
         .from("restaurants")
-        .insert({ owner_id: userId, name: restaurantName, onboarding_completed: false })
+        .insert({ owner_id: userId, name: restaurantName, plan: "menu", onboarding_completed: false })
         .select("id")
         .single();
 
