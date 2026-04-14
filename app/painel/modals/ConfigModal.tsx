@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Profile, Restaurant } from "../types";
+
+const PaymentModal = lazy(() => import("./PaymentModal"));
 
 const supabase = createClient();
 
@@ -66,6 +68,9 @@ export default function ConfigModal({ profile, restaurant }: { profile: Profile;
   // Plano
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [canceling, setCanceling] = useState(false);
+  const [payingForPlan, setPayingForPlan] = useState<{
+    planKey: string; planName: string; accent: string; accentRgb: string;
+  } | null>(null);
 
   const currentPlan = restaurant?.plan || "menu";
   const currentPlanIdx = PLANS.findIndex(p => p.key === currentPlan);
@@ -147,6 +152,20 @@ export default function ConfigModal({ profile, restaurant }: { profile: Profile;
 
   return (
     <div style={{ paddingTop: 8 }}>
+      {/* Payment modal overlay */}
+      {payingForPlan && (
+        <Suspense fallback={null}>
+          <PaymentModal
+            planKey={payingForPlan.planKey}
+            planName={payingForPlan.planName}
+            accent={payingForPlan.accent}
+            accentRgb={payingForPlan.accentRgb}
+            onClose={() => setPayingForPlan(null)}
+            onSuccess={() => { setPayingForPlan(null); window.location.reload(); }}
+          />
+        </Suspense>
+      )}
+
       {/* Tabs */}
       <div className="tabs-scroll" style={{ display: "flex", gap: 2, padding: 3, background: "var(--dash-card)", borderRadius: 12, marginBottom: 16, overflowX: "auto", scrollbarWidth: "none" as any }}>
         {TABS.map(t => (
@@ -358,7 +377,10 @@ export default function ConfigModal({ profile, restaurant }: { profile: Profile;
 
                   {/* Action button */}
                   <button
-                    onClick={isCurrent ? undefined : () => handleChangePlan(plan.key)}
+                    onClick={isCurrent ? undefined : () => setPayingForPlan({
+                      planKey: plan.key, planName: plan.name,
+                      accent: plan.accent, accentRgb: plan.accentRgb,
+                    })}
                     disabled={isCurrent}
                     style={{
                       width: "100%", padding: "12px", borderRadius: 12,
