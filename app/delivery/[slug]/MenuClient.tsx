@@ -559,32 +559,6 @@ export default function MenuClient({
                 pointerEvents: "none",
               }}
             />
-            {/* Botão de busca (ícone lupa) */}
-            <button
-              onClick={() => setSearchOpen((o) => !o)}
-              style={{
-                position: "absolute",
-                top: 12,
-                right: 12,
-                zIndex: 10,
-                width: 36,
-                height: 36,
-                borderRadius: 12,
-                background: "rgba(0,0,0,0.3)",
-                backdropFilter: "blur(10px)",
-                WebkitBackdropFilter: "blur(10px)",
-                border: "none",
-                color: "rgba(255,255,255,0.7)",
-                fontSize: 16,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: "pointer",
-              }}
-              aria-label="Buscar"
-            >
-              🔍
-            </button>
           </div>
 
           {/* B) Logo + Nome (sobrepõe a parte inferior da capa) */}
@@ -617,15 +591,42 @@ export default function MenuClient({
                 />
               </div>
             )}
-            <div
-              style={{
-                fontSize: 20,
-                fontWeight: 800,
-                color: isDark ? "#fff" : "#111",
-                letterSpacing: "-0.3px",
-              }}
-            >
-              {unit.name}
+            {/* Nome + lupa na mesma linha */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "0 16px" }}>
+              <div style={{ flex: 1 }} />
+              <div
+                style={{
+                  fontSize: 20,
+                  fontWeight: 800,
+                  color: isDark ? "#fff" : "#111",
+                  letterSpacing: "-0.3px",
+                }}
+              >
+                {unit.name}
+              </div>
+              <div style={{ flex: 1, display: "flex", justifyContent: "flex-end" }}>
+                <button
+                  onClick={() => setSearchOpen((o) => !o)}
+                  style={{
+                    width: 38, height: 38, borderRadius: 12,
+                    background: searchOpen
+                      ? (isDark ? "rgba(0,255,174,0.12)" : "rgba(0,160,100,0.1)")
+                      : (isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)"),
+                    backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
+                    border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
+                    color: searchOpen
+                      ? (isDark ? "#00ffae" : "#00a06a")
+                      : (isDark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.4)"),
+                    fontSize: 16,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    cursor: "pointer",
+                    transition: "all 200ms",
+                  }}
+                  aria-label="Buscar"
+                >
+                  🔍
+                </button>
+              </div>
             </div>
             {unit.description && (
               <div
