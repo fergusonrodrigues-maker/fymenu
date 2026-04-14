@@ -8,7 +8,7 @@ const SHOWCASE_VIDEOS = Array.from({ length: 10 }, (_, i) =>
 );
 
 export default function VideoShowcase() {
-  const [active, setActive] = useState(0);
+  const [active, setActive] = useState(4);
   const [isMobile, setIsMobile] = useState(true);
   const startX = useRef(0);
   const deltaX = useRef(0);
@@ -31,8 +31,8 @@ export default function VideoShowcase() {
     });
   }, [active]);
 
-  const W = isMobile ? 140 : 180;
-  const H = isMobile ? 249 : 320;
+  const W = isMobile ? 220 : 320;
+  const H = isMobile ? 391 : 569;
   const ROT = isMobile ? 10 : 14;
 
   function onDown(e: React.PointerEvent) {
@@ -58,7 +58,7 @@ export default function VideoShowcase() {
         onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerLeave={onUp}
         style={{
           display: "flex", alignItems: "center", justifyContent: "center",
-          height: H + 40, position: "relative", cursor: "grab",
+          height: H + 20, position: "relative", cursor: "grab",
           touchAction: "pan-y", userSelect: "none",
         }}
       >
@@ -106,16 +106,6 @@ export default function VideoShowcase() {
             </div>
           );
         })}
-      </div>
-      {/* Dots */}
-      <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 20 }}>
-        {SHOWCASE_VIDEOS.map((_, i) => (
-          <button key={i} onClick={() => setActive(i)} style={{
-            width: active === i ? 20 : 6, height: 6, borderRadius: 3,
-            background: active === i ? "#00ffae" : "rgba(255,255,255,0.15)",
-            border: "none", cursor: "pointer", transition: "all 0.3s", padding: 0,
-          }} />
-        ))}
       </div>
       <div style={{
         position: "absolute", bottom: 0, left: "50%", transform: "translateX(-50%)",
