@@ -47,8 +47,8 @@ export default function VideoShowcase() {
   function onUp() {
     if (!dragging.current) return;
     dragging.current = false;
-    if (deltaX.current < -40 && active < total - 1) setActive(p => p + 1);
-    else if (deltaX.current > 40 && active > 0) setActive(p => p - 1);
+    if (deltaX.current < -40) setActive(p => (p + 1) % total);
+    else if (deltaX.current > 40) setActive(p => (p - 1 + total) % total);
     deltaX.current = 0;
   }
 
@@ -63,7 +63,9 @@ export default function VideoShowcase() {
         }}
       >
         {SHOWCASE_VIDEOS.map((src, i) => {
-          const off = i - active;
+          let off = i - active;
+          if (off > total / 2) off -= total;
+          if (off < -total / 2) off += total;
           const isActive = off === 0;
           if (Math.abs(off) > 3) return null;
 
