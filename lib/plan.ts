@@ -15,6 +15,7 @@ export const PLAN_FEATURES: Record<PlanName, {
   ia_sugestao: boolean;
   import_ia: boolean;
   pdf_relatorio: boolean;
+  whatsapp: boolean;
 }> = {
   menu: {
     maxUnits: 1,
@@ -29,6 +30,7 @@ export const PLAN_FEATURES: Record<PlanName, {
     ia_sugestao: false,
     import_ia: false,
     pdf_relatorio: false,
+    whatsapp: false,
   },
   menupro: {
     maxUnits: 3,
@@ -43,6 +45,7 @@ export const PLAN_FEATURES: Record<PlanName, {
     ia_sugestao: true,
     import_ia: true,
     pdf_relatorio: true,
+    whatsapp: false,
   },
   business: {
     maxUnits: 4,
@@ -57,6 +60,7 @@ export const PLAN_FEATURES: Record<PlanName, {
     ia_sugestao: true,
     import_ia: true,
     pdf_relatorio: true,
+    whatsapp: true,
   },
 };
 

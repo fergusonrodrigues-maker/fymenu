@@ -138,7 +138,7 @@ interface Props {
   }>;
 }
 
-const TABS = ["Visão Geral", "Usuários", "FyMenu Financeiro", "Restaurantes Financeiro", "CRM FyMenu", "CRM Restaurantes", "Analytics", "Parceiros", "Fotos", "Controle", "Chats"] as const;
+const TABS = ["Visão Geral", "Usuários", "FyMenu Financeiro", "Restaurantes Financeiro", "CRM FyMenu", "CRM Restaurantes", "Analytics", "Parceiros", "Fotos", "Controle", "WhatsApp", "Chats"] as const;
 type Tab = (typeof TABS)[number];
 
 const PLAN_PRICES: Record<string, number> = {
@@ -3323,6 +3323,9 @@ export default function AdminClient({
         />
       )}
 
+        {/* ── WhatsApp tab ───────────────────────────────────────────────── */}
+        {tab === "WhatsApp" && <AdminWhatsAppTab />}
+
         {/* ── Chats tab ─────────────────────────────────────────────────── */}
         {tab === "Chats" && <AdminChatsTab />}
     </div>
@@ -3613,6 +3616,141 @@ function ChartPlaceholder({ title }: { title: string }) {
         ))}
       </div>
       <p className="text-gray-600 text-xs mt-3 text-center">Gráfico detalhado disponível com integração de analytics</p>
+    </div>
+  );
+}
+
+// ── Admin WhatsApp Tab ────────────────────────────────────────────────────────
+function AdminWhatsAppTab() {
+  const [instances, setInstances] = React.useState<Array<{
+    id: string;
+    unit_id: string;
+    zapi_instance_id: string;
+    phone_number: string | null;
+    status: string;
+    connected_at: string | null;
+    created_at: string;
+    units: { name: string; slug: string; restaurants: { name: string } | null } | null;
+  }>>([]);
+  const [msgCounts, setMsgCounts] = React.useState<Record<string, number>>({});
+  const [loading, setLoading] = React.useState(true);
+  const supabase = createClient();
+
+  React.useEffect(() => {
+    async function load() {
+      setLoading(true);
+      const { data } = await supabase
+        .from("whatsapp_instances")
+        .select("*, units(name, slug, restaurants(name))")
+        .order("created_at", { ascending: false });
+
+      setInstances((data ?? []) as typeof instances);
+
+      // Fetch message counts per unit
+      if (data && data.length > 0) {
+        const unitIds = data.map((d: any) => d.unit_id);
+        const { data: counts } = await supabase
+          .from("whatsapp_messages")
+          .select("unit_id")
+          .in("unit_id", unitIds)
+          .eq("direction", "outbound");
+
+        const map: Record<string, number> = {};
+        for (const r of counts ?? []) map[r.unit_id] = (map[r.unit_id] ?? 0) + 1;
+        setMsgCounts(map);
+      }
+
+      setLoading(false);
+    }
+    load();
+  }, []);
+
+  const WA_GREEN = "#25D366";
+  const connected = instances.filter((i) => i.status === "connected").length;
+  const estimatedCost = connected * 7000; // R$70 por instância em centavos
+
+  const statusColor: Record<string, string> = {
+    connected:    WA_GREEN,
+    disconnected: "#6b7280",
+    connecting:   "#f59e0b",
+    banned:       "#ef4444",
+  };
+  const statusLabel: Record<string, string> = {
+    connected:    "Conectado",
+    disconnected: "Desconectado",
+    connecting:   "Conectando",
+    banned:       "Banido",
+  };
+
+  return (
+    <div>
+      {/* Summary cards */}
+      <div className="grid grid-cols-4 gap-4 mb-6">
+        {[
+          { label: "Total instâncias", value: instances.length, color: "white" },
+          { label: "Conectadas", value: connected, color: WA_GREEN },
+          { label: "Desconectadas", value: instances.length - connected, color: "#6b7280" },
+          { label: "Custo estimado/mês", value: `R$ ${(estimatedCost / 100).toFixed(2).replace(".", ",")}`, color: "#f59e0b" },
+        ].map((c) => (
+          <div key={c.label} className="rounded-xl p-4 border border-gray-800 bg-gray-950">
+            <div style={{ fontSize: 22, fontWeight: 900, color: c.color }}>{c.value}</div>
+            <div className="text-gray-500 text-xs mt-1">{c.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {loading ? (
+        <p className="text-gray-500 text-sm text-center py-12">Carregando...</p>
+      ) : instances.length === 0 ? (
+        <p className="text-gray-500 text-sm text-center py-12">Nenhuma instância WhatsApp configurada</p>
+      ) : (
+        <div className="overflow-x-auto rounded-xl border border-gray-800">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-800">
+                {["Restaurante", "Unidade", "Instância Z-API", "Telefone", "Status", "Mensagens", "Conectado em"].map((h) => (
+                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {instances.map((inst) => (
+                <tr key={inst.id} className="border-b border-gray-800/50 hover:bg-gray-900/50 transition-colors">
+                  <td className="px-4 py-3 text-gray-200 text-xs font-medium">
+                    {(inst as any).units?.restaurants?.name ?? "—"}
+                  </td>
+                  <td className="px-4 py-3 text-gray-400 text-xs">
+                    {(inst as any).units?.name ?? "—"}
+                  </td>
+                  <td className="px-4 py-3">
+                    <code className="text-gray-400 text-xs bg-gray-900 px-2 py-0.5 rounded">
+                      {inst.zapi_instance_id.slice(0, 12)}...
+                    </code>
+                  </td>
+                  <td className="px-4 py-3 text-gray-300 text-xs">{inst.phone_number ?? "—"}</td>
+                  <td className="px-4 py-3">
+                    <span style={{
+                      padding: "2px 8px", borderRadius: 6, fontSize: 11, fontWeight: 700,
+                      background: `${statusColor[inst.status] ?? "#6b7280"}22`,
+                      color: statusColor[inst.status] ?? "#6b7280",
+                    }}>
+                      {statusLabel[inst.status] ?? inst.status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-gray-400 text-xs text-center">
+                    {msgCounts[inst.unit_id] ?? 0}
+                  </td>
+                  <td className="px-4 py-3 text-gray-500 text-xs">
+                    {inst.connected_at
+                      ? new Date(inst.connected_at).toLocaleDateString("pt-BR")
+                      : "—"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
