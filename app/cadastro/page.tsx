@@ -69,42 +69,82 @@ export default function SignupPage() {
     setLoading(true);
     try {
       const supabase = createClient();
-      const { error: signupError, data: authData } = await supabase.auth.signUp({ email, password });
-      if (signupError) { setError(signupError.message); return; }
+      const restaurantName = email.split("@")[0];
 
-      if (!authData.session) {
-        // Confirmação de email ativa — sem token de auth para RLS permitir insert.
-        // Salvar cupom pendente para aplicar em /configurar após login.
-        if (couponCode.trim() && couponStatus?.valid) {
-          localStorage.setItem("fy_pending_coupon", couponCode.trim());
+      const { error: authError, data: authData } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { restaurant_name: restaurantName } },
+      });
+      if (authError) { setError(authError.message); return; }
+
+      // Garantir sessão ativa — signUp com autoConfirm retorna sessão imediatamente,
+      // mas se confirmação de email estiver ativa, session é null.
+      let session = authData.session;
+
+      if (!session) {
+        const { data: loginData } = await supabase.auth.signInWithPassword({ email, password });
+        if (!loginData.session) {
+          // Email precisa ser confirmado — salvar pendência e mostrar aviso
+          localStorage.setItem("fy_pending_restaurant", JSON.stringify({
+            name: restaurantName,
+            coupon: couponCode.trim() || null,
+          }));
+          router.push("/entrar?pending=email");
+          return;
         }
-        router.push("/entrar?pending=email");
+        session = loginData.session;
+      }
+
+      const userId = session.user.id;
+
+      const { data: restaurant, error: restaurantError } = await supabase
+        .from("restaurants")
+        .insert({ owner_id: userId, name: restaurantName, onboarding_completed: false })
+        .select("id")
+        .single();
+
+      if (restaurantError || !restaurant) {
+        console.error("Erro ao criar restaurante:", restaurantError);
+        setError("Erro ao criar restaurante. Tente novamente.");
         return;
       }
 
-      if (authData.user?.id) {
-        const restaurantName = email.split("@")[0];
-        const { data: restaurant, error: restaurantError } = await supabase
-          .from("restaurants")
-          .insert({ owner_id: authData.user.id, name: restaurantName, onboarding_completed: false })
-          .select("id")
-          .single();
+      const slug = restaurantName.toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "meu-restaurante";
 
-        if (restaurantError || !restaurant) {
-          setError("Erro ao criar conta. Tente novamente.");
-          return;
-        }
+      const { error: unitError } = await supabase.from("units").insert({
+        restaurant_id: restaurant.id,
+        name: restaurantName,
+        slug,
+        is_published: false,
+      });
+      if (unitError) console.error("Erro ao criar unidade:", unitError);
 
-        if (couponCode.trim() && couponStatus?.valid) {
-          await fetch("/api/coupon/apply", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ code: couponCode.trim(), restaurant_id: restaurant.id }),
+      if (couponCode.trim() && restaurant.id) {
+        const { data: coupon } = await supabase
+          .from("partner_coupons")
+          .select("id, partner_id, code, current_uses")
+          .eq("code", couponCode.toUpperCase().trim())
+          .eq("is_active", true)
+          .maybeSingle();
+
+        if (coupon) {
+          await supabase.from("partner_referrals").insert({
+            partner_id: coupon.partner_id,
+            restaurant_id: restaurant.id,
+            coupon_id: coupon.id,
+            coupon_code: coupon.code,
+            status: "active",
           });
+          await supabase.from("partner_coupons").update({
+            current_uses: (coupon.current_uses || 0) + 1,
+          }).eq("id", coupon.id);
         }
       }
 
-      router.push("/entrar?ok=" + encodeURIComponent("Conta criada com sucesso. Faça login agora."));
+      router.push("/painel");
     } catch (err: any) {
       setError(err.message || "Erro ao criar conta.");
     } finally {
