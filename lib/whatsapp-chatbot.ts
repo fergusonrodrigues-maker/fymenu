@@ -3,7 +3,7 @@
 // history, generates replies and sends via Z-API.
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { sendText } from "@/lib/zapi";
+import { sendText, markAsRead, startTyping } from "@/lib/zapi";
 import type { MenuCacheData } from "@/lib/cache/buildMenuCache";
 
 // ─── In-memory context cache (5 min TTL) ────────────────────────────────────
@@ -27,6 +27,38 @@ function isRateLimited(phone: string): boolean {
   return false;
 }
 
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** Estimate typing duration based on reply length. 1s per 20 chars, clamped 2–8s. */
+function estimateTypingMs(text: string): number {
+  const ms = Math.round((text.length / 20) * 1_000);
+  return Math.min(8_000, Math.max(2_000, ms));
+}
+
+/**
+ * Clamp total delay budget to 25s minus openai time budget (10s) minus 2s buffer.
+ * Returns adjusted [readDelayMs, typingDelayMs, typingDurationMs].
+ */
+function clampDelays(
+  readDelayMs: number,
+  typingDelayMs: number,
+  typingDurationMs: number
+): [number, number, number] {
+  const BUDGET = 13_000; // 25s total - 10s openai - 2s buffer
+  const total = readDelayMs + typingDelayMs + typingDurationMs;
+  if (total <= BUDGET) return [readDelayMs, typingDelayMs, typingDurationMs];
+  const scale = BUDGET / total;
+  return [
+    Math.round(readDelayMs * scale),
+    Math.round(typingDelayMs * scale),
+    Math.round(typingDurationMs * scale),
+  ];
+}
+
 // ─── Build restaurant context from menu_cache ────────────────────────────────
 
 async function buildRestaurantContext(unitId: string): Promise<{ context: string; slug: string }> {
@@ -37,17 +69,15 @@ async function buildRestaurantContext(unitId: string): Promise<{ context: string
 
   const admin = createAdminClient();
 
-  // Prefer DB cache; fall back to direct unit + categories query
   const { data: cacheRow } = await admin
     .from("menu_cache")
     .select("menu_json")
     .eq("unit_id", unitId)
     .maybeSingle();
 
-  let menu: MenuCacheData | null = cacheRow?.menu_json as MenuCacheData ?? null;
+  const menu: MenuCacheData | null = (cacheRow?.menu_json as MenuCacheData) ?? null;
 
   if (!menu) {
-    // Minimal fallback — just unit name
     const { data: unit } = await admin
       .from("units")
       .select("id, name, slug, whatsapp, instagram, city, neighborhood")
@@ -63,7 +93,6 @@ async function buildRestaurantContext(unitId: string): Promise<{ context: string
 
   const u = menu.unit;
 
-  // Build menu text
   const menuLines: string[] = [];
   for (const cat of menu.categories) {
     const activeProducts = cat.products.filter((p) => p.is_active);
@@ -192,14 +221,25 @@ export interface InboundMessageData {
   unitId: string;
   phone: string;
   messageText: string;
+  messageId: string;
   instanceId: string;
   instanceToken: string;
   clientToken?: string;
   slug: string;
+  /** Seconds to wait before marking as read (default 3) */
+  readDelay: number;
+  /** Seconds to wait before starting typing indicator (default 5) */
+  typingDelay: number;
+  showRead: boolean;
+  showTyping: boolean;
 }
 
 export async function processIncomingMessage(data: InboundMessageData): Promise<void> {
-  const { unitId, phone, messageText, instanceId, instanceToken, clientToken, slug } = data;
+  const {
+    unitId, phone, messageText, messageId,
+    instanceId, instanceToken, clientToken, slug,
+    readDelay, typingDelay, showRead, showTyping,
+  } = data;
   const admin = createAdminClient();
 
   // 1. Save inbound message
@@ -218,13 +258,45 @@ export async function processIncomingMessage(data: InboundMessageData): Promise<
   // 3. Skip very short messages ("k", "ok", single emoji, etc.)
   if (messageText.trim().length <= 2) return;
 
-  // 4. Generate reply
-  const reply = await generateChatbotResponse(unitId, phone, messageText);
+  // 4. Generate reply (parallel with delays below — we await it after human simulation)
+  const replyPromise = generateChatbotResponse(unitId, phone, messageText);
 
-  // 5. Send via Z-API
+  // 5. Human simulation sequence
+  //    Calculate typing duration based on expected reply length (150 chars estimate)
+  //    We estimate before knowing the reply; we'll use actual length after OpenAI responds.
+  const estimatedTypingMs = estimateTypingMs("x".repeat(150));
+  const [safeReadMs, safeTypingMs, safeTypingDurationMs] = clampDelays(
+    readDelay * 1_000,
+    typingDelay * 1_000,
+    estimatedTypingMs
+  );
+
+  // Step 5a: wait read_delay, then mark as read
+  await sleep(safeReadMs);
+  if (showRead) {
+    markAsRead(instanceId, instanceToken, phone, messageId, clientToken).catch(() => {});
+  }
+
+  // Step 5b: wait typing_delay, then start typing indicator
+  await sleep(safeTypingMs);
+
+  // Await the OpenAI reply now (it's been running in parallel)
+  const reply = await replyPromise;
+
+  // Recalculate typing duration with actual reply length
+  const actualTypingMs = Math.min(safeTypingDurationMs, estimateTypingMs(reply));
+
+  if (showTyping) {
+    startTyping(instanceId, instanceToken, phone, actualTypingMs, clientToken).catch(() => {});
+  }
+
+  // Step 5c: wait typing duration
+  await sleep(actualTypingMs);
+
+  // 6. Send via Z-API
   const result = await sendText(instanceId, instanceToken, phone, reply, clientToken);
 
-  // 6. Save outbound reply
+  // 7. Save outbound reply
   await admin.from("whatsapp_messages").insert({
     unit_id: unitId,
     phone,

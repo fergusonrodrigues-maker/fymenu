@@ -18,6 +18,10 @@ interface WaInstance {
   notify_order_ready: boolean;
   notify_order_delivering: boolean;
   chatbot_enabled: boolean;
+  chatbot_read_delay: number;
+  chatbot_typing_delay: number;
+  chatbot_show_read: boolean;
+  chatbot_show_typing: boolean;
 }
 
 interface Template {
@@ -357,11 +361,60 @@ function SettingsTab({
         Chatbot IA
       </div>
       <Toggle field="chatbot_enabled" label="Chatbot IA ativo" />
-      {local.chatbot_enabled && (
-        <div style={{ fontSize: 11, color: "var(--dash-text-muted)", lineHeight: 1.6, padding: "8px 0 4px" }}>
+
+      <div style={{ opacity: local.chatbot_enabled ? 1 : 0.4, pointerEvents: local.chatbot_enabled ? "auto" : "none", transition: "opacity 0.2s" }}>
+        <div style={{ fontSize: 11, color: "var(--dash-text-muted)", lineHeight: 1.6, padding: "8px 0 12px" }}>
           O assistente virtual responde automaticamente perguntas sobre cardápio, preços e horários usando IA.
         </div>
-      )}
+
+        {/* Behavior section */}
+        <div style={{ fontSize: 11, fontWeight: 600, color: "var(--dash-text-muted)", textTransform: "uppercase", letterSpacing: "0.7px", marginBottom: 12 }}>
+          Comportamento do chatbot
+        </div>
+
+        {/* Read delay slider */}
+        <div style={{ padding: "10px 0", borderBottom: "1px solid var(--dash-border)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+            <span style={{ fontSize: 13, color: "var(--dash-text)" }}>Tempo para visualizar</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: WA_GREEN }}>{local.chatbot_read_delay}s</span>
+          </div>
+          <input
+            type="range" min={1} max={10} step={1}
+            value={local.chatbot_read_delay}
+            disabled={saving}
+            onChange={(e) => {
+              const v = Number(e.target.value);
+              setLocal((p) => ({ ...p, chatbot_read_delay: v }));
+            }}
+            onMouseUp={(e) => save({ chatbot_read_delay: Number((e.target as HTMLInputElement).value) })}
+            onTouchEnd={(e) => save({ chatbot_read_delay: Number((e.target as HTMLInputElement).value) })}
+            style={{ width: "100%", accentColor: WA_GREEN }}
+          />
+        </div>
+
+        {/* Typing delay slider */}
+        <div style={{ padding: "10px 0", borderBottom: "1px solid var(--dash-border)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+            <span style={{ fontSize: 13, color: "var(--dash-text)" }}>Tempo para começar a digitar</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: WA_GREEN }}>{local.chatbot_typing_delay}s</span>
+          </div>
+          <input
+            type="range" min={1} max={10} step={1}
+            value={local.chatbot_typing_delay}
+            disabled={saving}
+            onChange={(e) => {
+              const v = Number(e.target.value);
+              setLocal((p) => ({ ...p, chatbot_typing_delay: v }));
+            }}
+            onMouseUp={(e) => save({ chatbot_typing_delay: Number((e.target as HTMLInputElement).value) })}
+            onTouchEnd={(e) => save({ chatbot_typing_delay: Number((e.target as HTMLInputElement).value) })}
+            style={{ width: "100%", accentColor: WA_GREEN }}
+          />
+        </div>
+
+        <Toggle field="chatbot_show_read"   label='Mostrar "visualizado" antes de responder' />
+        <Toggle field="chatbot_show_typing" label='Mostrar "digitando..." antes de responder' />
+      </div>
     </div>
   );
 }

@@ -8,7 +8,11 @@ export async function PATCH(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
-    const { unitId, auto_notifications, notify_order_received, notify_order_preparing, notify_order_ready, notify_order_delivering, chatbot_enabled } = await req.json();
+    const {
+      unitId,
+      auto_notifications, notify_order_received, notify_order_preparing, notify_order_ready, notify_order_delivering,
+      chatbot_enabled, chatbot_read_delay, chatbot_typing_delay, chatbot_show_read, chatbot_show_typing,
+    } = await req.json();
     const admin = createAdminClient();
 
     const { data: unit } = await admin
@@ -27,7 +31,11 @@ export async function PATCH(req: NextRequest) {
     if (notify_order_preparing !== undefined) updates.notify_order_preparing = notify_order_preparing;
     if (notify_order_ready !== undefined) updates.notify_order_ready = notify_order_ready;
     if (notify_order_delivering !== undefined) updates.notify_order_delivering = notify_order_delivering;
-    if (chatbot_enabled !== undefined) updates.chatbot_enabled = chatbot_enabled;
+    if (chatbot_enabled     !== undefined) updates.chatbot_enabled     = chatbot_enabled;
+    if (chatbot_read_delay  !== undefined) updates.chatbot_read_delay  = chatbot_read_delay;
+    if (chatbot_typing_delay !== undefined) updates.chatbot_typing_delay = chatbot_typing_delay;
+    if (chatbot_show_read   !== undefined) updates.chatbot_show_read   = chatbot_show_read;
+    if (chatbot_show_typing !== undefined) updates.chatbot_show_typing = chatbot_show_typing;
 
     const { error } = await admin
       .from("whatsapp_instances")

@@ -97,6 +97,34 @@ export async function sendImage(
   );
 }
 
+export async function markAsRead(
+  instanceId: string,
+  token: string,
+  phone: string,
+  messageId: string,
+  clientToken?: string
+) {
+  return zapiRequest(
+    `${instanceUrl(instanceId, token)}/read-message`,
+    { method: "POST", body: JSON.stringify({ messageId, phone }) },
+    clientToken
+  );
+}
+
+export async function startTyping(
+  instanceId: string,
+  token: string,
+  phone: string,
+  durationMs: number,
+  clientToken?: string
+) {
+  return zapiRequest(
+    `${instanceUrl(instanceId, token)}/typing`,
+    { method: "POST", body: JSON.stringify({ phone, duration: durationMs }) },
+    clientToken
+  );
+}
+
 export async function sendLink(
   instanceId: string,
   token: string,

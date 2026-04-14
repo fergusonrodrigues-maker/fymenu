@@ -44,6 +44,7 @@ export async function POST(req: NextRequest) {
 
     const phone = payload.phone;
     const instanceId = payload.instanceId;
+    const incomingMessageId = payload.messageId ?? "";
     const messageText = payload.text?.message?.trim();
 
     // Only handle text messages with a valid phone and instance
@@ -54,11 +55,17 @@ export async function POST(req: NextRequest) {
     const admin = createAdminClient();
 
     // Look up the instance by zapi_instance_id
+    // Cast to any because chatbot_* columns were added via migration and
+    // are not yet reflected in the generated Supabase types.
     const { data: instance } = await admin
       .from("whatsapp_instances")
-      .select("id, unit_id, zapi_instance_id, zapi_instance_token, zapi_client_token, chatbot_enabled, status")
+      .select(
+        "id, unit_id, zapi_instance_id, zapi_instance_token, zapi_client_token, " +
+        "chatbot_enabled, status, " +
+        "chatbot_read_delay, chatbot_typing_delay, chatbot_show_read, chatbot_show_typing"
+      )
       .eq("zapi_instance_id", instanceId)
-      .maybeSingle();
+      .maybeSingle() as { data: Record<string, any> | null };
 
     if (!instance) return NextResponse.json({ ok: true });
     if (instance.status !== "connected") return NextResponse.json({ ok: true });
@@ -72,16 +79,20 @@ export async function POST(req: NextRequest) {
       .single();
 
     // Fire-and-forget: process asynchronously so webhook returns fast
-    // Dynamic import avoids loading OpenAI code on every status callback
     import("@/lib/whatsapp-chatbot").then(({ processIncomingMessage }) => {
       processIncomingMessage({
-        unitId: instance.unit_id,
+        unitId:        instance.unit_id,
         phone,
         messageText,
-        instanceId: instance.zapi_instance_id,
+        messageId:     incomingMessageId,
+        instanceId:    instance.zapi_instance_id,
         instanceToken: instance.zapi_instance_token,
-        clientToken: instance.zapi_client_token ?? undefined,
-        slug: unit?.slug ?? "",
+        clientToken:   instance.zapi_client_token ?? undefined,
+        slug:          unit?.slug ?? "",
+        readDelay:     instance.chatbot_read_delay   ?? 3,
+        typingDelay:   instance.chatbot_typing_delay ?? 5,
+        showRead:      instance.chatbot_show_read    ?? true,
+        showTyping:    instance.chatbot_show_typing  ?? true,
       }).catch(() => {
         // Intentionally swallowed — chatbot must never crash webhook
       });
