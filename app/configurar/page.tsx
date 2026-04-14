@@ -17,7 +17,7 @@ export default async function ConfigurarPage() {
     .eq("owner_id", user.id)
     .maybeSingle();
 
-  if (restaurant?.onboarding_completed) redirect("/painel");
+  if (restaurant?.onboarding_completed && restaurant?.plan) redirect("/painel");
 
   // Auto-provisiona restaurante se não existir
   let restaurantId = restaurant?.id;
@@ -29,7 +29,7 @@ export default async function ConfigurarPage() {
       .insert({
         owner_id: user.id,
         name: defaultName,
-        plan: "menu",
+        status: "pending",
       })
       .select("id, name")
       .single();

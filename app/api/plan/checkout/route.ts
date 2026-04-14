@@ -23,12 +23,18 @@ export async function POST(req: NextRequest) {
 
   const { restaurantId, plan, cycle } = await req.json();
 
-  const validPlans = ["menupro", "business"];
+  const validPlans = ["menu", "menupro", "business"];
   const validCycles = ["monthly", "quarterly", "semiannual"];
 
-  if (!validPlans.includes(plan) || !validCycles.includes(cycle)) {
+  if (!validPlans.includes(plan)) {
     return NextResponse.json(
-      { error: "Plano ou ciclo inválido" },
+      { error: `Plano inválido: ${plan}` },
+      { status: 400 }
+    );
+  }
+  if (plan !== "menu" && !validCycles.includes(cycle)) {
+    return NextResponse.json(
+      { error: `Ciclo inválido: ${cycle}` },
       { status: 400 }
     );
   }
@@ -70,6 +76,16 @@ export async function POST(req: NextRequest) {
         is_published: false,
       });
     }
+  }
+
+  // Menu: ativa direto sem pagamento (em qualquer ambiente)
+  if (plan === "menu") {
+    await ensureUnit();
+    await admin
+      .from("restaurants")
+      .update({ plan: "menu", status: "active", onboarding_completed: true })
+      .eq("id", restaurantId);
+    return NextResponse.json({ success: true });
   }
 
   if (isSandbox) {
