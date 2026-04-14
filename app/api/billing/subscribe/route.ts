@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { asaasRequest } from "@/lib/asaas";
+import { asaasRequest, AsaasError } from "@/lib/asaas";
+
+// ── [DEBUG] log Asaas config on module load ──────────────────────────────────
+const _asaasBase = process.env.ASAAS_SANDBOX === "true"
+  ? "https://sandbox.asaas.com/api/v3"
+  : "https://api.asaas.com/api/v3";
+const _keyPrefix = process.env.ASAAS_API_KEY?.substring(0, 10) ?? "MISSING";
+console.log(`[billing/subscribe] ASAAS_BASE=${_asaasBase} ASAAS_KEY_PREFIX=${_keyPrefix} SANDBOX=${process.env.ASAAS_SANDBOX}`);
 
 const PRICES: Record<string, Record<string, number>> = {
   menu:     { monthly: 19990,  quarterly: 53970,  semiannual: 95940 },
@@ -154,6 +161,23 @@ export async function POST(req: NextRequest) {
 
   } catch (err: any) {
     console.error("[billing/subscribe]", err);
+
+    if (err instanceof AsaasError) {
+      return NextResponse.json({
+        error: err.message || "Erro no gateway de pagamento",
+        // [DEBUG] remover após resolver
+        debug: {
+          rawText: err.rawText,
+          httpStatus: err.httpStatus,
+          asaasUrl: err.asaasUrl,
+          responseHeaders: err.responseHeaders,
+          envBase: _asaasBase,
+          envKeyPrefix: _keyPrefix,
+          envSandbox: process.env.ASAAS_SANDBOX,
+        },
+      }, { status: 502 });
+    }
+
     return NextResponse.json({ error: err.message || "Erro ao processar pagamento" }, { status: 500 });
   }
 }

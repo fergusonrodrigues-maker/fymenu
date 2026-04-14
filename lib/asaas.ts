@@ -1,5 +1,21 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 
+export class AsaasError extends Error {
+  rawText: string;
+  httpStatus: number;
+  asaasUrl: string;
+  responseHeaders: Record<string, string>;
+
+  constructor(message: string, rawText: string, httpStatus: number, asaasUrl: string, headers: Headers) {
+    super(message);
+    this.name = "AsaasError";
+    this.rawText = rawText;
+    this.httpStatus = httpStatus;
+    this.asaasUrl = asaasUrl;
+    this.responseHeaders = Object.fromEntries(headers.entries());
+  }
+}
+
 const ASAAS_BASE =
   process.env.ASAAS_SANDBOX === "true"
     ? "https://sandbox.asaas.com/api/v3"
@@ -44,13 +60,16 @@ export async function asaasRequest(method: string, endpoint: string, body?: any)
     data = JSON.parse(rawText);
   } catch {
     console.error("[ASAAS] Non-JSON response:", rawText.substring(0, 500));
-    throw new Error(rawText || "Resposta inválida do gateway de pagamento");
+    throw new AsaasError(
+      rawText || "Resposta inválida do gateway de pagamento",
+      rawText, res.status, url, res.headers,
+    );
   }
 
   if (!res.ok) {
     const msg = data?.errors?.[0]?.description || data?.message || JSON.stringify(data);
     console.error("[ASAAS] Error response:", data);
-    throw new Error(msg);
+    throw new AsaasError(msg, rawText, res.status, url, res.headers);
   }
 
   return data;
