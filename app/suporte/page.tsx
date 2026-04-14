@@ -178,7 +178,7 @@ function CRMSection({ token }: { token: string }) {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const { data, loading, error } = useSuporteApi("crm", { q: search, page: String(page) }, token);
-  const timer = useRef<ReturnType<typeof setTimeout>>();
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   function handleSearch(v: string) {
     setQ(v);
@@ -228,7 +228,7 @@ function UnitsSection({ token }: { token: string }) {
   const [status, setStatus] = useState("all");
   const [page, setPage] = useState(1);
   const { data, loading, error } = useSuporteApi("units", { q: search, status, page: String(page) }, token);
-  const timer = useRef<ReturnType<typeof setTimeout>>();
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   function handleSearch(v: string) {
     setQ(v);
@@ -343,7 +343,7 @@ function ProductsSection({ token, canEdit }: { token: string; canEdit: boolean }
   const [editForm, setEditForm] = useState<any>({});
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const timer = useRef<ReturnType<typeof setTimeout>>();
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   function handleSearch(v: string) {
     setQ(v);
@@ -455,7 +455,7 @@ function FeaturesSection({ token }: { token: string }) {
   const [search, setSearch] = useState("");
   const { data, loading, error, reload } = useSuporteApi("features", { q: search }, token);
   const [toggling, setToggling] = useState<string | null>(null);
-  const timer = useRef<ReturnType<typeof setTimeout>>();
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   function handleSearch(v: string) {
     setQ(v);
