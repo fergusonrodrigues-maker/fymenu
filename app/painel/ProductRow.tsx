@@ -221,6 +221,13 @@ function RecipeSection({ productId, unitId, basePrice }: { productId: string; un
   );
 }
 
+function toCurrencyDisplay(cents: number): string {
+  if (!cents) return "";
+  const s = String(cents).padStart(3, "0");
+  const int = s.slice(0, -2).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  return `${int},${s.slice(-2)}`;
+}
+
 export default function ProductRow({
   product,
   expanded,
@@ -244,8 +251,10 @@ export default function ProductRow({
   const [thumbnailUrl, setThumbnailUrl] = useState(product.thumbnail_url ?? "");
   const [videoUrl, setVideoUrl] = useState(product.video_url ?? "");
   const [priceType, setPriceType] = useState(product.price_type ?? "fixed");
-  const [basePriceStr, setBasePriceStr] = useState<string | undefined>(undefined);
-  const [variations, setVariations] = useState<{ id?: string; name: string; price: number; priceStr?: string }[]>([]);
+  const [basePriceStr, setBasePriceStr] = useState<string>(
+    product.base_price ? toCurrencyDisplay(product.base_price) : ""
+  );
+  const [variations, setVariations] = useState<{ id?: string; name: string; price: number }[]>([]);
   const [variationsLoaded, setVariationsLoaded] = useState(false);
   const [description, setDescription] = useState(product.description ?? "");
   const [descriptionSource, setDescriptionSource] = useState<"MANUAL" | "AI_GENERATED" | "HYBRID">(product.description_source ?? "MANUAL");
@@ -369,16 +378,7 @@ export default function ProductRow({
                 formData.set("video_url", videoUrl);
                 formData.set("is_alcoholic", isAlcoholic ? "on" : "off");
                 // Always sync variations: passes [] when fixed to delete stale variation rows
-                // Convert priceStr → price (in case user typed price but never blurred the field)
-                const variationsToSave = variations.map(({ id, name, price, priceStr }) => {
-                  let finalPrice = price;
-                  if (priceStr !== undefined) {
-                    const normalized = priceStr.replace(",", ".");
-                    finalPrice = Math.round(parseFloat(normalized) * 100) || price;
-                  }
-                  return { id, name, price: finalPrice };
-                });
-                await updateProductVariations(product.id, priceType === "variable" ? variationsToSave : []);
+                await updateProductVariations(product.id, priceType === "variable" ? variations.map(({ id, name, price }) => ({ id, name, price })) : []);
                 startTransition(() => updateProduct(formData));
                 onClose();
               }}
@@ -457,20 +457,15 @@ export default function ProductRow({
                   <input
                     name="base_price"
                     type="text"
-                    inputMode="decimal"
-                    value={basePriceStr !== undefined ? basePriceStr : (product.base_price != null ? (product.base_price / 100).toFixed(2).replace(".", ",") : "")}
+                    inputMode="numeric"
+                    value={basePriceStr}
                     placeholder="0,00"
                     style={{ ...inputStyle, paddingLeft: 36 }}
+                    onFocus={(e) => e.target.select()}
                     onChange={(e) => {
-                      const raw = e.target.value.replace(/[^\d,\.]/g, "");
-                      setBasePriceStr(raw);
-                    }}
-                    onBlur={(e) => {
-                      const raw = e.target.value.replace(/[^\d,\.]/g, "");
-                      const normalized = raw.replace(",", ".");
-                      const cents = Math.round(parseFloat(normalized) * 100) || 0;
-                      const formatted = cents ? (cents / 100).toFixed(2).replace(".", ",") : "";
-                      setBasePriceStr(formatted);
+                      const digits = e.target.value.replace(/\D/g, "");
+                      const cents = parseInt(digits || "0", 10);
+                      setBasePriceStr(toCurrencyDisplay(cents));
                     }}
                   />
                 </div>
@@ -511,19 +506,14 @@ export default function ProductRow({
                         <span style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>R$</span>
                         <input
                           type="text"
-                          inputMode="decimal"
+                          inputMode="numeric"
                           placeholder="0,00"
-                          value={v.priceStr !== undefined ? v.priceStr : (v.price ? (v.price / 100).toFixed(2).replace(".", ",") : "")}
+                          value={toCurrencyDisplay(v.price)}
+                          onFocus={(e) => e.target.select()}
                           onChange={(e) => {
-                            const raw = e.target.value.replace(/[^\d,\.]/g, "");
-                            setVariations(variations.map((x, j) => j === i ? { ...x, priceStr: raw } : x));
-                          }}
-                          onBlur={(e) => {
-                            const raw = e.target.value.replace(/[^\d,\.]/g, "");
-                            const normalized = raw.replace(",", ".");
-                            const cents = Math.round(parseFloat(normalized) * 100) || 0;
-                            const formatted = cents ? (cents / 100).toFixed(2).replace(".", ",") : "";
-                            setVariations(variations.map((x, j) => j === i ? { ...x, price: cents, priceStr: formatted } : x));
+                            const digits = e.target.value.replace(/\D/g, "");
+                            const cents = parseInt(digits || "0", 10);
+                            setVariations(variations.map((x, j) => j === i ? { ...x, price: cents } : x));
                           }}
                           style={{ ...inputStyle, width: 70, fontSize: 13, fontWeight: 700, padding: "5px 8px", textAlign: "right", color: "#00ffae" }}
                         />
