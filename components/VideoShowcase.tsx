@@ -3,9 +3,19 @@ import { useState, useRef, useEffect } from "react";
 
 const SUPABASE_URL = "https://rjfbavmupiypxiqzksxo.supabase.co/storage/v1/object/public/landing";
 
-const SHOWCASE_VIDEOS = Array.from({ length: 10 }, (_, i) =>
-  `${SUPABASE_URL}/video-${String(i + 1).padStart(2, "0")}.mp4`
-);
+const SHOWCASE_VIDEOS = [
+  "IMG_5135.MOV",
+  "IMG_7724.MOV",
+  "IMG_6863.MOV",
+  "IMG_6017.MOV",
+  "IMG_5175.MOV",
+  "IMG_7708.MOV",
+  "IMG_7719.MOV",
+  "IMG_5136.MOV",
+  "IMG_7723.MOV",
+  "IMG_5628.MOV",
+  "IMG_7725.MOV",
+].map((f) => `${SUPABASE_URL}/${f}`);
 
 export default function VideoShowcase() {
   const [active, setActive] = useState(4);
