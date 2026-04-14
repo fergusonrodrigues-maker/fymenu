@@ -446,6 +446,11 @@ export default function MenuClient({
     setTimeout(() => { isScrollingTo.current = false; }, 800);
   }, []);
 
+  function handleOpenProductById(productId: string) {
+    const product = products.find((p) => p.id === productId);
+    if (product) handleOpenProduct(product);
+  }
+
   function handleOpenProduct(product: Product) {
     setSelectedProduct(product);
     track({ event: "product_click", product_id: product.id, category_id: product.category_id });
@@ -1236,6 +1241,7 @@ export default function MenuClient({
           cartTotal={cartTotal}
           onUpdateQty={updateCartQty}
           onClearCart={clearCart}
+          onOpenProduct={handleOpenProductById}
         />
       )}
 
