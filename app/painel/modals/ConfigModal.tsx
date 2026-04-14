@@ -88,16 +88,17 @@ export default function ConfigModal({ profile, restaurant }: { profile: Profile;
 
   async function handleChangePlan(newPlan: string) {
     try {
-      const res = await fetch("/api/subscription/create", {
+      const res = await fetch("/api/plan/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ restaurantId: restaurant.id, plan: newPlan, cycle: "monthly" }),
       });
       const json = await res.json();
-      if (res.ok && json.paymentUrl) {
-        window.open(json.paymentUrl, "_blank");
+      if (res.ok && json.checkoutUrl) {
+        window.location.href = json.checkoutUrl;
       } else if (res.ok) {
         alert("Plano alterado com sucesso!");
+        window.location.reload();
       } else {
         alert(json.error || "Erro ao alterar plano");
       }
