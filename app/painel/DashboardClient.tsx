@@ -493,7 +493,7 @@ export default function DashboardClient({
     financeiro: { icon: "💰", label: "Financeiro", sub: "Relatórios e receita", modalKey: "financeiro" },
     unidade: { icon: "📍", label: "Unidade", sub: () => unit?.is_published ? "Publicado" : "Não publicado", modalKey: "unidade" },
     tv: { icon: "📺", label: "Modo TV", sub: () => `${tvCount} vídeo${tvCount !== 1 ? "s" : ""} ativo${tvCount !== 1 ? "s" : ""}`, modalKey: "modotv" },
-    plano: { icon: "⭐", label: "Plano", sub: () => restaurantState.status === "trial" ? `Trial · ${trialDays}d` : planLabel(restaurantState.plan), modalKey: "plano" },
+    plano: { icon: "⭐", label: "Plano", sub: () => restaurantState.status === "trial" ? `Trial · ${trialDays}d` : (restaurantState.status === "active" || restaurantState.free_access) ? planLabel(restaurantState.plan) : "Nenhum plano ativo", modalKey: "plano" },
     config: { icon: "⚙️", label: "Configurações", sub: () => `Perfil · ${planLabel(restaurantState.plan)} · Segurança`, modalKey: "config" },
     estoque: { icon: "📦", label: "Estoque", sub: () => stockStats.out > 0 ? `${stockStats.out} esgotado${stockStats.out !== 1 ? "s" : ""}` : stockStats.low > 0 ? `${stockStats.low} baixo${stockStats.low !== 1 ? "s" : ""}` : "Tudo em ordem", modalKey: "estoque" },
     operacoes: { icon: "🎛️", label: "Operações", sub: "Cozinha · Garçom · Andamento", modalKey: "operacoes" },
