@@ -17,26 +17,13 @@ const SHOWCASE_VIDEOS = [
   "IMG_7725.MOV",
 ].map((f) => `${SUPABASE_URL}/${f}`);
 
-// Placeholder gradient colors per card (used while video loads)
-const CARD_COLORS = [
-  ["hsl(0, 70%, 30%)", "hsl(30, 70%, 15%)"],
-  ["hsl(36, 70%, 30%)", "hsl(66, 70%, 15%)"],
-  ["hsl(72, 70%, 30%)", "hsl(102, 70%, 15%)"],
-  ["hsl(108, 70%, 30%)", "hsl(138, 70%, 15%)"],
-  ["hsl(144, 70%, 30%)", "hsl(174, 70%, 15%)"],
-  ["hsl(180, 70%, 30%)", "hsl(210, 70%, 15%)"],
-  ["hsl(216, 70%, 30%)", "hsl(246, 70%, 15%)"],
-  ["hsl(252, 70%, 30%)", "hsl(282, 70%, 15%)"],
-  ["hsl(288, 70%, 30%)", "hsl(318, 70%, 15%)"],
-  ["hsl(324, 70%, 30%)", "hsl(354, 70%, 15%)"],
-  ["hsl(360, 70%, 30%)", "hsl(30, 70%, 15%)"],
-];
 
 export default function VideoShowcase() {
   const [active, setActive] = useState(4);
   const [isMobile, setIsMobile] = useState(true);
   // Track which video indices have unlocked src (once loaded, always loaded)
-  const [loadedSet, setLoadedSet] = useState<Set<number>>(() => new Set([3, 4, 5]));
+  // Pre-unlock all 7 visible cards around initial active=4
+  const [loadedSet, setLoadedSet] = useState<Set<number>>(() => new Set([1, 2, 3, 4, 5, 6, 7]));
   // Whether the carousel section is near the viewport
   const [sectionVisible, setSectionVisible] = useState(false);
 
@@ -70,17 +57,13 @@ export default function VideoShowcase() {
     return () => observer.disconnect();
   }, []);
 
-  // When active changes: unlock adjacent src + manage play/pause
+  // When active changes: unlock all visible cards (±3) so they can show poster
   useEffect(() => {
-    const prev = (active - 1 + total) % total;
-    const next = (active + 1) % total;
-
-    // Unlock src for hero and immediate neighbours
     setLoadedSet((s) => {
       const ns = new Set(s);
-      ns.add(active);
-      ns.add(prev);
-      ns.add(next);
+      for (let off = -3; off <= 3; off++) {
+        ns.add((active + off + total) % total);
+      }
       return ns;
     });
   }, [active, total]);
@@ -143,7 +126,6 @@ export default function VideoShowcase() {
           if (off > total / 2) off -= total;
           if (off < -total / 2) off += total;
           const isActive = off === 0;
-          const isAdjacent = Math.abs(off) === 1;
           if (Math.abs(off) > 3) return null;
 
           // Only set src if section is visible AND this index was unlocked
@@ -153,7 +135,6 @@ export default function VideoShowcase() {
           const rot = isActive ? 0 : off > 0 ? ROT : -ROT;
           const sc = isActive ? 1 : 0.85 - Math.abs(off) * 0.05;
           const op = isActive ? 1 : Math.max(0.3, 1 - Math.abs(off) * 0.25);
-          const [c1, c2] = CARD_COLORS[i] ?? ["hsl(0,0%,20%)", "hsl(0,0%,10%)"];
 
           return (
             <div key={i} onClick={() => setActive(i)} style={{
@@ -164,14 +145,13 @@ export default function VideoShowcase() {
               cursor: isActive ? "default" : "pointer",
               boxShadow: isActive ? "0 20px 60px rgba(0,0,0,0.5), 0 0 30px rgba(0,255,174,0.08)" : "0 10px 30px rgba(0,0,0,0.3)",
               border: isActive ? "2px solid rgba(0,255,174,0.2)" : "1px solid rgba(255,255,255,0.06)",
-              // Gradient background shows as poster while video loads
-              background: `linear-gradient(135deg, ${c1}, ${c2})`,
+              background: "#111",
             }}>
               <video
                 ref={(el) => { videoRefs.current[i] = el; }}
                 src={videoSrc}
                 muted loop playsInline
-                preload={isActive ? "auto" : isAdjacent ? "metadata" : "none"}
+                preload={isActive ? "auto" : "metadata"}
                 style={{ width: "100%", height: "100%", objectFit: "cover" }}
                 onError={(e) => { (e.target as HTMLVideoElement).style.display = "none"; }}
               />
