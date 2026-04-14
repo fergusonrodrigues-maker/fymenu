@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
-import type { Unit } from "./menuTypes";
+import type { Unit, Product } from "./menuTypes";
 import type { CartItem } from "./CartModal";
 import { buildCartWhatsAppMessage } from "./orderBuilder";
 
@@ -104,11 +104,12 @@ interface Props {
   onUpdateQty?: (productId: string, qty: number) => void;
   onClearCart?: () => void;
   onAddSuggestion?: (id: string, name: string, price: number) => void;
+  products?: Product[];
 }
 
 export default function BottomGlassBar({
   unit, visible, onIfoodClick,
-  cart = [], cartTotal = 0, onUpdateQty, onClearCart, onAddSuggestion,
+  cart = [], cartTotal = 0, onUpdateQty, onClearCart, onAddSuggestion, products,
 }: Props) {
   const [glassExpanded, setGlassExpanded] = useState(false);
   const [glassView, setGlassView] = useState<"info" | "cart">("info");
@@ -123,7 +124,7 @@ export default function BottomGlassBar({
   const [sending, setSending] = useState(false);
   const [upsellData, setUpsellData] = useState<UpsellData>({ combos: [], suggestions: [] });
   const [loadingUpsell, setLoadingUpsell] = useState(false);
-  const [addedSuggestions, setAddedSuggestions] = useState<Set<string>>(new Set());
+  const suggestionsFetchedRef = useRef(false);
 
   // Drag-to-minimize (refs for handler values, state for rendering)
   const dragStartYRef = useRef(0);
@@ -188,22 +189,61 @@ export default function BottomGlassBar({
     }
   }
 
-  // Load upsell suggestions when cart tab opens
+  // Reset fetch flag when sheet closes so next open fetches fresh suggestions
+  useEffect(() => {
+    if (!glassExpanded) {
+      suggestionsFetchedRef.current = false;
+    }
+  }, [glassExpanded]);
+
+  // Load upsell suggestions — only once per cart open session (ref guards against re-fetch on cart changes)
   useEffect(() => {
     if (!glassExpanded || glassView !== "cart" || cart.length === 0) return;
-    const lastItem = cart[cart.length - 1];
+    if (suggestionsFetchedRef.current) return;
+    suggestionsFetchedRef.current = true;
+
+    const currentCart = cartRef.current;
+    const lastItem = currentCart[currentCart.length - 1];
     const productId = lastItem.product_id.split("__")[0];
     let cancelled = false;
     setLoadingUpsell(true);
-    setUpsellData({ combos: [], suggestions: [] });
+
+    const buildFallback = (exclude: Set<string>): AiSuggestion[] => {
+      if (!products || products.length === 0) return [];
+      const cartIds = new Set(currentCart.map(i => i.product_id.split("__")[0]));
+      const pool = products.filter(p => p.is_active && p.base_price != null && !cartIds.has(p.id) && !exclude.has(p.id));
+      return pool.sort(() => Math.random() - 0.5).slice(0, 3).map(p => ({
+        id: p.id, name: p.name, price: p.base_price ?? 0, reason: "Pode te interessar",
+      }));
+    };
+
     fetch("/api/upsell-ai", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ unitId: unit.id, productId, productName: lastItem.name, cartItems: [] }),
+      body: JSON.stringify({
+        unitId: unit.id,
+        productId,
+        productName: lastItem.name,
+        cartItems: currentCart.map(i => ({ product_id: i.product_id.split("__")[0], name: i.name })),
+      }),
     })
       .then(r => r.json())
-      .then(data => { if (!cancelled) setUpsellData(data ?? { combos: [], suggestions: [] }); })
-      .catch(() => {})
+      .then(data => {
+        if (cancelled) return;
+        let suggestions: AiSuggestion[] = data?.suggestions ?? [];
+        // Always guarantee 3 suggestions — fill with random products if AI returned fewer
+        if (suggestions.length < 3) {
+          const suggIds = new Set(suggestions.map(s => s.id));
+          const extras = buildFallback(suggIds).slice(0, 3 - suggestions.length);
+          suggestions = [...suggestions, ...extras];
+        }
+        setUpsellData({ combos: data?.combos ?? [], suggestions: suggestions.slice(0, 3) });
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setUpsellData({ combos: [], suggestions: buildFallback(new Set()) });
+        }
+      })
       .finally(() => { if (!cancelled) setLoadingUpsell(false); });
     return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -810,25 +850,27 @@ export default function BottomGlassBar({
                       ) : (
                         <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4, scrollbarWidth: "none" }}>
                           {upsellData.suggestions.map(s => {
-                            const isAdded = addedSuggestions.has(s.id);
+                            const isAdded = cart.some(i => i.product_id.split("__")[0] === s.id);
                             return (
                               <div key={s.id}
                                 onClick={() => {
-                                  if (isAdded) return;
-                                  onAddSuggestion?.(s.id, s.name, s.price);
-                                  setAddedSuggestions(prev => new Set(prev).add(s.id));
+                                  if (isAdded) {
+                                    onUpdateQty?.(s.id, 0);
+                                  } else {
+                                    onAddSuggestion?.(s.id, s.name, s.price);
+                                  }
                                 }}
                                 style={{
                                   minWidth: 120, padding: 12, borderRadius: 12, flexShrink: 0,
-                                  background: isAdded ? (isDark ? "rgba(0,255,174,0.08)" : "rgba(0,160,106,0.07)") : cardBg,
-                                  border: `1px solid ${isAdded ? (isDark ? "rgba(0,255,174,0.3)" : "rgba(0,160,106,0.25)") : cardBorder}`,
-                                  cursor: isAdded ? "default" : "pointer",
+                                  background: isAdded ? "rgba(0,255,174,0.08)" : cardBg,
+                                  border: `1px solid ${isAdded ? "#00ffae" : cardBorder}`,
+                                  cursor: "pointer",
                                   transition: "all 0.2s ease",
                                 }}>
                                 <div style={{ fontSize: 11, fontWeight: 700, color: textPrimary, marginBottom: 2 }}>{s.name}</div>
                                 {s.reason && <div style={{ fontSize: 9, color: textSecondary, marginBottom: 4, lineHeight: 1.3 }}>{s.reason}</div>}
-                                <div style={{ fontSize: 12, fontWeight: 900, color: isDark ? "#00ffae" : "#00a06a" }}>
-                                  {isAdded ? "✓ Adicionado" : `+ R$${s.price?.toFixed(2).replace(".", ",")}`}
+                                <div style={{ fontSize: 12, fontWeight: 900, color: isAdded ? "#00ffae" : (isDark ? "#00ffae" : "#00a06a") }}>
+                                  {isAdded ? "Adicionado ✓" : `+ R$${(s.price / 100)?.toFixed(2).replace(".", ",")}`}
                                 </div>
                               </div>
                             );

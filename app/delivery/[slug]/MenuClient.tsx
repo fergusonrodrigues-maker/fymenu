@@ -1249,6 +1249,7 @@ export default function MenuClient({
           onUpdateQty={updateCartQty}
           onClearCart={clearCart}
           onAddSuggestion={handleAddSuggestion}
+          products={products}
         />
       )}
 
