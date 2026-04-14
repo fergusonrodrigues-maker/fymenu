@@ -25,7 +25,7 @@ export default function SuporteLoginPage() {
       if (!res.ok) throw new Error(json.error);
       localStorage.setItem("suporte_token", json.token);
       localStorage.setItem("suporte_staff", JSON.stringify(json.staff));
-      router.push("/suporte");
+      router.push("/suporte/dashboard");
     } catch (err: any) {
       setError(err.message || "Erro ao fazer login");
     } finally {

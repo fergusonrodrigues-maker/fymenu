@@ -12,6 +12,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const search = searchParams.get("q") ?? "";
   const activeFilter = searchParams.get("active") ?? "all";
+  const unit_id = searchParams.get("unit_id") ?? "";
   const page = Math.max(1, parseInt(searchParams.get("page") ?? "1"));
   const limit = 20;
   const from = (page - 1) * limit;
@@ -27,6 +28,7 @@ export async function GET(req: NextRequest) {
     .range(from, from + limit - 1);
 
   if (search) query = query.ilike("name", `%${search}%`);
+  if (unit_id) query = query.eq("unit_id", unit_id);
   if (activeFilter === "active") query = query.eq("is_active", true);
   if (activeFilter === "inactive") query = query.eq("is_active", false);
 

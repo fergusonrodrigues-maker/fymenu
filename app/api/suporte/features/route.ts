@@ -9,6 +9,7 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const search = searchParams.get("q") ?? "";
+  const unit_id = searchParams.get("unit_id") ?? "";
 
   const admin = createAdminClient();
 
@@ -19,6 +20,7 @@ export async function GET(req: NextRequest) {
     .order("feature");
 
   if (search) query = query.ilike("feature", `%${search}%`);
+  if (unit_id) query = query.eq("unit_id", unit_id);
 
   const { data, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
