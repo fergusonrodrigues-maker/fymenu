@@ -7,15 +7,15 @@ export const revalidate = 0;
 export default async function ComandaPage({
   params,
 }: {
-  params: Promise<{ code: string }>;
+  params: Promise<{ slug: string }>;
 }) {
-  const { code } = await params;
+  const { slug } = await params;
   const supabase = await createClient();
 
   const { data: comanda } = await supabase
     .from("comandas")
     .select("*, comanda_items(*), mesas(number, label)")
-    .eq("short_code", code.toUpperCase())
+    .eq("short_code", slug.toUpperCase())
     .single();
 
   if (!comanda) return notFound();
