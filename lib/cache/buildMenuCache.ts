@@ -84,11 +84,11 @@ export async function buildMenuCache(unitId: string): Promise<{ menu_json: MenuC
             .from("product_variations")
             .select("id, name, price")
             .eq("product_id", product.id)
-            .neq("is_active", false);
+            .order("order_index");
 
           const { data: upsells } = await supabase
             .from("product_upsells")
-            .select("id, type")
+            .select("id, product_id")
             .eq("product_id", product.id);
 
           return {

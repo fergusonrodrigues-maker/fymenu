@@ -455,11 +455,9 @@ export async function updateProductVariations(
   if (variations.length > 0) {
     const rows = variations.map((v, i) => ({
       product_id: productId,
-      unit_id: unitId,
       name: v.name.trim(),
       price: v.price,
       order_index: i,
-      is_active: true,
     }));
     const { error } = await supabase.from("product_variations").insert(rows);
     if (error) throw new Error(error.message);
