@@ -17,14 +17,15 @@ async function resolveOwnership(
   return data;
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
     const admin = createAdminClient();
-    const existing = await resolveOwnership(admin, params.id, user.id);
+    const existing = await resolveOwnership(admin, id, user.id);
     if (!existing) return NextResponse.json({ error: "Não encontrado ou sem permissão" }, { status: 404 });
 
     const body = await req.json();
@@ -50,7 +51,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     const { data, error } = await admin
       .from("crm_customers")
       .update(updates)
-      .eq("id", params.id)
+      .eq("id", id)
       .select()
       .single();
 
@@ -61,20 +62,21 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
     const admin = createAdminClient();
-    const existing = await resolveOwnership(admin, params.id, user.id);
+    const existing = await resolveOwnership(admin, id, user.id);
     if (!existing) return NextResponse.json({ error: "Não encontrado ou sem permissão" }, { status: 404 });
 
     const { error } = await admin
       .from("crm_customers")
       .update({ is_active: false, updated_at: new Date().toISOString() })
-      .eq("id", params.id);
+      .eq("id", id);
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ success: true });
