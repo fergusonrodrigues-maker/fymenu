@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import VideoShowcase from "@/components/VideoShowcase";
 
 // ── Loader Component ──────────────────────────────────────────────────────────
 function PageLoader({ visible }: { visible: boolean }) {
@@ -916,6 +917,8 @@ export default function LandingPage() {
             Entrar
           </a>
         </nav>
+
+        <VideoShowcase />
 
         {/* ── HERO ── */}
         <section
