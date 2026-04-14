@@ -30,7 +30,10 @@ const DeliveryModal  = dynamic(() => import("./modals/DeliveryModal"),  { ssr: f
 const ChatWidget = dynamic(() => import("./components/ChatWidget"), { ssr: false });
 
 // ─── Modal backdrop ─────────────────────────────────────────────────────────
-function Modal({ open, onClose, children, title }: { open: boolean; onClose: () => void; children: React.ReactNode; title: string }) {
+function Modal({ open, onClose, children, title, size = "md" }: {
+  open: boolean; onClose: () => void; children: React.ReactNode; title: string;
+  size?: "sm" | "md" | "lg";
+}) {
   const [dragY, setDragY] = useState(0);
   const [dragging, setDragging] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
@@ -117,56 +120,71 @@ function Modal({ open, onClose, children, title }: { open: boolean; onClose: () 
 
   if (!open) return null;
 
-  // ── Desktop: inverted glassmorphism — luminous backdrop, dark modal ──────
+  const maxWidth = size === "lg" ? 900 : size === "sm" ? 520 : 760;
+  const modalBg = isDark ? "rgba(10,10,10,0.94)" : "rgba(253,253,253,0.97)";
+  const borderColor = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.08)";
+  const textColor = isDark ? "#ffffff" : "#111111";
+  const closeBg = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)";
+  const closeColor = isDark ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.45)";
+
+  // ── Desktop ──────────────────────────────────────────────────────────────
   if (isDesktop) {
     return (
       <div
         style={{
           position: "fixed", inset: 0, zIndex: 9999,
-          background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.2)",
-          backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
+          background: "rgba(0,0,0,0.6)",
+          backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
           display: "flex", alignItems: "center", justifyContent: "center",
-          animation: "modalBackdropIn 0.2s ease",
+          animation: "modalOverlayIn 0.22s ease",
         }}
         onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
       >
         <div
-          className="modal-desktop-scroll"
           style={{
-            width: "90%", maxWidth: 760, maxHeight: "80vh",
-            borderRadius: 28,
-            background: isDark ? "rgba(8,8,8,0.75)" : "rgba(255,255,255,0.92)",
+            width: "90%", maxWidth, maxHeight: "85vh",
+            borderRadius: 24,
+            background: modalBg,
             backdropFilter: "blur(80px)", WebkitBackdropFilter: "blur(80px)",
             boxShadow: isDark
-              ? "0 1px 0 rgba(255,255,255,0.04) inset, 0 -1px 0 rgba(0,0,0,0.4) inset, 0 40px 80px rgba(0,0,0,0.5), 0 0 0 0.5px rgba(255,255,255,0.06)"
-              : "0 1px 0 rgba(255,255,255,0.8) inset, 0 -1px 0 rgba(0,0,0,0.06) inset, 0 40px 80px rgba(0,0,0,0.15), 0 0 0 0.5px rgba(0,0,0,0.08)",
-            overflowY: "auto",
-            overscrollBehavior: "contain",
+              ? "0 1px 0 rgba(255,255,255,0.07) inset, 0 -1px 0 rgba(0,0,0,0.5) inset, 0 40px 100px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.07)"
+              : "0 1px 0 rgba(255,255,255,0.9) inset, 0 -1px 0 rgba(0,0,0,0.06) inset, 0 24px 60px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.09)",
+            display: "flex", flexDirection: "column",
             animation: "modalContentIn 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
-            position: "relative",
-            padding: 0,
+            overflow: "hidden",
           }}
         >
-          <button
-            onClick={onClose}
-            style={{
-              position: "sticky", top: 16, float: "right", zIndex: 10,
-              width: 36, height: 36, borderRadius: 12,
-              background: "rgba(220,38,38,0.12)",
-              border: "none",
-              color: "#ffffff",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              cursor: "pointer", fontSize: 16, marginRight: 16, marginTop: 16,
-              transition: "all 0.2s", flexShrink: 0,
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "rgba(220,38,38,0.22)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "rgba(220,38,38,0.12)";
-            }}
-          >✕</button>
-          <div style={{ padding: "8px 28px 28px" }}>
+          {/* ── Sticky header ── */}
+          <div style={{
+            height: 64, minHeight: 64, flexShrink: 0,
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "0 28px",
+            borderBottom: `1px solid ${borderColor}`,
+          }}>
+            <div style={{ fontSize: 18, fontWeight: 800, color: textColor, letterSpacing: "-0.3px" }}>
+              {title}
+            </div>
+            <button
+              onClick={onClose}
+              style={{
+                width: 36, height: 36, borderRadius: 10,
+                background: closeBg, border: "none", color: closeColor,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                cursor: "pointer", fontSize: 14, fontWeight: 600,
+                transition: "all 0.15s ease", flexShrink: 0,
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.1)";
+                e.currentTarget.style.color = isDark ? "#fff" : "#111";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = closeBg;
+                e.currentTarget.style.color = closeColor;
+              }}
+            >✕</button>
+          </div>
+          {/* ── Scrollable body ── */}
+          <div className="modal-desktop-scroll" style={{ padding: "24px 28px 32px", overflowY: "auto", overscrollBehavior: "contain", flex: 1, minHeight: 0 }}>
             {children}
           </div>
         </div>
@@ -197,7 +215,7 @@ function Modal({ open, onClose, children, title }: { open: boolean; onClose: () 
           borderRadius: "24px 24px 0 0",
           width: "100%",
           maxWidth: 480,
-          maxHeight: "92vh",
+          maxHeight: "90dvh",
           overflowY: "auto",
           overscrollBehavior: "contain",
           WebkitOverflowScrolling: "touch",
@@ -1550,16 +1568,16 @@ export default function DashboardClient({
         })()}
       </div>
 
-      <Modal open={modal === "analytics"} onClose={close} title="Analytics">
+      <Modal open={modal === "analytics"} onClose={close} title="Analytics" size="lg">
         <AnalyticsModal analytics={analytics} unit={unit} products={products} categories={categories} restaurant={restaurantState} />
       </Modal>
-      <Modal open={modal === "pedidos"} onClose={close} title="Pedidos de hoje">
+      <Modal open={modal === "pedidos"} onClose={close} title="Pedidos de hoje" size="lg">
         {unit && <PedidosModal unitId={unit.id} unit={unit} />}
       </Modal>
-      <Modal open={modal === "cardapio"} onClose={close} title="Cardápio">
+      <Modal open={modal === "cardapio"} onClose={close} title="Cardápio" size="lg">
         <CardapioModal unit={unit} categories={categories} products={products} upsellItems={upsellItems} restaurant={restaurantState} onClose={close} />
       </Modal>
-      <Modal open={modal === "financeiro"} onClose={close} title="Financeiro">
+      <Modal open={modal === "financeiro"} onClose={close} title="Financeiro" size="lg">
         <FinanceiroModal unit={unit} analytics={analytics} reportData={reportData} restaurant={restaurantState} onOpenPlano={() => open("plano")} />
       </Modal>
       <Modal open={modal === "unidade"} onClose={close} title="Unidade">
@@ -1568,28 +1586,28 @@ export default function DashboardClient({
       <Modal open={modal === "tv"} onClose={close} title="Modo TV">
         <TVModal unit={unit} tvCount={tvCount} />
       </Modal>
-      <Modal open={modal === "modotv"} onClose={close} title="Modo TV">
+      <Modal open={modal === "modotv"} onClose={close} title="Modo TV" size="sm">
         {unit && <ModoTVModal unit={unit} onClose={close} />}
       </Modal>
       <Modal open={modal === "plano"} onClose={close} title="Plano">
         <PlanoModal restaurant={restaurantState} trialDays={trialDays} onUpgrade={() => { close(); router.push("/painel/planos"); }} onClose={close} />
       </Modal>
-      <Modal open={modal === "config"} onClose={close} title="Configurações">
+      <Modal open={modal === "config"} onClose={close} title="Configurações" size="lg">
         <ConfigModal profile={profile} restaurant={restaurantState} />
       </Modal>
-      <Modal open={modal === "estoque"} onClose={close} title="Estoque">
+      <Modal open={modal === "estoque"} onClose={close} title="Estoque" size="lg">
         <EstoqueModal unit={unit} restaurant={restaurantState} />
       </Modal>
-      <Modal open={modal === "operacoes"} onClose={close} title="Operações">
+      <Modal open={modal === "operacoes"} onClose={close} title="Operações" size="lg">
         {unit && <RestaurantOperationsModal unitId={unit.id} comandaClosePermission={unit.comanda_close_permission ?? "somente_caixa"} />}
       </Modal>
-      <Modal open={modal === "impressoras"} onClose={close} title="Impressoras">
+      <Modal open={modal === "impressoras"} onClose={close} title="Impressoras" size="lg">
         {unit && <PrinterModal unitId={unit.id} categories={categories} />}
       </Modal>
-      <Modal open={modal === "equipe"} onClose={close} title="Equipe">
+      <Modal open={modal === "equipe"} onClose={close} title="Equipe" size="lg">
         {unit && <StaffAnalyticsModal unitId={unit.id} plan={restaurantState.plan ?? "menu"} />}
       </Modal>
-      <Modal open={modal === "links"} onClose={close} title="">
+      <Modal open={modal === "links"} onClose={close} title="Acessos rápidos" size="sm">
         <div style={{ paddingTop: 4 }}>
           {/* Header */}
           <div style={{ marginBottom: 20 }}>
@@ -1650,13 +1668,13 @@ export default function DashboardClient({
           </div>
         </div>
       </Modal>
-      <Modal open={modal === "crm"} onClose={close} title="CRM">
+      <Modal open={modal === "crm"} onClose={close} title="CRM" size="lg">
         {unit && restaurant && <CrmModal unit={unit} restaurant={restaurant} />}
       </Modal>
-      <Modal open={modal === "whatsapp"} onClose={close} title="WhatsApp">
+      <Modal open={modal === "whatsapp"} onClose={close} title="WhatsApp" size="lg">
         {unit && <WhatsappModal unit={unit} />}
       </Modal>
-      <Modal open={modal === "delivery"} onClose={close} title="Delivery">
+      <Modal open={modal === "delivery"} onClose={close} title="Delivery" size="lg">
         {unit && <DeliveryModal unitId={unit.id} />}
       </Modal>
       <ChatWidget

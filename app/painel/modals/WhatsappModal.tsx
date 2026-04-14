@@ -977,14 +977,15 @@ export default function WhatsappModal({ unit }: { unit: { id: string; name: stri
       </div>
 
       {/* Tabs */}
-      <div style={{ display: "flex", gap: 4, marginBottom: 20, padding: "3px", background: "rgba(255,255,255,0.04)", borderRadius: 12, border: "1px solid rgba(255,255,255,0.06)" }}>
+      <div style={{ display: "flex", gap: 2, marginBottom: 20, padding: "4px", background: "rgba(255,255,255,0.04)", borderRadius: 12, border: "1px solid rgba(255,255,255,0.06)" }}>
         {TABS.map((tab) => (
           <button key={tab} onClick={() => setActiveTab(tab)} style={{
-            flex: 1, padding: "8px 4px", borderRadius: 9, border: "none", cursor: "pointer",
-            background: activeTab === tab ? "rgba(255,255,255,0.08)" : "transparent",
-            color: activeTab === tab ? "var(--dash-text)" : "var(--dash-text-muted)",
-            fontSize: 11, fontWeight: activeTab === tab ? 700 : 500,
-            transition: "all 0.15s",
+            flex: 1, padding: "8px 16px", borderRadius: 8, border: "none", cursor: "pointer",
+            background: activeTab === tab ? "rgba(0,255,174,0.12)" : "transparent",
+            color: activeTab === tab ? "var(--dash-accent)" : "var(--dash-text-muted)",
+            fontSize: 13, fontWeight: activeTab === tab ? 700 : 500,
+            transition: "all 0.2s ease",
+            whiteSpace: "nowrap",
           }}>{tab}</button>
         ))}
       </div>
