@@ -261,7 +261,7 @@ function PlanCard({ planKey, plan, theme }: {
     // Outer wrapper: holds CSS-class border (::before), transform, mouse events.
     // No overflow:hidden here so pseudo-elements with inset:-2px are fully visible.
     <div
-      className={isGreen ? "card-business" : isPurple ? "card-menu" : isAccent ? "card-pro" : ""}
+      className={isGreen ? "card-business" : ""}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => { setHovered(false); setPressed(false); }}
       onMouseDown={() => setPressed(true)}
@@ -836,11 +836,7 @@ export default function LandingPage() {
 
         /* ── Animated card borders ─────────────────────────────────────────── */
         @property --gold-angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
-        @property --menu-angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
-        @property --pro-angle  { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
         @keyframes gold-rotate { to { --gold-angle: 360deg; } }
-        @keyframes menu-rotate { to { --menu-angle: 360deg; } }
-        @keyframes pro-rotate  { to { --pro-angle:  360deg; } }
         @keyframes gold-glow   { from { opacity: 0.45; } to { opacity: 1; } }
 
         /* Business — permanent gold 24k border */
@@ -870,48 +866,6 @@ export default function LandingPage() {
           pointer-events: none;
           z-index: -1;
         }
-
-        /* Menu — green border on hover */
-        .card-menu { position: relative; }
-        .card-menu::before {
-          content: '';
-          position: absolute;
-          inset: -1px;
-          border-radius: 25px;
-          padding: 1px;
-          background: conic-gradient(from var(--menu-angle), #00ffae, #00d9ff, #00ffae, #00d9ff, #00ffae);
-          animation: menu-rotate 3s linear infinite;
-          -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-          -webkit-mask-composite: xor;
-          mask-composite: exclude;
-          will-change: background;
-          pointer-events: none;
-          opacity: 0;
-          transition: opacity 0.3s ease;
-          z-index: 1;
-        }
-        .card-menu:hover::before { opacity: 1; }
-
-        /* MenuPro — cyan border on hover */
-        .card-pro { position: relative; }
-        .card-pro::before {
-          content: '';
-          position: absolute;
-          inset: -1px;
-          border-radius: 25px;
-          padding: 1px;
-          background: conic-gradient(from var(--pro-angle), #00d9ff, #00ffae, #00d9ff, #00ffae, #00d9ff);
-          animation: pro-rotate 3s linear infinite;
-          -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-          -webkit-mask-composite: xor;
-          mask-composite: exclude;
-          will-change: background;
-          pointer-events: none;
-          opacity: 0;
-          transition: opacity 0.3s ease;
-          z-index: 1;
-        }
-        .card-pro:hover::before { opacity: 1; }
 
         /* ── Theme Toggle ── */
         .theme-toggle-landing {
