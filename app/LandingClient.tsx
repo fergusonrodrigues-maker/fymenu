@@ -1007,7 +1007,7 @@ export default function LandingPage() {
             alignItems: "center",
             justifyContent: "flex-start",
             textAlign: "center",
-            padding: "16px 24px 24px",
+            padding: "16px 24px 80px",
             position: "relative",
             zIndex: 1,
           }}
@@ -1096,7 +1096,7 @@ export default function LandingPage() {
         {/* ── STATS ── */}
         <section
           style={{
-            padding: "0 24px 80px",
+            padding: "80px 24px 80px",
             position: "relative",
             zIndex: 1,
           }}
