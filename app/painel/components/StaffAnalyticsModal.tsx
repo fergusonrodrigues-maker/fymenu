@@ -10,8 +10,11 @@ interface Employee {
   name: string;
   role: string;
   phone: string | null;
+  cpf: string | null;
   is_active: boolean;
   category_name: string | null;
+  category_names: string[];
+  category_ids: string[];
   salary: number;
   work_days: string[] | null;
   shift_start: string | null;
@@ -118,7 +121,8 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
   const [editSaving, setEditSaving] = useState(false);
   const [editName, setEditName] = useState("");
   const [editRole, setEditRole] = useState("waiter");
-  const [editCategoryId, setEditCategoryId] = useState("");
+  const [editCategoryIds, setEditCategoryIds] = useState<string[]>([]);
+  const [formCategoryIds, setFormCategoryIds] = useState<string[]>([]);
   const [editSalary, setEditSalary] = useState("");
   const [editExtraCosts, setEditExtraCosts] = useState("");
   const [editWorkDays, setEditWorkDays] = useState<string[]>([]);
@@ -172,17 +176,24 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
   async function loadEmployees() {
     const { data } = await supabase
       .from("employees")
-      .select("*, employee_categories(name)")
+      .select("*, employee_categories(name), employee_category_links(category_id, employee_categories(name))")
       .eq("unit_id", unitId)
       .order("name");
 
     setEmployees(
-      (data ?? []).map((e: any) => ({
-        ...e,
-        category_name: e.employee_categories?.name ?? null,
-        salary: e.salary ?? 0,
-        extra_costs: e.extra_costs ?? 0,
-      }))
+      (data ?? []).map((e: any) => {
+        const links: any[] = e.employee_category_links ?? [];
+        const catNames = links.map((l: any) => l.employee_categories?.name).filter(Boolean) as string[];
+        const catIds = links.map((l: any) => l.category_id).filter(Boolean) as string[];
+        return {
+          ...e,
+          category_name: e.employee_categories?.name ?? catNames[0] ?? null,
+          category_names: catNames,
+          category_ids: catIds,
+          salary: e.salary ?? 0,
+          extra_costs: e.extra_costs ?? 0,
+        };
+      })
     );
   }
 
@@ -250,7 +261,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
     setEditingEmployee(emp);
     setEditName(emp.name);
     setEditRole(emp.role);
-    setEditCategoryId((emp as any).category_id ?? "");
+    setEditCategoryIds(emp.category_ids?.length ? emp.category_ids : ((emp as any).category_id ? [(emp as any).category_id] : []));
     setEditSalary(emp.salary > 0 ? (emp.salary / 100).toString() : "");
     setEditExtraCosts(emp.extra_costs > 0 ? (emp.extra_costs / 100).toString() : "");
     setEditWorkDays(emp.work_days ?? ["seg", "ter", "qua", "qui", "sex"]);
@@ -269,7 +280,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
     const updates: any = {
       name: editName.trim(),
       role: editRole,
-      category_id: editCategoryId || null,
+      category_id: editCategoryIds[0] || null, // backward compat: primeira categoria
       salary: editSalary ? Math.round(parseFloat(editSalary) * 100) : 0,
       extra_costs: editExtraCosts ? Math.round(parseFloat(editExtraCosts) * 100) : 0,
       work_days: editWorkDays,
@@ -282,9 +293,18 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
       updates.password_hash = await sha256(editPassword.trim());
     }
     await supabase.from("employees").update(updates).eq("id", editingEmployee.id);
-    const catName = categories.find(c => c.id === editCategoryId)?.name ?? editingEmployee.category_name;
+
+    // Sincronizar employee_category_links (delete + insert)
+    await supabase.from("employee_category_links").delete().eq("employee_id", editingEmployee.id);
+    if (editCategoryIds.length > 0) {
+      await supabase.from("employee_category_links").insert(
+        editCategoryIds.map(cid => ({ employee_id: editingEmployee.id, category_id: cid }))
+      );
+    }
+
+    const catNames = editCategoryIds.map(id => categories.find(c => c.id === id)?.name).filter(Boolean) as string[];
     setEmployees(prev => prev.map(e => e.id === editingEmployee.id
-      ? { ...e, ...updates, category_name: catName ?? null }
+      ? { ...e, ...updates, category_name: catNames[0] ?? null, category_names: catNames, category_ids: editCategoryIds }
       : e
     ));
     setEditSaving(false);
@@ -327,7 +347,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
         cpf: newEmployee.cpf.trim() || undefined,
         username: newEmployee.username.trim() || undefined,
         password: newEmployee.password || undefined,
-        category_id: newEmployee.category_id || undefined,
+        category_id: formCategoryIds[0] || newEmployee.category_id || undefined,
         salary: salary ? Math.round(parseFloat(salary) * 100) : 0,
         work_days: workDays,
         shift_start: shiftStart || "08:00",
@@ -347,6 +367,13 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
       return;
     }
 
+    // Insert employee_category_links for all selected categories
+    if (formCategoryIds.length > 0 && json.employee?.id) {
+      await supabase.from("employee_category_links").insert(
+        formCategoryIds.map((cid: string) => ({ employee_id: json.employee.id, category_id: cid }))
+      );
+    }
+
     setNewEmployee({ name: "", role: "waiter", phone: "", category_id: "", cpf: "", username: "", password: "", freelancer_service: "", freelancer_date: "" });
     setSalary("");
     setWorkDays(["seg", "ter", "qua", "qui", "sex"]);
@@ -357,6 +384,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
     setExtraCosts("");
     setExtraCostsDesc("");
     setFormTeam("geral");
+    setFormCategoryIds([]);
     setShowAddForm(false);
     setSaving(false);
     loadEmployees();
@@ -436,10 +464,12 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
   const totalExtraCosts = employees.reduce((s, e) => s + (e.extra_costs || 0), 0);
   const totalTeamCost = totalSalaries + totalExtraCosts;
 
-  // Filtered list
+  // Filtered list — match by team OR any category name
   const filteredEmployees = employees.filter(e => {
-    if (filterTeam !== "all" && (e.team || "geral") !== filterTeam) return false;
-    return true;
+    if (filterTeam === "all") return true;
+    if ((e.team || "geral") === filterTeam) return true;
+    const catNames = e.category_names?.length > 0 ? e.category_names : (e.category_name ? [e.category_name] : []);
+    return catNames.some(n => n === filterTeam);
   });
 
   if (loading) return (
@@ -640,14 +670,27 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                   </button>
                 </div>
                 {categories.length > 0 && (
-                  <select
-                    style={{ ...inp, background: undefined as any, backgroundColor: "rgba(255,255,255,0.05)" }}
-                    value={newEmployee.category_id}
-                    onChange={(e) => setNewEmployee((p) => ({ ...p, category_id: e.target.value }))}
-                  >
-                    <option value="">Sem categoria</option>
-                    {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
+                  <div>
+                    <label style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 6 }}>Categorias</label>
+                    <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                      {categories.map((c) => {
+                        const selected = formCategoryIds.includes(c.id);
+                        return (
+                          <button
+                            key={c.id}
+                            type="button"
+                            onClick={() => setFormCategoryIds(prev => selected ? prev.filter(id => id !== c.id) : [...prev, c.id])}
+                            style={{
+                              padding: "5px 12px", borderRadius: 8, border: "none", cursor: "pointer",
+                              background: selected ? "rgba(168,85,247,0.15)" : "rgba(255,255,255,0.04)",
+                              color: selected ? "#c084fc" : "rgba(255,255,255,0.4)",
+                              fontSize: 11, fontWeight: 600,
+                            }}
+                          >{c.name}</button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 )}
 
                 {/* Salário */}
@@ -741,26 +784,38 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
             </div>
           )}
 
-          {/* Filter by team */}
-          <div style={{ display: "flex", gap: 4, marginBottom: 12, overflowX: "auto", paddingBottom: 4 }}>
-            <button onClick={() => setFilterTeam("all")} style={{
-              padding: "5px 12px", borderRadius: 8, border: "none", cursor: "pointer", whiteSpace: "nowrap",
-              background: filterTeam === "all" ? "rgba(0,255,174,0.1)" : "rgba(255,255,255,0.04)",
-              color: filterTeam === "all" ? "var(--dash-accent)" : "var(--dash-text-muted)",
-              fontSize: 11, fontWeight: 600,
-            }}>Todos ({employees.length})</button>
-            {[...new Set(employees.map(e => e.team || "geral"))].map(t => {
-              const count = employees.filter(e => (e.team || "geral") === t).length;
-              return (
-                <button key={t} onClick={() => setFilterTeam(t)} style={{
+          {/* Filter by team or category */}
+          {(() => {
+            const teamFilters = [...new Set(employees.map(e => e.team || "geral"))];
+            const catFilters = [...new Set(employees.flatMap(e => e.category_names?.length > 0 ? e.category_names : (e.category_name ? [e.category_name] : [])))];
+            const allFilters = [...teamFilters, ...catFilters.filter(c => !teamFilters.includes(c))];
+            return (
+              <div style={{ display: "flex", gap: 4, marginBottom: 12, overflowX: "auto", paddingBottom: 4 }}>
+                <button onClick={() => setFilterTeam("all")} style={{
                   padding: "5px 12px", borderRadius: 8, border: "none", cursor: "pointer", whiteSpace: "nowrap",
-                  background: filterTeam === t ? "rgba(0,255,174,0.1)" : "rgba(255,255,255,0.04)",
-                  color: filterTeam === t ? "var(--dash-accent)" : "var(--dash-text-muted)",
-                  fontSize: 11, fontWeight: 600, textTransform: "capitalize",
-                }}>{t} ({count})</button>
-              );
-            })}
-          </div>
+                  background: filterTeam === "all" ? "rgba(0,255,174,0.1)" : "rgba(255,255,255,0.04)",
+                  color: filterTeam === "all" ? "var(--dash-accent)" : "var(--dash-text-muted)",
+                  fontSize: 11, fontWeight: 600,
+                }}>Todos ({employees.length})</button>
+                {allFilters.map(t => {
+                  const count = employees.filter(e => {
+                    if ((e.team || "geral") === t) return true;
+                    const cats = e.category_names?.length > 0 ? e.category_names : (e.category_name ? [e.category_name] : []);
+                    return cats.some(n => n === t);
+                  }).length;
+                  const isCat = catFilters.includes(t) && !teamFilters.includes(t);
+                  return (
+                    <button key={t} onClick={() => setFilterTeam(t)} style={{
+                      padding: "5px 12px", borderRadius: 8, border: "none", cursor: "pointer", whiteSpace: "nowrap",
+                      background: filterTeam === t ? (isCat ? "rgba(168,85,247,0.15)" : "rgba(0,255,174,0.1)") : "rgba(255,255,255,0.04)",
+                      color: filterTeam === t ? (isCat ? "#c084fc" : "var(--dash-accent)") : "var(--dash-text-muted)",
+                      fontSize: 11, fontWeight: 600, textTransform: "capitalize",
+                    }}>{t} ({count})</button>
+                  );
+                })}
+              </div>
+            );
+          })()}
 
           {filteredEmployees.length === 0 ? (
             <div style={{ textAlign: "center", padding: "32px 0", color: "#666" }}>
@@ -795,9 +850,11 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                           {emp.team || "geral"}
                         </span>
                       </div>
-                      <div style={{ color: "#888", fontSize: 11, marginTop: 1 }}>
-                        {ROLES[emp.role] ?? emp.role}
-                        {emp.category_name && ` · ${emp.category_name}`}
+                      <div style={{ color: "#888", fontSize: 11, marginTop: 1, display: "flex", alignItems: "center", flexWrap: "wrap", gap: 4 }}>
+                        <span>{ROLES[emp.role] ?? emp.role}</span>
+                        {(emp.category_names?.length > 0 ? emp.category_names : emp.category_name ? [emp.category_name] : []).map(cat => (
+                          <span key={cat} style={{ padding: "1px 6px", borderRadius: 5, background: "rgba(168,85,247,0.12)", color: "#c084fc", fontSize: 10, fontWeight: 600 }}>{cat}</span>
+                        ))}
                       </div>
                       <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 11, marginTop: 4 }}>
                         {emp.salary > 0 && <span>R$ {(emp.salary / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 })} · </span>}
@@ -1241,14 +1298,28 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                 </div>
               </div>
 
-              {/* Categoria */}
+              {/* Categorias — multi-select */}
               {categories.length > 0 && (
                 <div>
-                  <label style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 5 }}>Categoria</label>
-                  <select style={{ ...inp, backgroundColor: "rgba(255,255,255,0.05)" }} value={editCategoryId} onChange={e => setEditCategoryId(e.target.value)}>
-                    <option value="">Sem categoria</option>
-                    {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
+                  <label style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 5 }}>Categorias</label>
+                  <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                    {categories.map(c => {
+                      const selected = editCategoryIds.includes(c.id);
+                      return (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onClick={() => setEditCategoryIds(prev => selected ? prev.filter(id => id !== c.id) : [...prev, c.id])}
+                          style={{
+                            padding: "5px 12px", borderRadius: 8, border: "none", cursor: "pointer",
+                            background: selected ? "rgba(168,85,247,0.15)" : "rgba(255,255,255,0.04)",
+                            color: selected ? "#c084fc" : "rgba(255,255,255,0.4)",
+                            fontSize: 11, fontWeight: 600,
+                          }}
+                        >{c.name}</button>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
 
