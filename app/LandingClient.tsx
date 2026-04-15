@@ -5,23 +5,46 @@ import VideoShowcase from "@/components/VideoShowcase";
 
 // ── Loader Component ──────────────────────────────────────────────────────────
 function PageLoader({ visible }: { visible: boolean }) {
-  if (!visible) return null;
+  const [mounted, setMounted] = useState(true);
+  useEffect(() => {
+    if (!visible) {
+      const t = setTimeout(() => setMounted(false), 750);
+      return () => clearTimeout(t);
+    }
+  }, [visible]);
+  if (!mounted) return null;
   return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 9999,
-        background: "rgba(0,0,0,0.85)",
-        backdropFilter: "blur(20px)",
-        WebkitBackdropFilter: "blur(20px)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        transition: "opacity 0.5s ease",
-      }}
-    >
-      <div className="fy-loader" />
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 9999,
+      background: "#050505",
+      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+      gap: 24,
+      opacity: visible ? 1 : 0,
+      transition: "opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1)",
+      pointerEvents: visible ? "auto" : "none",
+    }}>
+      {/* Logo */}
+      <div style={{
+        fontWeight: 900, fontSize: 28, color: "#00ffae", letterSpacing: "-0.5px",
+        transform: visible ? "scale(1)" : "scale(0.82)",
+        transition: "transform 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.05s",
+      }}>
+        FyMenu
+      </div>
+      {/* Spinner */}
+      <div className="fy-loader" style={{
+        opacity: visible ? 1 : 0,
+        transition: "opacity 0.2s ease",
+      }} />
+      {/* Label */}
+      <div style={{
+        fontSize: 13, color: "rgba(255,255,255,0.28)",
+        opacity: visible ? 1 : 0,
+        transition: "opacity 0.2s ease",
+        letterSpacing: "0.5px",
+      }}>
+        Carregando...
+      </div>
     </div>
   );
 }
@@ -481,11 +504,37 @@ export default function LandingPage() {
   }, []);
 
   useEffect(() => {
-    const t = setTimeout(() => {
+    const isMobile = window.innerWidth < 640;
+    const maxWait  = isMobile ? 3000 : 4000;
+    const minWait  = 1000; // always show loader at least 1s
+    const startTime = Date.now();
+    let done = false;
+
+    const finish = () => {
+      if (done) return;
+      done = true;
       setLoading(false);
-      setTimeout(() => setHeroVisible(true), 100);
-    }, 2200);
-    return () => clearTimeout(t);
+      // heroVisible fires after loader finishes fading out (~750ms)
+      setTimeout(() => setHeroVisible(true), 800);
+    };
+
+    const hardTimeout = setTimeout(finish, maxWait);
+
+    // Poll for at least one video with first frame ready
+    const poll = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      if (elapsed < minWait) return;
+      const videos = Array.from(document.querySelectorAll<HTMLVideoElement>("video"));
+      if (videos.length > 0 && videos.some((v) => v.readyState >= 2)) {
+        clearInterval(poll);
+        finish();
+      }
+    }, 200);
+
+    return () => {
+      clearTimeout(hardTimeout);
+      clearInterval(poll);
+    };
   }, []);
 
   useEffect(() => {
@@ -830,6 +879,18 @@ export default function LandingPage() {
           0%   { background-position: -200% center; }
           100% { background-position:  200% center; }
         }
+        @keyframes lp-enter {
+          from { opacity: 0; transform: translateY(22px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes lp-enter-down {
+          from { opacity: 0; transform: translateY(-14px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes lp-fade-scale {
+          from { opacity: 0; transform: scale(0.96); }
+          to   { opacity: 1; transform: scale(1); }
+        }
         @media (prefers-reduced-motion: reduce) {
           .gradient-text-dark, .gradient-text-light { animation: none; }
         }
@@ -1073,7 +1134,11 @@ export default function LandingPage() {
           </a>
         </nav>
 
-        <VideoShowcase />
+        <div style={heroVisible
+          ? { animation: "lp-fade-scale 0.6s cubic-bezier(0.16,1,0.3,1) 0ms both" }
+          : { opacity: 0 }}>
+          <VideoShowcase />
+        </div>
 
         {/* ── HERO ── */}
         <section
@@ -1090,13 +1155,10 @@ export default function LandingPage() {
           }}
         >
 
-          <div
-            style={{
-              opacity: heroVisible ? 1 : 0,
-              transform: heroVisible ? "translateY(0)" : "translateY(40px)",
-              transition: "all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)",
-            }}
-          >
+          {/* Badge */}
+          <div style={heroVisible
+            ? { animation: "lp-enter 0.45s cubic-bezier(0.16,1,0.3,1) 100ms both" }
+            : { opacity: 0 }}>
             <div
               style={{
                 display: "inline-block",
@@ -1112,40 +1174,55 @@ export default function LandingPage() {
             >
               📱 Cardápio digital que vende
             </div>
+          </div>
 
-            <h1
-              className="hero-title"
-              style={{
-                fontSize: 40,
-                fontWeight: 900,
-                lineHeight: 1.05,
-                letterSpacing: "-2px",
-                maxWidth: 800,
-                margin: "0 auto 24px",
-                textAlign: "center",
-              }}
-            >
-              Primeiro cardápio de vídeo{" "}
-              <span className={theme === "dark" ? "gradient-text-dark" : "gradient-text-light"}>
-                para restaurantes
-              </span>
-            </h1>
+          {/* Headline */}
+          <h1
+            className="hero-title"
+            style={{
+              fontSize: 40,
+              fontWeight: 900,
+              lineHeight: 1.05,
+              letterSpacing: "-2px",
+              maxWidth: 800,
+              margin: "0 auto 24px",
+              textAlign: "center",
+              ...(heroVisible
+                ? { animation: "lp-enter 0.5s cubic-bezier(0.16,1,0.3,1) 200ms both" }
+                : { opacity: 0 }),
+            }}
+          >
+            Primeiro cardápio de vídeo{" "}
+            <span className={theme === "dark" ? "gradient-text-dark" : "gradient-text-light"}>
+              para restaurantes
+            </span>
+          </h1>
 
-            <p
-              className="hero-sub"
-              style={{
-                fontSize: 20,
-                maxWidth: 560,
-                margin: "0 auto 48px",
-                lineHeight: 1.6,
-                textAlign: "center",
-                color: theme === "dark" ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.55)",
-              }}
-            >
-              Sistema de pedidos com análise de dados, gestão financeira, implementação de IA e infraestrutura interna completa para sua empresa.
-            </p>
+          {/* Subtitle */}
+          <p
+            className="hero-sub"
+            style={{
+              fontSize: 20,
+              maxWidth: 560,
+              margin: "0 auto 48px",
+              lineHeight: 1.6,
+              textAlign: "center",
+              color: theme === "dark" ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.55)",
+              ...(heroVisible
+                ? { animation: "lp-enter 0.45s cubic-bezier(0.16,1,0.3,1) 320ms both" }
+                : { opacity: 0 }),
+            }}
+          >
+            Sistema de pedidos com análise de dados, gestão financeira, implementação de IA e infraestrutura interna completa para sua empresa.
+          </p>
 
-            <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
+          {/* CTAs */}
+          <div style={{
+            display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap",
+            ...(heroVisible
+              ? { animation: "lp-enter 0.45s cubic-bezier(0.16,1,0.3,1) 440ms both" }
+              : { opacity: 0 }),
+          }}>
               <a href="/cadastro" className="btn-hero">
                 Começar grátis →
               </a>
@@ -1168,7 +1245,6 @@ export default function LandingPage() {
                 Ver recursos
               </a>
             </div>
-          </div>
         </section>
 
         {/* ── STATS ── */}
@@ -1189,6 +1265,9 @@ export default function LandingPage() {
               gridTemplateColumns: "repeat(4, 1fr)",
               gap: 32,
               textAlign: "center",
+              ...(heroVisible
+                ? { animation: "lp-enter 0.45s cubic-bezier(0.16,1,0.3,1) 560ms both" }
+                : { opacity: 0 }),
             }}
           >
             {[
