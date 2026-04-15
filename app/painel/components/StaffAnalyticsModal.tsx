@@ -59,6 +59,19 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: string
   vacation: { label: "Férias", color: "#a855f7", icon: "🟣" },
 };
 
+function formatCpf(raw: string): string {
+  const d = raw.replace(/\D/g, "").slice(0, 11);
+  if (d.length <= 3) return d;
+  if (d.length <= 6) return `${d.slice(0, 3)}.${d.slice(3)}`;
+  if (d.length <= 9) return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6)}`;
+  return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
+}
+
+async function sha256(text: string): Promise<string> {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
 function RatingStars({ value }: { value: number | null }) {
   if (!value) return <span style={{ color: "#666", fontSize: 12 }}>Sem avaliações</span>;
   const stars = Math.round(value);
@@ -112,6 +125,10 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
   const [editShiftStart, setEditShiftStart] = useState("08:00");
   const [editShiftEnd, setEditShiftEnd] = useState("18:00");
   const [editTeam, setEditTeam] = useState("geral");
+  const [editCpf, setEditCpf] = useState("");
+  const [editPassword, setEditPassword] = useState("");
+  const [editShowPassword, setEditShowPassword] = useState(false);
+  const [showAddPassword, setShowAddPassword] = useState(false);
 
   // Ponto state
   const [timeEntries, setTimeEntries] = useState<any[]>([]);
@@ -240,6 +257,9 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
     setEditShiftStart(emp.shift_start?.slice(0, 5) ?? "08:00");
     setEditShiftEnd(emp.shift_end?.slice(0, 5) ?? "18:00");
     setEditTeam(emp.team ?? "geral");
+    setEditCpf(formatCpf((emp as any).cpf ?? ""));
+    setEditPassword("");
+    setEditShowPassword(false);
     setConfirmDelete(false);
   }
 
@@ -256,7 +276,11 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
       shift_start: editShiftStart,
       shift_end: editShiftEnd,
       team: editTeam,
+      cpf: editCpf.replace(/\D/g, "") || null,
     };
+    if (editPassword.trim()) {
+      updates.password_hash = await sha256(editPassword.trim());
+    }
     await supabase.from("employees").update(updates).eq("id", editingEmployee.id);
     const catName = categories.find(c => c.id === editCategoryId)?.name ?? editingEmployee.category_name;
     setEmployees(prev => prev.map(e => e.id === editingEmployee.id
@@ -579,11 +603,17 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                   value={newEmployee.phone}
                   onChange={(e) => setNewEmployee((p) => ({ ...p, phone: e.target.value }))}
                 />
-                <input
-                  style={inp} placeholder="CPF (opcional)"
-                  value={newEmployee.cpf}
-                  onChange={(e) => setNewEmployee((p) => ({ ...p, cpf: e.target.value }))}
-                />
+                <div>
+                  <label style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 6 }}>CPF (acesso ao portal)</label>
+                  <input
+                    style={inp}
+                    inputMode="numeric"
+                    placeholder="000.000.000-00"
+                    value={newEmployee.cpf}
+                    onChange={(e) => setNewEmployee((p) => ({ ...p, cpf: formatCpf(e.target.value) }))}
+                    autoComplete="off"
+                  />
+                </div>
                 <div style={{ color: "#888", fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px", marginTop: 4 }}>Acesso ao portal (opcional)</div>
                 <input
                   style={inp} placeholder="Usuário (ex: joao.silva)"
@@ -591,12 +621,24 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                   onChange={(e) => setNewEmployee((p) => ({ ...p, username: e.target.value }))}
                   autoComplete="off"
                 />
-                <input
-                  style={inp} type="password" placeholder="Senha"
-                  value={newEmployee.password}
-                  onChange={(e) => setNewEmployee((p) => ({ ...p, password: e.target.value }))}
-                  autoComplete="new-password"
-                />
+                <div style={{ position: "relative" }}>
+                  <input
+                    style={{ ...inp, paddingRight: 40 }}
+                    type={showAddPassword ? "text" : "password"}
+                    placeholder="Senha do portal"
+                    value={newEmployee.password}
+                    onChange={(e) => setNewEmployee((p) => ({ ...p, password: e.target.value }))}
+                    autoComplete="new-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowAddPassword(v => !v)}
+                    style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "rgba(255,255,255,0.35)", cursor: "pointer", fontSize: 14, padding: 4 }}
+                    tabIndex={-1}
+                  >
+                    {showAddPassword ? "🙈" : "👁️"}
+                  </button>
+                </div>
                 {categories.length > 0 && (
                   <select
                     style={{ ...inp, background: undefined as any, backgroundColor: "rgba(255,255,255,0.05)" }}
@@ -1161,6 +1203,42 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                 <select style={{ ...inp, backgroundColor: "rgba(255,255,255,0.05)" }} value={editRole} onChange={e => setEditRole(e.target.value)}>
                   {Object.entries(ROLES).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                 </select>
+              </div>
+
+              {/* CPF portal */}
+              <div>
+                <label style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 5 }}>CPF (acesso ao portal)</label>
+                <input
+                  style={inp}
+                  inputMode="numeric"
+                  value={editCpf}
+                  onChange={e => setEditCpf(formatCpf(e.target.value))}
+                  placeholder="000.000.000-00"
+                  autoComplete="off"
+                />
+              </div>
+
+              {/* Senha portal */}
+              <div>
+                <label style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 5 }}>Senha do portal</label>
+                <div style={{ position: "relative" }}>
+                  <input
+                    style={{ ...inp, paddingRight: 40 }}
+                    type={editShowPassword ? "text" : "password"}
+                    value={editPassword}
+                    onChange={e => setEditPassword(e.target.value)}
+                    placeholder="Deixe vazio para manter atual"
+                    autoComplete="new-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setEditShowPassword(v => !v)}
+                    style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "rgba(255,255,255,0.35)", cursor: "pointer", fontSize: 14, padding: 4 }}
+                    tabIndex={-1}
+                  >
+                    {editShowPassword ? "🙈" : "👁️"}
+                  </button>
+                </div>
               </div>
 
               {/* Categoria */}
