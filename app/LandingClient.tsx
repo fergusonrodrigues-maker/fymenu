@@ -480,35 +480,67 @@ export default function LandingPage() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
     let mouseX = -1000, mouseY = -1000;
     let ripples: Array<{ x: number; y: number; radius: number; startTime: number }> = [];
     let dots: Array<{ x: number; y: number; opacity: number }> = [];
 
+    // ── Light sources: one ellipse per content section ──────────────────────
+    type LightSource = { x: number; y: number; rx: number; ry: number };
+    let lightSources: LightSource[] = [];
+
+    function updateLightSources() {
+      if (!canvas) return;
+      const els = document.querySelectorAll<HTMLElement>("[data-light]");
+      const sources: LightSource[] = [];
+      els.forEach((el) => {
+        const r = el.getBoundingClientRect();
+        if (r.bottom > -200 && r.top < canvas.height + 200) {
+          sources.push({
+            x: r.left + r.width / 2,
+            y: r.top  + r.height / 2,
+            rx: Math.max(r.width  * 0.65, 360),
+            ry: Math.max(r.height * 0.65, 220),
+          });
+        }
+      });
+      // Fallback: illuminate viewport center if nothing found yet
+      if (sources.length === 0) {
+        sources.push({ x: canvas.width / 2, y: canvas.height / 2, rx: 500, ry: 380 });
+      }
+      lightSources = sources;
+    }
+
     function resize() {
       if (!canvas) return;
-      canvas.width = window.innerWidth;
+      canvas.width  = window.innerWidth;
       canvas.height = window.innerHeight;
       dots = [];
       for (let x = 8; x < canvas.width; x += 16) {
         for (let y = 8; y < canvas.height; y += 16) {
-          dots.push({ x, y, opacity: 0.25 });
+          dots.push({ x, y, opacity: 0.03 });
         }
       }
+      updateLightSources();
     }
     resize();
     window.addEventListener("resize", resize);
+    window.addEventListener("scroll", updateLightSources, { passive: true });
 
     function onMouseMove(e: MouseEvent) { mouseX = e.clientX; mouseY = e.clientY; }
     function onTouchMove(e: TouchEvent) { mouseX = e.touches[0].clientX; mouseY = e.touches[0].clientY; }
     function onClick(e: MouseEvent) {
-      ripples.push({ x: e.clientX, y: e.clientY, radius: 0, startTime: performance.now() });
+      if (!reducedMotion) ripples.push({ x: e.clientX, y: e.clientY, radius: 0, startTime: performance.now() });
     }
     function onTouchStart(e: TouchEvent) {
-      ripples.push({ x: e.touches[0].clientX, y: e.touches[0].clientY, radius: 0, startTime: performance.now() });
+      if (!reducedMotion) ripples.push({ x: e.touches[0].clientX, y: e.touches[0].clientY, radius: 0, startTime: performance.now() });
     }
 
-    window.addEventListener("mousemove", onMouseMove);
-    window.addEventListener("touchmove", onTouchMove, { passive: true });
+    if (!reducedMotion) {
+      window.addEventListener("mousemove", onMouseMove);
+      window.addEventListener("touchmove", onTouchMove, { passive: true });
+    }
     window.addEventListener("click", onClick);
     window.addEventListener("touchstart", onTouchStart, { passive: true });
 
@@ -518,6 +550,9 @@ export default function LandingPage() {
 
     const themeObs = new MutationObserver(() => {});
     themeObs.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+
+    const MIN_BASE = 0.03;  // dots at edges / far from content
+    const MAX_BASE = 0.25;  // dots directly over content
 
     let animId: number;
     function draw() {
@@ -536,28 +571,47 @@ export default function LandingPage() {
       });
 
       const dark = isDarkMode();
-      const baseOpacity = 0.25;
       const DOT_RADIUS = 1.0;
+      const cw = canvas.width;
 
       for (const dot of dots) {
+        // ── Content-proximity base opacity ────────────────────────────────
+        // Each section is an ellipse; pick the strongest illumination.
+        let contentFactor = 0;
+        for (const src of lightSources) {
+          const ndx = (dot.x - src.x) / src.rx;
+          const ndy = (dot.y - src.y) / src.ry;
+          const d   = Math.sqrt(ndx * ndx + ndy * ndy); // 0=center, 1=edge, >1=outside
+          if (d < 1) contentFactor = Math.max(contentFactor, 1 - d);
+        }
+
+        // Horizontal edge vignette: content is always in the center column.
+        // Dots near left/right edges are further attenuated regardless.
+        const horzEdge = Math.abs(dot.x - cw / 2) / (cw / 2); // 0=center 1=edge
+        const horzFactor = Math.max(0, 1 - Math.pow(horzEdge, 1.4));
+
+        const combined  = contentFactor * (0.25 + 0.75 * horzFactor) * horzFactor;
+        const baseOpacity = MIN_BASE + (MAX_BASE - MIN_BASE) * Math.min(combined, 1);
+
+        // ── Interactive boosts (mouse + ripple) ───────────────────────────
         let targetOpacity = baseOpacity;
 
-        const distToMouse = Math.hypot(dot.x - mouseX, dot.y - mouseY);
-        if (distToMouse < 120) {
-          const t = 1 - distToMouse / 120;
-          const mouseBrightness = 0.40 * (t * t);
-          targetOpacity = Math.max(targetOpacity, baseOpacity + mouseBrightness);
+        if (!reducedMotion) {
+          const distToMouse = Math.hypot(dot.x - mouseX, dot.y - mouseY);
+          if (distToMouse < 120) {
+            const t = 1 - distToMouse / 120;
+            targetOpacity = Math.max(targetOpacity, baseOpacity + 0.40 * t * t);
+          }
         }
 
         for (const ripple of ripples) {
-          const elapsed = now - ripple.startTime;
+          const elapsed      = now - ripple.startTime;
           const distToCenter = Math.hypot(dot.x - ripple.x, dot.y - ripple.y);
-          const distToRing = Math.abs(distToCenter - ripple.radius);
+          const distToRing   = Math.abs(distToCenter - ripple.radius);
           if (distToRing < 80) {
             const waveFactor = 1 - distToRing / 80;
-            const fade = Math.max(0, 1 - elapsed / RIPPLE_TOTAL_MS);
-            const rippleBrightness = 0.30 * waveFactor * fade;
-            targetOpacity = Math.max(targetOpacity, baseOpacity + rippleBrightness);
+            const fade       = Math.max(0, 1 - elapsed / RIPPLE_TOTAL_MS);
+            targetOpacity    = Math.max(targetOpacity, baseOpacity + 0.30 * waveFactor * fade);
           }
         }
 
@@ -565,11 +619,9 @@ export default function LandingPage() {
 
         ctx.beginPath();
         ctx.arc(dot.x, dot.y, DOT_RADIUS, 0, Math.PI * 2);
-        if (dark) {
-          ctx.fillStyle = `rgba(0, 255, 174, ${dot.opacity})`;
-        } else {
-          ctx.fillStyle = `rgba(0, 0, 0, ${dot.opacity * 0.7})`;
-        }
+        ctx.fillStyle = dark
+          ? `rgba(0, 255, 174, ${dot.opacity})`
+          : `rgba(0, 0, 0, ${dot.opacity * 0.7})`;
         ctx.fill();
       }
 
@@ -581,6 +633,7 @@ export default function LandingPage() {
       cancelAnimationFrame(animId);
       themeObs.disconnect();
       window.removeEventListener("resize", resize);
+      window.removeEventListener("scroll", updateLightSources);
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("touchmove", onTouchMove);
       window.removeEventListener("click", onClick);
@@ -998,6 +1051,7 @@ export default function LandingPage() {
 
         {/* ── HERO ── */}
         <section
+          data-light="hero"
           style={{
             display: "flex",
             flexDirection: "column",
@@ -1093,6 +1147,7 @@ export default function LandingPage() {
 
         {/* ── STATS ── */}
         <section
+          data-light="stats"
           style={{
             padding: "80px 24px 80px",
             position: "relative",
@@ -1129,6 +1184,7 @@ export default function LandingPage() {
         {/* ── FEATURES ── */}
         <section
           id="features"
+          data-light="features"
           style={{
             padding: "80px 24px 120px",
             position: "relative",
@@ -1176,6 +1232,7 @@ export default function LandingPage() {
         {/* ── PRICING ── */}
         <section
           id="pricing"
+          data-light="pricing"
           style={{
             padding: "80px 24px 120px",
             position: "relative",
@@ -1219,6 +1276,7 @@ export default function LandingPage() {
 
         {/* ── CTA Final ── */}
         <section
+          data-light="cta"
           style={{
             padding: "120px 24px",
             textAlign: "center",
