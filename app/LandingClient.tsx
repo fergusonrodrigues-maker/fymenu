@@ -30,12 +30,12 @@ function PageLoader({ visible }: { visible: boolean }) {
       }} />
       {/* Label */}
       <div style={{
-        fontSize: 13, color: "rgba(255,255,255,0.28)",
+        fontSize: 13, color: "rgba(255,255,255,0.32)",
         opacity: visible ? 1 : 0,
         transition: "opacity 0.2s ease",
         letterSpacing: "0.5px",
       }}>
-        Carregando...
+        deslize para interagir
       </div>
     </div>
   );
