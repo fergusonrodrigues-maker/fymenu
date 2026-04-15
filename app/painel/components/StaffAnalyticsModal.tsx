@@ -135,6 +135,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
   const [editPassword, setEditPassword] = useState("");
   const [editShowPassword, setEditShowPassword] = useState(false);
   const [showAddPassword, setShowAddPassword] = useState(false);
+  const [reactivateCandidate, setReactivateCandidate] = useState<{ id: string; name: string } | null>(null);
 
   // Ponto state
   const [timeEntries, setTimeEntries] = useState<any[]>([]);
@@ -261,6 +262,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
   }
 
   async function toggleActive(emp: Employee) {
+    if (!emp.id) return;
     const newActive = !emp.is_active;
     await supabase.from("employees").update({ is_active: newActive }).eq("id", emp.id);
     const updated = { ...emp, is_active: newActive };
@@ -330,7 +332,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
   }
 
   async function deleteEmployee() {
-    if (!editingEmployee) return;
+    if (!editingEmployee?.id) return;
     await supabase.from("employees").update({ is_active: false }).eq("id", editingEmployee.id);
     const deactivated = { ...editingEmployee, is_active: false };
     setEmployees(prev => prev.filter(e => e.id !== editingEmployee.id));
@@ -382,6 +384,11 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
     const json = await res.json();
 
     if (!res.ok) {
+      if (json.error === "INACTIVE_DUPLICATE") {
+        setReactivateCandidate({ id: json.inactive_id, name: json.inactive_name });
+        setSaving(false);
+        return;
+      }
       setSaveError(json.error ?? "Erro ao salvar");
       setSaving(false);
       return;
@@ -408,6 +415,16 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
     setShowAddForm(false);
     setSaving(false);
     loadEmployees();
+  }
+
+  async function handleReactivate() {
+    if (!reactivateCandidate) return;
+    setSaving(true);
+    await supabase.from("employees").update({ is_active: true }).eq("id", reactivateCandidate.id);
+    setReactivateCandidate(null);
+    setSaving(false);
+    await loadEmployees();
+    setShowAddForm(false);
   }
 
   function calculateHours(entries: any[]): { weekHours: number; monthHours: number } {
@@ -570,7 +587,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                 {showCategoryForm ? "Cancelar" : "+ Categoria"}
               </button>
               <button
-                onClick={() => { setShowAddForm((v) => !v); setShowCategoryForm(false); }}
+                onClick={() => { setShowAddForm((v) => !v); setShowCategoryForm(false); setReactivateCandidate(null); setSaveError(null); }}
                 style={{ padding: "7px 14px", borderRadius: 10, border: "none", background: "rgba(0,255,174,0.12)", color: "#00ffae", fontSize: 13, fontWeight: 700, cursor: "pointer" }}
               >
                 {showAddForm ? "Cancelar" : "+ Funcionário"}
@@ -793,13 +810,43 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                     {saveError}
                   </div>
                 )}
-                <button
-                  onClick={saveEmployee}
-                  disabled={saving || !newEmployee.name.trim()}
-                  style={{ padding: "11px", borderRadius: 10, border: "none", background: "var(--dash-accent-soft)", color: "var(--dash-accent)", fontSize: 14, fontWeight: 800, cursor: saving ? "not-allowed" : "pointer", marginTop: 8, boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset", transition: "all 0.2s" }}
-                >
-                  {saving ? "Salvando..." : "Salvar funcionário"}
-                </button>
+
+                {/* Reactivate conflict prompt */}
+                {reactivateCandidate && (
+                  <div style={{ padding: 14, borderRadius: 12, background: "rgba(251,191,36,0.06)", border: "1px solid rgba(251,191,36,0.2)" }}>
+                    <div style={{ color: "#fbbf24", fontSize: 13, fontWeight: 700, marginBottom: 10 }}>
+                      "{reactivateCandidate.name}" foi desativado anteriormente.
+                    </div>
+                    <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, marginBottom: 12 }}>
+                      Deseja reativar o cadastro existente ou criar um novo funcionário?
+                    </div>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button
+                        onClick={handleReactivate}
+                        disabled={saving}
+                        style={{ flex: 1, padding: "9px", borderRadius: 8, border: "none", background: "rgba(0,255,174,0.12)", color: "#00ffae", fontSize: 13, fontWeight: 800, cursor: saving ? "not-allowed" : "pointer" }}
+                      >
+                        {saving ? "..." : "Reativar"}
+                      </button>
+                      <button
+                        onClick={() => setReactivateCandidate(null)}
+                        style={{ flex: 1, padding: "9px", borderRadius: 8, border: "none", background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.5)", fontSize: 13, fontWeight: 700, cursor: "pointer" }}
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {!reactivateCandidate && (
+                  <button
+                    onClick={saveEmployee}
+                    disabled={saving || !newEmployee.name.trim()}
+                    style={{ padding: "11px", borderRadius: 10, border: "none", background: "var(--dash-accent-soft)", color: "var(--dash-accent)", fontSize: 14, fontWeight: 800, cursor: saving ? "not-allowed" : "pointer", marginTop: 8, boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset", transition: "all 0.2s" }}
+                  >
+                    {saving ? "Salvando..." : "Salvar funcionário"}
+                  </button>
+                )}
               </div>
             </div>
           )}

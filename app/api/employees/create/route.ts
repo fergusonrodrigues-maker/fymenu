@@ -93,6 +93,36 @@ export async function POST(req: NextRequest) {
 
     if (error) {
       if (error.code === "23505") {
+        // Determine which field caused the conflict
+        let conflictField: "cpf" | "username" | null = null;
+        let conflictValue: string | null = null;
+        if (error.message.includes("cpf") && cpf) {
+          conflictField = "cpf";
+          conflictValue = cpf.replace(/\D/g, "");
+        } else if (error.message.includes("username") && username) {
+          conflictField = "username";
+          conflictValue = username.trim().toLowerCase();
+        }
+
+        if (conflictField && conflictValue) {
+          // Check if the conflict is with an inactive employee — offer reactivation
+          const { data: inactive } = await supabase
+            .from("employees")
+            .select("id, name")
+            .eq("unit_id", unit_id)
+            .eq(conflictField, conflictValue)
+            .eq("is_active", false)
+            .maybeSingle();
+
+          if (inactive) {
+            return NextResponse.json({
+              error: "INACTIVE_DUPLICATE",
+              inactive_id: inactive.id,
+              inactive_name: inactive.name,
+            }, { status: 409 });
+          }
+        }
+
         if (error.message.includes("cpf")) return NextResponse.json({ error: "CPF já cadastrado" }, { status: 409 });
         if (error.message.includes("username")) return NextResponse.json({ error: "Usuário já existe" }, { status: 409 });
       }
