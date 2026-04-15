@@ -122,6 +122,8 @@ function FeatureCard({
     <div
       ref={ref}
       className="feature-card"
+      data-dot-light=""
+      data-dot-radius="200"
       style={{
         opacity: visible ? 1 : 0,
         transform: visible ? "translateY(0)" : "translateY(32px)",
@@ -285,6 +287,8 @@ function PlanCard({ planKey, plan, theme }: {
     // No overflow:hidden here so pseudo-elements with inset:-2px are fully visible.
     <div
       className=""
+      data-dot-light=""
+      data-dot-radius="300"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => { setHovered(false); setPressed(false); }}
       onMouseDown={() => setPressed(true)}
@@ -549,28 +553,30 @@ export default function LandingPage() {
     let ripples: Array<{ x: number; y: number; radius: number; startTime: number }> = [];
     let dots: Array<{ x: number; y: number; opacity: number }> = [];
 
-    // ── Light sources: one ellipse per content section ──────────────────────
-    type LightSource = { x: number; y: number; rx: number; ry: number };
+    // ── Light sources: one circle per significant element ────────────────────
+    type LightSource = { x: number; y: number; r: number };
     let lightSources: LightSource[] = [];
 
     function updateLightSources() {
       if (!canvas) return;
-      const els = document.querySelectorAll<HTMLElement>("[data-light]");
+      const isMob = window.innerWidth < 640;
+      const mf = isMob ? 0.7 : 1.0;
+      const els = document.querySelectorAll<HTMLElement>("[data-dot-light]");
       const sources: LightSource[] = [];
       els.forEach((el) => {
-        const r = el.getBoundingClientRect();
-        if (r.bottom > -200 && r.top < canvas.height + 200) {
+        const rect = el.getBoundingClientRect();
+        if (rect.bottom > -400 && rect.top < canvas.height + 400) {
+          const radius = parseInt(el.dataset.dotRadius || "200", 10) * mf;
           sources.push({
-            x: r.left + r.width / 2,
-            y: r.top  + r.height / 2,
-            rx: Math.max(r.width  * 0.65, 360),
-            ry: Math.max(r.height * 0.65, 220),
+            x: rect.left + rect.width  / 2,
+            y: rect.top  + rect.height / 2,
+            r: radius,
           });
         }
       });
       // Fallback: illuminate viewport center if nothing found yet
       if (sources.length === 0) {
-        sources.push({ x: canvas.width / 2, y: canvas.height / 2, rx: 500, ry: 380 });
+        sources.push({ x: canvas.width / 2, y: canvas.height / 2, r: 400 });
       }
       lightSources = sources;
     }
@@ -589,7 +595,12 @@ export default function LandingPage() {
     }
     resize();
     window.addEventListener("resize", resize);
-    window.addEventListener("scroll", updateLightSources, { passive: true });
+    let scrollRaf = 0;
+    function onScroll() {
+      if (scrollRaf) return;
+      scrollRaf = requestAnimationFrame(() => { scrollRaf = 0; updateLightSources(); });
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
 
     function onMouseMove(e: MouseEvent) { mouseX = e.clientX; mouseY = e.clientY; }
     function onTouchMove(e: TouchEvent) { mouseX = e.touches[0].clientX; mouseY = e.touches[0].clientY; }
@@ -642,9 +653,7 @@ export default function LandingPage() {
         // Each section is an ellipse; pick the strongest illumination.
         let contentFactor = 0;
         for (const src of lightSources) {
-          const ndx = (dot.x - src.x) / src.rx;
-          const ndy = (dot.y - src.y) / src.ry;
-          const d   = Math.sqrt(ndx * ndx + ndy * ndy); // 0=center, 1=edge, >1=outside
+          const d = Math.hypot(dot.x - src.x, dot.y - src.y) / src.r; // 0=center, 1=edge, >1=outside
           if (d < 1) contentFactor = Math.max(contentFactor, 1 - d);
         }
 
@@ -696,7 +705,7 @@ export default function LandingPage() {
       cancelAnimationFrame(animId);
       themeObs.disconnect();
       window.removeEventListener("resize", resize);
-      window.removeEventListener("scroll", updateLightSources);
+      window.removeEventListener("scroll", onScroll);
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("touchmove", onTouchMove);
       window.removeEventListener("click", onClick);
@@ -1179,6 +1188,8 @@ export default function LandingPage() {
           {/* Headline */}
           <h1
             className="hero-title"
+            data-dot-light=""
+            data-dot-radius="250"
             style={{
               fontSize: 40,
               fontWeight: 900,
@@ -1201,6 +1212,8 @@ export default function LandingPage() {
           {/* Subtitle */}
           <p
             className="hero-sub"
+            data-dot-light=""
+            data-dot-radius="200"
             style={{
               fontSize: 20,
               maxWidth: 560,
@@ -1217,12 +1230,16 @@ export default function LandingPage() {
           </p>
 
           {/* CTAs */}
-          <div style={{
-            display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap",
-            ...(heroVisible
-              ? { animation: "lp-enter 0.45s cubic-bezier(0.16,1,0.3,1) 440ms both" }
-              : { opacity: 0 }),
-          }}>
+          <div
+            data-dot-light=""
+            data-dot-radius="180"
+            style={{
+              display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap",
+              ...(heroVisible
+                ? { animation: "lp-enter 0.45s cubic-bezier(0.16,1,0.3,1) 440ms both" }
+                : { opacity: 0 }),
+            }}
+          >
               <a href="/cadastro" className="btn-hero">
                 Começar grátis →
               </a>
@@ -1276,7 +1293,7 @@ export default function LandingPage() {
               { value: 98, suffix: "%", label: "Uptime" },
               { value: 4, suffix: ".8⭐", label: "Avaliação" },
             ].map((s) => (
-              <div key={s.label}>
+              <div key={s.label} data-dot-light="" data-dot-radius="130">
                 <AnimatedCounter target={s.value} suffix={s.suffix} />
                 <div style={{ fontSize: 15, marginTop: 8, fontWeight: 600, color: theme === "dark" ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.55)" }}>
                   {s.label}
@@ -1298,6 +1315,8 @@ export default function LandingPage() {
         >
           <div style={{ textAlign: "center", marginBottom: 64 }}>
             <h2
+              data-dot-light=""
+              data-dot-radius="250"
               style={{
                 fontSize: 40,
                 fontWeight: 900,
@@ -1363,7 +1382,11 @@ export default function LandingPage() {
             }} />
           </div>
           <div style={{ textAlign: "center", marginBottom: 40 }}>
-            <h2 style={{ fontSize: 32, fontWeight: 900, color: "#fff", margin: 0 }}>
+            <h2
+              data-dot-light=""
+              data-dot-radius="250"
+              style={{ fontSize: 32, fontWeight: 900, color: "#fff", margin: 0 }}
+            >
               Planos que cabem no seu restaurante
             </h2>
             <p style={{ fontSize: 15, color: "rgba(255,255,255,0.5)", marginTop: 8 }}>
@@ -1391,7 +1414,11 @@ export default function LandingPage() {
         >
           <div className="glow-orb" style={{ width: 500, height: 500, background: theme === "dark" ? "rgba(0,255,174,0.06)" : "rgba(213,22,89,0.04)", top: "50%", left: "50%", transform: "translate(-50%, -50%)" }} />
 
-          <h2 style={{ fontSize: 40, fontWeight: 900, letterSpacing: "-1px", marginBottom: 16 }}>
+          <h2
+            data-dot-light=""
+            data-dot-radius="250"
+            style={{ fontSize: 40, fontWeight: 900, letterSpacing: "-1px", marginBottom: 16 }}
+          >
             Pronto pra{" "}
             <span className={theme === "dark" ? "gradient-text-dark" : "gradient-text-light"}>
               vender mais?
@@ -1400,7 +1427,7 @@ export default function LandingPage() {
           <p style={{ fontSize: 16, maxWidth: 400, margin: "0 auto 40px", color: theme === "dark" ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.55)" }}>
             Comece grátis por 7 dias. Sem cartão de crédito.
           </p>
-          <a href="/cadastro" className="btn-hero">
+          <a href="/cadastro" className="btn-hero" data-dot-light="" data-dot-radius="180">
             Criar meu cardápio →
           </a>
         </section>
