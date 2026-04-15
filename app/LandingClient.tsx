@@ -740,18 +740,31 @@ export default function LandingPage() {
           color: #d51659 !important;
         }
         .landing-light footer { border-color: rgba(0,0,0,0.06) !important; }
-        /* ── Gradient Text ── */
+        /* ── Gradient Text (headline only — subtle animated shine) ── */
         .gradient-text-dark {
-          background: linear-gradient(135deg, #00ffae 0%, #00d9ff 100%);
+          background: linear-gradient(90deg, #00ffae 0%, #00d9ff 35%, rgba(255,255,255,0.5) 50%, #00d9ff 65%, #00ffae 100%);
+          background-size: 200% auto;
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
+          animation: subtleShine 5s linear infinite;
+          will-change: background-position;
         }
         .gradient-text-light {
-          background: linear-gradient(135deg, #d51659 0%, #fe4a2c 100%);
+          background: linear-gradient(90deg, #d51659 0%, #fe4a2c 35%, rgba(255,180,100,0.6) 50%, #fe4a2c 65%, #d51659 100%);
+          background-size: 200% auto;
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
+          animation: subtleShine 5s linear infinite;
+          will-change: background-position;
+        }
+        @keyframes subtleShine {
+          0%   { background-position: -200% center; }
+          100% { background-position:  200% center; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .gradient-text-dark, .gradient-text-light { animation: none; }
         }
 
         /* ── Theme Toggle ── */
@@ -948,30 +961,9 @@ export default function LandingPage() {
           z-index: 0;
         }
 
-        /* ── Shine Text Effect ── */
-        .text-shine-dark {
-          background: linear-gradient(to right, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.9) 15%, rgba(255,255,255,0.35) 30%);
-          background-position: 0;
-          background-size: 400px;
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-          animation: textShine 6s infinite linear;
-        }
-        .text-shine-light {
-          background: linear-gradient(to right, rgba(34,34,34,0.35) 0%, rgba(34,34,34,0.85) 15%, rgba(34,34,34,0.35) 30%);
-          background-position: 0;
-          background-size: 400px;
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-          animation: textShine 6s infinite linear;
-        }
-        @keyframes textShine {
-          0% { background-position: 0; }
-          60% { background-position: 400px; }
-          100% { background-position: 400px; }
-        }
+        /* ── Shine Text (static — animation removed from secondary texts) ── */
+        .text-shine-dark  { color: rgba(255,255,255,0.6); }
+        .text-shine-light { color: rgba(0,0,0,0.55); }
 
         /* ── Responsive ── */
         @media (max-width: 768px) {
@@ -1060,13 +1052,14 @@ export default function LandingPage() {
             </h1>
 
             <p
-              className={`hero-sub ${theme === "dark" ? "text-shine-dark" : "text-shine-light"}`}
+              className="hero-sub"
               style={{
                 fontSize: 20,
                 maxWidth: 560,
                 margin: "0 auto 48px",
                 lineHeight: 1.6,
                 textAlign: "center",
+                color: theme === "dark" ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.55)",
               }}
             >
               Sistema de pedidos com análise de dados, gestão financeira, implementação de IA e infraestrutura interna completa para sua empresa.
@@ -1125,7 +1118,7 @@ export default function LandingPage() {
             ].map((s) => (
               <div key={s.label}>
                 <AnimatedCounter target={s.value} suffix={s.suffix} />
-                <div className={theme === "dark" ? "text-shine-dark" : "text-shine-light"} style={{ fontSize: 15, marginTop: 8, fontWeight: 600 }}>
+                <div style={{ fontSize: 15, marginTop: 8, fontWeight: 600, color: theme === "dark" ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.55)" }}>
                   {s.label}
                 </div>
               </div>
@@ -1156,7 +1149,7 @@ export default function LandingPage() {
                 precisa
               </span>
             </h2>
-            <p className={theme === "dark" ? "text-shine-dark" : "text-shine-light"} style={{ fontSize: 16, maxWidth: 500, margin: "0 auto" }}>
+            <p style={{ fontSize: 16, maxWidth: 500, margin: "0 auto", color: theme === "dark" ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.55)" }}>
               Funcionalidades pensadas para maximizar vendas e simplificar operações.
             </p>
           </div>
@@ -1241,7 +1234,7 @@ export default function LandingPage() {
               vender mais?
             </span>
           </h2>
-          <p className={theme === "dark" ? "text-shine-dark" : "text-shine-light"} style={{ fontSize: 16, maxWidth: 400, margin: "0 auto 40px" }}>
+          <p style={{ fontSize: 16, maxWidth: 400, margin: "0 auto 40px", color: theme === "dark" ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.55)" }}>
             Comece grátis por 7 dias. Sem cartão de crédito.
           </p>
           <a href="/cadastro" className="btn-hero">
