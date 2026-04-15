@@ -258,98 +258,82 @@ function PlanCard({ planKey, plan, theme }: {
       : "0 0 0 4px rgba(0,0,0,0.04), 0 1px 0 rgba(255,255,255,0.8) inset, 0 -1px 0 rgba(0,0,0,0.06) inset";
 
   return (
+    // Outer wrapper: holds CSS-class border (::before), transform, mouse events.
+    // No overflow:hidden here so pseudo-elements with inset:-2px are fully visible.
     <div
+      className={isGreen ? "card-business" : isPurple ? "card-menu" : isAccent ? "card-pro" : ""}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => { setHovered(false); setPressed(false); }}
       onMouseDown={() => setPressed(true)}
       onMouseUp={() => setPressed(false)}
       style={{
-        borderRadius: 24, padding: 28,
-        background: isAccent ? "var(--lp-highlight-bg)" : isGreen ? "rgba(255,255,255,0.04)" : "var(--lp-card-bg)",
-        backdropFilter: "blur(80px)", WebkitBackdropFilter: "blur(80px)",
-        position: "relative", overflow: "hidden",
+        position: "relative",
+        borderRadius: 24,
         transform: pressed
           ? `translateY(-4px) scale(0.99)${isAccent ? " scale(1.02)" : ""}`
           : hovered
             ? `translateY(-8px)${isAccent ? " scale(1.02)" : ""}`
             : isAccent ? "scale(1.02)" : "none",
-        display: "flex", flexDirection: "column",
-        boxShadow: isGreen
-          ? (hovered ? shadowHover + ", 0 0 40px rgba(212,175,55,0.08)" : shadowBase + ", 0 0 40px rgba(212,175,55,0.04)")
-          : (hovered ? shadowHover : shadowBase),
-        border: isGreen ? "3px solid rgba(212,175,55,0.3)" : undefined,
-        transition: "all 0.5s cubic-bezier(0.16, 1, 0.3, 1)",
+        transition: "transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)",
         cursor: "pointer",
       }}
     >
-      {/* Gold animated border — Business card only */}
-      {isGreen && (<>
-        <style>{`
-          @keyframes goldBorderSpin {
-            from { transform: rotate(0deg); }
-            to   { transform: rotate(360deg); }
-          }
-        `}</style>
+      {/* Inner card: keeps overflow:hidden to clip glow/shine overlays */}
+      <div
+        style={{
+          borderRadius: 24, padding: 28,
+          background: isAccent ? "var(--lp-highlight-bg)" : isGreen ? "rgba(255,255,255,0.04)" : "var(--lp-card-bg)",
+          backdropFilter: "blur(80px)", WebkitBackdropFilter: "blur(80px)",
+          position: "relative", overflow: "hidden",
+          display: "flex", flexDirection: "column",
+          boxShadow: isGreen
+            ? (hovered ? shadowHover + ", 0 0 40px rgba(212,175,55,0.08)" : shadowBase + ", 0 0 40px rgba(212,175,55,0.04)")
+            : (hovered ? shadowHover : shadowBase),
+          transition: "box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1), background 0.5s cubic-bezier(0.16, 1, 0.3, 1)",
+        }}
+      >
+        {/* Hover glow radial — top */}
         <div style={{
-          position: "absolute", inset: -3, borderRadius: "inherit",
-          overflow: "hidden", pointerEvents: "none", zIndex: 0,
+          position: "absolute", inset: -10, pointerEvents: "none",
+          background: hasAccent
+            ? dark
+              ? `radial-gradient(circle at 50% 0%, rgba(${rgb},0.15) 0%, transparent 70%)`
+              : `radial-gradient(circle at 50% 0%, rgba(${rgb},0.08) 0%, transparent 70%)`
+            : dark
+              ? "radial-gradient(circle at 50% 0%, rgba(255,255,255,0.06) 0%, transparent 70%)"
+              : "radial-gradient(circle at 50% 0%, rgba(0,0,0,0.04) 0%, transparent 70%)",
+          opacity: hovered ? 1 : 0,
+          transition: "opacity 0.5s ease",
+        }} />
+
+        {/* Shine diagonal */}
+        <div style={{
+          position: "absolute", inset: 0, pointerEvents: "none", borderRadius: "inherit",
+          background: "linear-gradient(120deg, transparent 40%, rgba(255,255,255,0.06) 50%, transparent 60%)",
+          backgroundSize: "200% 100%",
+          opacity: hovered ? 1 : 0,
+          animation: hovered ? "cardShine 3s infinite linear" : "none",
+          transition: "opacity 0.3s ease",
+        }} />
+
+        {/* Internal radial light — top glow (static) */}
+        <div style={{
+          position: "absolute", top: 0, left: 0, right: 0, bottom: 0, pointerEvents: "none",
+          maskImage: "linear-gradient(to bottom, white 0%, transparent 60%)",
+          WebkitMaskImage: "linear-gradient(to bottom, white 0%, transparent 60%)",
         }}>
           <div style={{
-            position: "absolute",
-            width: "200%", height: "200%",
-            top: "-50%", left: "-50%",
-            background: "conic-gradient(from 0deg, transparent 0%, transparent 35%, rgba(180,140,20,0.25) 42%, rgba(212,175,55,0.5) 50%, rgba(255,215,0,0.7) 51%, rgba(212,175,55,0.5) 58%, rgba(180,140,20,0.25) 65%, transparent 70%, transparent 100%)",
-            animation: "goldBorderSpin 3.5s linear infinite",
-          }} />
-          <div style={{
-            position: "absolute", inset: 3, borderRadius: 21,
-            background: dark ? "rgba(10,10,10,1)" : "rgba(245,245,245,1)",
+            position: "absolute", inset: 0,
+            background: hasAccent
+              ? `radial-gradient(ellipse at top, rgba(${rgb},0.08) 0%, transparent 70%)`
+              : dark
+                ? "radial-gradient(ellipse at top, rgba(255,255,255,0.04) 0%, transparent 70%)"
+                : "radial-gradient(ellipse at top, rgba(0,0,0,0.03) 0%, transparent 70%)",
           }} />
         </div>
-      </>)}
 
-      {/* Hover glow radial — top */}
-      <div style={{
-        position: "absolute", inset: -10, pointerEvents: "none",
-        background: hasAccent
-          ? dark
-            ? `radial-gradient(circle at 50% 0%, rgba(${rgb},0.15) 0%, transparent 70%)`
-            : `radial-gradient(circle at 50% 0%, rgba(${rgb},0.08) 0%, transparent 70%)`
-          : dark
-            ? "radial-gradient(circle at 50% 0%, rgba(255,255,255,0.06) 0%, transparent 70%)"
-            : "radial-gradient(circle at 50% 0%, rgba(0,0,0,0.04) 0%, transparent 70%)",
-        opacity: hovered ? 1 : 0,
-        transition: "opacity 0.5s ease",
-      }} />
-
-      {/* Shine diagonal */}
-      <div style={{
-        position: "absolute", inset: 0, pointerEvents: "none", borderRadius: "inherit",
-        background: "linear-gradient(120deg, transparent 40%, rgba(255,255,255,0.06) 50%, transparent 60%)",
-        backgroundSize: "200% 100%",
-        opacity: hovered ? 1 : 0,
-        animation: hovered ? "cardShine 3s infinite linear" : "none",
-        transition: "opacity 0.3s ease",
-      }} />
-
-      {/* Internal radial light — top glow (static) */}
-      <div style={{
-        position: "absolute", top: 0, left: 0, right: 0, bottom: 0, pointerEvents: "none",
-        maskImage: "linear-gradient(to bottom, white 0%, transparent 60%)",
-        WebkitMaskImage: "linear-gradient(to bottom, white 0%, transparent 60%)",
-      }}>
-        <div style={{
-          position: "absolute", inset: 0,
-          background: hasAccent
-            ? `radial-gradient(ellipse at top, rgba(${rgb},0.08) 0%, transparent 70%)`
-            : dark
-              ? "radial-gradient(ellipse at top, rgba(255,255,255,0.04) 0%, transparent 70%)"
-              : "radial-gradient(ellipse at top, rgba(0,0,0,0.03) 0%, transparent 70%)",
-        }} />
-      </div>
-
-      {/* Content (z-index above overlays) */}
-      <div style={{ position: "relative", zIndex: 2, display: "flex", flexDirection: "column", flex: 1 }}>
+        {/* Content (z-index above overlays) */}
+        <div style={{ position: "relative", zIndex: 2, display: "flex", flexDirection: "column", flex: 1 }}>
         {/* Inline badge label */}
         {"badge" in plan && plan.badge ? (
           <div style={{
@@ -454,6 +438,7 @@ function PlanCard({ planKey, plan, theme }: {
             </span>
           ) : plan.cta}
         </a>
+        </div>
       </div>
     </div>
   );
@@ -848,6 +833,85 @@ export default function LandingPage() {
         @media (prefers-reduced-motion: reduce) {
           .gradient-text-dark, .gradient-text-light { animation: none; }
         }
+
+        /* ── Animated card borders ─────────────────────────────────────────── */
+        @property --gold-angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+        @property --menu-angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+        @property --pro-angle  { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+        @keyframes gold-rotate { to { --gold-angle: 360deg; } }
+        @keyframes menu-rotate { to { --menu-angle: 360deg; } }
+        @keyframes pro-rotate  { to { --pro-angle:  360deg; } }
+        @keyframes gold-glow   { from { opacity: 0.45; } to { opacity: 1; } }
+
+        /* Business — permanent gold 24k border */
+        .card-business { position: relative; }
+        .card-business::before {
+          content: '';
+          position: absolute;
+          inset: -2px;
+          border-radius: 26px;
+          padding: 2px;
+          background: conic-gradient(from var(--gold-angle), #BF953F, #FCF6BA, #B38728, #FBF5B7, #AA771C, #BF953F);
+          animation: gold-rotate 4s linear infinite;
+          -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+          -webkit-mask-composite: xor;
+          mask-composite: exclude;
+          will-change: background;
+          pointer-events: none;
+          z-index: 1;
+        }
+        .card-business::after {
+          content: '';
+          position: absolute;
+          inset: -28px;
+          border-radius: 52px;
+          background: radial-gradient(ellipse at center, rgba(191,149,63,0.13) 0%, transparent 65%);
+          animation: gold-glow 3s ease infinite alternate;
+          pointer-events: none;
+          z-index: -1;
+        }
+
+        /* Menu — green border on hover */
+        .card-menu { position: relative; }
+        .card-menu::before {
+          content: '';
+          position: absolute;
+          inset: -1px;
+          border-radius: 25px;
+          padding: 1px;
+          background: conic-gradient(from var(--menu-angle), #00ffae, #00d9ff, #00ffae, #00d9ff, #00ffae);
+          animation: menu-rotate 3s linear infinite;
+          -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+          -webkit-mask-composite: xor;
+          mask-composite: exclude;
+          will-change: background;
+          pointer-events: none;
+          opacity: 0;
+          transition: opacity 0.3s ease;
+          z-index: 1;
+        }
+        .card-menu:hover::before { opacity: 1; }
+
+        /* MenuPro — cyan border on hover */
+        .card-pro { position: relative; }
+        .card-pro::before {
+          content: '';
+          position: absolute;
+          inset: -1px;
+          border-radius: 25px;
+          padding: 1px;
+          background: conic-gradient(from var(--pro-angle), #00d9ff, #00ffae, #00d9ff, #00ffae, #00d9ff);
+          animation: pro-rotate 3s linear infinite;
+          -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+          -webkit-mask-composite: xor;
+          mask-composite: exclude;
+          will-change: background;
+          pointer-events: none;
+          opacity: 0;
+          transition: opacity 0.3s ease;
+          z-index: 1;
+        }
+        .card-pro:hover::before { opacity: 1; }
 
         /* ── Theme Toggle ── */
         .theme-toggle-landing {
