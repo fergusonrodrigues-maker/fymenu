@@ -614,7 +614,7 @@ export default function LandingPage() {
           const distToMouse = Math.hypot(dot.x - mouseX, dot.y - mouseY);
           if (distToMouse < 120) {
             const t = 1 - distToMouse / 120;
-            targetOpacity = Math.max(targetOpacity, baseOpacity + 0.40 * t * t);
+            targetOpacity = Math.max(targetOpacity, baseOpacity + 0.52 * t * t);
           }
         }
 
