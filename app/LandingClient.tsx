@@ -1002,13 +1002,12 @@ export default function LandingPage() {
         {/* ── HERO ── */}
         <section
           style={{
-            minHeight: "100vh",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "flex-start",
             textAlign: "center",
-            padding: "16px 24px 80px",
+            padding: "16px 24px 24px",
             position: "relative",
             zIndex: 1,
           }}
