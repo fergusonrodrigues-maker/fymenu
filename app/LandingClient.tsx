@@ -533,7 +533,7 @@ export default function LandingPage() {
       dots = [];
       for (let x = 8; x < canvas.width; x += 16) {
         for (let y = 8; y < canvas.height; y += 16) {
-          dots.push({ x, y, opacity: 0.03 });
+          dots.push({ x, y, opacity: 0.06 });
         }
       }
       updateLightSources();
@@ -565,8 +565,8 @@ export default function LandingPage() {
     const themeObs = new MutationObserver(() => {});
     themeObs.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
 
-    const MIN_BASE = 0.03;  // dots at edges / far from content
-    const MAX_BASE = 0.25;  // dots directly over content
+    const MIN_BASE = 0.06;  // dots at edges (~20% visibility)
+    const MAX_BASE = 0.34;  // dots over content (+35% from 0.25)
 
     let animId: number;
     function draw() {
