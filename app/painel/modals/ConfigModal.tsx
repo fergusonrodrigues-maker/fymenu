@@ -3,6 +3,7 @@
 import { useState, lazy, Suspense } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Profile, Restaurant } from "../types";
+import PasswordReqs, { passwordValid, translatePasswordError } from "@/components/PasswordReqs";
 
 const PaymentModal = lazy(() => import("./PaymentModal"));
 
@@ -96,7 +97,7 @@ export default function ConfigModal({ profile, restaurant }: { profile: Profile;
     setChangingPassword(true);
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     if (error) {
-      setPasswordError(error.message);
+      setPasswordError(translatePasswordError(error.message));
     } else {
       setPasswordSuccess(true);
       setNewPassword("");
@@ -441,7 +442,8 @@ export default function ConfigModal({ profile, restaurant }: { profile: Profile;
           <div>
             <label style={{ fontSize: 10, color: "var(--dash-text-muted)", display: "block", marginBottom: 4 }}>Nova senha</label>
             <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)}
-              placeholder="Mínimo 6 caracteres" style={inp} {...inputFocusHandlers} />
+              placeholder="Mínimo 8 caracteres" style={inp} {...inputFocusHandlers} />
+            <PasswordReqs password={newPassword} />
           </div>
 
           <div>
@@ -462,12 +464,12 @@ export default function ConfigModal({ profile, restaurant }: { profile: Profile;
             </div>
           )}
 
-          <button onClick={handleChangePassword} disabled={changingPassword || !newPassword} style={{
+          <button onClick={handleChangePassword} disabled={changingPassword || !passwordValid(newPassword)} style={{
             width: "100%", padding: 12, borderRadius: 14, border: "none", cursor: "pointer",
             background: "var(--dash-accent-soft)", color: "var(--dash-accent)",
             fontSize: 13, fontWeight: 800, fontFamily: "inherit",
             boxShadow: "0 1px 0 rgba(0,255,174,0.12) inset, 0 -1px 0 rgba(0,0,0,0.2) inset",
-            opacity: changingPassword || !newPassword ? 0.5 : 1,
+            opacity: changingPassword || !passwordValid(newPassword) ? 0.5 : 1,
           }}>
             {changingPassword ? "Alterando..." : "Alterar senha"}
           </button>

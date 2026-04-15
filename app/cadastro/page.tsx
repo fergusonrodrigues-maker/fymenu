@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import PasswordReqs, { passwordValid, translatePasswordError } from "@/components/PasswordReqs";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -76,7 +77,7 @@ export default function SignupPage() {
         password,
         options: { data: { restaurant_name: restaurantName } },
       });
-      if (authError) { setError(authError.message); return; }
+      if (authError) { setError(translatePasswordError(authError.message)); return; }
 
       // Garantir sessão ativa — signUp com autoConfirm retorna sessão imediatamente,
       // mas se confirmação de email estiver ativa, session é null.
@@ -455,13 +456,14 @@ export default function SignupPage() {
             <div className="input-wrapper">
               <input
                 type="password"
-                placeholder="Mínimo 6 caracteres"
+                placeholder="Mínimo 8 caracteres"
                 autoComplete="new-password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
+            <PasswordReqs password={password} />
           </div>
 
           <div className="form-group">
@@ -498,7 +500,7 @@ export default function SignupPage() {
             )}
           </div>
 
-          <button type="submit" className="submit-btn" disabled={loading}>
+          <button type="submit" className="submit-btn" disabled={loading || !passwordValid(password)}>
             {loading ? "Criando conta..." : "Criar Conta"}
           </button>
         </form>

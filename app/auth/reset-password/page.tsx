@@ -1,5 +1,6 @@
 ﻿import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import UpdatePasswordForm from "./UpdatePasswordForm";
 
 export default async function ResetPasswordPage({
   searchParams,
@@ -208,33 +209,7 @@ export default async function ResetPasswordPage({
           <>
             <h1 className="title">Nova Senha</h1>
             <p className="subtitle">Digite e confirme sua nova senha</p>
-            {error && <div className="error-msg">⚠️ {error}</div>}
-            <form action={updatePasswordAction}>
-              <div className="input-group">
-                <label className="input-label" htmlFor="password">Nova senha</label>
-                <input
-                  id="password"
-                  className="input-field"
-                  type="password"
-                  name="password"
-                  placeholder="Mínimo 6 caracteres"
-                  required
-                  minLength={6}
-                />
-              </div>
-              <div className="input-group">
-                <label className="input-label" htmlFor="confirmPassword">Confirmar senha</label>
-                <input
-                  id="confirmPassword"
-                  className="input-field"
-                  type="password"
-                  name="confirmPassword"
-                  placeholder="Repita a senha"
-                  required
-                />
-              </div>
-              <button type="submit" className="submit-btn">Atualizar senha</button>
-            </form>
+            <UpdatePasswordForm action={updatePasswordAction} error={error} />
           </>
         ) : (
           // Formulário para enviar email de reset

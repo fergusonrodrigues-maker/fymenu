@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
+import PasswordReqs, { passwordValid, translatePasswordError } from "@/components/PasswordReqs";
 
 type Stats = {
   totalRestaurants: number;
@@ -868,7 +869,7 @@ export default function AdminClient({
         password: newPassword,
       });
       if (updateError) {
-        setPasswordError(updateError.message);
+        setPasswordError(translatePasswordError(updateError.message));
         return;
       }
 
@@ -2938,11 +2939,12 @@ export default function AdminClient({
                     />
                     <input
                       type="password"
-                      placeholder="Nova senha"
+                      placeholder="Nova senha (mín. 8 caracteres)"
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       className="w-full px-3 py-2 rounded-lg bg-gray-800/60 border border-gray-700 text-white text-sm outline-none focus:border-[#00ffae]/50"
                     />
+                    <PasswordReqs password={newPassword} />
                     <input
                       type="password"
                       placeholder="Confirmar nova senha"
@@ -2954,7 +2956,7 @@ export default function AdminClient({
                     {passwordSuccess && <p className="text-green-400 text-xs">{passwordSuccess}</p>}
                     <button
                       onClick={handleChangePassword}
-                      disabled={changingPassword}
+                      disabled={changingPassword || !passwordValid(newPassword)}
                       className="w-full py-2 rounded-lg text-[#050505] text-sm font-semibold disabled:opacity-50 transition-colors" style={{ background: "linear-gradient(135deg, #00ffae, #00d9ff)" }}
                     >
                       {changingPassword ? "Salvando..." : "Alterar Senha"}
