@@ -14,6 +14,8 @@ export interface EmployeeSession {
   role: string;
   unit_name: string;
   unit_logo: string | null;
+  active_category_id: string | null;
+  active_category_name: string | null;
   exp: number; // Date.now() + SESSION_DURATION_MS
 }
 

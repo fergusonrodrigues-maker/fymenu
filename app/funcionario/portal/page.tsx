@@ -20,6 +20,9 @@ interface Employee {
   unit_name: string;
   unit_logo: string | null;
   unit_slug: string | null;
+  categories: { id: string; name: string }[];
+  active_category_id: string | null;
+  active_category_name: string | null;
 }
 
 interface PontoEntry {
@@ -57,6 +60,25 @@ const ROLES: Record<string, string> = {
 const DAYS_PT: Record<string, string> = {
   seg: "Seg", ter: "Ter", qua: "Qua", qui: "Qui", sex: "Sex", sab: "Sáb", dom: "Dom",
 };
+
+const CATEGORY_ICONS: Record<string, string> = {
+  cozinha: "🍳", delivery: "🛵", salao: "🪑", bar: "🍸",
+  gerencia: "👔", limpeza: "🧹", geral: "📋",
+};
+
+const CATEGORY_PERMISSIONS: Record<string, string[]> = {
+  cozinha:  ["ver_pedidos_cozinha", "atualizar_status_pedido", "ver_fila"],
+  delivery: ["ver_entregas", "aceitar_entrega", "atualizar_entrega", "ver_mapa"],
+  salao:    ["ver_mesas", "abrir_comanda", "ver_pedidos_mesa", "chamar_garcom"],
+  bar:      ["ver_pedidos_bar", "atualizar_status_bebida"],
+  gerencia: ["ver_tudo", "ver_equipe", "ver_financeiro_resumido", "trocar_status_funcionario"],
+  limpeza:  ["ver_status", "registrar_ponto"],
+  geral:    ["ver_status", "registrar_ponto", "ver_dados"],
+};
+
+function getCategoryIcon(name: string): string {
+  return CATEGORY_ICONS[name.toLowerCase()] ?? "📋";
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function formatTime(iso: string) {
@@ -119,6 +141,8 @@ export default function FuncionarioPortal() {
   const [punchLoading, setPunchLoading] = useState(false);
   const [statusLoading, setStatusLoading] = useState(false);
   const [punchFeedback, setPunchFeedback] = useState<"in" | "out" | null>(null);
+  const [selectingCategory, setSelectingCategory] = useState(false);
+  const [categoryLoading, setCategoryLoading] = useState(false);
 
   // ── Auth + initial load ───────────────────────────────────────────────────
   const loadData = useCallback(async () => {
@@ -130,6 +154,11 @@ export default function FuncionarioPortal() {
     if (!meRes.ok) { router.replace("/funcionario"); return; }
     const { employee: emp } = await meRes.json();
     setEmployee(emp);
+
+    // If employee has multiple categories and none active, show selection
+    if ((emp.categories?.length ?? 0) > 1 && !emp.active_category_id) {
+      setSelectingCategory(true);
+    }
 
     if (pontoRes.ok) {
       const { entries: e } = await pontoRes.json();
@@ -195,6 +224,27 @@ export default function FuncionarioPortal() {
     router.replace("/funcionario");
   }
 
+  async function selectCategory(categoryId: string) {
+    setCategoryLoading(true);
+    try {
+      const res = await fetch("/api/funcionario/session", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ categoryId }),
+      });
+      if (res.ok) {
+        const { category } = await res.json();
+        setEmployee(prev => prev ? {
+          ...prev,
+          active_category_id: category.id,
+          active_category_name: category.name,
+        } : prev);
+        setSelectingCategory(false);
+      }
+    } catch {}
+    setCategoryLoading(false);
+  }
+
   // ── Derived state ─────────────────────────────────────────────────────────
   const statusCfg = STATUS_CONFIG[employee?.current_status ?? "off"] ?? STATUS_CONFIG.off;
 
@@ -224,6 +274,65 @@ export default function FuncionarioPortal() {
         </div>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } } * { box-sizing: border-box; } body { margin: 0; background: #060606; }`}</style>
       </div>
+    );
+  }
+
+  if (selectingCategory && employee) {
+    const cats = employee.categories ?? [];
+    return (
+      <>
+        <style>{`
+          * { box-sizing: border-box; }
+          body { margin: 0; background: #050505; }
+          .cat-card { transition: border-color 0.15s, background 0.15s, transform 0.1s; }
+          .cat-card:hover { border-color: #00ffae !important; background: rgba(0,255,174,0.05) !important; }
+          .cat-card:active { transform: scale(0.97); }
+          @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        `}</style>
+        <div style={{
+          minHeight: "100vh", background: "#050505",
+          backgroundImage: "radial-gradient(circle, rgba(0,255,174,0.10) 1px, transparent 1px)",
+          backgroundSize: "22px 22px",
+          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+          padding: "20px", fontFamily: "'Montserrat', system-ui, sans-serif",
+        }}>
+          <div style={{
+            width: "100%", maxWidth: 480, padding: "32px 28px 28px",
+            borderRadius: 20, background: "rgba(255,255,255,0.04)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            boxShadow: "0 24px 80px rgba(0,0,0,0.6)",
+          }}>
+            <div style={{ textAlign: "center", marginBottom: 28 }}>
+              <div style={{ fontSize: 24, fontWeight: 800, color: "#fff", marginBottom: 8 }}>
+                Olá, {employee.name.split(" ")[0]}!
+              </div>
+              <div style={{ fontSize: 14, color: "rgba(255,255,255,0.4)" }}>
+                Em qual função você vai trabalhar hoje?
+              </div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: cats.length === 1 ? "1fr" : "1fr 1fr", gap: 12 }}>
+              {cats.map((cat, i) => (
+                <button
+                  key={cat.id}
+                  className="cat-card"
+                  onClick={() => !categoryLoading && selectCategory(cat.id)}
+                  disabled={categoryLoading}
+                  style={{
+                    padding: "20px 16px", borderRadius: 14, border: "1px solid rgba(255,255,255,0.08)",
+                    background: "rgba(255,255,255,0.04)", cursor: categoryLoading ? "wait" : "pointer",
+                    display: "flex", flexDirection: "column", alignItems: "center", gap: 10,
+                    animation: `fadeUp 0.3s ease ${i * 50}ms both`,
+                    opacity: categoryLoading ? 0.6 : 1,
+                  }}
+                >
+                  <span style={{ fontSize: 32 }}>{getCategoryIcon(cat.name)}</span>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: "#fff", textTransform: "capitalize" }}>{cat.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </>
     );
   }
 
@@ -278,6 +387,21 @@ export default function FuncionarioPortal() {
                 {ROLES[employee.role] ?? employee.role}
                 {employee.category_name ? ` · ${employee.category_name}` : ""}
               </div>
+              {employee.active_category_name && (
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
+                  <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>
+                    {getCategoryIcon(employee.active_category_name)} {employee.active_category_name}
+                  </span>
+                  {(employee.categories?.length ?? 0) > 1 && (
+                    <button
+                      onClick={() => setSelectingCategory(true)}
+                      style={{ fontSize: 10, padding: "2px 8px", borderRadius: 6, border: "none", background: "rgba(0,255,174,0.1)", color: "#00ffae", cursor: "pointer", fontWeight: 600 }}
+                    >
+                      Trocar função
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, flexShrink: 0 }}>
               <div style={{ padding: "4px 10px", borderRadius: 8, background: statusCfg.bg, color: statusCfg.color, fontSize: 10, fontWeight: 700 }}>

@@ -142,6 +142,16 @@ export async function POST(req: NextRequest) {
   // Clear rate limit on success
   loginAttempts.delete(normalizedCpf);
 
+  // Fetch employee categories
+  const { data: empCategories } = await admin
+    .from("employee_category_links")
+    .select("category_id, employee_categories(id, name)")
+    .eq("employee_id", employee.id);
+
+  const categories = (empCategories ?? [])
+    .map((r: any) => ({ id: r.employee_categories?.id, name: r.employee_categories?.name }))
+    .filter((c: any) => c.id && c.name);
+
   // Build response
   const sessionPayload = createSessionData({
     employee_id: employee.id,
@@ -150,6 +160,8 @@ export async function POST(req: NextRequest) {
     role: employee.role ?? "",
     unit_name: unit?.name ?? "",
     unit_logo: unit?.logo_url ?? null,
+    active_category_id: categories.length === 1 ? categories[0].id : null,
+    active_category_name: categories.length === 1 ? categories[0].name : null,
   });
 
   const token = encodeSession(sessionPayload);
@@ -163,6 +175,7 @@ export async function POST(req: NextRequest) {
       unit_id: employee.unit_id,
       unit_slug: unit?.slug ?? null,
       unit_name: unit?.name ?? null,
+      categories,
     },
   });
 

@@ -110,7 +110,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
   const [lunchEnd, setLunchEnd] = useState("13:00");
   const [extraCosts, setExtraCosts] = useState("");
   const [extraCostsDesc, setExtraCostsDesc] = useState("");
-  const [formTeam, setFormTeam] = useState("geral");
+  const [formTeams, setFormTeams] = useState<string[]>(["geral"]);
 
   // Filter state
   const [filterTeam, setFilterTeam] = useState("all");
@@ -123,14 +123,12 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
   const [editSaving, setEditSaving] = useState(false);
   const [editName, setEditName] = useState("");
   const [editRole, setEditRole] = useState("waiter");
-  const [editCategoryIds, setEditCategoryIds] = useState<string[]>([]);
-  const [formCategoryIds, setFormCategoryIds] = useState<string[]>([]);
   const [editSalary, setEditSalary] = useState("");
   const [editExtraCosts, setEditExtraCosts] = useState("");
   const [editWorkDays, setEditWorkDays] = useState<string[]>([]);
   const [editShiftStart, setEditShiftStart] = useState("08:00");
   const [editShiftEnd, setEditShiftEnd] = useState("18:00");
-  const [editTeam, setEditTeam] = useState("geral");
+  const [editTeams, setEditTeams] = useState<string[]>(["geral"]);
   const [editCpf, setEditCpf] = useState("");
   const [editPassword, setEditPassword] = useState("");
   const [editShowPassword, setEditShowPassword] = useState(false);
@@ -277,17 +275,31 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
     }
   }
 
+  async function findOrCreateCategory(name: string): Promise<string | null> {
+    const existing = categories.find(c => c.name.toLowerCase() === name.toLowerCase());
+    if (existing) return existing.id;
+    const { data } = await supabase
+      .from("employee_categories")
+      .insert({ unit_id: unitId, name })
+      .select("id, name")
+      .single();
+    if (data) {
+      setCategories(prev => [...prev, { id: data.id, name: data.name }]);
+      return data.id;
+    }
+    return null;
+  }
+
   function openEditModal(emp: Employee) {
     setEditingEmployee(emp);
     setEditName(emp.name);
     setEditRole(emp.role);
-    setEditCategoryIds(emp.category_ids?.length ? emp.category_ids : ((emp as any).category_id ? [(emp as any).category_id] : []));
+    setEditTeams(emp.category_names?.length ? emp.category_names : (emp.team ? [emp.team] : ["geral"]));
     setEditSalary(emp.salary > 0 ? (emp.salary / 100).toString() : "");
     setEditExtraCosts(emp.extra_costs > 0 ? (emp.extra_costs / 100).toString() : "");
     setEditWorkDays(emp.work_days ?? ["seg", "ter", "qua", "qui", "sex"]);
     setEditShiftStart(emp.shift_start?.slice(0, 5) ?? "08:00");
     setEditShiftEnd(emp.shift_end?.slice(0, 5) ?? "18:00");
-    setEditTeam(emp.team ?? "geral");
     setEditCpf(formatCpf((emp as any).cpf ?? ""));
     setEditPassword("");
     setEditShowPassword(false);
@@ -297,16 +309,24 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
   async function saveEditEmployee() {
     if (!editingEmployee || !editName.trim()) return;
     setEditSaving(true);
+
+    // Resolve team names → category IDs (create if needed)
+    const teamIds: string[] = [];
+    for (const teamName of editTeams) {
+      const catId = await findOrCreateCategory(teamName);
+      if (catId) teamIds.push(catId);
+    }
+
     const updates: any = {
       name: editName.trim(),
       role: editRole,
-      category_id: editCategoryIds[0] || null, // backward compat: primeira categoria
+      category_id: teamIds[0] || null,
+      team: editTeams[0] || "geral",
       salary: editSalary ? Math.round(parseFloat(editSalary) * 100) : 0,
       extra_costs: editExtraCosts ? Math.round(parseFloat(editExtraCosts) * 100) : 0,
       work_days: editWorkDays,
       shift_start: editShiftStart,
       shift_end: editShiftEnd,
-      team: editTeam,
       cpf: editCpf.replace(/\D/g, "") || null,
     };
     if (editPassword.trim()) {
@@ -314,17 +334,16 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
     }
     await supabase.from("employees").update(updates).eq("id", editingEmployee.id);
 
-    // Sincronizar employee_category_links (delete + insert)
+    // Sync employee_category_links
     await supabase.from("employee_category_links").delete().eq("employee_id", editingEmployee.id);
-    if (editCategoryIds.length > 0) {
+    if (teamIds.length > 0) {
       await supabase.from("employee_category_links").insert(
-        editCategoryIds.map(cid => ({ employee_id: editingEmployee.id, category_id: cid }))
+        teamIds.map(cid => ({ employee_id: editingEmployee.id, category_id: cid }))
       );
     }
 
-    const catNames = editCategoryIds.map(id => categories.find(c => c.id === id)?.name).filter(Boolean) as string[];
     setEmployees(prev => prev.map(e => e.id === editingEmployee.id
-      ? { ...e, ...updates, category_name: catNames[0] ?? null, category_names: catNames, category_ids: editCategoryIds }
+      ? { ...e, ...updates, category_name: editTeams[0] ?? null, category_names: editTeams, category_ids: teamIds }
       : e
     ));
     setEditSaving(false);
@@ -369,7 +388,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
         cpf: newEmployee.cpf.trim() || undefined,
         username: newEmployee.username.trim() || undefined,
         password: newEmployee.password || undefined,
-        category_id: formCategoryIds[0] || newEmployee.category_id || undefined,
+        category_id: undefined, // set via employee_category_links after creation
         salary: salary ? Math.round(parseFloat(salary) * 100) : 0,
         work_days: workDays,
         shift_start: shiftStart || "08:00",
@@ -378,7 +397,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
         lunch_end: lunchEnd || null,
         extra_costs: extraCosts ? Math.round(parseFloat(extraCosts) * 100) : 0,
         extra_costs_description: extraCostsDesc || null,
-        team: formTeam,
+        team: formTeams[0] || "geral",
       }),
     });
     const json = await res.json();
@@ -394,11 +413,20 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
       return;
     }
 
-    // Insert employee_category_links for all selected categories
-    if (formCategoryIds.length > 0 && json.employee?.id) {
-      await supabase.from("employee_category_links").insert(
-        formCategoryIds.map((cid: string) => ({ employee_id: json.employee.id, category_id: cid }))
-      );
+    // Resolve teams → category IDs and sync links
+    if (json.employee?.id && formTeams.length > 0) {
+      const teamIds: string[] = [];
+      for (const teamName of formTeams) {
+        const catId = await findOrCreateCategory(teamName);
+        if (catId) teamIds.push(catId);
+      }
+      if (teamIds.length > 0) {
+        // Also update category_id on the employee record
+        await supabase.from("employees").update({ category_id: teamIds[0] }).eq("id", json.employee.id);
+        await supabase.from("employee_category_links").insert(
+          teamIds.map(cid => ({ employee_id: json.employee.id, category_id: cid }))
+        );
+      }
     }
 
     setNewEmployee({ name: "", role: "waiter", phone: "", category_id: "", cpf: "", username: "", password: "", freelancer_service: "", freelancer_date: "" });
@@ -410,8 +438,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
     setLunchEnd("13:00");
     setExtraCosts("");
     setExtraCostsDesc("");
-    setFormTeam("geral");
-    setFormCategoryIds([]);
+    setFormTeams(["geral"]);
     setShowAddForm(false);
     setSaving(false);
     loadEmployees();
@@ -645,23 +672,28 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                   </div>
                 )}
 
-                {/* Equipe */}
+                {/* Funções / Equipe — multi-select */}
                 <div style={{ marginTop: 10 }}>
-                  <label style={{ color: "var(--dash-text-muted)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 6 }}>Equipe</label>
+                  <label style={{ color: "var(--dash-text-muted)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 6 }}>
+                    Função(ões) <span style={{ fontWeight: 400, opacity: 0.5 }}>— pode selecionar várias</span>
+                  </label>
                   <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-                    {["cozinha", "salao", "bar", "delivery", "gerencia", "limpeza", "geral"].map(t => (
-                      <button
-                        key={t}
-                        type="button"
-                        onClick={() => setFormTeam(t)}
-                        style={{
-                          padding: "5px 12px", borderRadius: 8, border: "none", cursor: "pointer",
-                          background: formTeam === t ? "rgba(0,255,174,0.1)" : "rgba(255,255,255,0.04)",
-                          color: formTeam === t ? "var(--dash-accent)" : "var(--dash-text-muted)",
-                          fontSize: 11, fontWeight: 600, textTransform: "capitalize",
-                        }}
-                      >{t}</button>
-                    ))}
+                    {["cozinha", "salao", "bar", "delivery", "gerencia", "limpeza", "geral"].map(t => {
+                      const sel = formTeams.includes(t);
+                      return (
+                        <button
+                          key={t}
+                          type="button"
+                          onClick={() => setFormTeams(prev => sel ? (prev.length > 1 ? prev.filter(x => x !== t) : prev) : [...prev, t])}
+                          style={{
+                            padding: "5px 12px", borderRadius: 8, border: sel ? "none" : "1px solid rgba(255,255,255,0.12)", cursor: "pointer",
+                            background: sel ? "#00ffae" : "rgba(255,255,255,0.06)",
+                            color: sel ? "#000" : "#fff",
+                            fontSize: 11, fontWeight: sel ? 700 : 500, textTransform: "capitalize",
+                          }}
+                        >{t}</button>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -706,30 +738,6 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                     {showAddPassword ? "🙈" : "👁️"}
                   </button>
                 </div>
-                {categories.length > 0 && (
-                  <div>
-                    <label style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 6 }}>Categorias</label>
-                    <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-                      {categories.map((c) => {
-                        const selected = formCategoryIds.includes(c.id);
-                        return (
-                          <button
-                            key={c.id}
-                            type="button"
-                            onClick={() => setFormCategoryIds(prev => selected ? prev.filter(id => id !== c.id) : [...prev, c.id])}
-                            style={{
-                              padding: "5px 12px", borderRadius: 8, border: "none", cursor: "pointer",
-                              background: selected ? "rgba(168,85,247,0.15)" : "rgba(255,255,255,0.04)",
-                              color: selected ? "#c084fc" : "rgba(255,255,255,0.4)",
-                              fontSize: 11, fontWeight: 600,
-                            }}
-                          >{c.name}</button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
                 {/* Salário */}
                 <div style={{ marginTop: 12 }}>
                   <label style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 6 }}>Salário mensal (R$)</label>
@@ -1408,43 +1416,25 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                 </div>
               </div>
 
-              {/* Categorias — multi-select */}
-              {categories.length > 0 && (
-                <div>
-                  <label style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 5 }}>Categorias</label>
-                  <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-                    {categories.map(c => {
-                      const selected = editCategoryIds.includes(c.id);
-                      return (
-                        <button
-                          key={c.id}
-                          type="button"
-                          onClick={() => setEditCategoryIds(prev => selected ? prev.filter(id => id !== c.id) : [...prev, c.id])}
-                          style={{
-                            padding: "5px 12px", borderRadius: 8, border: "none", cursor: "pointer",
-                            background: selected ? "rgba(168,85,247,0.15)" : "rgba(255,255,255,0.04)",
-                            color: selected ? "#c084fc" : "rgba(255,255,255,0.4)",
-                            fontSize: 11, fontWeight: 600,
-                          }}
-                        >{c.name}</button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Equipe */}
+              {/* Funções / Equipe — multi-select */}
               <div>
-                <label style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 5 }}>Equipe</label>
+                <label style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 5 }}>
+                  Função(ões) <span style={{ fontWeight: 400, opacity: 0.5 }}>— pode selecionar várias</span>
+                </label>
                 <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-                  {["cozinha", "salao", "bar", "delivery", "gerencia", "limpeza", "geral"].map(t => (
-                    <button key={t} type="button" onClick={() => setEditTeam(t)} style={{
-                      padding: "5px 12px", borderRadius: 8, border: "none", cursor: "pointer",
-                      background: editTeam === t ? "rgba(0,255,174,0.1)" : "rgba(255,255,255,0.04)",
-                      color: editTeam === t ? "var(--dash-accent, #00ffae)" : "rgba(255,255,255,0.4)",
-                      fontSize: 11, fontWeight: 600, textTransform: "capitalize",
-                    }}>{t}</button>
-                  ))}
+                  {["cozinha", "salao", "bar", "delivery", "gerencia", "limpeza", "geral"].map(t => {
+                    const sel = editTeams.includes(t);
+                    return (
+                      <button key={t} type="button"
+                        onClick={() => setEditTeams(prev => sel ? (prev.length > 1 ? prev.filter(x => x !== t) : prev) : [...prev, t])}
+                        style={{
+                          padding: "5px 12px", borderRadius: 8, border: sel ? "none" : "1px solid rgba(255,255,255,0.12)", cursor: "pointer",
+                          background: sel ? "#00ffae" : "rgba(255,255,255,0.06)",
+                          color: sel ? "#000" : "#fff",
+                          fontSize: 11, fontWeight: sel ? 700 : 500, textTransform: "capitalize",
+                        }}>{t}</button>
+                    );
+                  })}
                 </div>
               </div>
 

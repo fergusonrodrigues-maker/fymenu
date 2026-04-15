@@ -28,6 +28,15 @@ export async function GET(req: NextRequest) {
   if (!employee || !employee.is_active)
     return NextResponse.json({ error: "Conta desativada" }, { status: 403 });
 
+  const { data: empCategories } = await admin
+    .from("employee_category_links")
+    .select("category_id, employee_categories(id, name)")
+    .eq("employee_id", session.employee_id);
+
+  const categories = (empCategories ?? [])
+    .map((r: any) => ({ id: r.employee_categories?.id, name: r.employee_categories?.name }))
+    .filter((c: any) => c.id && c.name);
+
   const unit = employee.units as any;
   const maskedCpf = employee.cpf
     ? employee.cpf.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, "***.$2.$3-$4")
@@ -50,6 +59,9 @@ export async function GET(req: NextRequest) {
       unit_name: unit?.name ?? session.unit_name,
       unit_logo: unit?.logo_url ?? session.unit_logo,
       unit_slug: unit?.slug ?? null,
+      categories,
+      active_category_id: session.active_category_id ?? null,
+      active_category_name: session.active_category_name ?? null,
     },
   });
 }
