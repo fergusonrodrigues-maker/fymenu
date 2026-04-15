@@ -261,7 +261,7 @@ function PlanCard({ planKey, plan, theme }: {
     // Outer wrapper: holds CSS-class border (::before), transform, mouse events.
     // No overflow:hidden here so pseudo-elements with inset:-2px are fully visible.
     <div
-      className={isGreen ? "card-business" : ""}
+      className=""
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => { setHovered(false); setPressed(false); }}
       onMouseDown={() => setPressed(true)}
@@ -834,38 +834,6 @@ export default function LandingPage() {
           .gradient-text-dark, .gradient-text-light { animation: none; }
         }
 
-        /* ── Animated card borders ─────────────────────────────────────────── */
-        @property --gold-angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
-        @keyframes gold-rotate { to { --gold-angle: 360deg; } }
-        @keyframes gold-glow   { from { opacity: 0.45; } to { opacity: 1; } }
-
-        /* Business — permanent gold 24k border */
-        .card-business { position: relative; }
-        .card-business::before {
-          content: '';
-          position: absolute;
-          inset: -2px;
-          border-radius: 26px;
-          padding: 2px;
-          background: conic-gradient(from var(--gold-angle), #BF953F, #FCF6BA, #B38728, #FBF5B7, #AA771C, #BF953F);
-          animation: gold-rotate 4s linear infinite;
-          -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-          -webkit-mask-composite: xor;
-          mask-composite: exclude;
-          will-change: background;
-          pointer-events: none;
-          z-index: 1;
-        }
-        .card-business::after {
-          content: '';
-          position: absolute;
-          inset: -28px;
-          border-radius: 52px;
-          background: radial-gradient(ellipse at center, rgba(191,149,63,0.13) 0%, transparent 65%);
-          animation: gold-glow 3s ease infinite alternate;
-          pointer-events: none;
-          z-index: -1;
-        }
 
         /* ── Theme Toggle ── */
         .theme-toggle-landing {
