@@ -524,12 +524,17 @@ export default function LandingPage() {
 
     const hardTimeout = setTimeout(finish, maxWait);
 
-    // Poll for at least one video with first frame ready
+    // window.onload as secondary fallback (fires after all resources incl. images)
+    window.addEventListener("load", finish, { once: true });
+
+    // Poll for at least one video with metadata ready.
+    // readyState >= 1 (HAVE_METADATA) is reliable on iOS Safari even with
+    // preload="metadata"; >= 2 (HAVE_CURRENT_DATA) can stall without interaction.
     const poll = setInterval(() => {
       const elapsed = Date.now() - startTime;
       if (elapsed < minWait) return;
       const videos = Array.from(document.querySelectorAll<HTMLVideoElement>("video"));
-      if (videos.length > 0 && videos.some((v) => v.readyState >= 2)) {
+      if (videos.length > 0 && videos.some((v) => v.readyState >= 1)) {
         clearInterval(poll);
         finish();
       }
@@ -538,6 +543,7 @@ export default function LandingPage() {
     return () => {
       clearTimeout(hardTimeout);
       clearInterval(poll);
+      window.removeEventListener("load", finish);
     };
   }, []);
 
@@ -1117,7 +1123,18 @@ export default function LandingPage() {
 
       <PageLoader visible={loading} />
 
-      <div className={theme === "light" ? "landing-light" : ""} style={{ minHeight: "100vh", position: "relative", background: theme === "light" ? "#fafafa" : "#000", transition: "background 0.5s ease" }}>
+      <div
+        className={theme === "light" ? "landing-light" : ""}
+        style={{
+          minHeight: "100vh", position: "relative",
+          background: theme === "light" ? "#fafafa" : "#000",
+          transition: "background 0.5s ease, opacity 0.5s ease",
+          // Keep content truly invisible while loading — more robust than relying
+          // on the fixed PageLoader overlay alone (iOS Safari fixed-pos paint bugs)
+          opacity: loading ? 0 : 1,
+          visibility: loading ? "hidden" : "visible",
+        }}
+      >
         <canvas ref={canvasRef} style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none" }} />
 
         {/* ── Mouse spotlight ── */}
