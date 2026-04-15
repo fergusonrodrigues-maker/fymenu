@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { createClient } from "@/lib/supabase/client";
-import FyLoader from "@/components/FyLoader";
+import LoadingSpinner, { ContentEnter } from "@/components/LoadingSpinner";
 
 const supabase = createClient();
 const WA_GREEN = "#25D366";
@@ -908,9 +908,9 @@ export default function CrmModal({ unit, restaurant }: { unit: any; restaurant: 
       </div>
 
       {loading ? (
-        <div style={{ display: "flex", justifyContent: "center", padding: 40 }}><FyLoader size="sm" /></div>
+        <div style={{ display: "flex", justifyContent: "center", padding: 40 }}><LoadingSpinner size="sm" /></div>
       ) : (
-        <>
+        <ContentEnter><>
           {/* === TAB CLIENTES === */}
           {tab === "clientes" && (
             <div>
@@ -1108,7 +1108,7 @@ export default function CrmModal({ unit, restaurant }: { unit: any; restaurant: 
               ))}
             </div>
           )}
-        </>
+        </></ContentEnter>
       )}
 
       {/* ── Modals ── */}

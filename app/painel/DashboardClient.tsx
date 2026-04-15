@@ -6,10 +6,10 @@ import ThemeToggle from "@/components/ThemeToggle";
 import { createClient } from "@/lib/supabase/client";
 import dynamic from "next/dynamic";
 import type { Restaurant, Unit, StockStats, Category, Product, Profile, ReportData } from "./types";
-import FyLoader from "@/components/FyLoader";
+import LoadingSpinner from "@/components/LoadingSpinner";
 import { hasPlanFeature, planLabel, maxUnits as planMaxUnits } from "@/lib/plan";
 
-const loadingFallback = <div style={{padding:40,display:"flex",justifyContent:"center"}}><FyLoader size="sm" /></div>;
+const loadingFallback = <div style={{padding:40,display:"flex",justifyContent:"center"}}><LoadingSpinner size="sm" /></div>;
 
 const RestaurantOperationsModal = dynamic(() => import("./components/RestaurantOperationsModal"), { ssr: false, loading: () => loadingFallback });
 const PedidosModal = dynamic(() => import("./components/PedidosModal"), { ssr: false, loading: () => loadingFallback });

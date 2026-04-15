@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Unit } from "../types";
-import FyLoader from "@/components/FyLoader";
+import LoadingSpinner, { ContentEnter } from "@/components/LoadingSpinner";
 import AIButton from "@/components/AIButton";
 import AIWaveLoader from "@/components/AIWaveLoader";
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell } from "recharts";
@@ -665,12 +665,14 @@ export default function AnalyticsModal({
           )}
 
           {loadingProducts ? (
-            <div style={{ display: "flex", justifyContent: "center", padding: 40 }}><FyLoader size="sm" /></div>
-          ) : topProducts.length === 0 ? (
+            <div style={{ display: "flex", justifyContent: "center", padding: 40 }}><LoadingSpinner size="sm" /></div>
+          ) : (
+            <ContentEnter>
+            {topProducts.length === 0 ? (
             <div style={{ textAlign: "center", padding: 40, color: "var(--dash-text-muted)", fontSize: 13 }}>
               Nenhum dado de cliques ainda. Os produtos aparecem aqui conforme os clientes interagem com o cardápio.
             </div>
-          ) : (
+            ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               {topProducts.map((p, i) => {
                 const maxClicks = topProducts[0]?.count || 1;
@@ -710,6 +712,8 @@ export default function AnalyticsModal({
                 );
               })}
             </div>
+            )}
+            </ContentEnter>
           )}
 
           {/* Product Attention Time */}
@@ -721,12 +725,14 @@ export default function AnalyticsModal({
 
             {(restaurant?.plan === "menupro" || restaurant?.plan === "business") ? (
               loadingAttention ? (
-                <div style={{ display: "flex", justifyContent: "center", padding: 20 }}><FyLoader size="sm" /></div>
-              ) : attentionRanking.length === 0 ? (
+                <div style={{ display: "flex", justifyContent: "center", padding: 20 }}><LoadingSpinner size="sm" /></div>
+              ) : (
+                <ContentEnter>
+                {attentionRanking.length === 0 ? (
                 <div style={{ textAlign: "center", padding: 20, color: "var(--dash-text-muted)", fontSize: 12 }}>
                   Ainda sem dados de atenção. Os dados aparecem conforme clientes visualizam produtos.
                 </div>
-              ) : (
+                ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                   {attentionRanking.slice(0, 15).map((p, i) => {
                     const maxTime = attentionRanking[0]?.avgSeconds || 1;
@@ -769,6 +775,8 @@ export default function AnalyticsModal({
                     );
                   })}
                 </div>
+                )}
+                </ContentEnter>
               )
             ) : (
               <div style={{ textAlign: "center", padding: 20 }}>

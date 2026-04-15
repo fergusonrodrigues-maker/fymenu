@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
-import FyLoader from "@/components/FyLoader";
+import LoadingSpinner, { ContentEnter } from "@/components/LoadingSpinner";
 import AIButton from "@/components/AIButton";
 import AIWaveLoader from "@/components/AIWaveLoader";
 
@@ -685,12 +685,14 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
 
           {/* Items list */}
           {loading ? (
-            <div style={{ display: "flex", justifyContent: "center", padding: 40 }}><FyLoader size="sm" /></div>
-          ) : filtered.length === 0 ? (
+            <div style={{ display: "flex", justifyContent: "center", padding: 40 }}><LoadingSpinner size="sm" /></div>
+          ) : (
+            <ContentEnter>
+            {filtered.length === 0 ? (
             <div style={{ textAlign: "center", padding: 40, color: "var(--dash-text-muted)" }}>
               {items.length === 0 ? "Nenhum ingrediente cadastrado. Clique em + Adicionar." : "Nenhum resultado para o filtro."}
             </div>
-          ) : (
+            ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               {filtered.map(item => {
                 const isLow = item.min_stock > 0 && item.current_stock <= item.min_stock;
@@ -789,6 +791,8 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
                 );
               })}
             </div>
+            )}
+            </ContentEnter>
           )}
         </div>
       )}

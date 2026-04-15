@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 const WA_GREEN = "#25D366";
 const WA_DARK = "#128C7E";
@@ -548,7 +549,7 @@ function TemplatesTab({ unitId }: { unitId: string }) {
       )}
 
       {loading ? (
-        <div style={{ color: "var(--dash-text-muted)", fontSize: 13, textAlign: "center", padding: 20 }}>Carregando...</div>
+        <div style={{ display: "flex", justifyContent: "center", padding: 20 }}><LoadingSpinner size="sm" /></div>
       ) : templates.length === 0 ? (
         <div style={{ color: "var(--dash-text-muted)", fontSize: 13, textAlign: "center", padding: 20 }}>Nenhum template</div>
       ) : (
@@ -855,7 +856,7 @@ function HistoryTab({ unitId }: { unitId: string }) {
       </div>
 
       {loading ? (
-        <div style={{ color: "var(--dash-text-muted)", fontSize: 13, textAlign: "center", padding: 30 }}>Carregando...</div>
+        <div style={{ display: "flex", justifyContent: "center", padding: 30 }}><LoadingSpinner size="sm" /></div>
       ) : messages.length === 0 ? (
         <div style={{ color: "var(--dash-text-muted)", fontSize: 13, textAlign: "center", padding: 30 }}>Nenhuma mensagem</div>
       ) : (
@@ -935,7 +936,7 @@ export default function WhatsappModal({ unit }: { unit: { id: string; name: stri
   }, [unit.id]);
 
   if (loading) {
-    return <div style={{ padding: 40, textAlign: "center", color: "var(--dash-text-muted)" }}>Carregando...</div>;
+    return <div style={{ display: "flex", justifyContent: "center", padding: 40 }}><LoadingSpinner size="sm" /></div>;
   }
 
   if (!instance) {

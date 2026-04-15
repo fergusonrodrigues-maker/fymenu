@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 type Conversation = {
   id: string;
@@ -345,7 +346,7 @@ export default function ChatWidget({
             {/* Messages */}
             <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
               {loadingMsgs ? (
-                <p style={{ textAlign: "center", color: "rgba(255,255,255,0.3)", fontSize: 13 }}>Carregando...</p>
+                <div style={{ display: "flex", justifyContent: "center", padding: "12px 0" }}><LoadingSpinner size="sm" /></div>
               ) : messages.length === 0 ? (
                 <p style={{ textAlign: "center", color: "rgba(255,255,255,0.3)", fontSize: 13 }}>Nenhuma mensagem ainda.</p>
               ) : (
