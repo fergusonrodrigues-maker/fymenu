@@ -357,9 +357,11 @@ function PlanCard({ planKey, plan, theme }: {
             marginBottom: 8,
             ...(isAccent
               ? { background: "linear-gradient(135deg, #00ffae, #00d9ff)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }
-              : hex
-                ? { color: hex }
-                : { color: dark ? "#fbbf24" : "#a07800" }),
+              : isGreen
+                ? { display: "inline-block", padding: "3px 12px", borderRadius: 999, background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.2)", color: "#FFD700" }
+                : hex
+                  ? { color: hex }
+                  : { color: dark ? "#fbbf24" : "#a07800" }),
           }}>
             {plan.badge.toUpperCase()}
           </div>
@@ -368,9 +370,8 @@ function PlanCard({ planKey, plan, theme }: {
         )}
 
         <div style={{ textAlign: "center", marginBottom: 20 }}>
-          <div style={{ fontSize: 28, marginBottom: 4 }}>{plan.icon}</div>
-          <div style={{ fontSize: 20, fontWeight: 900, color: isGreen ? "#d4af37" : "var(--lp-price-color)" }}>{plan.name}</div>
-          <div style={{ fontSize: 12, color: "var(--lp-text-secondary)", marginTop: 2 }}>{plan.units}</div>
+          <div style={{ fontSize: 20, fontWeight: 900, ...(isGreen ? { background: "linear-gradient(135deg, #BF953F, #FCF6BA, #B38728, #FBF5B7, #AA771C)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" } : { color: "var(--lp-price-color)" }) }}>{plan.name}</div>
+          <div style={{ fontSize: 12, color: isGreen ? "#D4AF37" : "var(--lp-text-secondary)", marginTop: 2 }}>{plan.units}</div>
         </div>
 
         {/* Per-card cycle selector */}
@@ -391,10 +392,10 @@ function PlanCard({ planKey, plan, theme }: {
                 flex: 1, border: "none", cursor: "pointer", fontFamily: "inherit",
                 padding: "6px 4px", borderRadius: 7, fontSize: 11, fontWeight: 700,
                 background: cycle === c.key
-                  ? (hex ? `rgba(${rgb},0.2)` : (dark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)"))
+                  ? (isGreen ? "#B8860B" : (hex ? `rgba(${rgb},0.2)` : (dark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)")))
                   : "transparent",
                 color: cycle === c.key
-                  ? (hex ?? (dark ? "#fff" : "#222"))
+                  ? (isGreen ? "#000" : (hex ?? (dark ? "#fff" : "#222")))
                   : (dark ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.35)"),
                 transition: "all 0.2s ease",
               }}
@@ -405,15 +406,15 @@ function PlanCard({ planKey, plan, theme }: {
         </div>
 
         <div style={{ textAlign: "center", marginBottom: 20 }}>
-          <div style={{ fontSize: 36, fontWeight: 900, color: isGreen ? "var(--lp-price-color)" : hex ?? "var(--lp-price-color)", transition: "all 0.2s ease" }}>
+          <div style={{ fontSize: 36, fontWeight: 900, ...(isGreen ? { background: "linear-gradient(135deg, #BF953F, #FCF6BA, #B38728, #FBF5B7, #AA771C)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" } : { color: hex ?? "var(--lp-price-color)" }), transition: "all 0.2s ease" }}>
             R${plan.prices[cycle]}
             <span style={{ fontSize: 14, fontWeight: 400, color: "var(--lp-text-secondary)" }}>/mês</span>
           </div>
           {cycle !== "MONTHLY" && (
             <div style={{
               display: "inline-flex", alignItems: "center", marginTop: 6,
-              background: hex ? `rgba(${rgb},0.12)` : "rgba(0,255,174,0.1)",
-              color: hex ?? "#00ffae",
+              background: isGreen ? "rgba(255,215,0,0.12)" : (hex ? `rgba(${rgb},0.12)` : "rgba(0,255,174,0.1)"),
+              color: isGreen ? "#FFD700" : (hex ?? "#00ffae"),
               fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 999,
             }}>
               Economia de {(plan.savings as Record<string, string>)[cycle]}
@@ -423,8 +424,8 @@ function PlanCard({ planKey, plan, theme }: {
 
         <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 24, flex: 1 }}>
           {plan.features.map((f) => (
-            <div key={f} style={{ fontSize: 13, color: "var(--lp-text)", display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ color: hex ?? "#00cc8a", fontSize: 12 }}>✓</span> {f}
+            <div key={f} style={{ fontSize: 13, color: isGreen ? "rgba(255,255,255,0.8)" : "var(--lp-text)", display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ color: isGreen ? "#FFD700" : (hex ?? "#00cc8a"), fontSize: 12 }}>✓</span> {f}
             </div>
           ))}
         </div>
@@ -437,17 +438,21 @@ function PlanCard({ planKey, plan, theme }: {
               : isPurple
                 ? `rgba(${rgb},0.15)`
                 : isGreen
-                  ? `rgba(${rgb},0.08)`
+                  ? "linear-gradient(rgba(12,12,12,0.92), rgba(12,12,12,0.92)) padding-box, linear-gradient(135deg, #BF953F, #FCF6BA, #B38728, #FBF5B7, #AA771C) border-box"
                   : "var(--lp-btn-bg)",
-            color: isAccent ? "#000" : hex ?? "var(--lp-btn-color)",
+            color: isAccent ? "#000" : (isGreen ? "#D4AF37" : (hex ?? "var(--lp-btn-color)")),
             fontWeight: 800, fontSize: 15, textDecoration: "none",
-            border: isGreen ? `2px solid rgba(${rgb},0.4)` : isPurple ? `1px solid rgba(${rgb},0.3)` : "none",
+            border: isGreen ? "2px solid transparent" : isPurple ? `1px solid rgba(${rgb},0.3)` : "none",
             boxShadow: hovered ? btnShadowHover : btnShadowBase,
             transform: hovered ? "scale(1.02)" : "scale(1)",
             transition: "all 0.4s ease",
           }}
         >
-          {plan.cta}
+          {isGreen ? (
+            <span style={{ background: "linear-gradient(135deg, #BF953F, #FCF6BA, #B38728, #FBF5B7, #AA771C)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+              {plan.cta}
+            </span>
+          ) : plan.cta}
         </a>
       </div>
     </div>
