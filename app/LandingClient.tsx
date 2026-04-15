@@ -23,14 +23,6 @@ function PageLoader({ visible }: { visible: boolean }) {
       transition: "opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1)",
       pointerEvents: visible ? "auto" : "none",
     }}>
-      {/* Logo */}
-      <div style={{
-        fontWeight: 900, fontSize: 28, color: "#00ffae", letterSpacing: "-0.5px",
-        transform: visible ? "scale(1)" : "scale(0.82)",
-        transition: "transform 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.05s",
-      }}>
-        FyMenu
-      </div>
       {/* Spinner */}
       <div className="fy-loader" style={{
         opacity: visible ? 1 : 0,
