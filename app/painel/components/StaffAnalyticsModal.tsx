@@ -114,6 +114,8 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
 
   // Filter state
   const [filterTeam, setFilterTeam] = useState("all");
+  const [showInactive, setShowInactive] = useState(false);
+  const [inactiveEmployees, setInactiveEmployees] = useState<Employee[]>([]);
 
   // Edit modal state
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
@@ -152,11 +154,16 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
       .channel(`employees-rt-${unitId}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "employees", filter: `unit_id=eq.${unitId}` }, (payload: any) => {
         if (payload.eventType === "UPDATE") {
-          setEmployees(prev => prev.map(e =>
-            e.id === payload.new.id
-              ? { ...e, current_status: payload.new.current_status, is_active: payload.new.is_active, name: payload.new.name }
-              : e
-          ));
+          if (payload.new.is_active === false) {
+            // Employee deactivated externally — move out of active list
+            setEmployees(prev => prev.filter(e => e.id !== payload.new.id));
+          } else {
+            setEmployees(prev => prev.map(e =>
+              e.id === payload.new.id
+                ? { ...e, current_status: payload.new.current_status, is_active: payload.new.is_active, name: payload.new.name }
+                : e
+            ));
+          }
         } else {
           loadEmployees();
         }
@@ -173,28 +180,30 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
     setLoading(false);
   }
 
-  async function loadEmployees() {
-    const { data } = await supabase
-      .from("employees")
-      .select("*, employee_categories(name), employee_category_links(category_id, employee_categories(name))")
-      .eq("unit_id", unitId)
-      .order("name");
+  function mapEmployee(e: any): Employee {
+    const links: any[] = e.employee_category_links ?? [];
+    const catNames = links.map((l: any) => l.employee_categories?.name).filter(Boolean) as string[];
+    const catIds = links.map((l: any) => l.category_id).filter(Boolean) as string[];
+    return {
+      ...e,
+      category_name: e.employee_categories?.name ?? catNames[0] ?? null,
+      category_names: catNames,
+      category_ids: catIds,
+      salary: e.salary ?? 0,
+      extra_costs: e.extra_costs ?? 0,
+    };
+  }
 
-    setEmployees(
-      (data ?? []).map((e: any) => {
-        const links: any[] = e.employee_category_links ?? [];
-        const catNames = links.map((l: any) => l.employee_categories?.name).filter(Boolean) as string[];
-        const catIds = links.map((l: any) => l.category_id).filter(Boolean) as string[];
-        return {
-          ...e,
-          category_name: e.employee_categories?.name ?? catNames[0] ?? null,
-          category_names: catNames,
-          category_ids: catIds,
-          salary: e.salary ?? 0,
-          extra_costs: e.extra_costs ?? 0,
-        };
-      })
-    );
+  async function loadEmployees() {
+    const sel = "*, employee_categories(name), employee_category_links(category_id, employee_categories(name))";
+
+    const [{ data: active }, { data: inactive }] = await Promise.all([
+      supabase.from("employees").select(sel).eq("unit_id", unitId).eq("is_active", true).order("name"),
+      supabase.from("employees").select(sel).eq("unit_id", unitId).eq("is_active", false).order("name"),
+    ]);
+
+    setEmployees((active ?? []).map(mapEmployee));
+    setInactiveEmployees((inactive ?? []).map(mapEmployee));
   }
 
   async function loadWaiterStats() {
@@ -254,7 +263,16 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
   async function toggleActive(emp: Employee) {
     const newActive = !emp.is_active;
     await supabase.from("employees").update({ is_active: newActive }).eq("id", emp.id);
-    setEmployees(prev => prev.map(e => e.id === emp.id ? { ...e, is_active: newActive } : e));
+    const updated = { ...emp, is_active: newActive };
+    if (newActive) {
+      // Reactivating: move from inactive list to active list
+      setInactiveEmployees(prev => prev.filter(e => e.id !== emp.id));
+      setEmployees(prev => [...prev, updated].sort((a, b) => a.name.localeCompare(b.name)));
+    } else {
+      // Deactivating: remove from active list, add to inactive list
+      setEmployees(prev => prev.filter(e => e.id !== emp.id));
+      setInactiveEmployees(prev => [...prev, updated].sort((a, b) => a.name.localeCompare(b.name)));
+    }
   }
 
   function openEditModal(emp: Employee) {
@@ -314,7 +332,9 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
   async function deleteEmployee() {
     if (!editingEmployee) return;
     await supabase.from("employees").update({ is_active: false }).eq("id", editingEmployee.id);
-    setEmployees(prev => prev.map(e => e.id === editingEmployee.id ? { ...e, is_active: false } : e));
+    const deactivated = { ...editingEmployee, is_active: false };
+    setEmployees(prev => prev.filter(e => e.id !== editingEmployee.id));
+    setInactiveEmployees(prev => [...prev, deactivated].sort((a, b) => a.name.localeCompare(b.name)));
     setEditingEmployee(null);
     setConfirmDelete(false);
   }
@@ -905,6 +925,49 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {/* Inactive employees toggle */}
+          {inactiveEmployees.length > 0 && (
+            <div style={{ marginTop: 16 }}>
+              <button
+                onClick={() => setShowInactive(v => !v)}
+                style={{
+                  width: "100%", padding: "8px 12px", borderRadius: 10, border: "none",
+                  background: "rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.3)",
+                  fontSize: 12, fontWeight: 600, cursor: "pointer", textAlign: "left",
+                  display: "flex", justifyContent: "space-between", alignItems: "center",
+                }}
+              >
+                <span>Inativos ({inactiveEmployees.length})</span>
+                <span style={{ fontSize: 10 }}>{showInactive ? "▲ Ocultar" : "▼ Mostrar"}</span>
+              </button>
+              {showInactive && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 8 }}>
+                  {inactiveEmployees.map(emp => (
+                    <div key={emp.id} style={{
+                      background: "rgba(255,255,255,0.02)", borderRadius: 12, padding: "10px 14px",
+                      border: "1px solid rgba(255,255,255,0.04)",
+                      display: "flex", alignItems: "center", gap: 10, opacity: 0.5,
+                    }}>
+                      <div style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(255,255,255,0.04)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>
+                        {emp.role === "deliverer" ? "🚴" : emp.role === "kitchen" ? "👨‍🍳" : emp.role === "freelancer" ? "🤝" : "🧑‍🍳"}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ color: "#666", fontSize: 13, fontWeight: 700 }}>{emp.name}</div>
+                        <div style={{ color: "#555", fontSize: 11 }}>{ROLES[emp.role] ?? emp.role}</div>
+                      </div>
+                      <button
+                        onClick={() => toggleActive(emp)}
+                        style={{ padding: "5px 10px", borderRadius: 8, border: "none", background: "rgba(0,255,174,0.08)", color: "#00ffae", fontSize: 11, fontWeight: 700, cursor: "pointer", flexShrink: 0 }}
+                      >
+                        Reativar
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
