@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 
 const SUPABASE_URL = "https://rjfbavmupiypxiqzksxo.supabase.co/storage/v1/object/public/landing";
 
@@ -24,6 +24,8 @@ export default function VideoShowcase() {
   const [loadedSet, setLoadedSet] = useState<Set<number>>(() => new Set([1, 2, 3, 4, 5, 6, 7]));
   // Whether the carousel section is near the viewport
   const [sectionVisible, setSectionVisible] = useState(false);
+  // Captured first-frame posters for side cards (index → data URI)
+  const [posterMap, setPosterMap] = useState<Record<number, string>>({});
 
   const startX = useRef(0);
   const deltaX = useRef(0);
@@ -71,16 +73,24 @@ export default function VideoShowcase() {
     });
   }, [active, total]);
 
+  // As soon as the section is visible, force-load side cards so the browser
+  // starts fetching metadata (and later we can capture the first frame).
+  // On iOS this does nothing until a user gesture, but fires immediately on
+  // Android / desktop — so side cards get their posters sooner there.
+  useEffect(() => {
+    if (!sectionVisible) return;
+    videoRefs.current.forEach((v, i) => {
+      if (!v || i === activeRef.current) return;
+      if (v.readyState < 1) v.load();
+    });
+  }, [sectionVisible]);
+
   // BUG FIX: play/pause effect now includes sectionVisible in deps.
-  // Previously it ran before src was set (sectionVisible=false → videoSrc=undefined)
-  // and never re-ran when src appeared. Adding sectionVisible ensures play()
-  // is called again once videos actually have a src.
   useEffect(() => {
     if (!sectionVisible) return; // src not set yet — nothing to play
     videoRefs.current.forEach((v, i) => {
-      if (!v || !v.src) return; // skip elements without src
+      if (!v || !v.src) return;
 
-      // Compute circular offset
       let off = i - active;
       if (off > total / 2) off -= total;
       if (off < -total / 2) off += total;
@@ -89,7 +99,6 @@ export default function VideoShowcase() {
         v.play().catch(() => {});
       } else {
         v.pause();
-        // Reset videos that are far from center to free decoder resources
         if (Math.abs(off) > 2) {
           v.currentTime = 0;
         }
@@ -98,19 +107,41 @@ export default function VideoShowcase() {
   }, [active, loadedSet, sectionVisible, total]);
 
   // BUG FIX: on first touch, force-load all carousel videos and play the active
-  // one. On iOS Safari, autoplay is blocked until the first user gesture — this
-  // ensures the hero video starts as soon as the user touches anything.
+  // one. On iOS Safari, autoplay is blocked until the first user gesture.
   useEffect(() => {
     const onFirstTouch = () => {
       videoRefs.current.forEach((v, i) => {
         if (!v) return;
-        // Force the browser to start buffering (iOS ignores preload otherwise)
         if (v.readyState < 1) v.load();
         if (i === activeRef.current) v.play().catch(() => {});
       });
     };
     document.addEventListener("touchstart", onFirstTouch, { once: true, passive: true });
     return () => document.removeEventListener("touchstart", onFirstTouch);
+  }, []);
+
+  // Capture the first visible frame of a video and store it as a poster data URI.
+  // Called from onSeeked (after we seek to 0.1s in onLoadedMetadata).
+  // On iOS, canvas.drawImage on a paused video can return a blank frame — the
+  // try/catch silently discards that; the gradient fallback covers the card.
+  const captureFrame = useCallback((video: HTMLVideoElement, index: number) => {
+    try {
+      const w = video.videoWidth || 220;
+      const h = video.videoHeight || 391;
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.drawImage(video, 0, 0, w, h);
+      const url = canvas.toDataURL("image/jpeg", 0.65);
+      // toDataURL returns "data:image/jpeg;base64,/9j/4AAQS..." for real frames
+      // and a minimal header for blank canvases — skip suspiciously short results
+      if (url.length < 200) return;
+      setPosterMap((prev) => ({ ...prev, [index]: url }));
+    } catch {
+      // cross-origin or tainted canvas — ignore
+    }
   }, []);
 
   const W = isMobile ? 220 : 320;
@@ -168,20 +199,34 @@ export default function VideoShowcase() {
               cursor: isActive ? "default" : "pointer",
               boxShadow: isActive ? "0 20px 60px rgba(0,0,0,0.5), 0 0 30px rgba(0,255,174,0.08)" : "0 10px 30px rgba(0,0,0,0.3)",
               border: isActive ? "2px solid rgba(0,255,174,0.2)" : "1px solid rgba(255,255,255,0.06)",
-              // BUG FIX: subtle dark gradient instead of pure #111 so cards never
-              // look like broken black boxes while the video is buffering.
-              background: "linear-gradient(160deg, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0.6) 100%)",
+              // Fallback: subtle glass gradient so cards never appear as solid black
+              // while the video/poster is still loading.
+              background: "linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.06))",
             }}>
               <video
                 ref={(el) => { videoRefs.current[i] = el; }}
                 src={videoSrc}
                 muted loop playsInline
-                // preload="metadata" on every card so the browser fetches enough
-                // data to display the first frame, even before play() is called.
-                // The active card uses "auto" so it buffers more aggressively.
                 preload={isActive ? "auto" : "metadata"}
+                // Captured first frame — shows immediately once metadata loads,
+                // so side cards are never blank even when paused on iOS.
+                poster={isActive ? undefined : posterMap[i]}
                 style={{ width: "100%", height: "100%", objectFit: "cover" }}
                 onError={(e) => { (e.target as HTMLVideoElement).style.display = "none"; }}
+                onLoadedMetadata={isActive ? undefined : (e) => {
+                  // Seek 0.1s ahead so we get a real frame (t=0 is often black)
+                  const v = e.target as HTMLVideoElement;
+                  if (v.seekable.length > 0 && v.duration > 0.1) {
+                    v.currentTime = 0.1;
+                  } else {
+                    // Can't seek (e.g. live stream) — try to capture immediately
+                    requestAnimationFrame(() => captureFrame(v, i));
+                  }
+                }}
+                onSeeked={isActive ? undefined : (e) => {
+                  // Frame is ready after the seek — capture it
+                  requestAnimationFrame(() => captureFrame(e.target as HTMLVideoElement, i));
+                }}
               />
               {/* Gradient overlay at bottom */}
               <div style={{
