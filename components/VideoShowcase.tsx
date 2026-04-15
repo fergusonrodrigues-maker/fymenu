@@ -32,6 +32,11 @@ export default function VideoShowcase() {
   const sectionRef = useRef<HTMLElement>(null);
   const total = SHOWCASE_VIDEOS.length;
 
+  // Ref that always holds the current active index — used in event listeners
+  // that would otherwise capture a stale closure value.
+  const activeRef = useRef(active);
+  useEffect(() => { activeRef.current = active; }, [active]);
+
   // Detect mobile
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 640);
@@ -66,10 +71,14 @@ export default function VideoShowcase() {
     });
   }, [active, total]);
 
-  // Separate effect: play/pause — runs after loadedSet re-render so src is set
+  // BUG FIX: play/pause effect now includes sectionVisible in deps.
+  // Previously it ran before src was set (sectionVisible=false → videoSrc=undefined)
+  // and never re-ran when src appeared. Adding sectionVisible ensures play()
+  // is called again once videos actually have a src.
   useEffect(() => {
+    if (!sectionVisible) return; // src not set yet — nothing to play
     videoRefs.current.forEach((v, i) => {
-      if (!v) return;
+      if (!v || !v.src) return; // skip elements without src
 
       // Compute circular offset
       let off = i - active;
@@ -86,7 +95,23 @@ export default function VideoShowcase() {
         }
       }
     });
-  }, [active, loadedSet, total]);
+  }, [active, loadedSet, sectionVisible, total]);
+
+  // BUG FIX: on first touch, force-load all carousel videos and play the active
+  // one. On iOS Safari, autoplay is blocked until the first user gesture — this
+  // ensures the hero video starts as soon as the user touches anything.
+  useEffect(() => {
+    const onFirstTouch = () => {
+      videoRefs.current.forEach((v, i) => {
+        if (!v) return;
+        // Force the browser to start buffering (iOS ignores preload otherwise)
+        if (v.readyState < 1) v.load();
+        if (i === activeRef.current) v.play().catch(() => {});
+      });
+    };
+    document.addEventListener("touchstart", onFirstTouch, { once: true, passive: true });
+    return () => document.removeEventListener("touchstart", onFirstTouch);
+  }, []);
 
   const W = isMobile ? 220 : 320;
   const H = isMobile ? 391 : 569;
@@ -143,12 +168,17 @@ export default function VideoShowcase() {
               cursor: isActive ? "default" : "pointer",
               boxShadow: isActive ? "0 20px 60px rgba(0,0,0,0.5), 0 0 30px rgba(0,255,174,0.08)" : "0 10px 30px rgba(0,0,0,0.3)",
               border: isActive ? "2px solid rgba(0,255,174,0.2)" : "1px solid rgba(255,255,255,0.06)",
-              background: "#111",
+              // BUG FIX: subtle dark gradient instead of pure #111 so cards never
+              // look like broken black boxes while the video is buffering.
+              background: "linear-gradient(160deg, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0.6) 100%)",
             }}>
               <video
                 ref={(el) => { videoRefs.current[i] = el; }}
                 src={videoSrc}
                 muted loop playsInline
+                // preload="metadata" on every card so the browser fetches enough
+                // data to display the first frame, even before play() is called.
+                // The active card uses "auto" so it buffers more aggressively.
                 preload={isActive ? "auto" : "metadata"}
                 style={{ width: "100%", height: "100%", objectFit: "cover" }}
                 onError={(e) => { (e.target as HTMLVideoElement).style.display = "none"; }}
