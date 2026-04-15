@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { createClient } from "@/lib/supabase/client";
 import FyLoader from "@/components/FyLoader";
 
@@ -98,6 +99,20 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
   // Filter state
   const [filterTeam, setFilterTeam] = useState("all");
 
+  // Edit modal state
+  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [editSaving, setEditSaving] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editRole, setEditRole] = useState("waiter");
+  const [editCategoryId, setEditCategoryId] = useState("");
+  const [editSalary, setEditSalary] = useState("");
+  const [editExtraCosts, setEditExtraCosts] = useState("");
+  const [editWorkDays, setEditWorkDays] = useState<string[]>([]);
+  const [editShiftStart, setEditShiftStart] = useState("08:00");
+  const [editShiftEnd, setEditShiftEnd] = useState("18:00");
+  const [editTeam, setEditTeam] = useState("geral");
+
   // Ponto state
   const [timeEntries, setTimeEntries] = useState<any[]>([]);
   const [pontoView, setPontoView] = useState<"registro" | "historico" | "resumo">("registro");
@@ -107,6 +122,26 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
 
   useEffect(() => {
     loadAll();
+  }, [unitId]);
+
+  // Realtime: sync employee changes (status, active) sem precisar recarregar
+  useEffect(() => {
+    if (!unitId) return;
+    const channel = supabase
+      .channel(`employees-rt-${unitId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "employees", filter: `unit_id=eq.${unitId}` }, (payload: any) => {
+        if (payload.eventType === "UPDATE") {
+          setEmployees(prev => prev.map(e =>
+            e.id === payload.new.id
+              ? { ...e, current_status: payload.new.current_status, is_active: payload.new.is_active, name: payload.new.name }
+              : e
+          ));
+        } else {
+          loadEmployees();
+        }
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, [unitId]);
 
   async function loadAll() {
@@ -189,11 +224,55 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
   }
 
   async function toggleActive(emp: Employee) {
-    await supabase
-      .from("employees")
-      .update({ is_active: !emp.is_active })
-      .eq("id", emp.id);
-    loadEmployees();
+    const newActive = !emp.is_active;
+    await supabase.from("employees").update({ is_active: newActive }).eq("id", emp.id);
+    setEmployees(prev => prev.map(e => e.id === emp.id ? { ...e, is_active: newActive } : e));
+  }
+
+  function openEditModal(emp: Employee) {
+    setEditingEmployee(emp);
+    setEditName(emp.name);
+    setEditRole(emp.role);
+    setEditCategoryId((emp as any).category_id ?? "");
+    setEditSalary(emp.salary > 0 ? (emp.salary / 100).toString() : "");
+    setEditExtraCosts(emp.extra_costs > 0 ? (emp.extra_costs / 100).toString() : "");
+    setEditWorkDays(emp.work_days ?? ["seg", "ter", "qua", "qui", "sex"]);
+    setEditShiftStart(emp.shift_start?.slice(0, 5) ?? "08:00");
+    setEditShiftEnd(emp.shift_end?.slice(0, 5) ?? "18:00");
+    setEditTeam(emp.team ?? "geral");
+    setConfirmDelete(false);
+  }
+
+  async function saveEditEmployee() {
+    if (!editingEmployee || !editName.trim()) return;
+    setEditSaving(true);
+    const updates: any = {
+      name: editName.trim(),
+      role: editRole,
+      category_id: editCategoryId || null,
+      salary: editSalary ? Math.round(parseFloat(editSalary) * 100) : 0,
+      extra_costs: editExtraCosts ? Math.round(parseFloat(editExtraCosts) * 100) : 0,
+      work_days: editWorkDays,
+      shift_start: editShiftStart,
+      shift_end: editShiftEnd,
+      team: editTeam,
+    };
+    await supabase.from("employees").update(updates).eq("id", editingEmployee.id);
+    const catName = categories.find(c => c.id === editCategoryId)?.name ?? editingEmployee.category_name;
+    setEmployees(prev => prev.map(e => e.id === editingEmployee.id
+      ? { ...e, ...updates, category_name: catName ?? null }
+      : e
+    ));
+    setEditSaving(false);
+    setEditingEmployee(null);
+  }
+
+  async function deleteEmployee() {
+    if (!editingEmployee) return;
+    await supabase.from("employees").update({ is_active: false }).eq("id", editingEmployee.id);
+    setEmployees(prev => prev.map(e => e.id === editingEmployee.id ? { ...e, is_active: false } : e));
+    setEditingEmployee(null);
+    setConfirmDelete(false);
   }
 
   async function saveCategory() {
@@ -692,8 +771,9 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                       <select
                         value={emp.current_status || "off"}
                         onChange={async (e) => {
-                          await supabase.from("employees").update({ current_status: e.target.value }).eq("id", emp.id);
-                          setEmployees(prev => prev.map(em => em.id === emp.id ? { ...em, current_status: e.target.value } : em));
+                          const newStatus = e.target.value;
+                          setEmployees(prev => prev.map(em => em.id === emp.id ? { ...em, current_status: newStatus } : em));
+                          await supabase.from("employees").update({ current_status: newStatus }).eq("id", emp.id);
                         }}
                         style={{
                           marginTop: 6, padding: "3px 8px", borderRadius: 6,
@@ -709,12 +789,20 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                         <option value="vacation">🟣 Férias</option>
                       </select>
                     </div>
-                    <button
-                      onClick={() => toggleActive(emp)}
-                      style={{ padding: "5px 10px", borderRadius: 8, border: "none", background: emp.is_active ? "rgba(248,113,113,0.1)" : "rgba(0,255,174,0.1)", color: emp.is_active ? "#f87171" : "#00ffae", fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}
-                    >
-                      {emp.is_active ? "Desativar" : "Ativar"}
-                    </button>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 4, flexShrink: 0 }}>
+                      <button
+                        onClick={() => openEditModal(emp)}
+                        style={{ padding: "5px 10px", borderRadius: 8, border: "none", background: "rgba(255,255,255,0.06)", color: "var(--dash-text)", fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}
+                      >
+                        ✏️ Editar
+                      </button>
+                      <button
+                        onClick={() => toggleActive(emp)}
+                        style={{ padding: "5px 10px", borderRadius: 8, border: "none", background: emp.is_active ? "rgba(248,113,113,0.1)" : "rgba(0,255,174,0.1)", color: emp.is_active ? "#f87171" : "#00ffae", fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}
+                      >
+                        {emp.is_active ? "Desativar" : "Ativar"}
+                      </button>
+                    </div>
                   </div>
                 );
               })}
@@ -1035,6 +1123,166 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
             </div>
           )}
         </div>
+      )}
+
+      {/* Edit employee portal — renderiza no body para não quebrar o layout do modal pai */}
+      {editingEmployee && typeof document !== "undefined" && createPortal(
+        <div
+          onClick={(e) => { if (e.target === e.currentTarget) setEditingEmployee(null); }}
+          style={{
+            position: "fixed", inset: 0, zIndex: 9999,
+            background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            padding: "20px",
+          }}
+        >
+          <div style={{
+            width: 520, maxWidth: "100%", maxHeight: "90vh", overflowY: "auto",
+            background: "var(--dash-card, #1a1a1a)",
+            borderRadius: 20, padding: 24,
+            border: "1px solid rgba(255,255,255,0.08)",
+            boxShadow: "0 30px 80px rgba(0,0,0,0.6)",
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "var(--dash-text, #fff)" }}>Editar funcionário</div>
+              <button onClick={() => setEditingEmployee(null)} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", fontSize: 20, cursor: "pointer", lineHeight: 1 }}>✕</button>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {/* Nome */}
+              <div>
+                <label style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 5 }}>Nome</label>
+                <input style={inp} value={editName} onChange={e => setEditName(e.target.value)} placeholder="Nome do funcionário" />
+              </div>
+
+              {/* Cargo */}
+              <div>
+                <label style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 5 }}>Cargo</label>
+                <select style={{ ...inp, backgroundColor: "rgba(255,255,255,0.05)" }} value={editRole} onChange={e => setEditRole(e.target.value)}>
+                  {Object.entries(ROLES).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                </select>
+              </div>
+
+              {/* Categoria */}
+              {categories.length > 0 && (
+                <div>
+                  <label style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 5 }}>Categoria</label>
+                  <select style={{ ...inp, backgroundColor: "rgba(255,255,255,0.05)" }} value={editCategoryId} onChange={e => setEditCategoryId(e.target.value)}>
+                    <option value="">Sem categoria</option>
+                    {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
+                </div>
+              )}
+
+              {/* Equipe */}
+              <div>
+                <label style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 5 }}>Equipe</label>
+                <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                  {["cozinha", "salao", "bar", "delivery", "gerencia", "limpeza", "geral"].map(t => (
+                    <button key={t} type="button" onClick={() => setEditTeam(t)} style={{
+                      padding: "5px 12px", borderRadius: 8, border: "none", cursor: "pointer",
+                      background: editTeam === t ? "rgba(0,255,174,0.1)" : "rgba(255,255,255,0.04)",
+                      color: editTeam === t ? "var(--dash-accent, #00ffae)" : "rgba(255,255,255,0.4)",
+                      fontSize: 11, fontWeight: 600, textTransform: "capitalize",
+                    }}>{t}</button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Salário e custos extras */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <div>
+                  <label style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 5 }}>Salário (R$)</label>
+                  <input type="number" style={inp} value={editSalary} onChange={e => setEditSalary(e.target.value)} placeholder="Ex: 1800" />
+                </div>
+                <div>
+                  <label style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 5 }}>Custos extras (R$)</label>
+                  <input type="number" style={inp} value={editExtraCosts} onChange={e => setEditExtraCosts(e.target.value)} placeholder="Ex: 300" />
+                </div>
+              </div>
+
+              {/* Dias de trabalho */}
+              <div>
+                <label style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 5 }}>Dias de trabalho</label>
+                <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                  {["seg", "ter", "qua", "qui", "sex", "sab", "dom"].map(day => (
+                    <button key={day} type="button"
+                      onClick={() => setEditWorkDays(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day])}
+                      style={{
+                        padding: "6px 12px", borderRadius: 8, border: "none", cursor: "pointer",
+                        background: editWorkDays.includes(day) ? "rgba(0,255,174,0.1)" : "rgba(255,255,255,0.04)",
+                        color: editWorkDays.includes(day) ? "var(--dash-accent, #00ffae)" : "rgba(255,255,255,0.3)",
+                        fontSize: 12, fontWeight: 600,
+                      }}>{day}</button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Horário */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <div>
+                  <label style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 5 }}>Entrada</label>
+                  <input type="time" style={inp} value={editShiftStart} onChange={e => setEditShiftStart(e.target.value)} />
+                </div>
+                <div>
+                  <label style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 5 }}>Saída</label>
+                  <input type="time" style={inp} value={editShiftEnd} onChange={e => setEditShiftEnd(e.target.value)} />
+                </div>
+              </div>
+
+              {/* Botão salvar */}
+              <button
+                onClick={saveEditEmployee}
+                disabled={editSaving || !editName.trim()}
+                style={{
+                  marginTop: 4, padding: "12px", borderRadius: 10, border: "none",
+                  background: "var(--dash-accent-soft, rgba(0,255,174,0.12))",
+                  color: "var(--dash-accent, #00ffae)",
+                  fontSize: 14, fontWeight: 800, cursor: editSaving ? "not-allowed" : "pointer",
+                  opacity: editSaving ? 0.7 : 1,
+                }}
+              >
+                {editSaving ? "Salvando..." : "Salvar alterações"}
+              </button>
+
+              {/* Excluir */}
+              {!confirmDelete ? (
+                <button
+                  onClick={() => setConfirmDelete(true)}
+                  style={{
+                    padding: "10px", borderRadius: 10, border: "1px solid rgba(248,113,113,0.2)",
+                    background: "rgba(248,113,113,0.06)", color: "#f87171",
+                    fontSize: 13, fontWeight: 700, cursor: "pointer",
+                  }}
+                >
+                  Excluir funcionário
+                </button>
+              ) : (
+                <div style={{ padding: 14, borderRadius: 12, background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.2)" }}>
+                  <div style={{ color: "#f87171", fontSize: 13, fontWeight: 700, marginBottom: 10 }}>
+                    Tem certeza que deseja excluir {editingEmployee.name}?<br />
+                    <span style={{ fontSize: 11, fontWeight: 400, color: "rgba(255,255,255,0.4)" }}>Esta ação pode ser revertida.</span>
+                  </div>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button
+                      onClick={deleteEmployee}
+                      style={{ flex: 1, padding: "9px", borderRadius: 8, border: "none", background: "rgba(248,113,113,0.2)", color: "#f87171", fontSize: 13, fontWeight: 800, cursor: "pointer" }}
+                    >
+                      Sim, excluir
+                    </button>
+                    <button
+                      onClick={() => setConfirmDelete(false)}
+                      style={{ flex: 1, padding: "9px", borderRadius: 8, border: "none", background: "rgba(255,255,255,0.06)", color: "var(--dash-text, #fff)", fontSize: 13, fontWeight: 700, cursor: "pointer" }}
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );
