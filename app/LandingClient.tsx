@@ -464,7 +464,36 @@ export default function LandingPage() {
   const [loading, setLoading] = useState(true);
   const [heroVisible, setHeroVisible] = useState(false);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const canvasRef    = useRef<HTMLCanvasElement>(null);
+  const spotlightRef = useRef<HTMLDivElement>(null);
+
+  // ── Mouse spotlight effect ────────────────────────────────────────────────
+  useEffect(() => {
+    if (!window.matchMedia("(hover: hover)").matches) return;
+
+    const el = spotlightRef.current;
+    let rafId = 0;
+    let visible = false;
+
+    function onMove(e: MouseEvent) {
+      if (rafId) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = 0;
+        if (!el) return;
+        if (!visible) { el.style.opacity = "1"; visible = true; }
+        el.style.background = `radial-gradient(circle 420px at ${e.clientX}px ${e.clientY}px, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.012) 45%, transparent 100%)`;
+      });
+    }
+    function onLeave() { if (el) { el.style.opacity = "0"; visible = false; } }
+
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseleave", onLeave);
+    return () => {
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseleave", onLeave);
+      if (rafId) cancelAnimationFrame(rafId);
+    };
+  }, []);
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -1034,6 +1063,17 @@ export default function LandingPage() {
 
       <div className={theme === "light" ? "landing-light" : ""} style={{ minHeight: "100vh", position: "relative", background: theme === "light" ? "#fafafa" : "#000", transition: "background 0.5s ease" }}>
         <canvas ref={canvasRef} style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none" }} />
+
+        {/* ── Mouse spotlight ── */}
+        <div
+          ref={spotlightRef}
+          style={{
+            position: "fixed", inset: 0, pointerEvents: "none",
+            zIndex: 1, opacity: 0,
+            transition: "opacity 0.4s ease",
+            willChange: "background",
+          }}
+        />
 
         {/* ── NAVBAR ── */}
         <nav className="fy-nav">
