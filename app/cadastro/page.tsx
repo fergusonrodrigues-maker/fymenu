@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import PasswordReqs, { passwordValid, translatePasswordError } from "@/components/PasswordReqs";
@@ -15,18 +15,6 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [validatingCoupon, setValidatingCoupon] = useState(false);
-  const glowRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const el = glowRef.current;
-    if (!el) return;
-    const handler = (e: MouseEvent) => {
-      el.style.left = e.clientX + "px";
-      el.style.top = e.clientY + "px";
-    };
-    window.addEventListener("mousemove", handler);
-    return () => window.removeEventListener("mousemove", handler);
-  }, []);
 
   async function validateCoupon(code: string) {
     const trimmed = code.trim();
@@ -177,6 +165,8 @@ export default function SignupPage() {
           background-image: radial-gradient(rgba(5,5,5,0.08) 1.2px, transparent 1.2px);
           background-size: 22px 22px;
           opacity: 0.5;
+          mask-image: radial-gradient(ellipse at center, transparent 20%, black 70%);
+          -webkit-mask-image: radial-gradient(ellipse at center, transparent 20%, black 70%);
         }
 
         .glass-container {
@@ -401,24 +391,6 @@ export default function SignupPage() {
 
       {/* Dot grid background */}
       <div className="auth-dots" />
-
-      {/* Mouse cursor glow */}
-      <div
-        ref={glowRef}
-        style={{
-          position: "fixed",
-          width: 400,
-          height: 400,
-          borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(213,22,89,0.03) 0%, transparent 70%)",
-          pointerEvents: "none",
-          left: "-200px",
-          top: "-200px",
-          transform: "translate(-50%, -50%)",
-          transition: "left 0.3s ease, top 0.3s ease",
-          zIndex: 1,
-        }}
-      />
 
       <div className="glass-container">
         <div className="logo">

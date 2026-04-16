@@ -1,6 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import MouseGlow from "@/components/MouseGlow";
 
 export default async function LoginPage({
   searchParams,
@@ -63,6 +62,8 @@ export default async function LoginPage({
           background-image: radial-gradient(rgba(5,5,5,0.08) 1.2px, transparent 1.2px);
           background-size: 22px 22px;
           opacity: 0.5;
+          mask-image: radial-gradient(ellipse at center, transparent 20%, black 70%);
+          -webkit-mask-image: radial-gradient(ellipse at center, transparent 20%, black 70%);
         }
 
         .glass-container {
@@ -278,9 +279,6 @@ export default async function LoginPage({
 
       {/* Dot grid background */}
       <div className="auth-dots" />
-
-      {/* Mouse cursor glow */}
-      <MouseGlow />
 
       <div className="glass-container">
         <div className="logo">
