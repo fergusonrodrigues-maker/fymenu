@@ -84,11 +84,6 @@ export default async function LoginPage({
           align-items: center;
           justify-content: center;
           margin-bottom: 28px;
-          font-size: 36px;
-          font-weight: 900;
-          font-style: italic;
-          letter-spacing: -1px;
-          color: #d51659;
         }
 
         .title {
@@ -96,7 +91,7 @@ export default async function LoginPage({
           font-weight: 800;
           margin-bottom: 8px;
           text-align: center;
-          background: linear-gradient(135deg, #d51659, #fe4a2c);
+          background: linear-gradient(135deg, #c01050, #e5391f);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
@@ -105,7 +100,7 @@ export default async function LoginPage({
 
         .subtitle {
           font-size: 13px;
-          color: rgba(0,0,0,0.45);
+          color: rgba(0,0,0,0.55);
           text-align: center;
           margin-bottom: 32px;
           text-shadow: none;
@@ -122,7 +117,7 @@ export default async function LoginPage({
           margin-bottom: 8px;
           text-transform: uppercase;
           letter-spacing: 2px;
-          color: rgba(0,0,0,0.55);
+          color: rgba(0,0,0,0.7);
           text-shadow: none;
         }
 
@@ -132,7 +127,7 @@ export default async function LoginPage({
           background: rgba(0,0,0,0.03);
           border: 1px solid rgba(0,0,0,0.1);
           border-radius: 14px;
-          color: #1a1a1a;
+          color: #111;
           font-size: 15px;
           font-family: inherit;
           transition: border-color 0.2s, box-shadow 0.2s;
@@ -141,7 +136,7 @@ export default async function LoginPage({
         }
 
         .input-wrapper input::placeholder {
-          color: rgba(0,0,0,0.3);
+          color: rgba(0,0,0,0.4);
         }
 
         .input-wrapper input:focus {
@@ -225,13 +220,13 @@ export default async function LoginPage({
         .footer-text {
           text-align: center;
           font-size: 13px;
-          color: rgba(0,0,0,0.45);
+          color: rgba(0,0,0,0.55);
           margin-top: 24px;
           text-shadow: none;
         }
 
         .footer-text a {
-          color: #d51659;
+          color: #c01050;
           text-decoration: none;
           font-weight: 600;
           text-shadow: none;
@@ -270,7 +265,7 @@ export default async function LoginPage({
 
         .forgot-password a {
           font-size: 13px;
-          color: #d51659;
+          color: #c01050;
           text-decoration: none;
           font-weight: 600;
           text-shadow: none;
@@ -288,7 +283,9 @@ export default async function LoginPage({
       <MouseGlow />
 
       <div className="glass-container">
-        <div className="logo">FyMenu</div>
+        <div className="logo">
+          <img src="https://rjfbavmupiypxiqzksxo.supabase.co/storage/v1/object/public/landing/logo-verrm.png" height={48} style={{ width: "auto" }} alt="FyMenu" />
+        </div>
 
         <h1 className="title">Bem-vindo</h1>
         <p className="subtitle">Gerencie seu cardápio digital</p>
