@@ -179,7 +179,7 @@ export default function SignupPage() {
           background: rgba(255,255,255,0.85);
           border: 1px solid rgba(0,0,0,0.06);
           border-radius: 24px;
-          padding: 40px 32px;
+          padding: 28px 28px;
           box-shadow: 0 20px 60px rgba(0,0,0,0.08);
         }
 
@@ -187,13 +187,13 @@ export default function SignupPage() {
           display: flex;
           align-items: center;
           justify-content: center;
-          margin-bottom: 12px;
+          margin-bottom: 8px;
         }
 
         .title {
-          font-size: 28px;
+          font-size: 24px;
           font-weight: 800;
-          margin-bottom: 8px;
+          margin-bottom: 4px;
           text-align: center;
           background: linear-gradient(135deg, #c01050, #e5391f);
           -webkit-background-clip: text;
@@ -206,12 +206,13 @@ export default function SignupPage() {
           font-size: 13px;
           color: rgba(0,0,0,0.55);
           text-align: center;
-          margin-bottom: 32px;
+          margin-bottom: 20px;
+          font-size: 12px;
           text-shadow: none;
         }
 
         .form-group {
-          margin-bottom: 18px;
+          margin-bottom: 12px;
         }
 
         .form-group label {
@@ -227,7 +228,7 @@ export default function SignupPage() {
 
         .input-wrapper input {
           width: 100%;
-          padding: 14px 18px;
+          padding: 12px 16px;
           background: rgba(0,0,0,0.03);
           border: 1px solid rgba(0,0,0,0.1);
           border-radius: 14px;
@@ -251,8 +252,8 @@ export default function SignupPage() {
 
         .submit-btn {
           width: 100%;
-          padding: 16px;
-          margin-top: 24px;
+          padding: 14px;
+          margin-top: 16px;
           background: linear-gradient(135deg, #d51659, #fe4a2c);
           border: none;
           border-radius: 14px;
@@ -331,7 +332,7 @@ export default function SignupPage() {
           text-align: center;
           font-size: 13px;
           color: rgba(0,0,0,0.55);
-          margin-top: 24px;
+          margin-top: 16px;
           text-shadow: none;
         }
 
