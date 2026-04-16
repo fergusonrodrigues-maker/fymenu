@@ -857,15 +857,25 @@ export default function LandingPage() {
           background: rgba(0,200,138,0.04);
         }
         .landing-light .pricing-card {
-          background: var(--lp-card-bg);
+          background: rgba(255,255,255,0.85) !important;
           box-shadow: var(--lp-card-shadow);
         }
         .landing-light .pricing-card:hover {
-          background: rgba(0,200,138,0.03);
+          background: rgba(255,255,255,1) !important;
         }
         .landing-light .pricing-highlight {
-          background: var(--lp-highlight-bg);
+          background: rgba(255,255,255,0.85) !important;
           box-shadow: var(--lp-highlight-shadow);
+        }
+        .landing-light .pricing-highlight:hover {
+          background: rgba(255,255,255,1) !important;
+        }
+        /* PlanCard inner div (Business/Menu/MenuPro) — uses inline background */
+        .landing-light [data-dot-radius="300"] > div {
+          background: rgba(255,255,255,0.85) !important;
+        }
+        .landing-light [data-dot-radius="300"]:hover > div {
+          background: rgba(255,255,255,1) !important;
         }
         .landing-light .pricing-badge {
           background: linear-gradient(135deg, #d51659, #fe4a2c);
