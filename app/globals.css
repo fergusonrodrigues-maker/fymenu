@@ -130,39 +130,46 @@ html:not(.dark) .modal-desktop-scroll { scrollbar-color: rgba(0,0,0,0.12) transp
 
 /* Light mode — html does NOT have .dark class */
 html:not(.dark) {
-  --dash-bg: #fafafa;
-  --dash-bg-gradient: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(213,22,89,0.05) 0%, transparent 60%), #fafafa;
+  --dash-bg: #f5f5f5;
+  --dash-bg-gradient: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(213,22,89,0.05) 0%, transparent 60%), #f5f5f5;
+  --dash-surface: #ffffff;
   --dash-text: #1a1a1a;
-  --dash-text-secondary: rgba(26,26,26,0.7);
+  --dash-text-secondary: #555555;
   --dash-text-dim: rgba(26,26,26,0.5);
-  --dash-text-muted: rgba(26,26,26,0.4);
+  --dash-text-muted: #999999;
   --dash-text-subtle: rgba(26,26,26,0.25);
-  --dash-card: rgba(0,0,0,0.04);
+  --dash-card: #ffffff;
   --dash-card-subtle: rgba(0,0,0,0.02);
-  --dash-card-hover: rgba(0,0,0,0.07);
+  --dash-card-hover: rgba(0,0,0,0.03);
   --dash-card-border: rgba(0,0,0,0.08);
+  --dash-card-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04);
   --dash-border: rgba(0,0,0,0.08);
   --dash-link-bg: rgba(0,0,0,0.05);
-  --dash-input-bg: rgba(0,0,0,0.04);
-  --dash-input-border: rgba(0,0,0,0.10);
-  --dash-modal-bg: linear-gradient(180deg, #ffffff 0%, #f5f5f5 100%);
+  --dash-input-bg: #f8f8f8;
+  --dash-input-border: rgba(0,0,0,0.12);
+  --dash-input-text: #1a1a1a;
+  --dash-input-placeholder: #aaaaaa;
+  --dash-input-focus-border: #00b07a;
+  --dash-input-focus-shadow: 0 0 0 3px rgba(0,176,122,0.1);
+  --dash-modal-bg: linear-gradient(180deg, #ffffff 0%, #f8f8f8 100%);
   --dash-modal-border: rgba(0,0,0,0.08);
   --dash-handle: rgba(0,0,0,0.12);
   --dash-close-btn: rgba(0,0,0,0.07);
   --dash-close-color: rgba(0,0,0,0.4);
   --dash-overlay: rgba(0,0,0,0.55);
   --dash-btn-border: rgba(0,0,0,0.12);
-  --dash-placeholder: rgba(0,0,0,0.25);
+  --dash-placeholder: #aaaaaa;
   --dash-scrollbar: rgba(0,0,0,0.15);
   --dash-separator: rgba(0,0,0,0.08);
   --dash-dot-color: rgba(213,22,89,0.12);
   --dash-dot-glow: rgba(213,22,89,0.04);
-  /* Accent stays green for UI elements; decorative pink lives in dot/bg-gradient vars */
-  --dash-accent-gradient: linear-gradient(135deg, #00b37e 0%, #00c9a7 50%, #00b37e 100%);
-  --dash-accent: #00b37e;
-  --dash-accent-soft: rgba(0,179,126,0.1);
+  /* Accent green — primary action color */
+  --dash-accent-gradient: linear-gradient(135deg, #00b07a 0%, #00c9a7 50%, #00b07a 100%);
+  --dash-accent: #00b07a;
+  --dash-accent-hover: #009968;
+  --dash-accent-soft: rgba(0,176,122,0.1);
   --dash-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04);
-  --dash-shadow-hover: 0 4px 12px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.06);
+  --dash-shadow-hover: 0 4px 12px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.06);
   /* Semantic tokens */
   --dash-danger: #dc2626;
   --dash-danger-soft: rgba(220,38,38,0.06);
@@ -737,4 +744,127 @@ html:not(.dark) select option {
   .modal-desktop-scroll::-webkit-scrollbar-thumb:hover {
     background: rgba(255,255,255,0.2);
   }
+  /* Light mode scrollbar override */
+  html:not(.dark) .modal-desktop-scroll::-webkit-scrollbar-thumb {
+    background: rgba(0,0,0,0.12);
+  }
+  html:not(.dark) .modal-desktop-scroll::-webkit-scrollbar-thumb:hover {
+    background: rgba(0,0,0,0.2);
+  }
 }
+
+/* ===== DASHBOARD LIGHT THEME — GLOBAL UTILITY CLASSES ===== */
+
+/* -- Buttons -- */
+html:not(.dark) .dash-btn {
+  border-radius: 12px;
+  font-weight: 700;
+  padding: 12px 24px;
+  transition: all 0.2s;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+html:not(.dark) .dash-btn-save {
+  background: #16a34a;
+  color: #fff;
+}
+html:not(.dark) .dash-btn-save:hover { background: #15803d; }
+
+html:not(.dark) .dash-btn-ai {
+  background: #8b5cf6;
+  color: #fff;
+}
+html:not(.dark) .dash-btn-ai:hover { background: #7c3aed; }
+
+html:not(.dark) .dash-btn-cancel {
+  background: #f5f5f5;
+  border: 1px solid rgba(0,0,0,0.12) !important;
+  color: #555555;
+}
+html:not(.dark) .dash-btn-cancel:hover { background: #ebebeb; }
+
+html:not(.dark) .dash-btn-close {
+  background: #ef4444;
+  color: #fff;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+html:not(.dark) .dash-btn-close:hover { background: #dc2626; }
+
+html:not(.dark) .dash-btn-add {
+  background: transparent;
+  border: 1px solid #00b07a !important;
+  color: #00b07a;
+}
+html:not(.dark) .dash-btn-add:hover { background: rgba(0,176,122,0.06); }
+
+html:not(.dark) .dash-btn-destructive {
+  background: rgba(239,68,68,0.06);
+  color: #dc2626;
+  border: 1px solid rgba(239,68,68,0.15) !important;
+}
+html:not(.dark) .dash-btn-destructive:hover { background: rgba(239,68,68,0.1); }
+
+/* -- Badges -- */
+html:not(.dark) .dash-badge {
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-weight: 700;
+  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+}
+html:not(.dark) .dash-badge-published {
+  background: rgba(22,163,74,0.1);
+  color: #16a34a;
+}
+html:not(.dark) .dash-badge-business {
+  background: rgba(213,22,89,0.1);
+  color: #d51659;
+}
+html:not(.dark) .dash-badge-realtime {
+  background: rgba(0,176,122,0.1);
+  color: #00b07a;
+}
+
+/* -- Section labels -- */
+html:not(.dark) .dash-section-label {
+  color: #00b07a;
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+/* -- Tabs/Pills container -- */
+html:not(.dark) .dash-tabs {
+  background: #f0f0f0;
+  border-radius: 12px;
+  padding: 4px;
+  display: flex;
+}
+html:not(.dark) .dash-tab {
+  border-radius: 9px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: transparent;
+  color: #888888;
+  border: none;
+}
+html:not(.dark) .dash-tab.active {
+  background: #ffffff;
+  color: #1a1a1a;
+  font-weight: 700;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+html:not(.dark) .dash-tab:hover:not(.active) { color: #555555; }
