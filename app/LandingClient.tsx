@@ -70,6 +70,58 @@ function AnimatedCounter({ target, suffix = "" }: { target: number; suffix?: str
   );
 }
 
+// ── Rating Counter (4.8★ with celebration) ───────────────────────────────────
+function RatingCounter() {
+  const [count, setCount] = useState(0);
+  const [done, setDone] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          let start = 0;
+          const target = 4;
+          const duration = 2000;
+          const increment = target / (duration / 16);
+          const timer = setInterval(() => {
+            start += increment;
+            if (start >= target) {
+              setCount(target);
+              clearInterval(timer);
+              setTimeout(() => setDone(true), 50);
+            } else {
+              setCount(Math.floor(start));
+            }
+          }, 16);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.3 }
+    );
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div ref={ref} style={{ fontSize: 48, fontWeight: 900, lineHeight: 1, color: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 2 }}>
+      {count}.8
+      <span style={{ position: "relative", display: "inline-flex", alignItems: "center", marginLeft: 4 }}>
+        {done && [1,2,3,4,5,6,7,8].map((n) => (
+          <span key={n} className={`star-particle sp${n}`} />
+        ))}
+        <svg
+          width="36" height="36" viewBox="0 0 24 24" fill="#FABE15"
+          className={done ? "star-svg-pop" : ""}
+          style={{ display: "inline-block", verticalAlign: "middle" }}
+        >
+          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+        </svg>
+      </span>
+    </div>
+  );
+}
+
 // ── Feature Card ──────────────────────────────────────────────────────────────
 function FeatureCard({
   icon,
@@ -996,6 +1048,29 @@ export default function LandingPage() {
           animation: subtleShine 5s linear infinite;
           will-change: background-position;
         }
+        @keyframes star-pop {
+          0%   { transform: scale(0); filter: brightness(1); }
+          60%  { transform: scale(1.2); filter: brightness(1.5); }
+          100% { transform: scale(1); filter: brightness(1); }
+        }
+        @keyframes sp1 { to { transform: translate(0,-32px);   opacity: 0; } }
+        @keyframes sp2 { to { transform: translate(23px,-23px); opacity: 0; } }
+        @keyframes sp3 { to { transform: translate(32px,0);    opacity: 0; } }
+        @keyframes sp4 { to { transform: translate(23px,23px);  opacity: 0; } }
+        @keyframes sp5 { to { transform: translate(0,32px);    opacity: 0; } }
+        @keyframes sp6 { to { transform: translate(-23px,23px); opacity: 0; } }
+        @keyframes sp7 { to { transform: translate(-32px,0);   opacity: 0; } }
+        @keyframes sp8 { to { transform: translate(-23px,-23px);opacity: 0; } }
+        .star-svg-pop { animation: star-pop 0.6s ease-out forwards; }
+        .star-particle {
+          position: absolute; width: 4px; height: 4px; border-radius: 50%;
+          background: #FABE15; top: 50%; left: 50%; margin: -2px 0 0 -2px;
+          animation-duration: 0.9s; animation-timing-function: ease-out;
+          animation-fill-mode: forwards;
+        }
+        .sp1{animation-name:sp1}.sp2{animation-name:sp2}.sp3{animation-name:sp3}
+        .sp4{animation-name:sp4}.sp5{animation-name:sp5}.sp6{animation-name:sp6}
+        .sp7{animation-name:sp7}.sp8{animation-name:sp8}
         @keyframes pill-pop {
           0%   { transform: scale(0.8); opacity: 0; }
           60%  { transform: scale(1.05); }
@@ -1422,7 +1497,6 @@ export default function LandingPage() {
               { value: 500, suffix: "+", label: "Restaurantes" },
               { value: 12, suffix: "K", label: "Pedidos/mês" },
               { value: 98, suffix: "%", label: "Uptime" },
-              { value: 4, suffix: ".8⭐", label: "Avaliação" },
             ].map((s) => (
               <div key={s.label} data-dot-light="" data-dot-radius="130">
                 <AnimatedCounter target={s.value} suffix={s.suffix} />
@@ -1431,6 +1505,12 @@ export default function LandingPage() {
                 </div>
               </div>
             ))}
+            <div data-dot-light="" data-dot-radius="130">
+              <RatingCounter />
+              <div style={{ fontSize: 15, marginTop: 8, fontWeight: 600, color: theme === "dark" ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.55)" }}>
+                Avaliação
+              </div>
+            </div>
           </div>
         </section>
 
