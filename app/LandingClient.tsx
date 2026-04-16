@@ -1242,7 +1242,7 @@ export default function LandingPage() {
         <div style={heroVisible
           ? { animation: "lp-fade-scale 0.6s cubic-bezier(0.16,1,0.3,1) 0ms both" }
           : { opacity: 0 }}>
-          <VideoShowcase />
+          <VideoShowcase theme={theme} />
         </div>
 
         {/* ── HERO ── */}

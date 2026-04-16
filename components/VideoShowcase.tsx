@@ -16,7 +16,7 @@ const SHOWCASE_VIDEOS = [
 ].map((f) => `${SUPABASE_URL}/${f}`);
 
 
-export default function VideoShowcase() {
+export default function VideoShowcase({ theme = "dark" }: { theme?: "dark" | "light" }) {
   const [active, setActive] = useState(4);
   const [isMobile, setIsMobile] = useState(true);
   // Track which video indices have unlocked src (once loaded, always loaded)
@@ -197,8 +197,12 @@ export default function VideoShowcase() {
               zIndex: 10 - Math.abs(off), opacity: op,
               transition: "all 0.5s cubic-bezier(0.16, 1, 0.3, 1)",
               cursor: isActive ? "default" : "pointer",
-              boxShadow: isActive ? "0 20px 60px rgba(0,0,0,0.5), 0 0 30px rgba(0,255,174,0.08)" : "0 10px 30px rgba(0,0,0,0.3)",
-              border: isActive ? "2px solid rgba(0,255,174,0.2)" : "1px solid rgba(255,255,255,0.06)",
+              boxShadow: theme === "light"
+                ? (isActive ? "0 8px 24px rgba(0,0,0,0.1)" : "0 4px 12px rgba(0,0,0,0.08)")
+                : (isActive ? "0 20px 60px rgba(0,0,0,0.5), 0 0 30px rgba(0,255,174,0.08)" : "0 10px 30px rgba(0,0,0,0.3)"),
+              border: theme === "light"
+                ? (isActive ? "2px solid rgba(213,22,89,0.15)" : "1px solid rgba(0,0,0,0.06)")
+                : (isActive ? "2px solid rgba(0,255,174,0.2)" : "1px solid rgba(255,255,255,0.06)"),
               // Fallback: subtle glass gradient so cards never appear as solid black
               // while the video/poster is still loading.
               background: "linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.06))",
