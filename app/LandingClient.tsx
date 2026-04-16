@@ -238,7 +238,9 @@ function PlanCard({ planKey, plan, theme }: {
   const shadowBase = hasAccent
     ? dark
       ? `0 0 120px 40px rgba(${rgb},0.03), 0 0 60px 20px rgba(${rgb},0.02), 0 1px 0 rgba(${rgb},0.06) inset, 0 -1px 0 rgba(0,0,0,0.25) inset`
-      : `0 0 100px 40px rgba(${rgb},0.02), 0 -1px 0 rgba(255,255,255,0.6) inset, 0 1px 0 rgba(0,0,0,0.04) inset`
+      : isAccent
+        ? `0 8px 32px rgba(0,180,122,0.2), 0 0 100px 40px rgba(${rgb},0.02), 0 -1px 0 rgba(255,255,255,0.6) inset, 0 1px 0 rgba(0,0,0,0.04) inset`
+        : `0 0 100px 40px rgba(${rgb},0.02), 0 -1px 0 rgba(255,255,255,0.6) inset, 0 1px 0 rgba(0,0,0,0.04) inset`
     : dark
       ? "0 0 80px 30px rgba(255,255,255,0.012), 0 1px 0 rgba(255,255,255,0.03) inset, 0 -1px 0 rgba(0,0,0,0.25) inset"
       : "0 0 80px 30px rgba(0,0,0,0.01), 0 -1px 0 rgba(255,255,255,0.6) inset, 0 1px 0 rgba(0,0,0,0.04) inset";
@@ -279,11 +281,12 @@ function PlanCard({ planKey, plan, theme }: {
       style={{
         position: "relative",
         borderRadius: 24,
+        height: "100%",
         transform: pressed
-          ? `translateY(-4px) scale(0.99)${isAccent ? " scale(1.02)" : ""}`
+          ? "translateY(-4px) scale(0.99)"
           : hovered
-            ? `translateY(-8px)${isAccent ? " scale(1.02)" : ""}`
-            : isAccent ? "scale(1.02)" : "none",
+            ? "translateY(-8px)"
+            : "none",
         transition: "transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)",
         cursor: "pointer",
       }}
@@ -291,7 +294,7 @@ function PlanCard({ planKey, plan, theme }: {
       {/* Inner card: keeps overflow:hidden to clip glow/shine overlays */}
       <div
         style={{
-          borderRadius: 24, padding: 28,
+          borderRadius: 24, padding: 32, height: "100%",
           background: dark
             ? (isAccent ? "var(--lp-highlight-bg)" : isGreen ? "rgba(255,255,255,0.04)" : "var(--lp-card-bg)")
             : isAccent
@@ -372,8 +375,8 @@ function PlanCard({ planKey, plan, theme }: {
         )}
 
         <div style={{ textAlign: "center", marginBottom: 20 }}>
-          <div style={{ fontSize: 20, fontWeight: 900, ...(isGreen ? { background: "linear-gradient(135deg, #BF953F, #FCF6BA, #B38728, #FBF5B7, #AA771C)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" } : { color: dark ? "var(--lp-price-color)" : "#fff" }) }}>{plan.name}</div>
-          <div style={{ fontSize: 12, color: isGreen ? "#D4AF37" : (dark ? "var(--lp-text-secondary)" : "rgba(255,255,255,0.7)"), marginTop: 2 }}>{plan.units}</div>
+          <div style={{ fontSize: 22, fontWeight: 900, ...(isGreen ? { background: "linear-gradient(135deg, #BF953F, #FCF6BA, #B38728, #FBF5B7, #AA771C)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" } : { color: dark ? "var(--lp-price-color)" : "#fff" }) }}>{plan.name}</div>
+          <div style={{ fontSize: 13, color: isGreen ? "#D4AF37" : (dark ? "var(--lp-text-secondary)" : "rgba(255,255,255,0.7)"), marginTop: 2 }}>{plan.units}</div>
         </div>
 
         {/* Per-card cycle selector */}
@@ -414,7 +417,7 @@ function PlanCard({ planKey, plan, theme }: {
         </div>
 
         <div style={{ textAlign: "center", marginBottom: 20 }}>
-          <div style={{ fontSize: 36, fontWeight: 900, ...(isGreen ? { background: "linear-gradient(135deg, #BF953F, #FCF6BA, #B38728, #FBF5B7, #AA771C)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" } : { color: dark ? (hex ?? "var(--lp-price-color)") : "#fff" }), transition: "all 0.2s ease" }}>
+          <div style={{ fontSize: 38, fontWeight: 900, ...(isGreen ? { background: "linear-gradient(135deg, #BF953F, #FCF6BA, #B38728, #FBF5B7, #AA771C)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" } : { color: dark ? (hex ?? "var(--lp-price-color)") : "#fff" }), transition: "all 0.2s ease" }}>
             R${plan.prices[cycle]}
             <span style={{ fontSize: 14, fontWeight: 400, color: dark ? "var(--lp-text-secondary)" : "rgba(255,255,255,0.7)" }}>/mês</span>
           </div>
@@ -436,7 +439,7 @@ function PlanCard({ planKey, plan, theme }: {
 
         <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 24, flex: 1 }}>
           {plan.features.map((f) => (
-            <div key={f} style={{ fontSize: 13, color: isGreen ? "rgba(255,255,255,0.8)" : (dark ? "var(--lp-text)" : "#fff"), display: "flex", alignItems: "center", gap: 8 }}>
+            <div key={f} style={{ fontSize: 14, color: isGreen ? "rgba(255,255,255,0.85)" : (dark ? "var(--lp-text)" : "#fff"), display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{ color: isGreen ? "#FFD700" : (dark ? (hex ?? "#00cc8a") : "#fff"), fontSize: 12 }}>✓</span> {f}
             </div>
           ))}
@@ -1488,7 +1491,7 @@ export default function LandingPage() {
           </div>
 
           {/* Plan cards */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16, maxWidth: 960, margin: "0 auto", padding: "0 16px" }}>
+          <div className="pricing-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", alignItems: "stretch", gap: 20, maxWidth: 1000, margin: "0 auto", padding: "0 16px" }}>
             {(Object.keys(PLANS) as PlanKey[]).map((key) => (
               <PlanCard key={key} planKey={key} plan={PLANS[key]} theme={theme} />
             ))}
