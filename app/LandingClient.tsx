@@ -417,14 +417,19 @@ function PlanCard({ planKey, plan, theme }: {
             <span style={{ fontSize: 14, fontWeight: 400, color: dark ? "var(--lp-text-secondary)" : "#999" }}>/mês</span>
           </div>
           {cycle !== "MONTHLY" && (
-            <div style={{
-              display: "inline-flex", alignItems: "center", marginTop: 6,
-              background: dark
-                ? (isGreen ? "rgba(255,215,0,0.12)" : (hex ? `rgba(${rgb},0.12)` : "rgba(0,255,174,0.1)"))
-                : `rgba(${lRgb},0.08)`,
-              color: dark ? (isGreen ? "#FFD700" : (hex ?? "#00ffae")) : lHex,
-              fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 999,
-            }}>
+            <div
+              key={cycle}
+              style={{
+                display: "inline-flex", alignItems: "center", marginTop: 6,
+                background: dark
+                  ? (isGreen ? "#FFD700" : isPurple ? "#a78bfa" : "#00ffae")
+                  : (isGreen ? "#B8860B" : isPurple ? "#8b5cf6" : "#00b07a"),
+                color: dark ? "#000" : "#fff",
+                fontSize: 12, fontWeight: 700, padding: "4px 14px", borderRadius: 999,
+                opacity: 0,
+                animation: "pill-pop 0.5s ease-out 0.3s forwards",
+              }}
+            >
               Economia de {(plan.savings as Record<string, string>)[cycle]}
             </div>
           )}
@@ -972,6 +977,11 @@ export default function LandingPage() {
           background-clip: text;
           animation: subtleShine 5s linear infinite;
           will-change: background-position;
+        }
+        @keyframes pill-pop {
+          0%   { transform: scale(0.8); opacity: 0; }
+          60%  { transform: scale(1.05); }
+          100% { transform: scale(1); opacity: 1; }
         }
         @keyframes subtleShine {
           0%   { background-position: -200% center; }
