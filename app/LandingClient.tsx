@@ -884,11 +884,14 @@ export default function LandingPage() {
         }
         .landing-light h1, .landing-light h2 { color: #222 !important; }
         .landing-light .feature-card {
-          background: var(--lp-card-bg);
-          box-shadow: var(--lp-feature-shadow);
+          background: #fff;
+          border-left: 3px solid transparent;
+          border-image: linear-gradient(to bottom, #d51659, #fe4a2c) 1;
+          box-shadow: 0 2px 12px rgba(0,0,0,0.06);
         }
         .landing-light .feature-card:hover {
-          background: rgba(0,200,138,0.04);
+          background: #fff;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.1);
         }
         .landing-light .pricing-card {
           background: rgba(255,255,255,0.85) !important;
