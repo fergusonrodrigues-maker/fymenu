@@ -887,7 +887,14 @@ export default function LandingPage() {
         }
         .landing-light .fy-nav .btn-primary:hover {
           background: #fff !important;
+          color: #d51659 !important;
+          -webkit-text-fill-color: #d51659 !important;
           box-shadow: 0 4px 16px rgba(0,0,0,0.2) !important;
+        }
+        .landing-light .fy-nav .btn-primary:active {
+          background: rgba(255,255,255,0.9) !important;
+          color: #d51659 !important;
+          -webkit-text-fill-color: #d51659 !important;
         }
         .landing-light h1, .landing-light h2 { color: #222 !important; }
         .landing-light .feature-card {
