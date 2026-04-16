@@ -42,7 +42,7 @@ export default async function LoginPage({
   return (
     <main style={{
       minHeight: "100vh",
-      background: "#050505",
+      background: "#fafafa",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
@@ -60,10 +60,9 @@ export default async function LoginPage({
           inset: 0;
           z-index: 0;
           pointer-events: none;
-          background-image: radial-gradient(rgba(0,255,174,0.25) 1.2px, transparent 1.2px);
+          background-image: radial-gradient(rgba(5,5,5,0.08) 1.2px, transparent 1.2px);
           background-size: 22px 22px;
-          filter: drop-shadow(0 0 3px rgba(0,255,174,0.25));
-          opacity: 0.7;
+          opacity: 0.5;
         }
 
         .glass-container {
@@ -73,11 +72,11 @@ export default async function LoginPage({
           max-width: 400px;
           backdrop-filter: blur(24px);
           -webkit-backdrop-filter: blur(24px);
-          background: rgba(255,255,255,0.02);
-          border: 1px solid rgba(255,255,255,0.06);
+          background: rgba(255,255,255,0.85);
+          border: 1px solid rgba(0,0,0,0.06);
           border-radius: 24px;
           padding: 40px 32px;
-          box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+          box-shadow: 0 20px 60px rgba(0,0,0,0.08);
         }
 
         .logo {
@@ -89,8 +88,7 @@ export default async function LoginPage({
           font-weight: 900;
           font-style: italic;
           letter-spacing: -1px;
-          color: #00ffae;
-          text-shadow: 0 0 30px rgba(0,255,174,0.3), 0 0 60px rgba(0,255,174,0.1);
+          color: #d51659;
         }
 
         .title {
@@ -98,17 +96,16 @@ export default async function LoginPage({
           font-weight: 800;
           margin-bottom: 8px;
           text-align: center;
-          background: linear-gradient(135deg, #00ffae 0%, #00d9ff 100%);
+          background: linear-gradient(135deg, #d51659, #fe4a2c);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
           text-shadow: none;
-          filter: drop-shadow(0 0 12px rgba(0,255,174,0.2));
         }
 
         .subtitle {
           font-size: 13px;
-          color: rgba(255,255,255,0.35);
+          color: rgba(0,0,0,0.45);
           text-align: center;
           margin-bottom: 32px;
           text-shadow: none;
@@ -125,17 +122,17 @@ export default async function LoginPage({
           margin-bottom: 8px;
           text-transform: uppercase;
           letter-spacing: 2px;
-          color: rgba(255,255,255,0.5);
+          color: rgba(0,0,0,0.55);
           text-shadow: none;
         }
 
         .input-wrapper input {
           width: 100%;
           padding: 14px 18px;
-          background: rgba(255,255,255,0.04);
-          border: 1px solid rgba(255,255,255,0.08);
+          background: rgba(0,0,0,0.03);
+          border: 1px solid rgba(0,0,0,0.1);
           border-radius: 14px;
-          color: #ffffff;
+          color: #1a1a1a;
           font-size: 15px;
           font-family: inherit;
           transition: border-color 0.2s, box-shadow 0.2s;
@@ -144,40 +141,40 @@ export default async function LoginPage({
         }
 
         .input-wrapper input::placeholder {
-          color: rgba(255,255,255,0.2);
+          color: rgba(0,0,0,0.3);
         }
 
         .input-wrapper input:focus {
-          border-color: rgba(0,255,174,0.3);
-          background: rgba(255,255,255,0.05);
-          box-shadow: 0 0 12px rgba(0,255,174,0.08);
+          border-color: rgba(213,22,89,0.3);
+          background: rgba(0,0,0,0.03);
+          box-shadow: 0 0 12px rgba(213,22,89,0.06);
         }
 
         .submit-btn {
           width: 100%;
           padding: 16px;
           margin-top: 24px;
-          background: linear-gradient(135deg, #00ffae 0%, #00d9ff 100%);
+          background: linear-gradient(135deg, #d51659, #fe4a2c);
           border: none;
           border-radius: 14px;
-          color: #000;
+          color: #fff;
           font-size: 16px;
           font-weight: 900;
           cursor: pointer;
           transition: all 0.2s;
-          box-shadow: 0 0 20px rgba(0,255,174,0.15), 0 0 40px rgba(0,255,174,0.05), inset 0 1px 0 rgba(0,255,174,0.12), inset 0 -1px 0 rgba(0,0,0,0.2);
+          box-shadow: 0 4px 20px rgba(213,22,89,0.2);
           font-family: inherit;
           letter-spacing: 0.3px;
         }
 
         .submit-btn:hover {
           transform: translateY(-1px);
-          box-shadow: 0 0 30px rgba(0,255,174,0.25), 0 0 60px rgba(0,255,174,0.1), inset 0 1px 0 rgba(0,255,174,0.15), inset 0 -1px 0 rgba(0,0,0,0.2);
+          box-shadow: 0 8px 28px rgba(213,22,89,0.3);
         }
 
         .submit-btn:active {
           transform: translateY(1px);
-          box-shadow: 0 0 10px rgba(0,255,174,0.1), inset 0 2px 4px rgba(0,0,0,0.12);
+          box-shadow: 0 2px 10px rgba(213,22,89,0.15);
         }
 
         .divider {
@@ -192,24 +189,24 @@ export default async function LoginPage({
           content: '';
           flex: 1;
           height: 1px;
-          background: rgba(255,255,255,0.06);
+          background: rgba(0,0,0,0.08);
         }
 
         .divider-text {
           font-size: 12px;
           text-transform: uppercase;
           letter-spacing: 1px;
-          color: rgba(255,255,255,0.2);
+          color: rgba(0,0,0,0.2);
           text-shadow: none;
         }
 
         .social-btn {
           width: 100%;
           padding: 14px;
-          background: rgba(255,255,255,0.03);
-          border: 1px solid rgba(255,255,255,0.08);
+          background: rgba(0,0,0,0.03);
+          border: 1px solid rgba(0,0,0,0.08);
           border-radius: 14px;
-          color: rgba(255,255,255,0.4);
+          color: rgba(0,0,0,0.4);
           font-size: 14px;
           font-weight: 600;
           cursor: pointer;
@@ -220,21 +217,21 @@ export default async function LoginPage({
         }
 
         .social-btn:hover {
-          background: rgba(255,255,255,0.05);
-          border-color: rgba(255,255,255,0.12);
-          color: rgba(255,255,255,0.6);
+          background: rgba(0,0,0,0.05);
+          border-color: rgba(0,0,0,0.12);
+          color: rgba(0,0,0,0.6);
         }
 
         .footer-text {
           text-align: center;
           font-size: 13px;
-          color: rgba(255,255,255,0.4);
+          color: rgba(0,0,0,0.45);
           margin-top: 24px;
           text-shadow: none;
         }
 
         .footer-text a {
-          color: #00ffae;
+          color: #d51659;
           text-decoration: none;
           font-weight: 600;
           text-shadow: none;
@@ -245,9 +242,9 @@ export default async function LoginPage({
         }
 
         .error-message {
-          background: rgba(248,66,51,0.08);
-          border: 1px solid rgba(248,66,51,0.2);
-          color: #ff9999;
+          background: rgba(248,66,51,0.06);
+          border: 1px solid rgba(248,66,51,0.15);
+          color: #dc2626;
           padding: 12px 16px;
           border-radius: 12px;
           font-size: 13px;
@@ -255,9 +252,9 @@ export default async function LoginPage({
         }
 
         .success-message {
-          background: rgba(0,255,174,0.06);
-          border: 1px solid rgba(0,255,174,0.15);
-          color: #00ffae;
+          background: rgba(22,163,74,0.06);
+          border: 1px solid rgba(22,163,74,0.15);
+          color: #16a34a;
           padding: 12px 16px;
           border-radius: 12px;
           font-size: 13px;
@@ -273,7 +270,7 @@ export default async function LoginPage({
 
         .forgot-password a {
           font-size: 13px;
-          color: #00ffae;
+          color: #d51659;
           text-decoration: none;
           font-weight: 600;
           text-shadow: none;
