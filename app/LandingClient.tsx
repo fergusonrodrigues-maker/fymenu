@@ -231,13 +231,13 @@ function PlanCard({ planKey, plan, theme }: {
   const dark = theme === "dark";
 
   // Per-plan accent color tokens (dark theme)
-  const rgb = isAccent ? "0,255,174" : isPurple ? "139,92,246" : isGreen ? "212,175,55" : null;
-  const hex = isAccent ? "#00ffae" : isPurple ? "#a78bfa" : isGreen ? "#d4af37" : null;
+  const rgb = isAccent ? "0,255,174" : isPurple ? "139,92,246" : isGreen ? "198,147,10" : null;
+  const hex = isAccent ? "#00ffae" : isPurple ? "#a78bfa" : isGreen ? "#C6930A" : null;
   const hasAccent = isAccent || isPurple || isGreen;
   // Per-plan accent color tokens (light theme — premium white design)
-  const lRgb = isAccent ? "0,176,122" : isPurple ? "139,92,246" : "212,175,55";
-  const lHex = isAccent ? "#00b07a" : isPurple ? "#8b5cf6" : "#B8860B";
-  const lHexBright = isAccent ? "#00d9a0" : isPurple ? "#7c4fe0" : "#D4AF37";
+  const lRgb = isAccent ? "0,176,122" : isPurple ? "139,92,246" : "198,147,10";
+  const lHex = isAccent ? "#00b07a" : isPurple ? "#8b5cf6" : "#C6930A";
+  const lHexBright = isAccent ? "#00d9a0" : isPurple ? "#7c4fe0" : "#FFD700";
 
   const shadowBase = dark
     ? hasAccent
@@ -300,7 +300,7 @@ function PlanCard({ planKey, plan, theme }: {
           display: "flex", flexDirection: "column",
           boxShadow: dark
             ? (isGreen
-              ? (hovered ? shadowHover + ", 0 0 40px rgba(212,175,55,0.08)" : shadowBase + ", 0 0 40px rgba(212,175,55,0.04)")
+              ? (hovered ? shadowHover + ", 0 0 40px rgba(198,147,10,0.1)" : shadowBase + ", 0 0 40px rgba(198,147,10,0.05)")
               : (hovered ? shadowHover : shadowBase))
             : (hovered ? shadowHover : shadowBase),
           transition: "box-shadow 0.3s ease, background 0.3s ease, border-color 0.3s ease",
@@ -357,8 +357,8 @@ function PlanCard({ planKey, plan, theme }: {
                 : { display: "inline-block", padding: "3px 10px", borderRadius: 999, background: "#00b07a", color: "#fff", WebkitTextFillColor: "#fff" }
               : isGreen
                 ? dark
-                  ? { display: "inline-block", padding: "3px 12px", borderRadius: 999, background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.2)", color: "#FFD700" }
-                  : { display: "inline-block", padding: "3px 12px", borderRadius: 999, background: "linear-gradient(135deg, #D4AF37, #FFD700)", color: "#000", WebkitTextFillColor: "#000" }
+                  ? { display: "inline-block", padding: "3px 12px", borderRadius: 999, background: "rgba(198,147,10,0.1)", border: "1px solid rgba(255,213,0,0.3)", color: "#FFD700" }
+                  : { display: "inline-block", padding: "3px 12px", borderRadius: 999, background: "linear-gradient(135deg, #8B6914, #FFD700, #C6930A)", color: "#000", WebkitTextFillColor: "#000" }
                 : hex
                   ? { color: hex }
                   : { color: dark ? "#fbbf24" : "#a07800" }),
@@ -370,8 +370,8 @@ function PlanCard({ planKey, plan, theme }: {
         )}
 
         <div style={{ textAlign: "center", marginBottom: 20 }}>
-          <div style={{ fontSize: 22, fontWeight: 900, ...(dark && isGreen ? { background: "linear-gradient(135deg, #BF953F, #FCF6BA, #B38728, #FBF5B7, #AA771C)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" } : { color: dark ? "var(--lp-price-color)" : "#1a1a1a" }) }}>{plan.name}</div>
-          <div style={{ fontSize: 13, color: dark ? (isGreen ? "#D4AF37" : "var(--lp-text-secondary)") : "#666", marginTop: 2 }}>{plan.units}</div>
+          <div style={{ fontSize: 22, fontWeight: 900, ...(dark && isGreen ? { background: "linear-gradient(135deg, #8B6914, #FFD700, #C6930A, #FFE55C, #8B6914)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" } : { color: dark ? "var(--lp-price-color)" : "#1a1a1a" }) }}>{plan.name}</div>
+          <div style={{ fontSize: 13, color: dark ? (isGreen ? "#FFD700" : "var(--lp-text-secondary)") : "#666", marginTop: 2 }}>{plan.units}</div>
         </div>
 
         {/* Per-card cycle selector */}
@@ -393,7 +393,7 @@ function PlanCard({ planKey, plan, theme }: {
                 padding: "6px 4px", borderRadius: 7, fontSize: 11, fontWeight: 700,
                 background: cycle === c.key
                   ? dark
-                    ? (isGreen ? "#B8860B" : (hex ? `rgba(${rgb},0.2)` : "rgba(255,255,255,0.12)"))
+                    ? (isGreen ? "#C6930A" : (hex ? `rgba(${rgb},0.2)` : "rgba(255,255,255,0.12)"))
                     : lHex
                   : "transparent",
                 color: cycle === c.key
@@ -412,7 +412,7 @@ function PlanCard({ planKey, plan, theme }: {
         </div>
 
         <div style={{ textAlign: "center", marginBottom: 20 }}>
-          <div style={{ fontSize: 38, fontWeight: 900, ...(dark && isGreen ? { background: "linear-gradient(135deg, #BF953F, #FCF6BA, #B38728, #FBF5B7, #AA771C)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" } : { color: dark ? (hex ?? "var(--lp-price-color)") : lHex }), transition: "all 0.2s ease" }}>
+          <div style={{ fontSize: 38, fontWeight: 900, ...(dark && isGreen ? { background: "linear-gradient(135deg, #8B6914, #FFD700, #C6930A, #FFE55C, #8B6914)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" } : { color: dark ? (hex ?? "var(--lp-price-color)") : lHex }), transition: "all 0.2s ease" }}>
             R${plan.prices[cycle]}
             <span style={{ fontSize: 14, fontWeight: 400, color: dark ? "var(--lp-text-secondary)" : "#999" }}>/mês</span>
           </div>
@@ -423,7 +423,7 @@ function PlanCard({ planKey, plan, theme }: {
                 display: "inline-flex", alignItems: "center", marginTop: 6,
                 background: dark
                   ? (isGreen ? "#FFD700" : isPurple ? "#a78bfa" : "#00ffae")
-                  : (isGreen ? "#B8860B" : isPurple ? "#8b5cf6" : "#00b07a"),
+                  : (isGreen ? "#C6930A" : isPurple ? "#8b5cf6" : "#00b07a"),
                 color: dark ? "#000" : "#fff",
                 fontSize: 12, fontWeight: 700, padding: "4px 14px", borderRadius: 999,
                 opacity: 0,
@@ -438,7 +438,7 @@ function PlanCard({ planKey, plan, theme }: {
         <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 24, flex: 1 }}>
           {plan.features.map((f) => (
             <div key={f} style={{ fontSize: 14, color: dark ? (isGreen ? "rgba(255,255,255,0.85)" : "var(--lp-text)") : "#4a4a4a", display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ color: dark ? (isGreen ? "#FFD700" : (hex ?? "#00cc8a")) : (isGreen ? "#D4AF37" : lHex), fontSize: 12 }}>✓</span> {f}
+              <span style={{ color: dark ? (isGreen ? "#FFD700" : (hex ?? "#00cc8a")) : (isGreen ? "#C6930A" : lHex), fontSize: 12 }}>✓</span> {f}
             </div>
           ))}
         </div>
@@ -448,7 +448,7 @@ function PlanCard({ planKey, plan, theme }: {
             display: "block", textAlign: "center", padding: "14px", borderRadius: 14,
             background: dark
               ? (isGreen
-                ? "linear-gradient(rgba(12,12,12,0.92), rgba(12,12,12,0.92)) padding-box, linear-gradient(135deg, #BF953F, #FCF6BA, #B38728, #FBF5B7, #AA771C) border-box"
+                ? "linear-gradient(rgba(12,12,12,0.92), rgba(12,12,12,0.92)) padding-box, linear-gradient(135deg, #8B6914, #FFD700, #C6930A, #FFE55C, #8B6914) border-box"
                 : isAccent
                   ? "linear-gradient(135deg, #00ffae, #00d9ff)"
                   : isPurple
@@ -460,7 +460,7 @@ function PlanCard({ planKey, plan, theme }: {
                   ? `linear-gradient(135deg, ${lHex}, ${lHexBright})`
                   : lHex,
             color: dark
-              ? (isGreen ? "#D4AF37" : isAccent ? "#000" : (hex ?? "var(--lp-btn-color)"))
+              ? (isGreen ? "#FFD700" : isAccent ? "#000" : (hex ?? "var(--lp-btn-color)"))
               : (isGreen ? lHex : "#fff"),
             fontWeight: 800, fontSize: 15, textDecoration: "none",
             border: dark
@@ -472,7 +472,7 @@ function PlanCard({ planKey, plan, theme }: {
           }}
         >
           {isGreen && dark ? (
-            <span style={{ background: "linear-gradient(135deg, #BF953F, #FCF6BA, #B38728, #FBF5B7, #AA771C)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+            <span style={{ background: "linear-gradient(135deg, #8B6914, #FFD700, #C6930A, #FFE55C, #8B6914)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
               {plan.cta}
             </span>
           ) : plan.cta}
