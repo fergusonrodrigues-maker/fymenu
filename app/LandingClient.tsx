@@ -843,11 +843,21 @@ export default function LandingPage() {
         /* ── Light Theme Overrides ── */
         .landing-light { background: #fafafa !important; color: #111 !important; }
         .landing-light .fy-nav {
-          background: rgba(255,255,255,0.75) !important;
-          border-color: rgba(213,22,89,0.1) !important;
+          background: linear-gradient(135deg, rgba(213,22,89,0.95), rgba(254,74,44,0.95)) !important;
+          border-color: rgba(213,22,89,0.3) !important;
         }
-        .landing-light .fy-nav a { color: rgba(34,34,34,0.7) !important; }
-        .landing-light .fy-nav a:hover { color: #222 !important; }
+        .landing-light .fy-nav a { color: #fff !important; }
+        .landing-light .fy-nav a:hover { color: #fff !important; text-shadow: 0 0 12px rgba(255,255,255,0.5); }
+        .landing-light .fy-nav .btn-primary {
+          background: #fff !important;
+          color: #d51659 !important;
+          -webkit-text-fill-color: #d51659 !important;
+          box-shadow: 0 2px 10px rgba(0,0,0,0.15) !important;
+        }
+        .landing-light .fy-nav .btn-primary:hover {
+          background: rgba(255,255,255,0.92) !important;
+          box-shadow: 0 4px 16px rgba(0,0,0,0.2) !important;
+        }
         .landing-light h1, .landing-light h2 { color: #222 !important; }
         .landing-light .feature-card {
           background: var(--lp-card-bg);
@@ -1192,7 +1202,7 @@ export default function LandingPage() {
 
         {/* ── NAVBAR ── */}
         <nav className="fy-nav">
-          <div style={{ fontWeight: 900, fontSize: 18, color: "#00ffae", letterSpacing: "-0.5px" }}>
+          <div style={{ fontWeight: 900, fontSize: 18, color: theme === "dark" ? "#00ffae" : "#fff", letterSpacing: "-0.5px" }}>
             FyMenu
           </div>
           <a href="#features">Recursos</a>
