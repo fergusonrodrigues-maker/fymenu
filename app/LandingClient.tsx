@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import VideoShowcase from "@/components/VideoShowcase";
 
 // ── Loader Component ──────────────────────────────────────────────────────────
-function PageLoader({ visible }: { visible: boolean }) {
+function PageLoader({ visible, theme }: { visible: boolean; theme: "dark" | "light" }) {
   const [mounted, setMounted] = useState(true);
   useEffect(() => {
     if (!visible) {
@@ -16,7 +16,7 @@ function PageLoader({ visible }: { visible: boolean }) {
   return (
     <div style={{
       position: "fixed", inset: 0, zIndex: 9999,
-      background: "#050505",
+      background: theme === "light" ? "#fafafa" : "#050505",
       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
       gap: 24,
       opacity: visible ? 1 : 0,
@@ -24,7 +24,7 @@ function PageLoader({ visible }: { visible: boolean }) {
       pointerEvents: visible ? "auto" : "none",
     }}>
       {/* Spinner */}
-      <div className="fy-loader" style={{
+      <div className={theme === "light" ? "fy-loader fy-loader-light" : "fy-loader"} style={{
         opacity: visible ? 1 : 0,
         transition: "opacity 0.2s ease",
       }} />
@@ -458,7 +458,7 @@ function PlanCard({ planKey, plan, theme }: {
 export default function LandingPage() {
   const [loading, setLoading] = useState(true);
   const [heroVisible, setHeroVisible] = useState(false);
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [theme, setTheme] = useState<"dark" | "light">("light");
   const canvasRef    = useRef<HTMLCanvasElement>(null);
   const spotlightRef = useRef<HTMLDivElement>(null);
 
@@ -529,6 +529,34 @@ export default function LandingPage() {
       window.removeEventListener("load", finish);
     };
   }, []);
+
+  // ── Theme side-effects: html classes, body bg, meta theme-color ─────────────
+  useEffect(() => {
+    const root = document.documentElement;
+    const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+
+    if (theme === "light") {
+      root.classList.remove("dark", "bg-black");
+      root.classList.add("light");
+      document.body.style.background = "#fafafa";
+      document.body.style.transition = "background 0.5s ease, color 0.5s ease";
+      if (meta) meta.content = "#fafafa";
+    } else {
+      root.classList.remove("light");
+      root.classList.add("dark", "bg-black");
+      document.body.style.background = "#000";
+      document.body.style.transition = "background 0.5s ease, color 0.5s ease";
+      if (meta) meta.content = "#050505";
+    }
+
+    return () => {
+      root.classList.remove("light");
+      root.classList.add("dark", "bg-black");
+      document.body.style.background = "";
+      document.body.style.transition = "";
+      if (meta) meta.content = "#050505";
+    };
+  }, [theme]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -682,7 +710,7 @@ export default function LandingPage() {
         ctx.arc(dot.x, dot.y, DOT_RADIUS, 0, Math.PI * 2);
         ctx.fillStyle = dark
           ? `rgba(0, 255, 174, ${dot.opacity})`
-          : `rgba(0, 0, 0, ${dot.opacity * 0.7})`;
+          : `rgba(0, 0, 0, ${Math.min(dot.opacity * 0.43, 0.25)})`;
         ctx.fill();
       }
 
@@ -708,7 +736,7 @@ export default function LandingPage() {
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap');
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: #000; color: #fff; font-family: 'Montserrat', -apple-system, sans-serif; overflow-x: hidden; font-weight: 500; }
+        body { background: ${theme === "light" ? "#fafafa" : "#000"}; color: ${theme === "light" ? "#111" : "#fff"}; font-family: 'Montserrat', -apple-system, sans-serif; overflow-x: hidden; font-weight: 500; transition: background 0.5s ease, color 0.5s ease; }
 
         /* ── Landing CSS vars — dark (default) ── */
         :root {
@@ -789,6 +817,27 @@ export default function LandingPage() {
         @keyframes pulsOut {
           0%, 50% { box-shadow: 0 0 0 0 #00ffae; opacity: 0; }
           100% { box-shadow: 0 0 0 1rem #00ffae; opacity: 1; }
+        }
+
+        /* ── Loader — Light Theme ── */
+        .fy-loader-light::before, .fy-loader-light::after {
+          filter: drop-shadow(0 0 1rem rgba(213, 22, 89, 0.6));
+        }
+        .fy-loader-light::before {
+          box-shadow: inset 0 0 0 1rem #d51659;
+          animation: pulsIn-light 1.8s ease-in-out infinite;
+        }
+        .fy-loader-light::after {
+          box-shadow: 0 0 0 0 #d51659;
+          animation: pulsOut-light 1.8s ease-in-out infinite;
+        }
+        @keyframes pulsIn-light {
+          0% { box-shadow: inset 0 0 0 1rem #d51659; opacity: 1; }
+          50%, 100% { box-shadow: inset 0 0 0 0 #d51659; opacity: 0; }
+        }
+        @keyframes pulsOut-light {
+          0%, 50% { box-shadow: 0 0 0 0 #d51659; opacity: 0; }
+          100% { box-shadow: 0 0 0 1rem #d51659; opacity: 1; }
         }
 
         /* ── Light Theme Overrides ── */
@@ -1104,7 +1153,7 @@ export default function LandingPage() {
         }
       `}</style>
 
-      <PageLoader visible={loading} />
+      <PageLoader visible={loading} theme={theme} />
 
       <div
         className={theme === "light" ? "landing-light" : ""}
