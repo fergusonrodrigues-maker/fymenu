@@ -197,7 +197,7 @@ export default function SignupPage() {
           display: flex;
           align-items: center;
           justify-content: center;
-          margin-bottom: 28px;
+          margin-bottom: 20px;
         }
 
         .title {
@@ -422,7 +422,7 @@ export default function SignupPage() {
 
       <div className="glass-container">
         <div className="logo">
-          <img src="https://rjfbavmupiypxiqzksxo.supabase.co/storage/v1/object/public/landing/logo-verrm.png" height={48} style={{ width: "auto" }} alt="FyMenu" />
+          <img src="https://rjfbavmupiypxiqzksxo.supabase.co/storage/v1/object/public/landing/logo-verrm.png" height={40} style={{ width: "auto", maxWidth: 180, objectFit: "contain" }} alt="FyMenu" />
         </div>
 
         <h1 className="title">Criar Conta</h1>
