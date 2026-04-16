@@ -283,7 +283,7 @@ export default async function LoginPage({
 
       <div className="glass-container">
         <div className="logo">
-          <img src="https://rjfbavmupiypxiqzksxo.supabase.co/storage/v1/object/public/landing/logo-verrm.png" height={72} style={{ width: "auto", maxWidth: 260, objectFit: "contain" }} alt="FyMenu" />
+          <img src="https://rjfbavmupiypxiqzksxo.supabase.co/storage/v1/object/public/landing/fymenu-vermelha.png" height={72} style={{ width: "auto", maxWidth: 260, objectFit: "contain" }} alt="FyMenu" />
         </div>
 
         <h1 className="title">Bem-vindo</h1>
