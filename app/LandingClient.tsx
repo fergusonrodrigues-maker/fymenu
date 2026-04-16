@@ -922,6 +922,7 @@ export default function LandingPage() {
           border-color: rgba(213,22,89,0.35) !important;
           color: #d51659 !important;
         }
+        .landing-light .fy-hero-glow { opacity: 0 !important; }
         .landing-light footer { border-color: rgba(0,0,0,0.06) !important; }
         /* ── Gradient Text (headline only — subtle animated shine) ── */
         .gradient-text-dark {

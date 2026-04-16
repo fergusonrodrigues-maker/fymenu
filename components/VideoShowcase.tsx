@@ -237,7 +237,7 @@ export default function VideoShowcase() {
           );
         })}
       </div>
-      <div style={{
+      <div className="fy-hero-glow" style={{
         position: "absolute", bottom: 0, left: "50%", transform: "translateX(-50%)",
         width: 200, height: 80,
         background: "radial-gradient(ellipse, rgba(0,255,174,0.06), transparent 70%)",
