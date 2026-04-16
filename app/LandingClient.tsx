@@ -710,7 +710,7 @@ export default function LandingPage() {
         ctx.arc(dot.x, dot.y, DOT_RADIUS, 0, Math.PI * 2);
         ctx.fillStyle = dark
           ? `rgba(0, 255, 174, ${dot.opacity})`
-          : `rgba(0, 0, 0, ${Math.min(dot.opacity * 0.43, 0.25)})`;
+          : `rgba(5, 5, 5, ${Math.min(dot.opacity * 0.43, 0.25)})`;
         ctx.fill();
       }
 
