@@ -872,19 +872,21 @@ export default function LandingPage() {
         /* ── Light Theme Overrides ── */
         .landing-light { background: #fafafa !important; color: #111 !important; }
         .landing-light .fy-nav {
-          background: linear-gradient(135deg, rgba(213,22,89,0.95), rgba(254,74,44,0.95)) !important;
-          border-color: rgba(213,22,89,0.3) !important;
+          background: linear-gradient(135deg, rgba(213,22,89,0.85), rgba(254,74,44,0.85)) !important;
+          backdrop-filter: blur(20px) !important;
+          -webkit-backdrop-filter: blur(20px) !important;
+          border: 1px solid rgba(255,255,255,0.2) !important;
         }
         .landing-light .fy-nav a { color: #fff !important; }
-        .landing-light .fy-nav a:hover { color: #fff !important; text-shadow: 0 0 12px rgba(255,255,255,0.5); }
+        .landing-light .fy-nav a:hover { color: rgba(255,255,255,0.8) !important; text-shadow: none; }
         .landing-light .fy-nav .btn-primary {
-          background: #fff !important;
+          background: rgba(255,255,255,0.95) !important;
           color: #d51659 !important;
           -webkit-text-fill-color: #d51659 !important;
           box-shadow: 0 2px 10px rgba(0,0,0,0.15) !important;
         }
         .landing-light .fy-nav .btn-primary:hover {
-          background: rgba(255,255,255,0.92) !important;
+          background: #fff !important;
           box-shadow: 0 4px 16px rgba(0,0,0,0.2) !important;
         }
         .landing-light h1, .landing-light h2 { color: #222 !important; }
