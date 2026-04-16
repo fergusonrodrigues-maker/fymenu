@@ -896,6 +896,15 @@ export default function LandingPage() {
           color: #d51659 !important;
           -webkit-text-fill-color: #d51659 !important;
         }
+        .landing-light .btn-ver-recursos {
+          border: 1px solid rgba(0,0,0,0.2) !important;
+          color: #1a1a1a !important;
+          background: transparent !important;
+        }
+        .landing-light .btn-ver-recursos:hover {
+          border-color: rgba(213,22,89,0.4) !important;
+          color: #d51659 !important;
+        }
         .landing-light h1, .landing-light h2 { color: #222 !important; }
         .landing-light .feature-card {
           background: #fff;
@@ -1366,6 +1375,7 @@ export default function LandingPage() {
               </a>
               <a
                 href="#features"
+                className="btn-ver-recursos"
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
