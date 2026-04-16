@@ -422,7 +422,7 @@ export default function SignupPage() {
 
       <div className="glass-container">
         <div className="logo">
-          <img src="https://rjfbavmupiypxiqzksxo.supabase.co/storage/v1/object/public/landing/logo-verrm.png" height={40} style={{ width: "auto", maxWidth: 180, objectFit: "contain" }} alt="FyMenu" />
+          <img src="https://rjfbavmupiypxiqzksxo.supabase.co/storage/v1/object/public/landing/logo-verrm.png" height={56} style={{ width: "auto", maxWidth: 220, objectFit: "contain" }} alt="FyMenu" />
         </div>
 
         <h1 className="title">Criar Conta</h1>
