@@ -1203,9 +1203,11 @@ export default function LandingPage() {
 
         {/* ── NAVBAR ── */}
         <nav className="fy-nav">
-          <div style={{ fontWeight: 900, fontSize: 18, color: theme === "dark" ? "#00ffae" : "#fff", letterSpacing: "-0.5px" }}>
-            FyMenu
-          </div>
+          <img
+            src="/images/LOGO-FYMENU-DARK.png"
+            alt="FyMenu"
+            style={{ height: 28, width: "auto", display: "block", mixBlendMode: "screen" }}
+          />
           <a href="#features">Recursos</a>
           <a href="#pricing">Planos</a>
           <a href="/painel" className="btn-primary" style={{ width: "auto", padding: "8px 20px", fontSize: 12, borderRadius: 999, fontWeight: 800, color: theme === "dark" ? "#000" : "#fff", WebkitTextFillColor: theme === "dark" ? "#000" : "#fff" }}>
@@ -1513,7 +1515,11 @@ export default function LandingPage() {
           }}
         >
           <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 24, flexWrap: "wrap" }}>
-            <span className={theme === "dark" ? "gradient-text-dark" : "gradient-text-light"} style={{ fontWeight: 900, fontSize: 18 }}>FyMenu</span>
+            <img
+              src={theme === "dark" ? "/images/LOGO-FYMENU-DARK.png" : "/images/LOGO-FYMENU-LIGHT.png"}
+              alt="FyMenu"
+              style={{ height: 24, width: "auto", display: "block", mixBlendMode: theme === "dark" ? "screen" : "multiply" }}
+            />
             <a href="#features" style={{ color: theme === "dark" ? "rgba(255,255,255,0.7)" : "rgba(34,34,34,0.65)", textDecoration: "none", fontSize: 15 }}>Recursos</a>
             <a href="#pricing" style={{ color: theme === "dark" ? "rgba(255,255,255,0.7)" : "rgba(34,34,34,0.65)", textDecoration: "none", fontSize: 15 }}>Planos</a>
             <a href="/entrar" style={{ color: theme === "dark" ? "rgba(255,255,255,0.7)" : "rgba(34,34,34,0.65)", textDecoration: "none", fontSize: 15 }}>Entrar</a>
