@@ -885,9 +885,18 @@ export default function LandingPage() {
         .landing-light h1, .landing-light h2 { color: #222 !important; }
         .landing-light .feature-card {
           background: #fff;
-          border-left: 3px solid transparent;
-          border-image: linear-gradient(to bottom, #d51659, #fe4a2c) 1;
+          border-left: none;
           box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        }
+        .landing-light .feature-card::before {
+          content: '';
+          position: absolute;
+          left: 0;
+          top: 12px;
+          bottom: 12px;
+          width: 3px;
+          border-radius: 3px;
+          background: linear-gradient(to bottom, #d51659, #fe4a2c);
         }
         .landing-light .feature-card:hover {
           background: #fff;
