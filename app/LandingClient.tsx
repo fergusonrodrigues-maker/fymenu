@@ -1228,9 +1228,9 @@ export default function LandingPage() {
         {/* ── NAVBAR ── */}
         <nav className="fy-nav">
           <img
-            src="/images/LOGO-FYMENU-DARK.png"
+            src="https://rjfbavmupiypxiqzksxo.supabase.co/storage/v1/object/public/landing/ICON-FY-MENU-DARK.png"
             alt="FyMenu"
-            style={{ height: 28, width: "auto", display: "block", mixBlendMode: "screen" }}
+            style={{ height: 32, width: "auto", display: "block", mixBlendMode: "screen" }}
           />
           <a href="#features">Recursos</a>
           <a href="#pricing">Planos</a>
@@ -1540,9 +1540,11 @@ export default function LandingPage() {
         >
           <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 24, flexWrap: "wrap" }}>
             <img
-              src={theme === "dark" ? "/images/LOGO-FYMENU-DARK.png" : "/images/LOGO-FYMENU-LIGHT.png"}
+              src={theme === "dark"
+                ? "https://rjfbavmupiypxiqzksxo.supabase.co/storage/v1/object/public/landing/ICON-FY-MENU-DARK.png"
+                : "https://rjfbavmupiypxiqzksxo.supabase.co/storage/v1/object/public/landing/icon-fymenu-LIGHT.png"}
               alt="FyMenu"
-              style={{ height: 24, width: "auto", display: "block", mixBlendMode: theme === "dark" ? "screen" : "multiply" }}
+              style={{ height: 28, width: "auto", display: "block", mixBlendMode: theme === "dark" ? "screen" : "multiply" }}
             />
             <a href="#features" style={{ color: theme === "dark" ? "rgba(255,255,255,0.7)" : "rgba(34,34,34,0.65)", textDecoration: "none", fontSize: 15 }}>Recursos</a>
             <a href="#pricing" style={{ color: theme === "dark" ? "rgba(255,255,255,0.7)" : "rgba(34,34,34,0.65)", textDecoration: "none", fontSize: 15 }}>Planos</a>
