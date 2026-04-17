@@ -278,13 +278,20 @@ export default function EntrarClient() {
           border-radius: 24px;
           padding: 24px 28px 28px;
           box-shadow: 0 20px 60px rgba(0,0,0,0.08);
-          min-height: 620px;
+          height: 640px;
+          overflow: hidden;
           display: flex;
           flex-direction: column;
         }
 
         @media (max-width: 639px) {
-          .glass-container { min-height: unset; }
+          .glass-container {
+            height: auto;
+            overflow: visible;
+          }
+          .fields-area {
+            flex: unset;
+          }
         }
 
         /* ── Toggle ─────────────────────────────────────── */
