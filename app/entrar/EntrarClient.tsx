@@ -281,6 +281,15 @@ export default function EntrarClient() {
           border-radius: 24px;
           padding: 24px 28px 28px;
           box-shadow: 0 20px 60px rgba(0,0,0,0.08);
+          min-height: 620px;
+          display: flex;
+          flex-direction: column;
+        }
+
+        @media (max-width: 639px) {
+          .glass-container {
+            min-height: unset;
+          }
         }
 
         .mode-toggle {
@@ -300,7 +309,7 @@ export default function EntrarClient() {
           font-size: 13px;
           font-weight: 700;
           cursor: pointer;
-          transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+          transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
           font-family: inherit;
           background: transparent;
           color: #555;
@@ -506,6 +515,39 @@ export default function EntrarClient() {
           margin-top: 6px;
           font-weight: 600;
         }
+
+        @keyframes auth-form-in-right {
+          from { opacity: 0; transform: translateX(10px); }
+          to   { opacity: 1; transform: translateX(0);    }
+        }
+
+        @keyframes auth-form-in-left {
+          from { opacity: 0; transform: translateX(-10px); }
+          to   { opacity: 1; transform: translateX(0);     }
+        }
+
+        .form-area {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          animation: auth-form-in-right 220ms ease-out both;
+        }
+
+        .form-area--login {
+          justify-content: center;
+          animation: auth-form-in-left 220ms ease-out both;
+        }
+
+        .form-area--criar {
+          justify-content: flex-start;
+          animation: auth-form-in-right 220ms ease-out both;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .form-area, .form-area--login, .form-area--criar {
+            animation: none !important;
+          }
+        }
       `}</style>
 
       <div className="auth-dots" />
@@ -529,184 +571,187 @@ export default function EntrarClient() {
           </button>
         </div>
 
-        <div className="logo">
-          <img
-            src="https://rjfbavmupiypxiqzksxo.supabase.co/storage/v1/object/public/landing/fymenu-vermelha.png"
-            height={72}
-            style={{ width: "auto", maxWidth: 260, objectFit: "contain" }}
-            alt="FyMenu"
-          />
-        </div>
-
-        <h1 className="title">{modo === "login" ? "Bem-vindo" : "Criar Conta"}</h1>
-        <p className="subtitle">
-          {modo === "login" ? "Gerencie seu cardápio digital" : "Cardápio digital em minutos"}
-        </p>
-
-        {error && <div className="error-message">{error}</div>}
-        {success && <div className="success-message">{success}</div>}
-        {urlPending === "email" && (
-          <div
-            style={{
-              padding: "14px 18px",
-              borderRadius: 14,
-              background: "rgba(251,191,36,0.08)",
-              border: "1px solid rgba(251,191,36,0.15)",
-              color: "#b45309",
-              fontSize: 13,
-              marginBottom: 16,
-              textAlign: "center",
-            }}
-          >
-            Verifique seu email para confirmar a conta. Depois faça login aqui.
+        {/* Animated form area — keyed so React remounts on mode change, triggering CSS animation */}
+        <div key={modo} className={`form-area form-area--${modo}`}>
+          <div className="logo">
+            <img
+              src="https://rjfbavmupiypxiqzksxo.supabase.co/storage/v1/object/public/landing/fymenu-vermelha.png"
+              height={72}
+              style={{ width: "auto", maxWidth: 260, objectFit: "contain" }}
+              alt="FyMenu"
+            />
           </div>
-        )}
 
-        {/* ── LOGIN FORM ── */}
-        {modo === "login" && (
-          <form onSubmit={handleLogin} style={{ display: "grid", gap: 0 }}>
-            <div className="form-group">
-              <label>Email</label>
-              <div className="input-wrapper">
-                <input
-                  type="email"
-                  placeholder="seu@email.com"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-            </div>
+          <h1 className="title">{modo === "login" ? "Bem-vindo" : "Criar Conta"}</h1>
+          <p className="subtitle">
+            {modo === "login" ? "Gerencie seu cardápio digital" : "Cardápio digital em minutos"}
+          </p>
 
-            <div className="form-group">
-              <label>Senha</label>
-              <div className="input-wrapper">
-                <input
-                  type="password"
-                  placeholder="Sua senha"
-                  autoComplete="current-password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="forgot-password">
-              <a href="/auth/reset-password">Esqueceu a senha?</a>
-            </div>
-
-            <button type="submit" className="submit-btn" disabled={loading}>
-              {loading ? "Entrando..." : "Entrar"}
-            </button>
-          </form>
-        )}
-
-        {/* ── SIGNUP FORM ── */}
-        {modo === "criar" && (
-          <form onSubmit={handleSignup} style={{ display: "grid", gap: 0 }}>
-            <div className="form-group">
-              <label>Email</label>
-              <div className="input-wrapper">
-                <input
-                  type="email"
-                  placeholder="seu@email.com"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label>Senha</label>
-              <div className="input-wrapper">
-                <input
-                  type="password"
-                  placeholder="Mínimo 8 caracteres"
-                  autoComplete="new-password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-              <PasswordReqs password={password} />
-            </div>
-
-            <div className="form-group">
-              <label>Confirmar Senha</label>
-              <div className="input-wrapper">
-                <input
-                  type="password"
-                  placeholder="Confirme sua senha"
-                  autoComplete="new-password"
-                  required
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label>
-                {appliedCoupons.length > 0 ? "+ Adicionar outro cupom" : "Cupom (opcional)"}
-              </label>
-              <div className="input-wrapper coupon-input-mono">
-                <input
-                  type="text"
-                  placeholder="Tem um cupom?"
-                  value={couponInput}
-                  onChange={(e) => {
-                    setCouponInput(e.target.value.toUpperCase());
-                    setCouponError(null);
-                  }}
-                  onBlur={() => validateAndApplyCoupon()}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      validateAndApplyCoupon();
-                    }
-                  }}
-                />
-              </div>
-              {validatingCoupon && (
-                <p style={{ color: "rgba(0,0,0,0.4)", fontSize: 12, marginTop: 6 }}>
-                  Validando...
-                </p>
-              )}
-              {couponError && !validatingCoupon && (
-                <div className="coupon-error">✗ {couponError}</div>
-              )}
-              {appliedCoupons.length > 0 && (
-                <div className="coupon-pills">
-                  {appliedCoupons.map((c) => (
-                    <span key={c.code} className="coupon-pill">
-                      {c.label}
-                      <button
-                        type="button"
-                        className="coupon-pill-remove"
-                        onClick={() => removeCoupon(c.code)}
-                        aria-label={`Remover cupom ${c.code}`}
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <button
-              type="submit"
-              className="submit-btn"
-              disabled={loading || !passwordValid(password)}
+          {error && <div className="error-message">{error}</div>}
+          {success && <div className="success-message">{success}</div>}
+          {urlPending === "email" && (
+            <div
+              style={{
+                padding: "14px 18px",
+                borderRadius: 14,
+                background: "rgba(251,191,36,0.08)",
+                border: "1px solid rgba(251,191,36,0.15)",
+                color: "#b45309",
+                fontSize: 13,
+                marginBottom: 16,
+                textAlign: "center",
+              }}
             >
-              {loading ? "Criando conta..." : "Criar Conta"}
-            </button>
-          </form>
-        )}
+              Verifique seu email para confirmar a conta. Depois faça login aqui.
+            </div>
+          )}
+
+          {/* ── LOGIN FORM ── */}
+          {modo === "login" && (
+            <form onSubmit={handleLogin} style={{ display: "grid", gap: 0 }}>
+              <div className="form-group">
+                <label>Email</label>
+                <div className="input-wrapper">
+                  <input
+                    type="email"
+                    placeholder="seu@email.com"
+                    autoComplete="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Senha</label>
+                <div className="input-wrapper">
+                  <input
+                    type="password"
+                    placeholder="Sua senha"
+                    autoComplete="current-password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="forgot-password">
+                <a href="/auth/reset-password">Esqueceu a senha?</a>
+              </div>
+
+              <button type="submit" className="submit-btn" disabled={loading}>
+                {loading ? "Entrando..." : "Entrar"}
+              </button>
+            </form>
+          )}
+
+          {/* ── SIGNUP FORM ── */}
+          {modo === "criar" && (
+            <form onSubmit={handleSignup} style={{ display: "grid", gap: 0 }}>
+              <div className="form-group">
+                <label>Email</label>
+                <div className="input-wrapper">
+                  <input
+                    type="email"
+                    placeholder="seu@email.com"
+                    autoComplete="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Senha</label>
+                <div className="input-wrapper">
+                  <input
+                    type="password"
+                    placeholder="Mínimo 8 caracteres"
+                    autoComplete="new-password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                </div>
+                <PasswordReqs password={password} />
+              </div>
+
+              <div className="form-group">
+                <label>Confirmar Senha</label>
+                <div className="input-wrapper">
+                  <input
+                    type="password"
+                    placeholder="Confirme sua senha"
+                    autoComplete="new-password"
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>
+                  {appliedCoupons.length > 0 ? "+ Adicionar outro cupom" : "Cupom (opcional)"}
+                </label>
+                <div className="input-wrapper coupon-input-mono">
+                  <input
+                    type="text"
+                    placeholder="Tem um cupom?"
+                    value={couponInput}
+                    onChange={(e) => {
+                      setCouponInput(e.target.value.toUpperCase());
+                      setCouponError(null);
+                    }}
+                    onBlur={() => validateAndApplyCoupon()}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        validateAndApplyCoupon();
+                      }
+                    }}
+                  />
+                </div>
+                {validatingCoupon && (
+                  <p style={{ color: "rgba(0,0,0,0.4)", fontSize: 12, marginTop: 6 }}>
+                    Validando...
+                  </p>
+                )}
+                {couponError && !validatingCoupon && (
+                  <div className="coupon-error">✗ {couponError}</div>
+                )}
+                {appliedCoupons.length > 0 && (
+                  <div className="coupon-pills">
+                    {appliedCoupons.map((c) => (
+                      <span key={c.code} className="coupon-pill">
+                        {c.label}
+                        <button
+                          type="button"
+                          className="coupon-pill-remove"
+                          onClick={() => removeCoupon(c.code)}
+                          aria-label={`Remover cupom ${c.code}`}
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <button
+                type="submit"
+                className="submit-btn"
+                disabled={loading || !passwordValid(password)}
+              >
+                {loading ? "Criando conta..." : "Criar Conta"}
+              </button>
+            </form>
+          )}
+        </div>
       </div>
     </main>
   );
