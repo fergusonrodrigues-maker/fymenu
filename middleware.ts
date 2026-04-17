@@ -93,7 +93,6 @@ export async function middleware(request: NextRequest) {
   // ── Rate limiting nas rotas de auth ──────────────────────────────────
   const isAuthAction =
     pathname === "/entrar" ||
-    pathname === "/cadastro" ||
     pathname === "/auth/reset-password";
 
   if (isAuthAction && request.method === "POST") {
