@@ -103,10 +103,7 @@ export default function EntrarClient() {
     setLoading(true);
     try {
       const supabase = createClient();
-      const { error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
       if (authError) {
         const msg = authError.message.includes("Invalid login credentials")
           ? "Email ou senha incorretos."
@@ -155,10 +152,7 @@ export default function EntrarClient() {
 
       let session = authData.session;
       if (!session) {
-        const { data: loginData } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
+        const { data: loginData } = await supabase.auth.signInWithPassword({ email, password });
         if (!loginData.session) {
           router.push("/entrar?pending=email");
           return;
@@ -239,6 +233,9 @@ export default function EntrarClient() {
     }
   }
 
+  // CTA button disabled state depends on mode
+  const ctaDisabled = loading || (modo === "criar" && !passwordValid(password));
+
   return (
     <main
       style={{
@@ -287,11 +284,10 @@ export default function EntrarClient() {
         }
 
         @media (max-width: 639px) {
-          .glass-container {
-            min-height: unset;
-          }
+          .glass-container { min-height: unset; }
         }
 
+        /* ── Toggle ─────────────────────────────────────── */
         .mode-toggle {
           display: flex;
           background: rgba(0,0,0,0.05);
@@ -299,6 +295,7 @@ export default function EntrarClient() {
           padding: 4px;
           margin-bottom: 20px;
           gap: 2px;
+          flex-shrink: 0;
         }
 
         .mode-btn {
@@ -326,13 +323,16 @@ export default function EntrarClient() {
           color: #333;
         }
 
+        /* ── Logo ────────────────────────────────────────── */
         .logo {
           display: flex;
           align-items: center;
           justify-content: center;
           margin-bottom: 8px;
+          flex-shrink: 0;
         }
 
+        /* ── Title / subtitle (fade swap only) ──────────── */
         .title {
           font-size: 24px;
           font-weight: 800;
@@ -343,16 +343,46 @@ export default function EntrarClient() {
           -webkit-text-fill-color: transparent;
           background-clip: text;
           text-shadow: none;
+          flex-shrink: 0;
+          animation: auth-fade 150ms ease-out both;
         }
 
         .subtitle {
           font-size: 12px;
           color: rgba(0,0,0,0.55);
           text-align: center;
-          margin-bottom: 20px;
+          margin-bottom: 16px;
           text-shadow: none;
+          flex-shrink: 0;
+          animation: auth-fade 150ms ease-out both;
         }
 
+        /* ── Fields area (slide + fade) ──────────────────── */
+        .fields-area {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+          animation: auth-fields-in-right 220ms ease-out both;
+        }
+
+        .fields-area--login {
+          justify-content: center;
+          animation: auth-fields-in-left 220ms ease-out both;
+        }
+
+        .fields-area--criar {
+          justify-content: flex-start;
+          animation: auth-fields-in-right 220ms ease-out both;
+        }
+
+        /* ── CTA footer (always fixed at bottom) ─────────── */
+        .cta-footer {
+          flex-shrink: 0;
+          padding-top: 4px;
+        }
+
+        /* ── Form fields ─────────────────────────────────── */
         .form-group {
           margin-bottom: 12px;
         }
@@ -382,9 +412,7 @@ export default function EntrarClient() {
           box-sizing: border-box;
         }
 
-        .input-wrapper input::placeholder {
-          color: rgba(0,0,0,0.4);
-        }
+        .input-wrapper input::placeholder { color: rgba(0,0,0,0.4); }
 
         .input-wrapper input:focus {
           border-color: rgba(213,22,89,0.3);
@@ -392,10 +420,10 @@ export default function EntrarClient() {
           box-shadow: 0 0 12px rgba(213,22,89,0.06);
         }
 
+        /* ── Submit button ───────────────────────────────── */
         .submit-btn {
           width: 100%;
           padding: 14px;
-          margin-top: 16px;
           background: linear-gradient(135deg, #d51659, #fe4a2c);
           border: none;
           border-radius: 14px;
@@ -407,6 +435,8 @@ export default function EntrarClient() {
           box-shadow: 0 4px 20px rgba(213,22,89,0.2);
           font-family: inherit;
           letter-spacing: 0.3px;
+          position: relative;
+          overflow: hidden;
         }
 
         .submit-btn:hover {
@@ -425,6 +455,12 @@ export default function EntrarClient() {
           transform: none;
         }
 
+        /* Label inside CTA fades on swap */
+        .cta-label {
+          animation: auth-fade 150ms ease-out both;
+        }
+
+        /* ── Messages ────────────────────────────────────── */
         .error-message {
           background: rgba(248,66,51,0.06);
           border: 1px solid rgba(248,66,51,0.15);
@@ -445,6 +481,7 @@ export default function EntrarClient() {
           margin-bottom: 16px;
         }
 
+        /* ── Forgot password ─────────────────────────────── */
         .forgot-password {
           display: flex;
           justify-content: flex-end;
@@ -460,10 +497,9 @@ export default function EntrarClient() {
           text-shadow: none;
         }
 
-        .forgot-password a:hover {
-          text-decoration: underline;
-        }
+        .forgot-password a:hover { text-decoration: underline; }
 
+        /* ── Coupon ──────────────────────────────────────── */
         .coupon-input-mono input {
           font-family: monospace;
           letter-spacing: 0.08em;
@@ -501,9 +537,7 @@ export default function EntrarClient() {
           transition: opacity 0.15s;
         }
 
-        .coupon-pill-remove:hover {
-          opacity: 1;
-        }
+        .coupon-pill-remove:hover { opacity: 1; }
 
         .coupon-error {
           background: rgba(248,66,51,0.06);
@@ -516,35 +550,25 @@ export default function EntrarClient() {
           font-weight: 600;
         }
 
-        @keyframes auth-form-in-right {
+        /* ── Keyframes ───────────────────────────────────── */
+        @keyframes auth-fade {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+
+        @keyframes auth-fields-in-right {
           from { opacity: 0; transform: translateX(10px); }
           to   { opacity: 1; transform: translateX(0);    }
         }
 
-        @keyframes auth-form-in-left {
+        @keyframes auth-fields-in-left {
           from { opacity: 0; transform: translateX(-10px); }
           to   { opacity: 1; transform: translateX(0);     }
         }
 
-        .form-area {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          animation: auth-form-in-right 220ms ease-out both;
-        }
-
-        .form-area--login {
-          justify-content: center;
-          animation: auth-form-in-left 220ms ease-out both;
-        }
-
-        .form-area--criar {
-          justify-content: flex-start;
-          animation: auth-form-in-right 220ms ease-out both;
-        }
-
         @media (prefers-reduced-motion: reduce) {
-          .form-area, .form-area--login, .form-area--criar {
+          .title, .subtitle, .fields-area, .fields-area--login,
+          .fields-area--criar, .cta-label {
             animation: none !important;
           }
         }
@@ -553,7 +577,8 @@ export default function EntrarClient() {
       <div className="auth-dots" />
 
       <div className="glass-container">
-        {/* Segmented control toggle */}
+
+        {/* ── FIXED: Toggle ── */}
         <div className="mode-toggle">
           <button
             type="button"
@@ -571,22 +596,26 @@ export default function EntrarClient() {
           </button>
         </div>
 
-        {/* Animated form area — keyed so React remounts on mode change, triggering CSS animation */}
-        <div key={modo} className={`form-area form-area--${modo}`}>
-          <div className="logo">
-            <img
-              src="https://rjfbavmupiypxiqzksxo.supabase.co/storage/v1/object/public/landing/fymenu-vermelha.png"
-              height={72}
-              style={{ width: "auto", maxWidth: 260, objectFit: "contain" }}
-              alt="FyMenu"
-            />
-          </div>
+        {/* ── FIXED: Logo ── */}
+        <div className="logo">
+          <img
+            src="https://rjfbavmupiypxiqzksxo.supabase.co/storage/v1/object/public/landing/fymenu-vermelha.png"
+            height={72}
+            style={{ width: "auto", maxWidth: 260, objectFit: "contain" }}
+            alt="FyMenu"
+          />
+        </div>
 
-          <h1 className="title">{modo === "login" ? "Bem-vindo" : "Criar Conta"}</h1>
-          <p className="subtitle">
-            {modo === "login" ? "Gerencie seu cardápio digital" : "Cardápio digital em minutos"}
-          </p>
+        {/* ── FIXED + FADE: Title / subtitle ── */}
+        <h1 key={`title-${modo}`} className="title">
+          {modo === "login" ? "Bem-vindo" : "Criar Conta"}
+        </h1>
+        <p key={`sub-${modo}`} className="subtitle">
+          {modo === "login" ? "Gerencie seu cardápio digital" : "Cardápio digital em minutos"}
+        </p>
 
+        {/* ── ANIMATED: Fields area (only inputs swap) ── */}
+        <div key={`fields-${modo}`} className={`fields-area fields-area--${modo}`}>
           {error && <div className="error-message">{error}</div>}
           {success && <div className="success-message">{success}</div>}
           {urlPending === "email" && (
@@ -606,9 +635,9 @@ export default function EntrarClient() {
             </div>
           )}
 
-          {/* ── LOGIN FORM ── */}
+          {/* LOGIN fields (no submit button — shared CTA below) */}
           {modo === "login" && (
-            <form onSubmit={handleLogin} style={{ display: "grid", gap: 0 }}>
+            <form id="auth-form" onSubmit={handleLogin} style={{ display: "grid", gap: 0 }}>
               <div className="form-group">
                 <label>Email</label>
                 <div className="input-wrapper">
@@ -640,16 +669,12 @@ export default function EntrarClient() {
               <div className="forgot-password">
                 <a href="/auth/reset-password">Esqueceu a senha?</a>
               </div>
-
-              <button type="submit" className="submit-btn" disabled={loading}>
-                {loading ? "Entrando..." : "Entrar"}
-              </button>
             </form>
           )}
 
-          {/* ── SIGNUP FORM ── */}
+          {/* SIGNUP fields (no submit button — shared CTA below) */}
           {modo === "criar" && (
-            <form onSubmit={handleSignup} style={{ display: "grid", gap: 0 }}>
+            <form id="auth-form" onSubmit={handleSignup} style={{ display: "grid", gap: 0 }}>
               <div className="form-group">
                 <label>Email</label>
                 <div className="input-wrapper">
@@ -741,17 +766,26 @@ export default function EntrarClient() {
                   </div>
                 )}
               </div>
-
-              <button
-                type="submit"
-                className="submit-btn"
-                disabled={loading || !passwordValid(password)}
-              >
-                {loading ? "Criando conta..." : "Criar Conta"}
-              </button>
             </form>
           )}
         </div>
+
+        {/* ── FIXED: CTA button anchored at bottom ── */}
+        <div className="cta-footer">
+          <button
+            type="submit"
+            form="auth-form"
+            className="submit-btn"
+            disabled={ctaDisabled}
+          >
+            <span key={`cta-${loading ? "loading" : modo}`} className="cta-label">
+              {modo === "login"
+                ? loading ? "Entrando..." : "Entrar"
+                : loading ? "Criando conta..." : "Criar Conta"}
+            </span>
+          </button>
+        </div>
+
       </div>
     </main>
   );
