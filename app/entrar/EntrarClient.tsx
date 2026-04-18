@@ -6,13 +6,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import PasswordReqs, { passwordValid, translatePasswordError } from "@/components/PasswordReqs";
 
 type Modo = "login" | "criar";
-type PlanId = "menu" | "menupro" | "business";
-
-const PLANS: { id: PlanId; name: string; color: string; price: string; badge: string | null }[] = [
-  { id: "menu",     name: "Menu",     color: "#8b5cf6", price: "R$199,90/mês",    badge: null },
-  { id: "menupro",  name: "MenuPro",  color: "#00b07a", price: "R$399,90/mês",    badge: null },
-  { id: "business", name: "Business", color: "#B8860B", price: "R$1.599,00/mês",  badge: "7 DIAS GRÁTIS" },
-];
 
 interface AppliedCoupon {
   code: string;
@@ -41,7 +34,6 @@ export default function EntrarClient() {
   const [loading, setLoading] = useState(false);
 
   // Signup-only fields
-  const [selectedPlan, setSelectedPlan] = useState<PlanId>("menupro");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [couponInput, setCouponInput] = useState("");
   const [appliedCoupons, setAppliedCoupons] = useState<AppliedCoupon[]>([]);
@@ -168,31 +160,14 @@ export default function EntrarClient() {
         session = loginData.session;
       }
 
-      // Calculate status and trial based on selected plan
-      let restaurantStatus: string;
-      let trialEndsAtValue: string | null;
-
-      if (selectedPlan === "business") {
-        const extraDays = appliedCoupons
-          .filter((c) => c.discount_type === "trial_extension" || c.discount_type === "trial_days")
-          .reduce((sum, c) => sum + c.trial_extra_days, 0);
-        const trialDate = new Date();
-        trialDate.setDate(trialDate.getDate() + 7 + extraDays);
-        restaurantStatus = "trial";
-        trialEndsAtValue = trialDate.toISOString();
-      } else {
-        restaurantStatus = "pending";
-        trialEndsAtValue = null;
-      }
-
       const { data: restaurant, error: restaurantError } = await supabase
         .from("restaurants")
         .insert({
           owner_id: session.user.id,
           name: restaurantName,
-          plan: selectedPlan,
-          status: restaurantStatus,
-          trial_ends_at: trialEndsAtValue,
+          plan: null,
+          status: "pending",
+          trial_ends_at: null,
           onboarding_completed: true,
         })
         .select("id")
@@ -296,7 +271,7 @@ export default function EntrarClient() {
           border-radius: 24px;
           padding: 28px;
           box-shadow: 0 20px 60px rgba(0,0,0,0.08);
-          height: 820px;
+          height: 720px;
           overflow: hidden;
           display: flex;
           flex-direction: column;
@@ -601,85 +576,6 @@ export default function EntrarClient() {
           }
         }
 
-        /* ── Plan cards ──────────────────────────────────── */
-        .plan-cards-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr 1fr;
-          gap: 6px;
-        }
-
-        .plan-card {
-          position: relative;
-          background: #fff;
-          border: 1px solid rgba(0,0,0,0.1);
-          border-radius: 12px;
-          padding: 12px 6px 10px;
-          cursor: pointer;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 3px;
-          transition: border-color 0.2s, background 0.2s;
-          text-align: center;
-          min-height: 72px;
-          user-select: none;
-        }
-
-        .plan-card:hover {
-          border-color: var(--plan-color);
-        }
-
-        .plan-card--selected {
-          border: 2px solid var(--plan-color);
-          background: var(--plan-bg);
-        }
-
-        .plan-badge {
-          position: absolute;
-          top: -9px;
-          left: 50%;
-          transform: translateX(-50%);
-          font-size: 8px;
-          font-weight: 800;
-          color: #fff;
-          padding: 2px 6px;
-          border-radius: 999px;
-          white-space: nowrap;
-          letter-spacing: 0.3px;
-        }
-
-        .plan-check {
-          position: absolute;
-          top: 5px;
-          right: 7px;
-          font-size: 11px;
-          font-weight: 900;
-          line-height: 1;
-        }
-
-        .plan-name {
-          font-weight: 800;
-          font-size: 13px;
-          margin-top: 4px;
-        }
-
-        .plan-price {
-          font-size: 10px;
-          color: #666;
-          line-height: 1.3;
-        }
-
-        @media (max-width: 639px) {
-          .plan-cards-grid {
-            grid-template-columns: 1fr;
-          }
-          .plan-badge {
-            position: static;
-            transform: none;
-            align-self: flex-start;
-            margin-bottom: 2px;
-          }
-        }
       `}</style>
 
       <div className="auth-dots" />
@@ -823,31 +719,6 @@ export default function EntrarClient() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                   />
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label>Escolha seu plano</label>
-                <div className="plan-cards-grid">
-                  {PLANS.map((plan) => (
-                    <div
-                      key={plan.id}
-                      className={`plan-card${selectedPlan === plan.id ? " plan-card--selected" : ""}`}
-                      style={{ "--plan-color": plan.color, "--plan-bg": `${plan.color}0a` } as React.CSSProperties}
-                      onClick={() => setSelectedPlan(plan.id)}
-                    >
-                      {plan.badge && (
-                        <span className="plan-badge" style={{ background: plan.color }}>
-                          {plan.badge}
-                        </span>
-                      )}
-                      {selectedPlan === plan.id && (
-                        <span className="plan-check" style={{ color: plan.color }}>✓</span>
-                      )}
-                      <span className="plan-name" style={{ color: plan.color }}>{plan.name}</span>
-                      <span className="plan-price">{plan.price}</span>
-                    </div>
-                  ))}
                 </div>
               </div>
 
