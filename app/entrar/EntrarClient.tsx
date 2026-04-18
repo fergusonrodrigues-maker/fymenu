@@ -336,7 +336,7 @@ export default function EntrarClient() {
           display: flex;
           align-items: center;
           justify-content: center;
-          margin-bottom: 12px;
+          margin-bottom: 8px;
           flex-shrink: 0;
         }
 
@@ -610,8 +610,8 @@ export default function EntrarClient() {
         <div className="logo">
           <img
             src="https://rjfbavmupiypxiqzksxo.supabase.co/storage/v1/object/public/landing/fymenu-vermelha.png"
-            height={72}
-            style={{ width: "auto", maxWidth: 260, objectFit: "contain" }}
+            height={52}
+            style={{ width: "auto", maxWidth: 220, objectFit: "contain" }}
             alt="FyMenu"
           />
         </div>
