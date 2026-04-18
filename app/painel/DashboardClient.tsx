@@ -27,6 +27,7 @@ const PrinterModal = dynamic(() => import("./modals/PrinterModal"), { ssr: false
 const CrmModal = dynamic(() => import("./modals/CrmModal"), { ssr: false, loading: () => loadingFallback });
 const WhatsappModal  = dynamic(() => import("./modals/WhatsappModal"),  { ssr: false, loading: () => loadingFallback });
 const DeliveryModal  = dynamic(() => import("./modals/DeliveryModal"),  { ssr: false, loading: () => loadingFallback });
+const CriarUnidadeModal = dynamic(() => import("./modals/CriarUnidadeModal"), { ssr: false, loading: () => loadingFallback });
 const ChatWidget = dynamic(() => import("./components/ChatWidget"), { ssr: false });
 
 // ─── Modal backdrop ─────────────────────────────────────────────────────────
@@ -431,7 +432,7 @@ export default function DashboardClient({
   reportData: ReportData;
 }) {
   const router = useRouter();
-  const [modal, setModal] = useState<"analytics" | "cardapio" | "pedidos" | "financeiro" | "unidade" | "plano" | "config" | "tv" | "modotv" | "estoque" | "operacoes" | "equipe" | "impressoras" | "links" | "crm" | "whatsapp" | "delivery" | null>(null);
+  const [modal, setModal] = useState<"analytics" | "cardapio" | "pedidos" | "financeiro" | "unidade" | "plano" | "config" | "tv" | "modotv" | "estoque" | "operacoes" | "equipe" | "impressoras" | "links" | "crm" | "whatsapp" | "delivery" | "criar-unidade" | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
   const open = (m: typeof modal) => setModal(m);
   const close = () => setModal(null);
@@ -480,8 +481,10 @@ export default function DashboardClient({
 
   // Unit selector
   const [allUnits, setAllUnits] = useState<any[]>([]);
+  const [allUnitsLoaded, setAllUnitsLoaded] = useState(false);
   const [showUnitSelector, setShowUnitSelector] = useState(false);
-  const canAddUnit = allUnits.length < planMaxUnits(restaurantState.plan);
+  // Plan restriction removed for unit creation — limits only apply to publish/domain
+  const canAddUnit = true;
 
   useEffect(() => {
     async function loadNotifications() {
@@ -612,7 +615,10 @@ export default function DashboardClient({
       .select("id, name, slug, is_published")
       .eq("restaurant_id", restaurant.id)
       .order("name")
-      .then(({ data }) => { if (data) setAllUnits(data); });
+      .then(({ data }) => {
+        if (data) setAllUnits(data);
+        setAllUnitsLoaded(true);
+      });
   }, [restaurant.id]);
 
   // Close unit selector on outside click
@@ -1352,7 +1358,7 @@ export default function DashboardClient({
                       ))}
                       <button onClick={() => {
                         setShowUnitSelector(false);
-                        open("unidade");
+                        open("criar-unidade");
                       }} style={{
                         display: "flex", alignItems: "center", gap: 8,
                         width: "100%", padding: "11px 14px",
@@ -1495,8 +1501,65 @@ export default function DashboardClient({
           </div>
         )}
 
+        {/* ── Estado vazio: sem unidades ── */}
+        {unit === null && allUnitsLoaded && allUnits.length === 0 && (
+          <div style={{
+            display: "flex", alignItems: "flex-start", justifyContent: "center",
+            padding: "32px 16px 100px",
+          }}>
+            <div style={{
+              width: "100%", maxWidth: 400,
+              borderRadius: 24,
+              background: "var(--dash-card)",
+              border: "1px solid var(--dash-border)",
+              boxShadow: "var(--dash-shadow)",
+              backdropFilter: "blur(60px)",
+              WebkitBackdropFilter: "blur(60px)",
+              padding: "36px 28px 32px",
+              display: "flex", flexDirection: "column", alignItems: "center",
+              textAlign: "center", gap: 16,
+            }}>
+              <div style={{
+                width: 72, height: 72, borderRadius: "50%",
+                background: "rgba(22,163,74,0.1)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 36,
+              }}>🏪</div>
+              <div>
+                <div style={{ fontSize: 18, fontWeight: 800, color: "var(--dash-text)", marginBottom: 8, letterSpacing: "-0.3px" }}>
+                  Crie sua primeira unidade
+                </div>
+                <div style={{ fontSize: 13, color: "var(--dash-text-muted)", lineHeight: 1.6 }}>
+                  Comece adicionando seu restaurante para montar o cardápio
+                </div>
+              </div>
+              <button
+                onClick={() => open("criar-unidade")}
+                style={{
+                  padding: "14px 32px",
+                  borderRadius: 12,
+                  border: "none",
+                  background: "#16a34a",
+                  color: "#fff",
+                  fontSize: 15,
+                  fontWeight: 800,
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                  letterSpacing: "0.2px",
+                  boxShadow: "0 4px 20px rgba(22,163,74,0.25)",
+                  transition: "opacity 0.2s, transform 0.2s",
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.opacity = "0.9"; e.currentTarget.style.transform = "translateY(-1px)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.transform = "translateY(0)"; }}
+              >
+                + Criar unidade
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Grid principal */}
-        {(() => {
+        {(unit !== null || !allUnitsLoaded || allUnits.length > 0) && (() => {
           const currentPlan = restaurant.plan ?? "menu";
           const layout = GRID_LAYOUTS[currentPlan] ?? GRID_LAYOUTS.menu;
           const gridCols = isMobile ? 2 : 4;
@@ -1760,7 +1823,14 @@ export default function DashboardClient({
         <FinanceiroModal unit={unit} analytics={analytics} reportData={reportData} restaurant={restaurantState} onOpenPlano={() => open("plano")} />
       </Modal>
       <Modal open={modal === "unidade"} onClose={close} title="Unidade">
-        <UnidadeModal unit={unit} canAddUnit={canAddUnit} plan={restaurantState.plan} restaurantStatus={restaurantState.status} onClose={close} onOpenPlans={() => open("plano")} />
+        <UnidadeModal unit={unit} canAddUnit={canAddUnit} plan={restaurantState.plan} restaurantStatus={restaurantState.status} onClose={close} onOpenPlans={() => open("plano")} onOpenCreateUnit={() => { close(); open("criar-unidade"); }} />
+      </Modal>
+      <Modal open={modal === "criar-unidade"} onClose={close} title="Nova Unidade" size="sm">
+        <CriarUnidadeModal
+          restaurantId={restaurant.id}
+          onSuccess={(newUnitId) => { close(); window.location.href = `/painel?unit_id=${newUnitId}`; }}
+          onCancel={close}
+        />
       </Modal>
       <Modal open={modal === "tv"} onClose={close} title="Modo TV">
         <TVModal unit={unit} tvCount={tvCount} />

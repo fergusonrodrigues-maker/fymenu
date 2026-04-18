@@ -36,7 +36,7 @@ function CopyLinkRow({ label, url }: { label: string; url: string }) {
   );
 }
 
-export default function UnidadeModal({ unit, canAddUnit, plan, restaurantStatus, onClose, onOpenPlans }: { unit: Unit | null; canAddUnit: boolean; plan: string; restaurantStatus?: string; onClose: () => void; onOpenPlans?: () => void }) {
+export default function UnidadeModal({ unit, canAddUnit, plan, restaurantStatus, onClose, onOpenPlans, onOpenCreateUnit }: { unit: Unit | null; canAddUnit: boolean; plan: string; restaurantStatus?: string; onClose: () => void; onOpenPlans?: () => void; onOpenCreateUnit?: () => void }) {
   const [isPublished, setIsPublished] = useState(unit?.is_published ?? false);
   const [showNewUnit, setShowNewUnit] = useState(false);
 
@@ -63,7 +63,24 @@ export default function UnidadeModal({ unit, canAddUnit, plan, restaurantStatus,
   );
   const [forceStatus, setForceStatus] = useState(unit?.force_status || "auto");
 
-  if (!unit) return <div style={{ color: "var(--dash-text-muted)", paddingTop: 16 }}>Nenhuma unidade encontrada.</div>;
+  if (!unit) return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16, padding: "32px 0" }}>
+      <div style={{ fontSize: 13, color: "var(--dash-text-muted)" }}>Nenhuma unidade encontrada.</div>
+      {onOpenCreateUnit && (
+        <button
+          type="button"
+          onClick={onOpenCreateUnit}
+          style={{
+            padding: "12px 28px", borderRadius: 12, border: "none",
+            background: "#16a34a", color: "#fff",
+            fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
+          }}
+        >
+          + Criar unidade
+        </button>
+      )}
+    </div>
+  );
 
   const hasActivePlan =
     !!plan &&
@@ -122,6 +139,26 @@ export default function UnidadeModal({ unit, canAddUnit, plan, restaurantStatus,
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingTop: 8 }}>
+
+      {/* ── Nova unidade ── */}
+      {onOpenCreateUnit && (
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 4 }}>
+          <button
+            type="button"
+            onClick={onOpenCreateUnit}
+            style={{
+              padding: "8px 16px", borderRadius: 10, border: "1px solid rgba(22,163,74,0.3)",
+              background: "rgba(22,163,74,0.08)", color: "#16a34a",
+              fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+              transition: "background 0.15s",
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(22,163,74,0.14)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(22,163,74,0.08)"; }}
+          >
+            + Nova unidade
+          </button>
+        </div>
+      )}
 
       {/* SEÇÃO 1 — Informações da unidade */}
       <div style={{ marginBottom: 16 }}>
