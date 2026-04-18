@@ -278,7 +278,7 @@ export default function EntrarClient() {
           border-radius: 24px;
           padding: 24px 28px 28px;
           box-shadow: 0 20px 60px rgba(0,0,0,0.08);
-          height: 640px;
+          height: 700px;
           overflow: hidden;
           display: flex;
           flex-direction: column;
