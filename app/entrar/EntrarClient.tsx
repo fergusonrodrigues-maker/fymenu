@@ -276,9 +276,9 @@ export default function EntrarClient() {
           background: rgba(255,255,255,0.85);
           border: 1px solid rgba(0,0,0,0.06);
           border-radius: 24px;
-          padding: 24px 28px 28px;
+          padding: 28px;
           box-shadow: 0 20px 60px rgba(0,0,0,0.08);
-          height: 700px;
+          height: 720px;
           overflow: hidden;
           display: flex;
           flex-direction: column;
@@ -291,6 +291,7 @@ export default function EntrarClient() {
           }
           .fields-area {
             flex: unset;
+            overflow-y: visible;
           }
         }
 
@@ -300,7 +301,7 @@ export default function EntrarClient() {
           background: rgba(0,0,0,0.05);
           border-radius: 999px;
           padding: 4px;
-          margin-bottom: 20px;
+          margin-bottom: 16px;
           gap: 2px;
           flex-shrink: 0;
         }
@@ -335,7 +336,7 @@ export default function EntrarClient() {
           display: flex;
           align-items: center;
           justify-content: center;
-          margin-bottom: 8px;
+          margin-bottom: 12px;
           flex-shrink: 0;
         }
 
@@ -358,7 +359,7 @@ export default function EntrarClient() {
           font-size: 12px;
           color: rgba(0,0,0,0.55);
           text-align: center;
-          margin-bottom: 16px;
+          margin-bottom: 20px;
           text-shadow: none;
           flex-shrink: 0;
           animation: auth-fade 150ms ease-out both;
@@ -369,7 +370,8 @@ export default function EntrarClient() {
           flex: 1;
           display: flex;
           flex-direction: column;
-          overflow: hidden;
+          overflow-y: auto;
+          min-height: 0;
           animation: auth-fields-in-right 220ms ease-out both;
         }
 
@@ -386,12 +388,13 @@ export default function EntrarClient() {
         /* ── CTA footer (always fixed at bottom) ─────────── */
         .cta-footer {
           flex-shrink: 0;
-          padding-top: 4px;
+          margin-top: 16px;
         }
 
         /* ── Form fields ─────────────────────────────────── */
         .form-group {
-          margin-bottom: 12px;
+          margin-bottom: 0;
+          flex-shrink: 0;
         }
 
         .form-group label {
@@ -644,7 +647,7 @@ export default function EntrarClient() {
 
           {/* LOGIN fields (no submit button — shared CTA below) */}
           {modo === "login" && (
-            <form id="auth-form" onSubmit={handleLogin} style={{ display: "grid", gap: 0 }}>
+            <form id="auth-form" onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               <div className="form-group">
                 <label>Email</label>
                 <div className="input-wrapper">
@@ -681,7 +684,7 @@ export default function EntrarClient() {
 
           {/* SIGNUP fields (no submit button — shared CTA below) */}
           {modo === "criar" && (
-            <form id="auth-form" onSubmit={handleSignup} style={{ display: "grid", gap: 0 }}>
+            <form id="auth-form" onSubmit={handleSignup} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               <div className="form-group">
                 <label>Email</label>
                 <div className="input-wrapper">
