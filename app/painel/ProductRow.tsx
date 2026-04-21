@@ -51,7 +51,7 @@ function StockBadge({ product }: { product: Product }) {
   const min = product.stock_minimum ?? 10;
   if (stock === 0) return <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 6, background: "rgba(248,113,113,0.15)", color: "#f87171", fontWeight: 700 }}>Sem estoque</span>;
   if (stock <= min) return <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 6, background: "rgba(251,191,36,0.15)", color: "#fbbf24", fontWeight: 700 }}>{stock} restantes</span>;
-  return <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 6, background: "rgba(0,255,174,0.10)", color: "#00ffae", fontWeight: 700 }}>{stock} em estoque</span>;
+  return <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 6, background: "rgba(0,255,174,0.10)", color: "var(--dash-accent)", fontWeight: 700 }}>{stock} em estoque</span>;
 }
 
 function RecipeSection({ productId, unitId, basePrice }: { productId: string; unitId: string; basePrice: number }) {
@@ -122,7 +122,7 @@ function RecipeSection({ productId, unitId, basePrice }: { productId: string; un
   const available = inventoryItems.filter(i => !usedIds.includes(i.id));
 
   return (
-    <div style={{ marginTop: 16, padding: 14, borderRadius: 14, background: "rgba(255,255,255,0.02)", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.1) inset" }}>
+    <div style={{ marginTop: 16, padding: 14, borderRadius: 14, background: "var(--dash-card-subtle)", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.1) inset" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
         <div style={{ fontSize: 12, fontWeight: 700, color: "var(--dash-text)" }}>📋 Ficha Técnica</div>
         <button onClick={() => setShowAdd(!showAdd)} style={{
@@ -141,7 +141,7 @@ function RecipeSection({ productId, unitId, basePrice }: { productId: string; un
             <div style={{ fontSize: 13, fontWeight: 800, color: "var(--dash-accent)" }}>{fmtBRL(Math.round(margin))}</div>
             <div style={{ fontSize: 9, color: "var(--dash-text-muted)" }}>Margem</div>
           </div>
-          <div style={{ padding: "8px 10px", borderRadius: 10, background: "rgba(255,255,255,0.04)", textAlign: "center" }}>
+          <div style={{ padding: "8px 10px", borderRadius: 10, background: "var(--dash-card-hover)", textAlign: "center" }}>
             <div style={{ fontSize: 13, fontWeight: 800, color: parseFloat(marginPercent) >= 60 ? "var(--dash-accent)" : parseFloat(marginPercent) >= 30 ? "#fbbf24" : "#f87171" }}>
               {marginPercent}%
             </div>
@@ -160,10 +160,10 @@ function RecipeSection({ productId, unitId, basePrice }: { productId: string; un
             ))}
           </select>
           <input type="number" step="0.001" placeholder="Qtd" value={quantity} onChange={e => setQuantity(e.target.value)}
-            style={{ width: 70, padding: "8px 10px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "none", color: "var(--dash-text)", fontSize: 12, outline: "none" }} />
+            style={{ width: 70, padding: "8px 10px", borderRadius: 10, background: "var(--dash-card-hover)", border: "none", color: "var(--dash-text)", fontSize: 12, outline: "none" }} />
           <button onClick={handleAddRecipe} disabled={!selectedItem || !quantity} style={{
             padding: "8px 12px", borderRadius: 10, border: "none", cursor: "pointer",
-            background: "rgba(0,255,174,0.1)", color: "var(--dash-accent)", fontSize: 11, fontWeight: 700,
+            background: "var(--dash-accent-soft)", color: "var(--dash-accent)", fontSize: 11, fontWeight: 700,
             opacity: !selectedItem || !quantity ? 0.4 : 1,
           }}>✓</button>
           <button onClick={() => setShowAdd(false)} style={{
@@ -193,7 +193,7 @@ function RecipeSection({ productId, unitId, basePrice }: { productId: string; un
             return (
               <div key={r.id} style={{
                 display: "flex", alignItems: "center", gap: 8, padding: "6px 10px",
-                borderRadius: 10, background: "rgba(255,255,255,0.02)",
+                borderRadius: 10, background: "var(--dash-card-subtle)",
               }}>
                 <div style={{ flex: 1 }}>
                   <span style={{ fontSize: 12, color: "var(--dash-text)", fontWeight: 600 }}>{item?.name || "?"}</span>
@@ -202,7 +202,7 @@ function RecipeSection({ productId, unitId, basePrice }: { productId: string; un
                   type="number" step="0.001"
                   defaultValue={r.quantity}
                   onBlur={(e) => handleUpdateQuantity(r.id, e.target.value)}
-                  style={{ width: 60, padding: "3px 6px", borderRadius: 6, background: "rgba(255,255,255,0.04)", border: "none", color: "var(--dash-text)", fontSize: 11, outline: "none", textAlign: "center" }}
+                  style={{ width: 60, padding: "3px 6px", borderRadius: 6, background: "var(--dash-card-hover)", border: "none", color: "var(--dash-text)", fontSize: 11, outline: "none", textAlign: "center" }}
                 />
                 <span style={{ fontSize: 10, color: "var(--dash-text-muted)", width: 24 }}>{item?.unit_measure}</span>
                 <span style={{ fontSize: 11, color: "#f87171", fontWeight: 600, width: 60, textAlign: "right" }}>{fmtBRL(Math.round(itemCost))}</span>
@@ -312,15 +312,15 @@ export default function ProductRow({
   }
 
   return (
-    <div className="modal-neon-card" style={{ borderRadius: 12, marginBottom: 8, overflow: "hidden", background: "rgba(255,255,255,0.03)" }}>
+    <div className="modal-neon-card" style={{ borderRadius: 12, marginBottom: 8, overflow: "hidden", background: "var(--dash-card-subtle)" }}>
       {/* Header row */}
       <div onClick={onToggle} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", cursor: "pointer" }}>
-        <div style={{ width: 44, height: 44, borderRadius: 8, background: "rgba(255,255,255,0.06)", flexShrink: 0, overflow: "hidden" }}>
+        <div style={{ width: 44, height: 44, borderRadius: 8, background: "var(--dash-card-hover)", flexShrink: 0, overflow: "hidden" }}>
           {thumbnailUrl && <img src={thumbnailUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontWeight: 600, fontSize: 14, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{product.name}</div>
-          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 2, display: "flex", alignItems: "center", gap: 6 }}>
+          <div style={{ fontWeight: 600, fontSize: 14, color: "var(--dash-text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{product.name}</div>
+          <div style={{ fontSize: 12, color: "var(--dash-text-muted)", marginTop: 2, display: "flex", alignItems: "center", gap: 6 }}>
             {product.price_type === "variable" ? "Preço variável" : product.base_price ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(product.base_price / 100) : "Sem preço"}
             <StockBadge product={product} />
           </div>
@@ -354,16 +354,16 @@ export default function ProductRow({
             </div>
           </div>
         </label>
-        <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 14, flexShrink: 0 }}>{expanded ? "▲" : "▼"}</span>
+        <span style={{ color: "var(--dash-text-subtle)", fontSize: 14, flexShrink: 0 }}>{expanded ? "▲" : "▼"}</span>
       </div>
 
       {/* Expanded */}
       {expanded && (
-        <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+        <div style={{ borderTop: "1px solid var(--dash-border)" }}>
           {/* Tabs */}
-          <div style={{ display: "flex", gap: 0, borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+          <div style={{ display: "flex", gap: 0, borderBottom: "1px solid var(--dash-border)" }}>
             {(["info", "estoque", "nutricao"] as const).map((t) => (
-              <button key={t} onClick={() => setActiveTab(t)} style={{ flex: 1, padding: "10px 0", background: "none", border: "none", cursor: "pointer", fontSize: 12, fontWeight: activeTab === t ? 700 : 500, color: activeTab === t ? "#00ffae" : "rgba(255,255,255,0.4)", borderBottom: activeTab === t ? "2px solid #00ffae" : "2px solid transparent" }}>
+              <button key={t} onClick={() => setActiveTab(t)} style={{ flex: 1, padding: "10px 0", background: "none", border: "none", cursor: "pointer", fontSize: 12, fontWeight: activeTab === t ? 700 : 500, color: activeTab === t ? "var(--dash-accent)" : "var(--dash-text-muted)", borderBottom: activeTab === t ? "2px solid var(--dash-accent)" : "2px solid transparent" }}>
                 {t === "info" ? "Info" : t === "estoque" ? "Estoque" : "Nutrição"}
               </button>
             ))}
@@ -405,12 +405,12 @@ export default function ProductRow({
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                     {descriptionSource && (
-                      <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 6, background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.45)" }}>
+                      <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 6, background: "var(--dash-card-hover)", color: "var(--dash-text-muted)" }}>
                         {descriptionSource === "AI_GENERATED" ? "✨ IA" : descriptionSource === "HYBRID" ? "🔄 Híbrida" : "✏️ Manual"}
                       </span>
                     )}
                   </div>
-                  <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>{description.length}/150</span>
+                  <span style={{ fontSize: 11, color: "var(--dash-text-subtle)" }}>{description.length}/150</span>
                 </div>
                 <AIButton
                   label="Gerar descrição com IA"
@@ -422,12 +422,12 @@ export default function ProductRow({
                   size="md"
                 />
                 {!thumbnailUrl && (
-                  <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", margin: 0 }}>Adicione uma foto para gerar descrição com IA</p>
+                  <p style={{ fontSize: 11, color: "var(--dash-text-subtle)", margin: 0 }}>Adicione uma foto para gerar descrição com IA</p>
                 )}
               </div>
               {/* Tipo de preço — toggle buttons */}
               <div>
-                <div style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.4)", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.04em" }}>Tipo de preço</div>
+                <div style={{ fontSize: 10, fontWeight: 600, color: "var(--dash-text-muted)", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.04em" }}>Tipo de preço</div>
                 <div style={{ display: "flex", gap: 4 }}>
                   {[
                     { value: "fixed", label: "💰 Preço único" },
@@ -439,8 +439,8 @@ export default function ProductRow({
                       onClick={() => { setPriceType(opt.value); setVariationsLoaded(false); }}
                       style={{
                         flex: 1, padding: "8px 10px", borderRadius: 10, border: "none", cursor: "pointer",
-                        background: priceType === opt.value ? "rgba(0,255,174,0.12)" : "rgba(255,255,255,0.05)",
-                        color: priceType === opt.value ? "#00ffae" : "rgba(255,255,255,0.45)",
+                        background: priceType === opt.value ? "var(--dash-accent-soft)" : "var(--dash-card-hover)",
+                        color: priceType === opt.value ? "var(--dash-accent)" : "var(--dash-text-muted)",
                         fontSize: 12, fontWeight: 600, transition: "all 0.15s",
                       }}
                     >{opt.label}</button>
@@ -453,7 +453,7 @@ export default function ProductRow({
               {/* Preço único */}
               {priceType === "fixed" && (
                 <div style={{ position: "relative" }}>
-                  <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,0.4)", fontSize: 13, fontWeight: 700 }}>R$</span>
+                  <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--dash-text-muted)", fontSize: 13, fontWeight: 700 }}>R$</span>
                   <input
                     name="base_price"
                     type="text"
@@ -474,7 +474,7 @@ export default function ProductRow({
               {/* Variações */}
               {priceType === "variable" && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  <div style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                  <div style={{ fontSize: 10, fontWeight: 600, color: "var(--dash-text-muted)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
                     Variações ({variations.length})
                   </div>
 
@@ -482,13 +482,13 @@ export default function ProductRow({
                     <div key={v.id ?? i} style={{
                       display: "flex", alignItems: "center", gap: 6,
                       padding: "8px 10px", borderRadius: 10,
-                      background: "rgba(255,255,255,0.04)",
-                      border: "1px solid rgba(255,255,255,0.08)",
+                      background: "var(--dash-card-hover)",
+                      border: "1px solid var(--dash-border)",
                     }}>
                       {/* Ordem */}
                       <span style={{
                         width: 18, height: 18, borderRadius: 5,
-                        background: "rgba(0,255,174,0.12)", color: "#00ffae",
+                        background: "var(--dash-accent-soft)", color: "var(--dash-accent)",
                         display: "flex", alignItems: "center", justifyContent: "center",
                         fontSize: 9, fontWeight: 800, flexShrink: 0,
                       }}>{i + 1}</span>
@@ -503,7 +503,7 @@ export default function ProductRow({
 
                       {/* Preço */}
                       <div style={{ display: "flex", alignItems: "center", gap: 2, flexShrink: 0 }}>
-                        <span style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>R$</span>
+                        <span style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>R$</span>
                         <input
                           type="text"
                           inputMode="numeric"
@@ -515,7 +515,7 @@ export default function ProductRow({
                             const cents = parseInt(digits || "0", 10);
                             setVariations(variations.map((x, j) => j === i ? { ...x, price: cents } : x));
                           }}
-                          style={{ ...inputStyle, width: 70, fontSize: 13, fontWeight: 700, padding: "5px 8px", textAlign: "right", color: "#00ffae" }}
+                          style={{ ...inputStyle, width: 70, fontSize: 13, fontWeight: 700, padding: "5px 8px", textAlign: "right", color: "var(--dash-accent)" }}
                         />
                       </div>
 
@@ -538,7 +538,7 @@ export default function ProductRow({
                     onClick={() => setVariations([...variations, { name: "", price: 0 }])}
                     style={{
                       padding: "9px 0", background: "transparent",
-                      color: "rgba(255,255,255,0.4)", border: "1px dashed rgba(255,255,255,0.12)",
+                      color: "var(--dash-text-muted)", border: "1px dashed var(--dash-border)",
                       borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 600,
                     }}
                   >+ Adicionar variação</button>
@@ -573,7 +573,7 @@ export default function ProductRow({
                   <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                     {videoUrl ? (
                       <div style={{ display: "flex", alignItems: "center", gap: 6, position: "relative" }}>
-                        <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>🎬 {videoUrl.split("/").pop()}</span>
+                        <span style={{ fontSize: 12, color: "var(--dash-text-dim)", maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>🎬 {videoUrl.split("/").pop()}</span>
                         <button type="button" onClick={() => setVideoUrl("")} style={{
                           width: 22, height: 22, borderRadius: "50%",
                           background: "#ef4444", color: "#fff", border: "none",
@@ -595,7 +595,7 @@ export default function ProductRow({
               {sectionConfig.allows_alcoholic && (
                 <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
                   <input type="checkbox" checked={isAlcoholic} onChange={e => setIsAlcoholic(e.target.checked)} style={{ accentColor: "#FF6B00" }} />
-                  <span style={{ color: "rgba(255,255,255,0.6)", fontSize: 13 }}>
+                  <span style={{ color: "var(--dash-text-secondary)", fontSize: 13 }}>
                     {section === "drinks" ? "Drink alcoólico" : "Bebida alcoólica"}
                   </span>
                 </label>
@@ -605,7 +605,7 @@ export default function ProductRow({
 
               {/* Upsell mode */}
               <div>
-                <div style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.4)", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.04em" }}>Upsell</div>
+                <div style={{ fontSize: 10, fontWeight: 600, color: "var(--dash-text-muted)", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.04em" }}>Upsell</div>
                 <div style={{ display: "flex", gap: 4 }}>
                   {[
                     { value: "auto", label: "✨ Auto (IA)" },
@@ -615,8 +615,8 @@ export default function ProductRow({
                     <button key={opt.value} type="button" onClick={() => setUpsellMode(opt.value)}
                       style={{
                         flex: 1, padding: "7px 6px", borderRadius: 9, border: "none", cursor: "pointer",
-                        background: upsellMode === opt.value ? "rgba(0,255,174,0.12)" : "rgba(255,255,255,0.05)",
-                        color: upsellMode === opt.value ? "#00ffae" : "rgba(255,255,255,0.45)",
+                        background: upsellMode === opt.value ? "var(--dash-accent-soft)" : "var(--dash-card-hover)",
+                        color: upsellMode === opt.value ? "var(--dash-accent)" : "var(--dash-text-muted)",
                         fontSize: 11, fontWeight: 600, transition: "all 0.15s",
                       }}
                     >{opt.label}</button>
@@ -626,7 +626,7 @@ export default function ProductRow({
 
               {/* Disponibilidade */}
               <div>
-                <div style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.4)", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.04em" }}>Disponível em</div>
+                <div style={{ fontSize: 10, fontWeight: 600, color: "var(--dash-text-muted)", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.04em" }}>Disponível em</div>
                 <div style={{ display: "flex", gap: 4 }}>
                   {[
                     { value: "both", label: "📋 Ambos" },
@@ -636,8 +636,8 @@ export default function ProductRow({
                     <button key={opt.value} type="button" onClick={() => setAvailMode(opt.value)}
                       style={{
                         flex: 1, padding: "7px 6px", borderRadius: 9, border: "none", cursor: "pointer",
-                        background: availMode === opt.value ? "rgba(0,255,174,0.12)" : "rgba(255,255,255,0.05)",
-                        color: availMode === opt.value ? "#00ffae" : "rgba(255,255,255,0.45)",
+                        background: availMode === opt.value ? "var(--dash-accent-soft)" : "var(--dash-card-hover)",
+                        color: availMode === opt.value ? "var(--dash-accent)" : "var(--dash-text-muted)",
                         fontSize: 11, fontWeight: 600, transition: "all 0.15s",
                       }}
                     >{opt.label}</button>
@@ -659,7 +659,7 @@ export default function ProductRow({
               {hasRecipeFeature && unitId ? (
                 <RecipeSection productId={product.id} unitId={unitId} basePrice={product.base_price || 0} />
               ) : (
-                <div style={{ marginTop: 12, padding: 12, borderRadius: 12, background: "rgba(255,255,255,0.02)", textAlign: "center" }}>
+                <div style={{ marginTop: 12, padding: 12, borderRadius: 12, background: "var(--dash-card-subtle)", textAlign: "center" }}>
                   <span style={{ fontSize: 14 }}>🔒</span>
                   <div style={{ fontSize: 11, color: "var(--dash-text-muted)", marginTop: 4 }}>Ficha técnica disponível no plano Business</div>
                 </div>
@@ -683,10 +683,10 @@ export default function ProductRow({
 
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0" }}>
                 <div>
-                  <div style={{ color: "#fff", fontSize: 13, fontWeight: 600 }}>Estoque ilimitado</div>
-                  <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 11 }}>Sem controle de quantidade</div>
+                  <div style={{ color: "var(--dash-text)", fontSize: 13, fontWeight: 600 }}>Estoque ilimitado</div>
+                  <div style={{ color: "var(--dash-text-muted)", fontSize: 11 }}>Sem controle de quantidade</div>
                 </div>
-                <button type="button" onClick={() => setUnlimitedStock(!unlimitedStock)} style={{ width: 44, height: 26, borderRadius: 13, background: unlimitedStock ? "var(--dash-accent)" : "rgba(255,255,255,0.15)", border: "none", cursor: "pointer", position: "relative", transition: "background 0.2s", flexShrink: 0 }}>
+                <button type="button" onClick={() => setUnlimitedStock(!unlimitedStock)} style={{ width: 44, height: 26, borderRadius: 13, background: unlimitedStock ? "var(--dash-accent)" : "var(--dash-card-border)", border: "none", cursor: "pointer", position: "relative", transition: "background 0.2s", flexShrink: 0 }}>
                   <span style={{ display: "block", width: 20, height: 20, borderRadius: "50%", background: "#fff", position: "absolute", top: 3, left: 3, transition: "transform 0.2s", transform: unlimitedStock ? "translateX(18px)" : "translateX(0)" }} />
                 </button>
               </div>
@@ -721,7 +721,7 @@ export default function ProductRow({
             >
               <input type="hidden" name="id" value={product.id} />
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 2 }}>
-                <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 11 }}>Informações nutricionais por porção</span>
+                <span style={{ color: "var(--dash-text-muted)", fontSize: 11 }}>Informações nutricionais por porção</span>
                 <AIButton
                   label="Sugestão IA"
                   loadingLabel="Calculando..."
@@ -790,18 +790,18 @@ export default function ProductRow({
 
 const inputStyle: React.CSSProperties = {
   width: "100%", padding: 10, borderRadius: 8,
-  border: "1px solid rgba(255,255,255,0.1)",
-  background: "rgba(255,255,255,0.05)",
-  color: "#fff", fontSize: 16, outline: "none", boxSizing: "border-box",
+  border: "1px solid var(--dash-border)",
+  background: "var(--dash-card-hover)",
+  color: "var(--dash-text)", fontSize: 16, outline: "none", boxSizing: "border-box",
 };
 
 const labelStyle: React.CSSProperties = {
-  display: "block", fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 6, fontWeight: 500,
+  display: "block", fontSize: 12, color: "var(--dash-text-muted)", marginBottom: 6, fontWeight: 500,
 };
 
 const uploadBtnStyle: React.CSSProperties = {
-  padding: "8px 14px", background: "rgba(255,255,255,0.08)", color: "#fff",
-  border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, fontSize: 13,
+  padding: "8px 14px", background: "var(--dash-card-hover)", color: "var(--dash-text)",
+  border: "1px solid var(--dash-border)", borderRadius: 8, fontSize: 13,
   cursor: "pointer", whiteSpace: "nowrap",
 };
 
