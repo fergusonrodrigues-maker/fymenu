@@ -436,10 +436,24 @@ function ManagePanel({
               <button
                 onClick={() => toggleFreeAccess(!freeAccess)}
                 disabled={saving === "free"}
-                className="relative w-11 h-6 rounded-full transition-colors"
-                style={{ background: freeAccess ? "#00ffae" : "rgba(255,255,255,0.12)" }}
+                className="relative rounded-full flex-shrink-0"
+                style={{
+                  width: 44, height: 24,
+                  background: freeAccess ? "#00ffae" : "#3a3a3a",
+                  transition: "background 0.25s cubic-bezier(0.4,0,0.2,1)",
+                  cursor: "pointer",
+                }}
               >
-                <span className={`absolute top-0.5 w-5 h-5 rounded-full shadow transition-transform ${freeAccess ? "translate-x-5" : "translate-x-0.5"}`} style={{ background: freeAccess ? "#050505" : "rgba(255,255,255,0.7)" }} />
+                <span
+                  className="absolute rounded-full"
+                  style={{
+                    top: 2, width: 20, height: 20,
+                    background: "#fff",
+                    boxShadow: "0 2px 4px rgba(0,0,0,0.3)",
+                    transform: freeAccess ? "translateX(20px)" : "translateX(2px)",
+                    transition: "transform 0.25s cubic-bezier(0.4,0,0.2,1)",
+                  }}
+                />
               </button>
             </label>
             <p className="text-xs text-gray-600 mt-1">Quando ativado, seta status = active e marca free_access = true</p>
@@ -465,10 +479,24 @@ function ManagePanel({
                     <span className="text-sm text-gray-300 font-mono">{feat}</span>
                     <button
                       onClick={() => toggleFeature(feat, !localFeatures[feat])}
-                      className="relative w-10 h-5 rounded-full transition-colors"
-                      style={{ background: localFeatures[feat] ? "#00ffae" : "rgba(255,255,255,0.12)" }}
+                      className="relative rounded-full flex-shrink-0"
+                      style={{
+                        width: 44, height: 24,
+                        background: localFeatures[feat] ? "#00ffae" : "#3a3a3a",
+                        transition: "background 0.25s cubic-bezier(0.4,0,0.2,1)",
+                        cursor: "pointer",
+                      }}
                     >
-                      <span className={`absolute top-0.5 w-4 h-4 rounded-full shadow transition-transform ${localFeatures[feat] ? "translate-x-5" : "translate-x-0.5"}`} style={{ background: localFeatures[feat] ? "#050505" : "rgba(255,255,255,0.7)" }} />
+                      <span
+                        className="absolute rounded-full"
+                        style={{
+                          top: 2, width: 20, height: 20,
+                          background: "#fff",
+                          boxShadow: "0 2px 4px rgba(0,0,0,0.3)",
+                          transform: localFeatures[feat] ? "translateX(20px)" : "translateX(2px)",
+                          transition: "transform 0.25s cubic-bezier(0.4,0,0.2,1)",
+                        }}
+                      />
                     </button>
                   </label>
                 ))}
