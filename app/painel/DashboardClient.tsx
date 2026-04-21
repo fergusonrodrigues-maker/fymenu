@@ -440,6 +440,7 @@ export default function DashboardClient({
   // ── Plan gate state ──
   const [deniedCardId, setDeniedCardId] = useState<string | null>(null);
   const [upgradePopup, setUpgradePopup] = useState<{ moduleId: string; icon: string } | null>(null);
+  const [highlightPlan, setHighlightPlan] = useState<string | null>(null);
 
   const trialDays = Math.max(0, Math.ceil((new Date(restaurant.trial_ends_at).getTime() - Date.now()) / 86400000));
   const [restaurantState, setRestaurantState] = useState<Restaurant>(restaurant);
@@ -1497,7 +1498,7 @@ export default function DashboardClient({
             <div style={{ color: "var(--dash-danger)", fontSize: 13, fontWeight: 600 }}>
               🔒 Seu cardápio está offline. Assine um plano para publicar.
             </div>
-            <button onClick={() => router.push("/painel/planos")} style={{ padding: "6px 14px", borderRadius: 8, border: "none", background: "var(--dash-danger-soft)", color: "var(--dash-danger)", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>Ver planos</button>
+            <button onClick={() => open("plano")} style={{ padding: "6px 14px", borderRadius: 8, border: "none", background: "var(--dash-danger-soft)", color: "var(--dash-danger)", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>Ver planos</button>
           </div>
         )}
 
@@ -1839,7 +1840,7 @@ export default function DashboardClient({
         {unit && <ModoTVModal unit={unit} onClose={close} />}
       </Modal>
       <Modal open={modal === "plano"} onClose={close} title="Plano">
-        <PlanoModal restaurant={restaurantState} trialDays={trialDays} onUpgrade={() => { close(); router.push("/painel/planos"); }} onClose={close} />
+        <PlanoModal restaurant={restaurantState} highlightPlan={highlightPlan} trialDays={trialDays} onUpgrade={() => { close(); router.push("/painel/planos"); }} onClose={() => { close(); setHighlightPlan(null); }} />
       </Modal>
       <Modal open={modal === "config"} onClose={close} title="Configurações" size="lg">
         <ConfigModal profile={profile} restaurant={restaurantState} />
@@ -1931,7 +1932,7 @@ export default function DashboardClient({
           moduleId={upgradePopup.moduleId}
           icon={upgradePopup.icon}
           onClose={() => setUpgradePopup(null)}
-          onViewPlans={() => { setUpgradePopup(null); open("plano"); }}
+          onViewPlans={() => { const info = MODULE_INFO[upgradePopup.moduleId]; const key = info?.plan === "Business" ? "business" : info?.plan === "MenuPro" ? "menupro" : null; setHighlightPlan(key); setUpgradePopup(null); open("plano"); }}
         />
       )}
       <ChatWidget

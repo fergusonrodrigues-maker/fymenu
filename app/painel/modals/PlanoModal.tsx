@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
 import { Restaurant } from "../types";
 
 type Cycle = "monthly" | "quarterly" | "semiannual";
@@ -83,10 +84,20 @@ const PLANS = [
   },
 ];
 
+interface Coupon {
+  coupon_code: string;
+  discount_type: string | null;
+  trial_extra_days: number;
+  discount_value: number | null;
+}
+
 export default function PlanoModal({
   restaurant,
+  highlightPlan,
+  onClose,
 }: {
   restaurant: Restaurant;
+  highlightPlan?: string | null;
   trialDays?: number;
   onUpgrade?: () => void;
   onClose?: () => void;
@@ -94,6 +105,8 @@ export default function PlanoModal({
   const [planCycle, setPlanCycle] = useState<Cycle>("quarterly");
   const [planLoading, setPlanLoading] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
 
   const currentPlan = (restaurant?.plan as string | null) ?? null;
   const hasActivePlan =
@@ -102,15 +115,34 @@ export default function PlanoModal({
       restaurant?.status === "trial" ||
       restaurant?.free_access);
 
+  // Load coupons from partner_referrals
+  useEffect(() => {
+    const supabase = createClient();
+    supabase
+      .from("partner_referrals")
+      .select("coupon_code, partner_coupons(discount_type, trial_extra_days, discount_value)")
+      .eq("restaurant_id", restaurant.id)
+      .eq("status", "active")
+      .then(({ data }) => {
+        if (data) {
+          setCoupons(data.map((d: any) => ({
+            coupon_code: d.coupon_code,
+            discount_type: d.partner_coupons?.discount_type ?? null,
+            trial_extra_days: d.partner_coupons?.trial_extra_days ?? 0,
+            discount_value: d.partner_coupons?.discount_value ?? null,
+          })));
+        }
+      });
+  }, [restaurant.id]);
+
+  const trialExtensionDays = coupons
+    .filter((c) => c.discount_type === "trial_extension")
+    .reduce((sum, c) => sum + c.trial_extra_days, 0);
+
   async function handleSelectPlan(planKey: string) {
     setPlanLoading(true);
     try {
-      const endpoint =
-        planKey === "menu" && !hasActivePlan
-          ? "/api/plan/activate"
-          : "/api/plan/checkout";
-
-      const res = await fetch(endpoint, {
+      const res = await fetch("/api/plan/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -124,9 +156,33 @@ export default function PlanoModal({
         const data = await res.json();
         if (data.checkoutUrl) {
           window.location.href = data.checkoutUrl;
-        } else {
-          window.location.reload();
+          return;
         }
+
+        // Apply trial_extension coupons for business plan
+        if (planKey === "business" && trialExtensionDays > 0) {
+          const supabase = createClient();
+          const { data: rest } = await supabase
+            .from("restaurants")
+            .select("trial_ends_at")
+            .eq("id", restaurant.id)
+            .single();
+          if (rest?.trial_ends_at) {
+            const extended = new Date(rest.trial_ends_at);
+            extended.setDate(extended.getDate() + trialExtensionDays);
+            await supabase
+              .from("restaurants")
+              .update({ trial_ends_at: extended.toISOString() })
+              .eq("id", restaurant.id);
+          }
+        }
+
+        const msg =
+          planKey === "business"
+            ? `Trial Business ativado! ${7 + trialExtensionDays} dias grátis iniciados 🎉`
+            : "Plano ativado com sucesso!";
+        setToast(msg);
+        setTimeout(() => window.location.reload(), 2200);
       } else {
         const err = await res.json().catch(() => ({}));
         alert(err.error || "Erro ao processar plano");
@@ -143,10 +199,7 @@ export default function PlanoModal({
       const res = await fetch("/api/plan/activate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          restaurantId: restaurant.id,
-          plan: "cancel",
-        }),
+        body: JSON.stringify({ restaurantId: restaurant.id, plan: "cancel" }),
       });
       if (res.ok) {
         window.location.reload();
@@ -163,13 +216,34 @@ export default function PlanoModal({
 
   const currentPlanData = PLANS.find((p) => p.key === currentPlan);
 
+  // ── Toast overlay ──────────────────────────────────────────────────────────
+  if (toast) {
+    return (
+      <div style={{ paddingTop: 24, textAlign: "center" }}>
+        <div style={{
+          padding: "24px 28px", borderRadius: 20,
+          background: "rgba(0,255,174,0.06)", border: "1px solid rgba(0,255,174,0.18)",
+          animation: "planGoldSpin 0s",
+        }}>
+          <div style={{ fontSize: 36, marginBottom: 12 }}>🎉</div>
+          <div style={{ fontSize: 16, fontWeight: 900, color: "var(--dash-accent)", marginBottom: 8 }}>
+            {toast}
+          </div>
+          <div style={{ fontSize: 12, color: "var(--dash-text-muted)" }}>
+            Recarregando o painel...
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Cancel confirm screen ──────────────────────────────────────────────────
   if (showCancelConfirm) {
     return (
       <div style={{ paddingTop: 8 }}>
         <div style={{
           padding: 24, borderRadius: 20,
-          background: "rgba(248,113,113,0.05)",
-          border: "1px solid rgba(248,113,113,0.12)",
+          background: "rgba(248,113,113,0.05)", border: "1px solid rgba(248,113,113,0.12)",
           marginBottom: 20, textAlign: "center",
         }}>
           <div style={{ fontSize: 28, marginBottom: 12 }}>⚠️</div>
@@ -204,6 +278,39 @@ export default function PlanoModal({
 
   return (
     <div style={{ paddingTop: 8 }}>
+      <style>{`
+        @keyframes planGoldSpin {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
+        }
+        @keyframes planHighlightPulse {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(var(--plan-rgb), 0.15); }
+          50%       { box-shadow: 0 0 0 8px rgba(var(--plan-rgb), 0); }
+        }
+      `}</style>
+
+      {/* ── Coupon pills ── */}
+      {coupons.length > 0 && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 16 }}>
+          {coupons.map((c) => (
+            <span key={c.coupon_code} style={{
+              display: "inline-flex", alignItems: "center", gap: 4,
+              padding: "4px 10px", borderRadius: 999,
+              background: "rgba(0,255,174,0.08)", border: "1px solid rgba(0,255,174,0.22)",
+              color: "var(--dash-accent)", fontSize: 11, fontWeight: 700,
+            }}>
+              🎟 {c.coupon_code}
+              {c.discount_type === "trial_extension" && c.trial_extra_days > 0 && (
+                <span style={{ opacity: 0.7 }}> +{c.trial_extra_days}d</span>
+              )}
+              {c.discount_type === "percent" && c.discount_value && (
+                <span style={{ opacity: 0.7 }}> -{c.discount_value}%</span>
+              )}
+            </span>
+          ))}
+        </div>
+      )}
+
       {/* ── Status do plano atual ── */}
       <div style={{
         padding: "14px 18px", borderRadius: 16, marginBottom: 20, textAlign: "center",
@@ -242,7 +349,7 @@ export default function PlanoModal({
         border: "1px solid var(--dash-border)",
       }}>
         {[
-          { key: "monthly", label: "Mensal" },
+          { key: "monthly",   label: "Mensal" },
           { key: "quarterly", label: "Trimestral", badge: "-15%" },
           { key: "semiannual", label: "Semestral", badge: "-30%" },
         ].map((c) => (
@@ -267,13 +374,6 @@ export default function PlanoModal({
       </div>
 
       {/* ── Cards dos planos ── */}
-      <style>{`
-        @keyframes planGoldSpin {
-          from { transform: rotate(0deg); }
-          to   { transform: rotate(360deg); }
-        }
-      `}</style>
-
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         {PLANS.map((plan) => {
           const price = plan.prices[planCycle];
@@ -287,6 +387,7 @@ export default function PlanoModal({
             (currentPlan === "menu" && plan.key !== "menu") ||
             (currentPlan === "menupro" && plan.key === "business");
           const isGold = plan.key === "business";
+          const isHighlighted = !!highlightPlan && plan.key === highlightPlan && !isCurrent;
 
           return (
             <div key={plan.key} style={{
@@ -295,21 +396,26 @@ export default function PlanoModal({
               background: "rgba(255,255,255,0.04)",
               backdropFilter: "blur(40px)",
               WebkitBackdropFilter: "blur(40px)",
-              border: `${isCurrent || isGold ? "2px" : "1px"} solid ${
+              border: `${isCurrent || isGold || isHighlighted ? "2px" : "1px"} solid ${
                 isCurrent
                   ? plan.borderColor
-                  : isGold
-                    ? "rgba(212,175,55,0.3)"
-                    : "rgba(255,255,255,0.08)"
+                  : isHighlighted
+                    ? plan.borderColor
+                    : isGold
+                      ? "rgba(212,175,55,0.3)"
+                      : "rgba(255,255,255,0.08)"
               }`,
-              boxShadow: isCurrent
-                ? `0 0 40px rgba(${plan.accentRgb},0.08), 0 4px 24px rgba(0,0,0,0.2)`
-                : "0 4px 24px rgba(0,0,0,0.15)",
+              boxShadow: isHighlighted
+                ? `0 0 0 3px rgba(${plan.accentRgb},0.18), 0 8px 40px rgba(${plan.accentRgb},0.12), 0 4px 24px rgba(0,0,0,0.2)`
+                : isCurrent
+                  ? `0 0 40px rgba(${plan.accentRgb},0.08), 0 4px 24px rgba(0,0,0,0.2)`
+                  : "0 4px 24px rgba(0,0,0,0.15)",
               position: "relative",
               overflow: "hidden",
               transition: "all 0.3s ease",
               display: "flex",
               flexDirection: "column",
+              transform: isHighlighted ? "scale(1.02)" : "scale(1)",
             }}>
 
               {/* Gold animated border — Business only */}
@@ -346,20 +452,32 @@ export default function PlanoModal({
                         textTransform: "uppercase" as const, letterSpacing: "0.08em",
                         border: `1px solid ${isGold ? "rgba(212,175,55,0.3)" : `rgba(${plan.accentRgb},0.2)`}`,
                       }}>
-                        {plan.badge}
+                        {plan.key === "business" && trialExtensionDays > 0
+                          ? `${7 + trialExtensionDays} DIAS GRÁTIS`
+                          : plan.badge}
                       </span>
                     ) : null}
                   </div>
-                  {isCurrent && (
-                    <span style={{
-                      padding: "3px 10px", borderRadius: 6,
-                      background: `rgba(${plan.accentRgb},0.12)`,
-                      color: plan.accent,
-                      fontSize: 9, fontWeight: 900,
-                      textTransform: "uppercase" as const, letterSpacing: "0.08em",
-                      border: `1px solid rgba(${plan.accentRgb},0.2)`,
-                    }}>✓ Atual</span>
-                  )}
+                  <div style={{ display: "flex", gap: 6 }}>
+                    {isHighlighted && (
+                      <span style={{
+                        padding: "3px 10px", borderRadius: 6,
+                        background: `rgba(${plan.accentRgb},0.12)`,
+                        color: plan.accent, fontSize: 9, fontWeight: 900,
+                        textTransform: "uppercase" as const, letterSpacing: "0.08em",
+                        border: `1px solid rgba(${plan.accentRgb},0.2)`,
+                      }}>Recomendado</span>
+                    )}
+                    {isCurrent && (
+                      <span style={{
+                        padding: "3px 10px", borderRadius: 6,
+                        background: `rgba(${plan.accentRgb},0.12)`,
+                        color: plan.accent, fontSize: 9, fontWeight: 900,
+                        textTransform: "uppercase" as const, letterSpacing: "0.08em",
+                        border: `1px solid rgba(${plan.accentRgb},0.2)`,
+                      }}>✓ Atual</span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Icon + Name + Tagline */}
@@ -438,7 +556,7 @@ export default function PlanoModal({
                     </button>
                     {plan.trial && !hasActivePlan && (
                       <div style={{ textAlign: "center", marginTop: 8, fontSize: 10, color: "var(--dash-text-muted)" }}>
-                        7 dias grátis, cancele quando quiser
+                        {7 + trialExtensionDays} dias grátis, cancele quando quiser
                       </div>
                     )}
                   </>
