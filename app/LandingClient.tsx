@@ -675,10 +675,18 @@ export default function LandingPage() {
     }
     resize();
     window.addEventListener("resize", resize);
+    const navEl = document.querySelector(".fy-nav");
     let scrollRaf = 0;
     function onScroll() {
       if (scrollRaf) return;
-      scrollRaf = requestAnimationFrame(() => { scrollRaf = 0; updateLightSources(); });
+      scrollRaf = requestAnimationFrame(() => {
+        scrollRaf = 0;
+        updateLightSources();
+        if (navEl) {
+          if (window.scrollY > 50) navEl.classList.add("scrolled");
+          else navEl.classList.remove("scrolled");
+        }
+      });
     }
     window.addEventListener("scroll", onScroll, { passive: true });
 
@@ -1296,6 +1304,15 @@ export default function LandingPage() {
           backdrop-filter: blur(20px);
           -webkit-backdrop-filter: blur(20px);
           border: 1px solid rgba(255,255,255,0.08);
+          transition: box-shadow 0.3s ease, backdrop-filter 0.3s ease;
+        }
+        .fy-nav.scrolled {
+          backdrop-filter: blur(24px);
+          -webkit-backdrop-filter: blur(24px);
+          box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+        }
+        .landing-light .fy-nav.scrolled {
+          box-shadow: 0 4px 16px rgba(0,0,0,0.06);
         }
         .fy-nav a {
           color: rgba(255,255,255,0.8);
@@ -1303,6 +1320,7 @@ export default function LandingPage() {
           font-size: 15px;
           font-weight: 600;
           transition: color 0.2s;
+          flex-shrink: 0;
         }
         .fy-nav a:hover { color: #fff; }
 
@@ -1331,16 +1349,19 @@ export default function LandingPage() {
         }
         @media (max-width: 640px) {
           .fy-nav {
-            left: 16px;
-            right: 16px;
+            top: 12px;
+            left: 12px;
+            right: 12px;
             transform: none;
-            max-width: calc(100vw - 32px);
-            gap: 12px;
-            padding: 8px 16px;
+            width: calc(100vw - 24px);
+            max-width: calc(100vw - 24px);
+            gap: 10px;
+            padding: 8px 12px;
+            justify-content: space-between;
           }
-          .fy-nav-logo { height: 24px !important; }
-          .fy-nav a { font-size: 13px; }
-          .fy-nav .btn-primary { padding: 6px 14px !important; font-size: 11px !important; flex-shrink: 0; }
+          .fy-nav-logo { height: 22px !important; flex-shrink: 0; margin: 0 !important; }
+          .fy-nav a { font-size: 12px; font-weight: 600; flex-shrink: 0; }
+          .fy-nav .btn-primary { padding: 6px 12px !important; font-size: 11px !important; flex-shrink: 0; border-radius: 999px !important; }
         }
       `}</style>
 
@@ -1377,7 +1398,7 @@ export default function LandingPage() {
             src="https://rjfbavmupiypxiqzksxo.supabase.co/storage/v1/object/public/landing/ICON-FY-MENU-DARK.png"
             alt="FyMenu"
             className="fy-nav-logo"
-            style={{ height: 32, width: "auto", display: "block", mixBlendMode: "screen" }}
+            style={{ height: 32, width: "auto", display: "block", mixBlendMode: "screen", flexShrink: 0, margin: 0 }}
           />
           <a href="#features">Recursos</a>
           <a href="#pricing">Planos</a>
