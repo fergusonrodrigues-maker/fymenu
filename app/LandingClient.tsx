@@ -128,22 +128,26 @@ function FeatureCard({
   title,
   desc,
   delay,
-  theme = "dark",
+  theme: _theme = "dark",
 }: {
-  icon: string;
+  icon: React.ReactNode;
   title: string;
   desc: string;
   delay: number;
   theme?: "dark" | "light";
 }) {
   const [visible, setVisible] = useState(false);
+  const [iconPop, setIconPop] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          setTimeout(() => setVisible(true), delay);
+          setTimeout(() => {
+            setVisible(true);
+            setTimeout(() => setIconPop(true), 200);
+          }, delay);
           observer.disconnect();
         }
       },
@@ -157,41 +161,17 @@ function FeatureCard({
     <div
       ref={ref}
       className="feature-card"
-      data-dot-light=""
-      data-dot-radius="200"
       style={{
         opacity: visible ? 1 : 0,
         transform: visible ? "translateY(0)" : "translateY(32px)",
-        transition: "all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)",
-        position: "relative", overflow: "hidden",
+        transition: "opacity 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)",
       }}
     >
-      {/* Internal radial light — top glow */}
-      <div style={{
-        position: "absolute", top: 0, left: 0, right: 0, bottom: 0, pointerEvents: "none",
-        maskImage: "linear-gradient(to bottom, white 0%, transparent 60%)",
-        WebkitMaskImage: "linear-gradient(to bottom, white 0%, transparent 60%)",
-      }}>
-        <div style={{
-          position: "absolute", inset: 0,
-          background: theme === "light"
-            ? "radial-gradient(ellipse at top, rgba(0,0,0,0.03) 0%, transparent 70%)"
-            : "radial-gradient(ellipse at top, rgba(255,255,255,0.04) 0%, transparent 70%)",
-        }} />
+      <div className={`feature-icon-container${iconPop ? " icon-pop" : ""}`}>
+        {icon}
       </div>
-      <div style={{ fontSize: 36, marginBottom: 16, position: "relative" }}>{icon}</div>
-      <h3
-        style={{
-          fontSize: 20,
-          fontWeight: 800,
-          color: "var(--lp-price-color)",
-          marginBottom: 8,
-          letterSpacing: "-0.3px",
-        }}
-      >
-        {title}
-      </h3>
-      <p style={{ fontSize: 14, color: "var(--lp-text)", lineHeight: 1.6 }}>{desc}</p>
+      <h3 className="feature-title">{title}</h3>
+      <p className="feature-desc">{desc}</p>
     </div>
   );
 }
@@ -964,23 +944,22 @@ export default function LandingPage() {
         .landing-light h1, .landing-light h2 { color: #222 !important; }
         .landing-light .feature-card {
           background: #fff;
-          border-left: none;
-          box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-        }
-        .landing-light .feature-card::before {
-          content: '';
-          position: absolute;
-          left: 0;
-          top: 12px;
-          bottom: 12px;
-          width: 3px;
-          border-radius: 3px;
-          background: linear-gradient(to bottom, #d51659, #fe4a2c);
+          border: 1px solid rgba(0,0,0,0.05);
+          box-shadow: 0 4px 16px rgba(213,22,89,0.04), 0 1px 3px rgba(0,0,0,0.04);
         }
         .landing-light .feature-card:hover {
-          background: #fff;
-          box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+          box-shadow: 0 20px 40px rgba(213,22,89,0.12), 0 4px 12px rgba(0,0,0,0.08);
+          border-color: rgba(213,22,89,0.15);
         }
+        .landing-light .feature-card:hover .feature-icon-container {
+          background: rgba(213,22,89,0.15);
+        }
+        .landing-light .feature-icon-container {
+          background: rgba(213,22,89,0.1);
+          color: #d51659;
+        }
+        .landing-light .feature-title { color: #1a1a2e; }
+        .landing-light .feature-desc { color: #5a6368; }
         .landing-light .pricing-card {
           background: rgba(255,255,255,0.85) !important;
           box-shadow: var(--lp-card-shadow);
@@ -1212,17 +1191,58 @@ export default function LandingPage() {
 
         /* ── Feature Cards ── */
         .feature-card {
-          padding: 32px;
-          border-radius: 20px;
-          background: var(--lp-card-bg);
-          backdrop-filter: blur(80px);
-          -webkit-backdrop-filter: blur(80px);
-          transition: all 0.3s ease;
-          box-shadow: var(--lp-feature-shadow);
+          padding: 36px 32px;
+          border-radius: 24px;
+          background: rgba(20,20,20,0.6);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          border: 1px solid rgba(0,255,174,0.08);
+          box-shadow: 0 4px 16px rgba(0,255,174,0.03), 0 1px 3px rgba(0,0,0,0.3);
+          transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+          position: relative;
+          overflow: hidden;
         }
         .feature-card:hover {
-          background: rgba(0,255,174,0.03);
-          transform: translateY(-4px);
+          transform: translateY(-8px);
+          box-shadow: 0 20px 40px rgba(0,255,174,0.15), 0 4px 12px rgba(0,0,0,0.5);
+          border-color: rgba(0,255,174,0.25);
+        }
+        .feature-card:hover .feature-icon-container {
+          transform: scale(1.08);
+          background: rgba(0,255,174,0.15);
+        }
+        .feature-icon-container {
+          width: 64px;
+          height: 64px;
+          border-radius: 18px;
+          background: rgba(0,255,174,0.1);
+          color: #00ffae;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-bottom: 28px;
+          transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.35s ease;
+        }
+        .icon-pop {
+          animation: iconPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes iconPop {
+          0%   { transform: scale(0.5); }
+          70%  { transform: scale(1.05); }
+          100% { transform: scale(1); }
+        }
+        .feature-title {
+          font-size: 22px;
+          font-weight: 800;
+          color: #fff;
+          margin: 0 0 12px;
+          letter-spacing: -0.3px;
+        }
+        .feature-desc {
+          font-size: 15px;
+          color: rgba(255,255,255,0.6);
+          line-height: 1.6;
+          margin: 0;
         }
 
         /* ── Pricing ── */
@@ -1570,15 +1590,39 @@ export default function LandingPage() {
               margin: "0 auto",
               display: "grid",
               gridTemplateColumns: "repeat(3, 1fr)",
-              gap: 20,
+              gap: 24,
             }}
           >
-            <FeatureCard icon="📱" title="Cardápio 9:16" desc="Design mobile-first com vídeo e swipe. UX estilo reels para engajar clientes." delay={0} theme={theme} />
-            <FeatureCard icon="📊" title="Analytics em tempo real" desc="12 eventos de tracking, tempo de atenção por produto e taxa de conversão." delay={100} theme={theme} />
-            <FeatureCard icon="🤖" title="IA integrada" desc="Geração automática de descrições, sugestões de upsell e análise do cardápio." delay={200} theme={theme} />
-            <FeatureCard icon="📺" title="Modo TV" desc="Autoplay vertical ou horizontal. Ideal para telas no restaurante." delay={300} theme={theme} />
-            <FeatureCard icon="📦" title="Pedidos WhatsApp" desc="Pedido estruturado direto pelo WhatsApp com variações e upsell." delay={400} theme={theme} />
-            <FeatureCard icon="🏭" title="Hub de operações" desc="Cozinha, garçom e comanda digital em tempo real com Supabase Realtime." delay={500} theme={theme} />
+            <FeatureCard delay={0} theme={theme} title="Cardápio 9:16" desc="Design mobile-first com vídeo e swipe. UX estilo reels para engajar clientes." icon={
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/>
+              </svg>
+            } />
+            <FeatureCard delay={100} theme={theme} title="Analytics em tempo real" desc="12 eventos de tracking, tempo de atenção por produto e taxa de conversão." icon={
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/>
+              </svg>
+            } />
+            <FeatureCard delay={200} theme={theme} title="IA integrada" desc="Geração automática de descrições, sugestões de upsell e análise do cardápio." icon={
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+              </svg>
+            } />
+            <FeatureCard delay={300} theme={theme} title="Modo TV" desc="Autoplay vertical ou horizontal. Ideal para telas no restaurante." icon={
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="7" width="20" height="15" rx="2" ry="2"/><polyline points="17 2 12 7 7 2"/>
+              </svg>
+            } />
+            <FeatureCard delay={400} theme={theme} title="Pedidos WhatsApp" desc="Pedido estruturado direto pelo WhatsApp com variações e upsell." icon={
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+            } />
+            <FeatureCard delay={500} theme={theme} title="Hub de operações" desc="Cozinha, garçom e comanda digital em tempo real com Supabase Realtime." icon={
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+              </svg>
+            } />
           </div>
         </section>
 
