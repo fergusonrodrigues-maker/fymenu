@@ -135,7 +135,7 @@ export default function PartnerDashboard() {
   const [changingPw, setChangingPw] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem("partner_token");
+    const token = sessionStorage.getItem("partner_token");
     if (!token) { router.replace("/parceiro/login"); return; }
 
     fetch("/api/parceiro/data", { headers: { Authorization: `Bearer ${token}` } })
@@ -153,9 +153,9 @@ export default function PartnerDashboard() {
   }, [router]);
 
   function handleLogout() {
-    localStorage.removeItem("partner_token");
-    localStorage.removeItem("partner_id");
-    localStorage.removeItem("partner_name");
+    sessionStorage.removeItem("partner_token");
+    sessionStorage.removeItem("partner_id");
+    sessionStorage.removeItem("partner_name");
     router.replace("/parceiro/login");
   }
 

@@ -7,7 +7,7 @@ export default function SuportePage() {
   const router = useRouter();
 
   useEffect(() => {
-    const token = localStorage.getItem("suporte_token");
+    const token = sessionStorage.getItem("suporte_token");
     if (token) {
       router.replace("/suporte/dashboard");
     } else {

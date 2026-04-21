@@ -21,9 +21,9 @@ export default function PartnerLoginClient() {
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Erro ao fazer login");
-      localStorage.setItem("partner_token", json.token);
-      localStorage.setItem("partner_id", json.partner.id);
-      localStorage.setItem("partner_name", json.partner.name);
+      sessionStorage.setItem("partner_token", json.token);
+      sessionStorage.setItem("partner_id", json.partner.id);
+      sessionStorage.setItem("partner_name", json.partner.name);
       router.push("/parceiro/painel");
     } catch (err: any) {
       setError(err.message);

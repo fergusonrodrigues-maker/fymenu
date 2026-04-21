@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PasswordReqs, { passwordValid, translatePasswordError } from "@/components/PasswordReqs";
 
@@ -581,6 +581,15 @@ export default function AdminClient({
   subscriptionData, crmConsumers,
 }: Props) {
   const supabase = createClient();
+
+  useEffect(() => {
+    if (!sessionStorage.getItem("fy_admin_session")) {
+      supabase.auth.signOut().then(() => {
+        window.location.replace("/admin/login");
+      });
+    }
+  }, []);
+
   const [tab, setTab] = useState<Tab>("Visão Geral");
   const [managingId, setManagingId] = useState<string | null>(null);
   const [localRestaurants, setLocalRestaurants] = useState(restaurants);

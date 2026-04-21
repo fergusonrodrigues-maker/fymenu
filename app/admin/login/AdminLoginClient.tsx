@@ -22,6 +22,7 @@ export default function AdminLoginClient() {
         await supabase.auth.signOut();
         throw new Error("Acesso negado. Você não tem permissão de administrador.");
       }
+      sessionStorage.setItem("fy_admin_session", "true");
       window.location.href = "/admin";
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Erro ao fazer login");

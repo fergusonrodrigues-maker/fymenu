@@ -1312,8 +1312,8 @@ export default function SuporteDashboard() {
   const [chatUnread, setChatUnread] = useState(0);
 
   useEffect(() => {
-    const t = localStorage.getItem("suporte_token");
-    const s = localStorage.getItem("suporte_staff");
+    const t = sessionStorage.getItem("suporte_token");
+    const s = sessionStorage.getItem("suporte_staff");
     if (!t) { router.replace("/suporte/login"); return; }
     setToken(t);
     if (s) { try { setStaff(JSON.parse(s)); } catch {} }
@@ -1321,9 +1321,9 @@ export default function SuporteDashboard() {
     fetch("/api/suporte/me", { headers: { "x-suporte-token": t } })
       .then((r) => r.json())
       .then(({ staff: srv }) => {
-        if (!srv) { localStorage.clear(); router.replace("/suporte/login"); return; }
+        if (!srv) { sessionStorage.removeItem("suporte_token"); sessionStorage.removeItem("suporte_staff"); router.replace("/suporte/login"); return; }
         setStaff(srv);
-        localStorage.setItem("suporte_staff", JSON.stringify(srv));
+        sessionStorage.setItem("suporte_staff", JSON.stringify(srv));
         setAuthReady(true);
         // Load initial unread chat count
         fetch("/api/suporte/chats?status=open&page=1", { headers: { "x-suporte-token": t } })
@@ -1335,8 +1335,8 @@ export default function SuporteDashboard() {
   }, [router]);
 
   function logout() {
-    localStorage.removeItem("suporte_token");
-    localStorage.removeItem("suporte_staff");
+    sessionStorage.removeItem("suporte_token");
+    sessionStorage.removeItem("suporte_staff");
     router.replace("/suporte/login");
   }
 

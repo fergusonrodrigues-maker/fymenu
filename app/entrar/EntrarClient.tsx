@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { getSupabaseClient } from "@/lib/supabase/client";
 import { useRouter, useSearchParams } from "next/navigation";
 import PasswordReqs, { passwordValid, translatePasswordError } from "@/components/PasswordReqs";
 
@@ -29,6 +29,7 @@ export default function EntrarClient() {
   // Shared fields
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState<string | null>(urlErr || null);
   const [success, setSuccess] = useState<string | null>(urlOk || null);
   const [loading, setLoading] = useState(false);
@@ -102,7 +103,7 @@ export default function EntrarClient() {
     }
     setLoading(true);
     try {
-      const supabase = createClient();
+      const supabase = getSupabaseClient(rememberMe);
       const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
       if (authError) {
         const msg = authError.message.includes("Invalid login credentials")
@@ -110,6 +111,13 @@ export default function EntrarClient() {
           : authError.message;
         setError(msg);
         return;
+      }
+      if (rememberMe) {
+        localStorage.setItem("fy_remember", "true");
+        sessionStorage.removeItem("fy_session_only");
+      } else {
+        sessionStorage.setItem("fy_session_only", "true");
+        localStorage.removeItem("fy_remember");
       }
       router.push("/painel");
     } catch (err: unknown) {
@@ -137,7 +145,7 @@ export default function EntrarClient() {
 
     setLoading(true);
     try {
-      const supabase = createClient();
+      const supabase = getSupabaseClient(true);
       const restaurantName = email.split("@")[0];
 
       const { error: authError, data: authData } = await supabase.auth.signUp({
@@ -484,6 +492,56 @@ export default function EntrarClient() {
           margin-bottom: 16px;
         }
 
+        /* ── Remember me ─────────────────────────────────── */
+        .remember-me-row {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 4px;
+        }
+
+        .remember-me-checkbox {
+          appearance: none;
+          -webkit-appearance: none;
+          width: 16px;
+          height: 16px;
+          min-width: 16px;
+          border-radius: 4px;
+          border: 1px solid rgba(0,0,0,0.2);
+          background: #fff;
+          cursor: pointer;
+          position: relative;
+          transition: background 0.15s, border-color 0.15s;
+          flex-shrink: 0;
+        }
+
+        .remember-me-checkbox:checked {
+          background: #d51659;
+          border-color: #d51659;
+        }
+
+        .remember-me-checkbox:checked::after {
+          content: '';
+          position: absolute;
+          left: 4px;
+          top: 1px;
+          width: 5px;
+          height: 9px;
+          border: 2px solid #fff;
+          border-top: none;
+          border-left: none;
+          transform: rotate(45deg);
+        }
+
+        .remember-me-label {
+          color: #555;
+          font-size: 13px;
+          font-weight: 600;
+          cursor: pointer;
+          user-select: none;
+          line-height: 1.3;
+        }
+
         /* ── Forgot password ─────────────────────────────── */
         .forgot-password {
           display: flex;
@@ -668,6 +726,19 @@ export default function EntrarClient() {
                     onChange={(e) => setPassword(e.target.value)}
                   />
                 </div>
+              </div>
+
+              <div className="remember-me-row">
+                <input
+                  type="checkbox"
+                  id="remember-me"
+                  className="remember-me-checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                />
+                <label htmlFor="remember-me" className="remember-me-label">
+                  Mantenha-me conectado por 30 dias
+                </label>
               </div>
 
               <div className="forgot-password">
