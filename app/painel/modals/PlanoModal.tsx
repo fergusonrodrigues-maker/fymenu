@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Restaurant } from "../types";
 
@@ -107,6 +107,14 @@ export default function PlanoModal({
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   const currentPlan = (restaurant?.plan as string | null) ?? null;
   const hasActivePlan =
@@ -289,6 +297,13 @@ export default function PlanoModal({
         }
       `}</style>
 
+      {/* ── Subtitle ── */}
+      <div style={{ textAlign: "center", marginBottom: 20 }}>
+        <div style={{ fontSize: 13, color: "var(--dash-text-muted)", lineHeight: 1.5 }}>
+          Desbloqueie todos os recursos do FyMenu
+        </div>
+      </div>
+
       {/* ── Coupon pills ── */}
       {coupons.length > 0 && (
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 16 }}>
@@ -374,7 +389,12 @@ export default function PlanoModal({
       </div>
 
       {/* ── Cards dos planos ── */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)",
+        gap: 16,
+        alignItems: "stretch",
+      }}>
         {PLANS.map((plan) => {
           const price = plan.prices[planCycle];
           const isCurrent =

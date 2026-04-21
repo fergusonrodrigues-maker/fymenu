@@ -1839,7 +1839,7 @@ export default function DashboardClient({
       <Modal open={modal === "modotv"} onClose={close} title="Modo TV" size="sm">
         {unit && <ModoTVModal unit={unit} onClose={close} />}
       </Modal>
-      <Modal open={modal === "plano"} onClose={close} title="Plano">
+      <Modal open={modal === "plano"} onClose={close} title="Escolha seu plano" size="lg">
         <PlanoModal restaurant={restaurantState} highlightPlan={highlightPlan} trialDays={trialDays} onUpgrade={() => { close(); router.push("/painel/planos"); }} onClose={() => { close(); setHighlightPlan(null); }} />
       </Modal>
       <Modal open={modal === "config"} onClose={close} title="Configurações" size="lg">

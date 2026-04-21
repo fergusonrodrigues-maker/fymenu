@@ -356,7 +356,13 @@ export default function UnidadeModal({ unit, canAddUnit, plan, restaurantStatus,
             </div>
             <button
               type="button"
-              onClick={() => setIsPublished((v) => !v)}
+              onClick={() => {
+                if (!isPublished && !hasActivePlan) {
+                  onOpenPlans?.();
+                  return;
+                }
+                setIsPublished((v) => !v);
+              }}
               style={{
                 width: 44, height: 26, borderRadius: 13, border: "none",
                 background: isPublished ? "var(--dash-accent)" : "var(--dash-card-hover)",
