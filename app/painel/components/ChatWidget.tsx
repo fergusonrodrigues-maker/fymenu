@@ -235,15 +235,15 @@ export default function ChatWidget({
         )}
       </button>
 
-      {/* Backdrop on mobile */}
+      {/* Backdrop — transparent on desktop (click-outside-to-close), dark on mobile */}
       {panelOpen && (
         <div
           onClick={onClose}
-          style={{ position: "fixed", inset: 0, zIndex: 8998, background: "rgba(0,0,0,0.5)", display: "none" }}
+          style={{ position: "fixed", inset: 0, zIndex: 8998, background: "transparent" }}
           className="chat-backdrop"
         />
       )}
-      <style>{`@media (max-width: 480px) { .chat-backdrop { display: block !important; } }`}</style>
+      <style>{`@media (max-width: 480px) { .chat-backdrop { background: rgba(0,0,0,0.5) !important; } }`}</style>
 
       {/* Chat panel */}
       <div style={panelStyle} className="chat-panel">
