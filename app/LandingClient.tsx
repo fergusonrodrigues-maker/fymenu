@@ -650,6 +650,7 @@ export default function LandingPage() {
     let mouseX = -1000, mouseY = -1000;
     let ripples: Array<{ x: number; y: number; radius: number; startTime: number }> = [];
     let dots: Array<{ x: number; y: number; opacity: number }> = [];
+    let isMobileView = window.innerWidth < 640;
 
     // ── Light sources: one circle per significant element ────────────────────
     type LightSource = { x: number; y: number; r: number };
@@ -681,6 +682,7 @@ export default function LandingPage() {
 
     function resize() {
       if (!canvas) return;
+      isMobileView = window.innerWidth < 640;
       canvas.width  = window.innerWidth;
       canvas.height = window.innerHeight;
       dots = [];
@@ -789,9 +791,11 @@ export default function LandingPage() {
 
         ctx.beginPath();
         ctx.arc(dot.x, dot.y, DOT_RADIUS, 0, Math.PI * 2);
+        const lightMult = isMobileView ? 0.56 : 0.43;
+        const lightMax  = isMobileView ? 0.33 : 0.25;
         ctx.fillStyle = dark
           ? `rgba(0, 255, 174, ${dot.opacity})`
-          : `rgba(5, 5, 5, ${Math.min(dot.opacity * 0.43, 0.25)})`;
+          : `rgba(5, 5, 5, ${Math.min(dot.opacity * lightMult, lightMax)})`;
         ctx.fill();
       }
 
@@ -1305,6 +1309,19 @@ export default function LandingPage() {
           .pricing-grid { grid-template-columns: 1fr !important; }
           .stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
         }
+        @media (max-width: 640px) {
+          .fy-nav {
+            left: 16px;
+            right: 16px;
+            transform: none;
+            max-width: calc(100vw - 32px);
+            gap: 12px;
+            padding: 8px 16px;
+          }
+          .fy-nav-logo { height: 24px !important; }
+          .fy-nav a { font-size: 13px; }
+          .fy-nav .btn-primary { padding: 6px 14px !important; font-size: 11px !important; flex-shrink: 0; }
+        }
       `}</style>
 
       <PageLoader visible={loading} theme={theme} />
@@ -1339,6 +1356,7 @@ export default function LandingPage() {
           <img
             src="https://rjfbavmupiypxiqzksxo.supabase.co/storage/v1/object/public/landing/ICON-FY-MENU-DARK.png"
             alt="FyMenu"
+            className="fy-nav-logo"
             style={{ height: 32, width: "auto", display: "block", mixBlendMode: "screen" }}
           />
           <a href="#features">Recursos</a>
