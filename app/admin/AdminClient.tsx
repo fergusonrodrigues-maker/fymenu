@@ -173,6 +173,7 @@ function fmtBRL(value: number) {
 }
 
 const PLAN_BADGE: Record<string, string> = {
+  "": "bg-gray-700/40 text-gray-400 border border-gray-600/30",
   basic: "bg-white/10 text-white/70 border border-white/10",
   menu: "bg-white/10 text-white/70 border border-white/10",
   menupro: "bg-[#00ffae]/10 text-[#00ffae] border border-[#00ffae]/20",
@@ -241,7 +242,7 @@ function ManagePanel({
   onClose: () => void;
   onUpdated: (id: string, updates: Partial<Restaurant>) => void;
 }) {
-  const [plan, setPlan] = useState(restaurant.plan ?? "menu");
+  const [plan, setPlan] = useState(restaurant.plan ?? "");
   const [status, setStatus] = useState(restaurant.status);
   const [freeAccess, setFreeAccess] = useState(!!restaurant.free_access);
   const [saving, setSaving] = useState<string | null>(null);
@@ -269,10 +270,58 @@ function ManagePanel({
 
   async function savePlan() {
     setSaving("plan");
-    const r = await call("/api/admin/update-restaurant", { restaurantId: restaurant.id, plan });
+
+    if (plan === "") {
+      // Sem plano: set plan=null, status=pending, trial_ends_at=null
+      const r = await call("/api/admin/update-restaurant", {
+        restaurantId: restaurant.id,
+        plan: null,
+        status: "pending",
+        trial_ends_at: null,
+      });
+      setSaving(null);
+      if (r.success) {
+        setMsg({ text: "Plano removido. Status → pending.", ok: true });
+        onUpdated(restaurant.id, { plan: null, status: "pending" });
+        setStatus("pending");
+      } else setMsg({ text: r.error ?? "Erro", ok: false });
+      return;
+    }
+
+    if (plan === "business") {
+      const withTrial = window.confirm("Ativar trial de 7 dias para esta conta Business?");
+      const trialEndsAt = withTrial
+        ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+        : null;
+      const newStatus = withTrial ? "trial" : "active";
+      const r = await call("/api/admin/update-restaurant", {
+        restaurantId: restaurant.id,
+        plan: "business",
+        status: newStatus,
+        trial_ends_at: trialEndsAt,
+      });
+      setSaving(null);
+      if (r.success) {
+        setMsg({ text: withTrial ? "Business + trial 7d ativado!" : "Business ativo!", ok: true });
+        onUpdated(restaurant.id, { plan: "business", status: newStatus });
+        setStatus(newStatus);
+      } else setMsg({ text: r.error ?? "Erro", ok: false });
+      return;
+    }
+
+    // menu / menupro: status = active
+    const r = await call("/api/admin/update-restaurant", {
+      restaurantId: restaurant.id,
+      plan,
+      status: "active",
+      trial_ends_at: null,
+    });
     setSaving(null);
-    if (r.success) { setMsg({ text: "Plano salvo!", ok: true }); onUpdated(restaurant.id, { plan }); }
-    else setMsg({ text: r.error ?? "Erro", ok: false });
+    if (r.success) {
+      setMsg({ text: "Plano salvo!", ok: true });
+      onUpdated(restaurant.id, { plan, status: "active" });
+      setStatus("active");
+    } else setMsg({ text: r.error ?? "Erro", ok: false });
   }
 
   async function saveStatus() {
@@ -349,11 +398,13 @@ function ManagePanel({
               className="w-full rounded-xl px-3 py-2.5 text-sm text-white"
               style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}
             >
-              <option value="menu">menu</option>
-              <option value="menupro">menupro</option>
-              <option value="business">business</option>
-              <option value="basic">basic (legado)</option>
-              <option value="pro">pro (legado)</option>
+              <option value="">— Sem plano —</option>
+              <option value="menu">Menu</option>
+              <option value="menupro">MenuPro</option>
+              <option value="business">Business</option>
+              <option disabled>──────────</option>
+              <option value="basic">Basic (legado)</option>
+              <option value="pro">Pro (legado)</option>
             </select>
             <ActionBtn onClick={savePlan} loading={saving === "plan"} color="purple">
               Salvar plano
@@ -1153,8 +1204,8 @@ export default function AdminClient({
                             )}
                           </td>
                           <td className="px-6 py-3">
-                            <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${PLAN_BADGE[r.plan ?? "basic"] ?? "bg-gray-700 text-gray-300"}`}>
-                              {r.plan ?? "basic"}
+                            <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${PLAN_BADGE[r.plan ?? ""] ?? "bg-gray-700 text-gray-400"}`}>
+                              {r.plan ?? "sem plano"}
                             </span>
                           </td>
                           <td className="px-6 py-3">

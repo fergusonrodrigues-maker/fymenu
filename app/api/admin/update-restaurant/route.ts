@@ -10,13 +10,14 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { restaurantId, plan, status, free_access } = body;
+  const { restaurantId, plan, status, free_access, trial_ends_at } = body;
 
   const admin = createAdminClient();
   const updates: Record<string, unknown> = {};
 
   if (plan !== undefined) updates.plan = plan;
   if (status !== undefined) updates.status = status;
+  if (trial_ends_at !== undefined) updates.trial_ends_at = trial_ends_at;
   if (free_access !== undefined) {
     updates.free_access = free_access;
     if (free_access) updates.status = "active";
