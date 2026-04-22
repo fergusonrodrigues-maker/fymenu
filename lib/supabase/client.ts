@@ -7,13 +7,12 @@ export function createClient() {
   );
 }
 
-// rememberMe=true  → stores fy_remember in localStorage (30-day session)
-// rememberMe=false → stores fy_session_only in sessionStorage (tab-only session)
-// Both return the same cookie-based client required for SSR middleware compatibility.
-// Session-only enforcement is handled client-side via PainelSessionGuard.
-export function getSupabaseClient(_rememberMe: boolean) {
+// rememberMe=true  → cookie maxAge 30 days, fy_remember='true' in localStorage
+// rememberMe=false → session cookie (expires on browser close), fy_remember='false' in localStorage
+export function getSupabaseClient(rememberMe: boolean) {
   return createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    rememberMe ? { cookieOptions: { maxAge: 30 * 24 * 60 * 60 } } : undefined
   );
 }

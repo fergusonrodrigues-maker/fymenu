@@ -5,9 +5,10 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 // Enforces session-only behavior when user did NOT check "Mantenha-me conectado".
-// fy_remember (localStorage)  → persistent 30-day session, no action needed.
-// fy_session_only (sessionStorage) → tab-only session, cleared when browser closes.
-// Neither flag found → browser was closed without remember-me → sign out.
+// fy_remember='true'  (localStorage) → persistent 30-day cookie, no action needed.
+// fy_remember='false' (localStorage) → session cookie; browser handles expiry on close.
+// fy_remember=null → flag missing (unknown state) → sign out.
+// fy_session_only (sessionStorage) → backward compat for sessions created before this change.
 export default function PainelSessionGuard() {
   const router = useRouter();
 
@@ -15,7 +16,7 @@ export default function PainelSessionGuard() {
     const remember = localStorage.getItem("fy_remember");
     const sessionOnly = sessionStorage.getItem("fy_session_only");
 
-    if (!remember && !sessionOnly) {
+    if (remember === null && !sessionOnly) {
       const supabase = createClient();
       supabase.auth.signOut().then(() => {
         router.replace("/entrar");

@@ -103,6 +103,7 @@ export default function EntrarClient() {
     }
     setLoading(true);
     try {
+      localStorage.setItem("fy_remember", rememberMe ? "true" : "false");
       const supabase = getSupabaseClient(rememberMe);
       const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
       if (authError) {
@@ -111,13 +112,6 @@ export default function EntrarClient() {
           : authError.message;
         setError(msg);
         return;
-      }
-      if (rememberMe) {
-        localStorage.setItem("fy_remember", "true");
-        sessionStorage.removeItem("fy_session_only");
-      } else {
-        sessionStorage.setItem("fy_session_only", "true");
-        localStorage.removeItem("fy_remember");
       }
       router.push("/painel");
     } catch (err: unknown) {
