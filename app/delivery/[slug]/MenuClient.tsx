@@ -124,9 +124,10 @@ export default function MenuClient({
     return () => clearInterval(interval);
   }, [categories]);
 
-  // Tema
-  const [isDark, setIsDark] = useState(true);
+  // Tema — cardápio público sempre light (toggle desativado)
+  const [isDark, setIsDark] = useState(false);
   useEffect(() => {
+    document.documentElement.classList.remove("dark");
     const check = () => setIsDark(document.documentElement.classList.contains("dark"));
     check();
     const obs = new MutationObserver(check);

@@ -376,8 +376,8 @@ export default function BottomGlassBar({
 
   return (
     <>
-      {/* ── Theme toggle — fixed left, same level as pill ── */}
-      <button
+      {/* ── Theme toggle — desativado nos cardápios públicos (sempre light) ── */}
+      {/* <button
         onClick={toggleTheme}
         style={{
           position: "fixed",
@@ -398,7 +398,7 @@ export default function BottomGlassBar({
         aria-label="Alternar tema"
       >
         {isDark ? "☀️" : "🌙"}
-      </button>
+      </button> */}
 
       {/* ── MINIMIZED pill ── */}
       <div
