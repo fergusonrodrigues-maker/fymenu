@@ -440,9 +440,9 @@ function GarcomTab({
             onClick={() => onUpdatePermission("garcom_e_caixa")}
             style={{
               flex: 1, padding: "12px", borderRadius: 12, border: "1px solid",
-              borderColor: comandaPermission === "garcom_e_caixa" ? "#00ffae" : "rgba(255,255,255,0.1)",
+              borderColor: comandaPermission === "garcom_e_caixa" ? "#00ffae" : "var(--dash-border)",
               background: comandaPermission === "garcom_e_caixa" ? "rgba(0,255,174,0.08)" : "transparent",
-              color: comandaPermission === "garcom_e_caixa" ? "#00ffae" : "rgba(255,255,255,0.5)",
+              color: comandaPermission === "garcom_e_caixa" ? "#00ffae" : "var(--dash-text-muted)",
               cursor: "pointer", fontSize: 13, fontWeight: 600,
             }}
           >
@@ -452,9 +452,9 @@ function GarcomTab({
             onClick={() => onUpdatePermission("somente_caixa")}
             style={{
               flex: 1, padding: "12px", borderRadius: 12, border: "1px solid",
-              borderColor: comandaPermission === "somente_caixa" ? "#00ffae" : "rgba(255,255,255,0.1)",
+              borderColor: comandaPermission === "somente_caixa" ? "#00ffae" : "var(--dash-border)",
               background: comandaPermission === "somente_caixa" ? "rgba(0,255,174,0.08)" : "transparent",
-              color: comandaPermission === "somente_caixa" ? "#00ffae" : "rgba(255,255,255,0.5)",
+              color: comandaPermission === "somente_caixa" ? "#00ffae" : "var(--dash-text-muted)",
               cursor: "pointer", fontSize: 13, fontWeight: 600,
             }}
           >
@@ -624,7 +624,7 @@ function AndamentoTab({ orders }: { orders: Order[] }) {
                       </span>
                       <span style={{
                         fontSize: 10, fontWeight: 600, padding: "1px 7px", borderRadius: 20,
-                        background: isDelivered ? "rgba(0,255,174,0.1)" : "rgba(255,255,255,0.05)",
+                        background: isDelivered ? "rgba(0,255,174,0.1)" : "var(--dash-card-hover)",
                         color: isDelivered ? "#00ffae" : "var(--dash-text-muted)",
                       }}>
                         {WAITER_LABELS[ws]}
@@ -700,7 +700,7 @@ function AuditoriaTab({ unitId }: { unitId: string }) {
             onClick={() => setDateFilter(f.id)}
             style={{
               flex: 1, padding: "8px 0", borderRadius: 10, border: "1px solid",
-              borderColor: dateFilter === f.id ? "#00ffae" : "rgba(255,255,255,0.1)",
+              borderColor: dateFilter === f.id ? "#00ffae" : "var(--dash-border)",
               background: dateFilter === f.id ? "rgba(0,255,174,0.08)" : "transparent",
               color: dateFilter === f.id ? "#00ffae" : "var(--dash-text-muted)",
               fontSize: 12, fontWeight: 600, cursor: "pointer",

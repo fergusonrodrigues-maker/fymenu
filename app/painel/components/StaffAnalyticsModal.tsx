@@ -57,7 +57,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: string
   working: { label: "Trabalhando", color: "#00ffae", icon: "🟢" },
   break: { label: "Descanso", color: "#fbbf24", icon: "🟡" },
   lunch: { label: "Almoço", color: "#60a5fa", icon: "🔵" },
-  off: { label: "Folga", color: "rgba(255,255,255,0.3)", icon: "⚪" },
+  off: { label: "Folga", color: "var(--dash-text-muted)", icon: "⚪" },
   absent: { label: "Ausente", color: "#f87171", icon: "🔴" },
   vacation: { label: "Férias", color: "#a855f7", icon: "🟣" },
 };
@@ -510,9 +510,9 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
 
   const inp: React.CSSProperties = {
     width: "100%", padding: "10px 12px", borderRadius: 10,
-    border: "1px solid rgba(255,255,255,0.1)",
-    background: "rgba(255,255,255,0.05)",
-    color: "#fff", fontSize: 15, boxSizing: "border-box",
+    border: "1px solid var(--dash-border)",
+    background: "var(--dash-input-bg)",
+    color: "var(--dash-text)", fontSize: 15, boxSizing: "border-box",
   };
 
   const tabStyle = (active: boolean): React.CSSProperties => ({
@@ -557,17 +557,17 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
         <div>
           {/* Team cost summary */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 20 }}>
-            <div style={{ padding: 14, borderRadius: 14, background: "rgba(255,255,255,0.03)", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset", textAlign: "center" }}>
-              <div style={{ fontSize: 18, fontWeight: 800, color: "#fff" }}>{employees.length}</div>
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>Funcionários</div>
+            <div style={{ padding: 14, borderRadius: 14, background: "var(--dash-card)", border: "1px solid var(--dash-border)", textAlign: "center" }}>
+              <div style={{ fontSize: 18, fontWeight: 800, color: "var(--dash-text)" }}>{employees.length}</div>
+              <div style={{ fontSize: 11, color: "var(--dash-text-muted)" }}>Funcionários</div>
             </div>
-            <div style={{ padding: 14, borderRadius: 14, background: "rgba(255,255,255,0.03)", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset", textAlign: "center" }}>
+            <div style={{ padding: 14, borderRadius: 14, background: "var(--dash-card)", border: "1px solid var(--dash-border)", textAlign: "center" }}>
               <div style={{ fontSize: 18, fontWeight: 800, color: "#f87171" }}>R$ {(totalSalaries / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</div>
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>Salários</div>
+              <div style={{ fontSize: 11, color: "var(--dash-text-muted)" }}>Salários</div>
             </div>
-            <div style={{ padding: 14, borderRadius: 14, background: "rgba(255,255,255,0.03)", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset", textAlign: "center" }}>
+            <div style={{ padding: 14, borderRadius: 14, background: "var(--dash-card)", border: "1px solid var(--dash-border)", textAlign: "center" }}>
               <div style={{ fontSize: 18, fontWeight: 800, color: "#fbbf24" }}>R$ {(totalTeamCost / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</div>
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>Custo total equipe</div>
+              <div style={{ fontSize: 11, color: "var(--dash-text-muted)" }}>Custo total equipe</div>
             </div>
           </div>
 
@@ -577,10 +577,10 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
               <div style={{ fontSize: 13, fontWeight: 700, color: "var(--dash-text)", marginBottom: 10 }}>Status da equipe agora</div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                 {[
-                  { key: "working", label: "Trabalhando", color: "#00ffae", icon: "🟢" },
+                  { key: "working", label: "Trabalhando", color: "var(--dash-accent)", icon: "🟢" },
                   { key: "break", label: "Descanso", color: "#fbbf24", icon: "🟡" },
                   { key: "lunch", label: "Almoço", color: "#60a5fa", icon: "🔵" },
-                  { key: "off", label: "Folga", color: "rgba(255,255,255,0.3)", icon: "⚪" },
+                  { key: "off", label: "Folga", color: "var(--dash-text-muted)", icon: "⚪" },
                   { key: "absent", label: "Ausente", color: "#f87171", icon: "🔴" },
                   { key: "vacation", label: "Férias", color: "#a855f7", icon: "🟣" },
                 ].map(s => {
@@ -588,7 +588,8 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                   return (
                     <div key={s.key} style={{
                       padding: "8px 14px", borderRadius: 12,
-                      background: count > 0 ? `${s.color}10` : "rgba(255,255,255,0.02)",
+                      background: count > 0 ? "var(--dash-card-hover)" : "var(--dash-card-subtle)",
+                      border: "1px solid var(--dash-border)",
                       display: "flex", alignItems: "center", gap: 6,
                       minWidth: 100,
                     }}>
@@ -609,13 +610,13 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
             <div style={{ display: "flex", gap: 6 }}>
               <button
                 onClick={() => { setShowCategoryForm((v) => !v); setShowAddForm(false); }}
-                style={{ padding: "7px 12px", borderRadius: 10, border: "none", background: "rgba(168,85,247,0.12)", color: "#c084fc", fontSize: 12, fontWeight: 700, cursor: "pointer" }}
+                style={{ padding: "7px 12px", borderRadius: 10, border: "none", background: "var(--dash-purple-soft)", color: "var(--dash-purple)", fontSize: 12, fontWeight: 700, cursor: "pointer" }}
               >
                 {showCategoryForm ? "Cancelar" : "+ Categoria"}
               </button>
               <button
                 onClick={() => { setShowAddForm((v) => !v); setShowCategoryForm(false); setReactivateCandidate(null); setSaveError(null); }}
-                style={{ padding: "7px 14px", borderRadius: 10, border: "none", background: "rgba(0,255,174,0.12)", color: "#00ffae", fontSize: 13, fontWeight: 700, cursor: "pointer" }}
+                style={{ padding: "7px 14px", borderRadius: 10, border: "none", background: "var(--dash-accent-soft)", color: "var(--dash-accent)", fontSize: 13, fontWeight: 700, cursor: "pointer" }}
               >
                 {showAddForm ? "Cancelar" : "+ Funcionário"}
               </button>
@@ -634,7 +635,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
               <button
                 onClick={saveCategory}
                 disabled={savingCategory || !newCategoryName.trim()}
-                style={{ padding: "10px 14px", borderRadius: 10, border: "none", background: "rgba(168,85,247,0.2)", color: "#c084fc", fontSize: 13, fontWeight: 700, cursor: savingCategory ? "not-allowed" : "pointer", flexShrink: 0, opacity: savingCategory ? 0.6 : 1 }}
+                style={{ padding: "10px 14px", borderRadius: 10, border: "none", background: "var(--dash-purple-soft)", color: "var(--dash-purple)", fontSize: 13, fontWeight: 700, cursor: savingCategory ? "not-allowed" : "pointer", flexShrink: 0, opacity: savingCategory ? 0.6 : 1 }}
               >
                 {savingCategory ? "..." : "Criar"}
               </button>
@@ -642,7 +643,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
           )}
 
           {showAddForm && (
-            <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 14, padding: 16, marginBottom: 16, border: "1px solid rgba(255,255,255,0.08)" }}>
+            <div style={{ background: "var(--dash-card)", borderRadius: 14, padding: 16, marginBottom: 16, border: "1px solid var(--dash-border)" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 <input
                   style={inp} placeholder="Nome do funcionário"
@@ -650,7 +651,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                   onChange={(e) => setNewEmployee((p) => ({ ...p, name: e.target.value }))}
                 />
                 <select
-                  style={{ ...inp, background: undefined as any, backgroundColor: "rgba(255,255,255,0.05)" }}
+                  style={{ ...inp, background: undefined as any, backgroundColor: "var(--dash-input-bg)" }}
                   value={newEmployee.role}
                   onChange={(e) => setNewEmployee((p) => ({ ...p, role: e.target.value }))}
                 >
@@ -686,9 +687,9 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                           type="button"
                           onClick={() => setFormTeams(prev => sel ? (prev.length > 1 ? prev.filter(x => x !== t) : prev) : [...prev, t])}
                           style={{
-                            padding: "5px 12px", borderRadius: 8, border: sel ? "none" : "1px solid rgba(255,255,255,0.12)", cursor: "pointer",
-                            background: sel ? "#00ffae" : "rgba(255,255,255,0.06)",
-                            color: sel ? "#000" : "#fff",
+                            padding: "5px 12px", borderRadius: 8, border: sel ? "none" : "1px solid var(--dash-border)", cursor: "pointer",
+                            background: sel ? "var(--dash-accent)" : "var(--dash-card-hover)",
+                            color: sel ? "#000" : "var(--dash-text)",
                             fontSize: 11, fontWeight: sel ? 700 : 500, textTransform: "capitalize",
                           }}
                         >{t}</button>
@@ -703,7 +704,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                   onChange={(e) => setNewEmployee((p) => ({ ...p, phone: e.target.value }))}
                 />
                 <div>
-                  <label style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 6 }}>CPF (acesso ao portal)</label>
+                  <label style={{ color: "var(--dash-text-muted)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 6 }}>CPF (acesso ao portal)</label>
                   <input
                     style={inp}
                     inputMode="numeric"
@@ -732,7 +733,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                   <button
                     type="button"
                     onClick={() => setShowAddPassword(v => !v)}
-                    style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "rgba(255,255,255,0.35)", cursor: "pointer", fontSize: 14, padding: 4 }}
+                    style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "var(--dash-text-muted)", cursor: "pointer", fontSize: 14, padding: 4 }}
                     tabIndex={-1}
                   >
                     {showAddPassword ? "🙈" : "👁️"}
@@ -740,19 +741,19 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                 </div>
                 {/* Salário */}
                 <div style={{ marginTop: 12 }}>
-                  <label style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 6 }}>Salário mensal (R$)</label>
+                  <label style={{ color: "var(--dash-text-muted)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 6 }}>Salário mensal (R$)</label>
                   <input
                     type="number"
                     placeholder="Ex: 1800"
                     value={salary}
                     onChange={e => setSalary(e.target.value)}
-                    style={{ width: "100%", padding: "10px 14px", borderRadius: 12, background: "rgba(255,255,255,0.04)", border: "none", color: "#fff", fontSize: 14, outline: "none", boxSizing: "border-box" }}
+                    style={{ width: "100%", padding: "10px 14px", borderRadius: 12, background: "var(--dash-input-bg)", border: "1px solid var(--dash-border)", color: "var(--dash-text)", fontSize: 14, outline: "none", boxSizing: "border-box" }}
                   />
                 </div>
 
                 {/* Dias de trabalho */}
                 <div style={{ marginTop: 12 }}>
-                  <label style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 6 }}>Dias de trabalho</label>
+                  <label style={{ color: "var(--dash-text-muted)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 6 }}>Dias de trabalho</label>
                   <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
                     {["seg", "ter", "qua", "qui", "sex", "sab", "dom"].map(day => (
                       <button
@@ -765,8 +766,8 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                         }}
                         style={{
                           padding: "6px 12px", borderRadius: 8, border: "none", cursor: "pointer",
-                          background: workDays.includes(day) ? "rgba(0,255,174,0.1)" : "rgba(255,255,255,0.04)",
-                          color: workDays.includes(day) ? "#00ffae" : "rgba(255,255,255,0.3)",
+                          background: workDays.includes(day) ? "var(--dash-accent-soft)" : "var(--dash-card-hover)",
+                          color: workDays.includes(day) ? "var(--dash-accent)" : "var(--dash-text-muted)",
                           fontSize: 12, fontWeight: 600, textTransform: "capitalize",
                         }}
                       >
@@ -779,38 +780,38 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                 {/* Horários */}
                 <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                   <div>
-                    <label style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 6 }}>Entrada</label>
+                    <label style={{ color: "var(--dash-text-muted)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 6 }}>Entrada</label>
                     <input type="time" value={shiftStart} onChange={e => setShiftStart(e.target.value)}
-                      style={{ width: "100%", padding: "10px 14px", borderRadius: 12, background: "rgba(255,255,255,0.04)", border: "none", color: "#fff", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+                      style={{ width: "100%", padding: "10px 14px", borderRadius: 12, background: "var(--dash-input-bg)", border: "1px solid var(--dash-border)", color: "var(--dash-text)", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
                   </div>
                   <div>
-                    <label style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 6 }}>Saída</label>
+                    <label style={{ color: "var(--dash-text-muted)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 6 }}>Saída</label>
                     <input type="time" value={shiftEnd} onChange={e => setShiftEnd(e.target.value)}
-                      style={{ width: "100%", padding: "10px 14px", borderRadius: 12, background: "rgba(255,255,255,0.04)", border: "none", color: "#fff", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+                      style={{ width: "100%", padding: "10px 14px", borderRadius: 12, background: "var(--dash-input-bg)", border: "1px solid var(--dash-border)", color: "var(--dash-text)", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
                   </div>
                 </div>
 
                 {/* Almoço */}
                 <div style={{ marginTop: 8, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                   <div>
-                    <label style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 6 }}>Almoço início</label>
+                    <label style={{ color: "var(--dash-text-muted)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 6 }}>Almoço início</label>
                     <input type="time" value={lunchStart} onChange={e => setLunchStart(e.target.value)}
-                      style={{ width: "100%", padding: "10px 14px", borderRadius: 12, background: "rgba(255,255,255,0.04)", border: "none", color: "#fff", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+                      style={{ width: "100%", padding: "10px 14px", borderRadius: 12, background: "var(--dash-input-bg)", border: "1px solid var(--dash-border)", color: "var(--dash-text)", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
                   </div>
                   <div>
-                    <label style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 6 }}>Almoço fim</label>
+                    <label style={{ color: "var(--dash-text-muted)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 6 }}>Almoço fim</label>
                     <input type="time" value={lunchEnd} onChange={e => setLunchEnd(e.target.value)}
-                      style={{ width: "100%", padding: "10px 14px", borderRadius: 12, background: "rgba(255,255,255,0.04)", border: "none", color: "#fff", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+                      style={{ width: "100%", padding: "10px 14px", borderRadius: 12, background: "var(--dash-input-bg)", border: "1px solid var(--dash-border)", color: "var(--dash-text)", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
                   </div>
                 </div>
 
                 {/* Custos extras */}
                 <div style={{ marginTop: 12 }}>
-                  <label style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 6 }}>Custos extras mensais (R$) — VT, VA, etc</label>
+                  <label style={{ color: "var(--dash-text-muted)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 6 }}>Custos extras mensais (R$) — VT, VA, etc</label>
                   <input type="number" placeholder="Ex: 500" value={extraCosts} onChange={e => setExtraCosts(e.target.value)}
-                    style={{ width: "100%", padding: "10px 14px", borderRadius: 12, background: "rgba(255,255,255,0.04)", border: "none", color: "#fff", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+                    style={{ width: "100%", padding: "10px 14px", borderRadius: 12, background: "var(--dash-input-bg)", border: "1px solid var(--dash-border)", color: "var(--dash-text)", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
                   <input type="text" placeholder="Descrição (VT + VA + uniforme)" value={extraCostsDesc} onChange={e => setExtraCostsDesc(e.target.value)}
-                    style={{ width: "100%", padding: "10px 14px", borderRadius: 12, background: "rgba(255,255,255,0.04)", border: "none", color: "#fff", fontSize: 14, outline: "none", boxSizing: "border-box", marginTop: 6 }} />
+                    style={{ width: "100%", padding: "10px 14px", borderRadius: 12, background: "var(--dash-input-bg)", border: "1px solid var(--dash-border)", color: "var(--dash-text)", fontSize: 14, outline: "none", boxSizing: "border-box", marginTop: 6 }} />
                 </div>
 
                 {saveError && (
@@ -825,20 +826,20 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                     <div style={{ color: "#fbbf24", fontSize: 13, fontWeight: 700, marginBottom: 10 }}>
                       "{reactivateCandidate.name}" foi desativado anteriormente.
                     </div>
-                    <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, marginBottom: 12 }}>
+                    <div style={{ color: "var(--dash-text-secondary)", fontSize: 12, marginBottom: 12 }}>
                       Deseja reativar o cadastro existente ou criar um novo funcionário?
                     </div>
                     <div style={{ display: "flex", gap: 8 }}>
                       <button
                         onClick={handleReactivate}
                         disabled={saving}
-                        style={{ flex: 1, padding: "9px", borderRadius: 8, border: "none", background: "rgba(0,255,174,0.12)", color: "#00ffae", fontSize: 13, fontWeight: 800, cursor: saving ? "not-allowed" : "pointer" }}
+                        style={{ flex: 1, padding: "9px", borderRadius: 8, border: "none", background: "var(--dash-accent-soft)", color: "var(--dash-accent)", fontSize: 13, fontWeight: 800, cursor: saving ? "not-allowed" : "pointer" }}
                       >
                         {saving ? "..." : "Reativar"}
                       </button>
                       <button
                         onClick={() => setReactivateCandidate(null)}
-                        style={{ flex: 1, padding: "9px", borderRadius: 8, border: "none", background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.5)", fontSize: 13, fontWeight: 700, cursor: "pointer" }}
+                        style={{ flex: 1, padding: "9px", borderRadius: 8, border: "none", background: "var(--dash-card-hover)", color: "var(--dash-text-muted)", fontSize: 13, fontWeight: 700, cursor: "pointer" }}
                       >
                         Cancelar
                       </button>
@@ -868,7 +869,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
               <div style={{ display: "flex", gap: 4, marginBottom: 12, overflowX: "auto", paddingBottom: 4 }}>
                 <button onClick={() => setFilterTeam("all")} style={{
                   padding: "5px 12px", borderRadius: 8, border: "none", cursor: "pointer", whiteSpace: "nowrap",
-                  background: filterTeam === "all" ? "rgba(0,255,174,0.1)" : "rgba(255,255,255,0.04)",
+                  background: filterTeam === "all" ? "var(--dash-accent-soft)" : "var(--dash-card-hover)",
                   color: filterTeam === "all" ? "var(--dash-accent)" : "var(--dash-text-muted)",
                   fontSize: 11, fontWeight: 600,
                 }}>Todos ({employees.length})</button>
@@ -882,7 +883,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                   return (
                     <button key={t} onClick={() => setFilterTeam(t)} style={{
                       padding: "5px 12px", borderRadius: 8, border: "none", cursor: "pointer", whiteSpace: "nowrap",
-                      background: filterTeam === t ? (isCat ? "rgba(168,85,247,0.15)" : "rgba(0,255,174,0.1)") : "rgba(255,255,255,0.04)",
+                      background: filterTeam === t ? (isCat ? "var(--dash-purple-soft)" : "var(--dash-accent-soft)") : "var(--dash-card-hover)",
                       color: filterTeam === t ? (isCat ? "#c084fc" : "var(--dash-accent)") : "var(--dash-text-muted)",
                       fontSize: 11, fontWeight: 600, textTransform: "capitalize",
                     }}>{t} ({count})</button>
@@ -902,13 +903,13 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
               {filteredEmployees.map((emp) => {
                 const status = STATUS_CONFIG[emp.current_status || "off"];
                 return (
-                  <div key={emp.id} style={{ background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: "12px 14px", border: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", gap: 12 }}>
-                    <div style={{ width: 36, height: 36, borderRadius: "50%", background: emp.is_active ? "rgba(0,255,174,0.12)" : "rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>
+                  <div key={emp.id} style={{ background: "var(--dash-card)", borderRadius: 12, padding: "12px 14px", border: "1px solid var(--dash-border)", display: "flex", alignItems: "center", gap: 12 }}>
+                    <div style={{ width: 36, height: 36, borderRadius: "50%", background: emp.is_active ? "rgba(0,255,174,0.12)" : "var(--dash-card-hover)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>
                       {emp.role === "deliverer" ? "🚴" : emp.role === "kitchen" ? "👨‍🍳" : emp.role === "freelancer" ? "🤝" : "🧑‍🍳"}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 4 }}>
-                        <span style={{ color: emp.is_active ? "#fff" : "#666", fontSize: 14, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{emp.name}</span>
+                        <span style={{ color: emp.is_active ? "var(--dash-text)" : "var(--dash-text-muted)", fontSize: 14, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{emp.name}</span>
                         <span style={{
                           padding: "2px 8px", borderRadius: 6, fontSize: 9, fontWeight: 700,
                           background: `${status.color}15`,
@@ -918,7 +919,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                         </span>
                         <span style={{
                           padding: "2px 8px", borderRadius: 6, fontSize: 9,
-                          background: "rgba(255,255,255,0.04)",
+                          background: "var(--dash-card-hover)",
                           color: "var(--dash-text-muted)",
                           textTransform: "capitalize",
                         }}>
@@ -931,13 +932,13 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                           <span key={cat} style={{ padding: "1px 6px", borderRadius: 5, background: "rgba(168,85,247,0.12)", color: "#c084fc", fontSize: 10, fontWeight: 600 }}>{cat}</span>
                         ))}
                       </div>
-                      <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 11, marginTop: 4 }}>
+                      <div style={{ color: "var(--dash-text-muted)", fontSize: 11, marginTop: 4 }}>
                         {emp.salary > 0 && <span>R$ {(emp.salary / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 })} · </span>}
                         {emp.work_days && emp.work_days.length > 0 && <span>{emp.work_days.join(", ")} · </span>}
                         {emp.shift_start && emp.shift_end && <span>{emp.shift_start.slice(0, 5)} às {emp.shift_end.slice(0, 5)}</span>}
                       </div>
                       {emp.extra_costs > 0 && (
-                        <div style={{ color: "rgba(255,255,255,0.2)", fontSize: 10, marginTop: 2 }}>
+                        <div style={{ color: "var(--dash-text-muted)", fontSize: 10, marginTop: 2 }}>
                           Custos extras: R$ {(emp.extra_costs / 100).toFixed(2)}{emp.extra_costs_description ? ` (${emp.extra_costs_description})` : ""}
                         </div>
                       )}
@@ -966,7 +967,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                     <div style={{ display: "flex", flexDirection: "column", gap: 4, flexShrink: 0 }}>
                       <button
                         onClick={() => openEditModal(emp)}
-                        style={{ padding: "5px 10px", borderRadius: 8, border: "none", background: "rgba(255,255,255,0.06)", color: "var(--dash-text)", fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}
+                        style={{ padding: "5px 10px", borderRadius: 8, border: "none", background: "var(--dash-card-hover)", color: "var(--dash-text)", fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}
                       >
                         ✏️ Editar
                       </button>
@@ -990,7 +991,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                 onClick={() => setShowInactive(v => !v)}
                 style={{
                   width: "100%", padding: "8px 12px", borderRadius: 10, border: "none",
-                  background: "rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.3)",
+                  background: "var(--dash-card)", color: "var(--dash-text-muted)",
                   fontSize: 12, fontWeight: 600, cursor: "pointer", textAlign: "left",
                   display: "flex", justifyContent: "space-between", alignItems: "center",
                 }}
@@ -1002,11 +1003,11 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                 <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 8 }}>
                   {inactiveEmployees.map(emp => (
                     <div key={emp.id} style={{
-                      background: "rgba(255,255,255,0.02)", borderRadius: 12, padding: "10px 14px",
-                      border: "1px solid rgba(255,255,255,0.04)",
+                      background: "var(--dash-card)", borderRadius: 12, padding: "10px 14px",
+                      border: "1px solid var(--dash-border)",
                       display: "flex", alignItems: "center", gap: 10, opacity: 0.5,
                     }}>
-                      <div style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(255,255,255,0.04)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>
+                      <div style={{ width: 32, height: 32, borderRadius: "50%", background: "var(--dash-card-hover)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>
                         {emp.role === "deliverer" ? "🚴" : emp.role === "kitchen" ? "👨‍🍳" : emp.role === "freelancer" ? "🤝" : "🧑‍🍳"}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
@@ -1039,27 +1040,27 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {waiterStats.map((stat) => (
-                <div key={stat.employee_id} style={{ background: "rgba(255,255,255,0.04)", borderRadius: 14, padding: "14px 16px", border: "1px solid rgba(255,255,255,0.07)" }}>
+                <div key={stat.employee_id} style={{ background: "var(--dash-card)", borderRadius: 14, padding: "14px 16px", border: "1px solid var(--dash-border)" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
                     <div>
-                      <div style={{ color: "#fff", fontSize: 15, fontWeight: 700 }}>{stat.employee_name}</div>
+                      <div style={{ color: "var(--dash-text)", fontSize: 15, fontWeight: 700 }}>{stat.employee_name}</div>
                       <RatingStars value={stat.avg_rating} />
                     </div>
                     <div style={{ textAlign: "right" }}>
-                      <div style={{ color: "#00ffae", fontSize: 20, fontWeight: 900 }}>{stat.total_orders}</div>
-                      <div style={{ color: "#888", fontSize: 11 }}>pedidos</div>
+                      <div style={{ color: "var(--dash-accent)", fontSize: 20, fontWeight: 900 }}>{stat.total_orders}</div>
+                      <div style={{ color: "var(--dash-text-muted)", fontSize: 11 }}>pedidos</div>
                     </div>
                   </div>
                   <div style={{ display: "flex", gap: 8 }}>
-                    <div style={{ flex: 1, background: "rgba(255,255,255,0.04)", borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
-                      <div style={{ color: "#fff", fontSize: 14, fontWeight: 700 }}>{stat.rating_count}</div>
-                      <div style={{ color: "#888", fontSize: 10 }}>avaliações</div>
+                    <div style={{ flex: 1, background: "var(--dash-card-hover)", borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
+                      <div style={{ color: "var(--dash-text)", fontSize: 14, fontWeight: 700 }}>{stat.rating_count}</div>
+                      <div style={{ color: "var(--dash-text-muted)", fontSize: 10 }}>avaliações</div>
                     </div>
-                    <div style={{ flex: 1, background: "rgba(255,255,255,0.04)", borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
+                    <div style={{ flex: 1, background: "var(--dash-card-hover)", borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
                       <div style={{ color: stat.avg_rating && stat.avg_rating >= 4 ? "#00ffae" : stat.avg_rating && stat.avg_rating >= 3 ? "#fbbf24" : "#f87171", fontSize: 14, fontWeight: 700 }}>
                         {stat.avg_rating ? stat.avg_rating.toFixed(1) : "—"}
                       </div>
-                      <div style={{ color: "#888", fontSize: 10 }}>média</div>
+                      <div style={{ color: "var(--dash-text-muted)", fontSize: 10 }}>média</div>
                     </div>
                   </div>
                 </div>
@@ -1080,27 +1081,27 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {delivererStats.map((stat) => (
-                <div key={stat.employee_id} style={{ background: "rgba(255,255,255,0.04)", borderRadius: 14, padding: "14px 16px", border: "1px solid rgba(255,255,255,0.07)" }}>
+                <div key={stat.employee_id} style={{ background: "var(--dash-card)", borderRadius: 14, padding: "14px 16px", border: "1px solid var(--dash-border)" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
                     <div>
-                      <div style={{ color: "#fff", fontSize: 15, fontWeight: 700 }}>{stat.employee_name}</div>
+                      <div style={{ color: "var(--dash-text)", fontSize: 15, fontWeight: 700 }}>{stat.employee_name}</div>
                       <RatingStars value={stat.avg_rating} />
                     </div>
                     <div style={{ textAlign: "right" }}>
                       <div style={{ color: "#60a5fa", fontSize: 20, fontWeight: 900 }}>{stat.total_deliveries}</div>
-                      <div style={{ color: "#888", fontSize: 11 }}>entregas</div>
+                      <div style={{ color: "var(--dash-text-muted)", fontSize: 11 }}>entregas</div>
                     </div>
                   </div>
                   <div style={{ display: "flex", gap: 8 }}>
-                    <div style={{ flex: 1, background: "rgba(255,255,255,0.04)", borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
-                      <div style={{ color: "#fff", fontSize: 14, fontWeight: 700 }}>{stat.rating_count}</div>
-                      <div style={{ color: "#888", fontSize: 10 }}>avaliações</div>
+                    <div style={{ flex: 1, background: "var(--dash-card-hover)", borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
+                      <div style={{ color: "var(--dash-text)", fontSize: 14, fontWeight: 700 }}>{stat.rating_count}</div>
+                      <div style={{ color: "var(--dash-text-muted)", fontSize: 10 }}>avaliações</div>
                     </div>
-                    <div style={{ flex: 1, background: "rgba(255,255,255,0.04)", borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
+                    <div style={{ flex: 1, background: "var(--dash-card-hover)", borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
                       <div style={{ color: stat.avg_rating && stat.avg_rating >= 4 ? "#00ffae" : stat.avg_rating && stat.avg_rating >= 3 ? "#fbbf24" : "#f87171", fontSize: 14, fontWeight: 700 }}>
                         {stat.avg_rating ? stat.avg_rating.toFixed(1) : "—"}
                       </div>
-                      <div style={{ color: "#888", fontSize: 10 }}>média</div>
+                      <div style={{ color: "var(--dash-text-muted)", fontSize: 10 }}>média</div>
                     </div>
                   </div>
                 </div>
@@ -1137,7 +1138,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                 const status = emp.current_status || "off";
                 const statusConfig: Record<string, { label: string; color: string; actions: { type: string; label: string; icon: string; nextStatus: string }[] }> = {
                   off: {
-                    label: "Fora", color: "rgba(255,255,255,0.3)",
+                    label: "Fora", color: "var(--dash-text-muted)",
                     actions: [{ type: "clock_in", label: "Entrada", icon: "▶️", nextStatus: "working" }],
                   },
                   working: {
@@ -1170,8 +1171,8 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                   <div key={emp.id} style={{
                     display: "flex", alignItems: "center", gap: 10,
                     padding: "12px 14px", borderRadius: 14,
-                    background: "rgba(255,255,255,0.03)",
-                    boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
+                    background: "var(--dash-card)",
+                    border: "1px solid var(--dash-border)",
                     marginBottom: 6,
                   }}>
                     <div style={{ flex: 1 }}>
@@ -1232,7 +1233,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                     return (
                       <div key={entry.id} style={{
                         display: "flex", alignItems: "center", gap: 8,
-                        padding: "8px 12px", borderRadius: 10, background: "rgba(255,255,255,0.02)",
+                        padding: "8px 12px", borderRadius: 10, background: "var(--dash-card)",
                       }}>
                         <span style={{ fontSize: 12 }}>{tc.icon}</span>
                         <div style={{ flex: 1 }}>
@@ -1266,8 +1267,8 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                 return (
                   <div key={emp.id} style={{
                     padding: "12px 14px", borderRadius: 14,
-                    background: "rgba(255,255,255,0.03)",
-                    boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
+                    background: "var(--dash-card)",
+                    border: "1px solid var(--dash-border)",
                     marginBottom: 6,
                   }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
@@ -1323,7 +1324,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                           const pct = weekTarget > 0 ? Math.min((weekHours / weekTarget) * 100, 100) : 0;
                           return (
                             <>
-                              <div style={{ height: 4, borderRadius: 2, background: "rgba(255,255,255,0.04)", overflow: "hidden" }}>
+                              <div style={{ height: 4, borderRadius: 2, background: "var(--dash-card-hover)", overflow: "hidden" }}>
                                 <div style={{ height: "100%", borderRadius: 2, width: `${pct}%`, background: "var(--dash-accent)", transition: "width 0.5s" }} />
                               </div>
                               <div style={{ fontSize: 9, color: "var(--dash-text-muted)", marginTop: 3 }}>
@@ -1357,32 +1358,32 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
             width: 520, maxWidth: "100%", maxHeight: "90vh", overflowY: "auto",
             background: "var(--dash-card, #1a1a1a)",
             borderRadius: 20, padding: 24,
-            border: "1px solid rgba(255,255,255,0.08)",
+            border: "1px solid var(--dash-border)",
             boxShadow: "0 30px 80px rgba(0,0,0,0.6)",
           }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
               <div style={{ fontSize: 16, fontWeight: 800, color: "var(--dash-text, #fff)" }}>Editar funcionário</div>
-              <button onClick={() => setEditingEmployee(null)} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", fontSize: 20, cursor: "pointer", lineHeight: 1 }}>✕</button>
+              <button onClick={() => setEditingEmployee(null)} style={{ background: "none", border: "none", color: "var(--dash-text-muted)", fontSize: 20, cursor: "pointer", lineHeight: 1 }}>✕</button>
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {/* Nome */}
               <div>
-                <label style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 5 }}>Nome</label>
+                <label style={{ color: "var(--dash-text-muted)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 5 }}>Nome</label>
                 <input style={inp} value={editName} onChange={e => setEditName(e.target.value)} placeholder="Nome do funcionário" />
               </div>
 
               {/* Cargo */}
               <div>
-                <label style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 5 }}>Cargo</label>
-                <select style={{ ...inp, backgroundColor: "rgba(255,255,255,0.05)" }} value={editRole} onChange={e => setEditRole(e.target.value)}>
+                <label style={{ color: "var(--dash-text-muted)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 5 }}>Cargo</label>
+                <select style={{ ...inp, backgroundColor: "var(--dash-input-bg)" }} value={editRole} onChange={e => setEditRole(e.target.value)}>
                   {Object.entries(ROLES).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                 </select>
               </div>
 
               {/* CPF portal */}
               <div>
-                <label style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 5 }}>CPF (acesso ao portal)</label>
+                <label style={{ color: "var(--dash-text-muted)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 5 }}>CPF (acesso ao portal)</label>
                 <input
                   style={inp}
                   inputMode="numeric"
@@ -1395,7 +1396,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
 
               {/* Senha portal */}
               <div>
-                <label style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 5 }}>Senha do portal</label>
+                <label style={{ color: "var(--dash-text-muted)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 5 }}>Senha do portal</label>
                 <div style={{ position: "relative" }}>
                   <input
                     style={{ ...inp, paddingRight: 40 }}
@@ -1408,7 +1409,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                   <button
                     type="button"
                     onClick={() => setEditShowPassword(v => !v)}
-                    style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "rgba(255,255,255,0.35)", cursor: "pointer", fontSize: 14, padding: 4 }}
+                    style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "var(--dash-text-muted)", cursor: "pointer", fontSize: 14, padding: 4 }}
                     tabIndex={-1}
                   >
                     {editShowPassword ? "🙈" : "👁️"}
@@ -1418,7 +1419,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
 
               {/* Funções / Equipe — multi-select */}
               <div>
-                <label style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 5 }}>
+                <label style={{ color: "var(--dash-text-muted)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 5 }}>
                   Função(ões) <span style={{ fontWeight: 400, opacity: 0.5 }}>— pode selecionar várias</span>
                 </label>
                 <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
@@ -1428,9 +1429,9 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                       <button key={t} type="button"
                         onClick={() => setEditTeams(prev => sel ? (prev.length > 1 ? prev.filter(x => x !== t) : prev) : [...prev, t])}
                         style={{
-                          padding: "5px 12px", borderRadius: 8, border: sel ? "none" : "1px solid rgba(255,255,255,0.12)", cursor: "pointer",
-                          background: sel ? "#00ffae" : "rgba(255,255,255,0.06)",
-                          color: sel ? "#000" : "#fff",
+                          padding: "5px 12px", borderRadius: 8, border: sel ? "none" : "1px solid var(--dash-border)", cursor: "pointer",
+                          background: sel ? "var(--dash-accent)" : "var(--dash-card-hover)",
+                          color: sel ? "#000" : "var(--dash-text)",
                           fontSize: 11, fontWeight: sel ? 700 : 500, textTransform: "capitalize",
                         }}>{t}</button>
                     );
@@ -1441,26 +1442,26 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
               {/* Salário e custos extras */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                 <div>
-                  <label style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 5 }}>Salário (R$)</label>
+                  <label style={{ color: "var(--dash-text-muted)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 5 }}>Salário (R$)</label>
                   <input type="number" style={inp} value={editSalary} onChange={e => setEditSalary(e.target.value)} placeholder="Ex: 1800" />
                 </div>
                 <div>
-                  <label style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 5 }}>Custos extras (R$)</label>
+                  <label style={{ color: "var(--dash-text-muted)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 5 }}>Custos extras (R$)</label>
                   <input type="number" style={inp} value={editExtraCosts} onChange={e => setEditExtraCosts(e.target.value)} placeholder="Ex: 300" />
                 </div>
               </div>
 
               {/* Dias de trabalho */}
               <div>
-                <label style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 5 }}>Dias de trabalho</label>
+                <label style={{ color: "var(--dash-text-muted)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 5 }}>Dias de trabalho</label>
                 <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
                   {["seg", "ter", "qua", "qui", "sex", "sab", "dom"].map(day => (
                     <button key={day} type="button"
                       onClick={() => setEditWorkDays(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day])}
                       style={{
                         padding: "6px 12px", borderRadius: 8, border: "none", cursor: "pointer",
-                        background: editWorkDays.includes(day) ? "rgba(0,255,174,0.1)" : "rgba(255,255,255,0.04)",
-                        color: editWorkDays.includes(day) ? "var(--dash-accent, #00ffae)" : "rgba(255,255,255,0.3)",
+                        background: editWorkDays.includes(day) ? "var(--dash-accent-soft)" : "var(--dash-card-hover)",
+                        color: editWorkDays.includes(day) ? "var(--dash-accent)" : "var(--dash-text-muted)",
                         fontSize: 12, fontWeight: 600,
                       }}>{day}</button>
                   ))}
@@ -1470,11 +1471,11 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
               {/* Horário */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                 <div>
-                  <label style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 5 }}>Entrada</label>
+                  <label style={{ color: "var(--dash-text-muted)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 5 }}>Entrada</label>
                   <input type="time" style={inp} value={editShiftStart} onChange={e => setEditShiftStart(e.target.value)} />
                 </div>
                 <div>
-                  <label style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 5 }}>Saída</label>
+                  <label style={{ color: "var(--dash-text-muted)", fontSize: 11, fontWeight: 600, display: "block", marginBottom: 5 }}>Saída</label>
                   <input type="time" style={inp} value={editShiftEnd} onChange={e => setEditShiftEnd(e.target.value)} />
                 </div>
               </div>
@@ -1510,7 +1511,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                 <div style={{ padding: 14, borderRadius: 12, background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.2)" }}>
                   <div style={{ color: "#f87171", fontSize: 13, fontWeight: 700, marginBottom: 10 }}>
                     Tem certeza que deseja excluir {editingEmployee.name}?<br />
-                    <span style={{ fontSize: 11, fontWeight: 400, color: "rgba(255,255,255,0.4)" }}>Esta ação pode ser revertida.</span>
+                    <span style={{ fontSize: 11, fontWeight: 400, color: "var(--dash-text-muted)" }}>Esta ação pode ser revertida.</span>
                   </div>
                   <div style={{ display: "flex", gap: 8 }}>
                     <button
@@ -1521,7 +1522,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                     </button>
                     <button
                       onClick={() => setConfirmDelete(false)}
-                      style={{ flex: 1, padding: "9px", borderRadius: 8, border: "none", background: "rgba(255,255,255,0.06)", color: "var(--dash-text, #fff)", fontSize: 13, fontWeight: 700, cursor: "pointer" }}
+                      style={{ flex: 1, padding: "9px", borderRadius: 8, border: "none", background: "var(--dash-card-hover)", color: "var(--dash-text)", fontSize: 13, fontWeight: 700, cursor: "pointer" }}
                     >
                       Cancelar
                     </button>

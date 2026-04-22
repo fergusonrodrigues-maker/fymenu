@@ -179,6 +179,76 @@ html:not(.dark) {
   --dash-info-soft: rgba(37,99,235,0.06);
   --dash-purple: rgba(124,58,237,0.8);
   --dash-purple-soft: rgba(124,58,237,0.06);
+  /* Extended semantic tokens for light mode */
+  --dash-text-heading: #0a0a0a;
+  --dash-text-primary: #1a1a1a;
+  --dash-text-body: #2a2a2a;
+  --dash-text-label: #555555;
+  --dash-text-disabled: #bbbbbb;
+  --dash-accent-dark: #00754e;
+  --dash-accent-bg: rgba(0,176,122,0.10);
+  --dash-accent-bg-hover: rgba(0,176,122,0.18);
+  --dash-surface: #ffffff;
+  --dash-surface-alt: #f8f8f8;
+  --dash-border-strong: rgba(0,0,0,0.14);
+  --dash-success: #16a34a;
+  --dash-purple-solid: #6d28d9;
+  --dash-purple-bg: rgba(139,92,246,0.10);
+}
+
+/* ===== LIGHT-MODE MODAL CONTRAST OVERRIDES ===== */
+/*
+ * Both containers targeted:
+ *   .modal-desktop-scroll  — desktop scrollable body (already exists)
+ *   .dashboard-modal       — mobile inner content wrapper (added to DashboardClient)
+ *
+ * CSS !important overrides inline React styles safely.
+ * Dark theme is completely untouched (these all live inside html:not(.dark)).
+ */
+
+/* ── Inputs, textareas ── */
+html:not(.dark) .modal-desktop-scroll input:not([type="range"]):not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="submit"]),
+html:not(.dark) .dashboard-modal      input:not([type="range"]):not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="submit"]),
+html:not(.dark) .modal-desktop-scroll textarea,
+html:not(.dark) .dashboard-modal      textarea {
+  color: #1a1a1a !important;
+  background-color: #f8f8f8 !important;
+  border-color: rgba(0,0,0,0.12) !important;
+}
+
+/* ── Selects ── */
+html:not(.dark) .modal-desktop-scroll select,
+html:not(.dark) .dashboard-modal      select {
+  color: #1a1a1a !important;
+  background-color: #f8f8f8 !important;
+  border-color: rgba(0,0,0,0.12) !important;
+}
+
+/* ── Placeholders ── */
+html:not(.dark) .modal-desktop-scroll input::placeholder,
+html:not(.dark) .dashboard-modal      input::placeholder,
+html:not(.dark) .modal-desktop-scroll textarea::placeholder,
+html:not(.dark) .dashboard-modal      textarea::placeholder {
+  color: #aaaaaa !important;
+  opacity: 1 !important;
+}
+
+/* ── Labels ── */
+html:not(.dark) .modal-desktop-scroll label,
+html:not(.dark) .dashboard-modal      label {
+  color: #555555 !important;
+}
+
+/* ── Table headers in modals ── */
+html:not(.dark) .modal-desktop-scroll th,
+html:not(.dark) .dashboard-modal      th {
+  color: #555555 !important;
+  border-color: rgba(0,0,0,0.08) !important;
+}
+html:not(.dark) .modal-desktop-scroll td,
+html:not(.dark) .dashboard-modal      td {
+  color: #1a1a1a !important;
+  border-color: rgba(0,0,0,0.06) !important;
 }
 
 /* ===== THEME TOGGLE STYLES ===== */

@@ -256,7 +256,7 @@ function Modal({ open, onClose, children, title, size = "md" }: {
             >✕</button>
           </div>
         </div>
-        <div style={{ padding: "16px 20px 32px" }}>
+        <div className="dashboard-modal" style={{ padding: "16px 20px 32px" }}>
           {children}
         </div>
       </div>

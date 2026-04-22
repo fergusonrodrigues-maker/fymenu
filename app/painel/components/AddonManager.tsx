@@ -53,7 +53,7 @@ export function AddonManager({ productId, unitId, productName }: AddonManagerPro
   return (
     <div style={{ padding: "12px 16px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", fontWeight: 500 }}>
+        <span style={{ fontSize: 12, color: "var(--dash-text-muted)", fontWeight: 500 }}>
           {productName ? `Adicionais de ${productName}` : "Adicionais"}
         </span>
         <button
@@ -91,7 +91,7 @@ export function AddonManager({ productId, unitId, productName }: AddonManagerPro
             </button>
             <button
               onClick={() => setIsCreating(false)}
-              style={{ flex: 1, padding: "8px 0", background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, fontWeight: 600, fontSize: 13, cursor: "pointer" }}
+              style={{ flex: 1, padding: "8px 0", background: "var(--dash-card-hover)", color: "var(--dash-text-muted)", border: "1px solid var(--dash-border)", borderRadius: 8, fontWeight: 600, fontSize: 13, cursor: "pointer" }}
             >
               Cancelar
             </button>
@@ -103,7 +103,7 @@ export function AddonManager({ productId, unitId, productName }: AddonManagerPro
         {loading ? (
           <div style={{ display: "flex", justifyContent: "center", padding: "8px 0" }}><FyLoader size="sm" /></div>
         ) : addons.length === 0 ? (
-          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", margin: 0 }}>Nenhum adicional cadastrado</p>
+          <p style={{ fontSize: 12, color: "var(--dash-text-muted)", margin: 0 }}>Nenhum adicional cadastrado</p>
         ) : (
           addons.map((addon) => (
             <div
@@ -114,8 +114,8 @@ export function AddonManager({ productId, unitId, productName }: AddonManagerPro
                 alignItems: "center",
                 padding: "8px 10px",
                 borderRadius: 8,
-                background: addon.enabled ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.02)",
-                border: "1px solid rgba(255,255,255,0.08)",
+                background: "var(--dash-card)",
+                border: "1px solid var(--dash-border)",
                 opacity: addon.enabled ? 1 : 0.5,
               }}
             >
@@ -139,8 +139,8 @@ export function AddonManager({ productId, unitId, productName }: AddonManagerPro
               ) : (
                 <>
                   <div>
-                    <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "#fff" }}>{addon.name}</p>
-                    <p style={{ margin: 0, fontSize: 12, color: "rgba(255,255,255,0.4)" }}>
+                    <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "var(--dash-text)" }}>{addon.name}</p>
+                    <p style={{ margin: 0, fontSize: 12, color: "var(--dash-text-muted)" }}>
                       {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(addon.price / 100)}
                     </p>
                   </div>
@@ -175,9 +175,9 @@ export function AddonManager({ productId, unitId, productName }: AddonManagerPro
 const inputStyle: React.CSSProperties = {
   padding: "8px 10px",
   borderRadius: 8,
-  border: "1px solid rgba(255,255,255,0.1)",
-  background: "rgba(255,255,255,0.05)",
-  color: "#fff",
+  border: "1px solid var(--dash-border)",
+  background: "var(--dash-input-bg)",
+  color: "var(--dash-text)",
   fontSize: 13,
   outline: "none",
   boxSizing: "border-box",
@@ -191,9 +191,9 @@ const iconBtnStyle: React.CSSProperties = {
   width: 30,
   height: 30,
   borderRadius: 6,
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.1)",
-  color: "rgba(255,255,255,0.6)",
+  background: "var(--dash-card-hover)",
+  border: "1px solid var(--dash-border)",
+  color: "var(--dash-text-muted)",
   cursor: "pointer",
 };
 
@@ -225,9 +225,9 @@ const saveBtnStyle: React.CSSProperties = {
 
 const cancelBtnStyle: React.CSSProperties = {
   padding: "6px 12px",
-  background: "rgba(255,255,255,0.06)",
-  color: "rgba(255,255,255,0.6)",
-  border: "1px solid rgba(255,255,255,0.1)",
+  background: "var(--dash-card-hover)",
+  color: "var(--dash-text-muted)",
+  border: "1px solid var(--dash-border)",
   borderRadius: 6,
   fontSize: 12,
   fontWeight: 600,

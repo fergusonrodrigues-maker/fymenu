@@ -68,7 +68,7 @@ function daysSince(iso: string | null): number {
 // ─── Input styles ─────────────────────────────────────────────────────────────
 const INPUT: React.CSSProperties = {
   width: "100%", padding: "9px 12px", borderRadius: 10,
-  background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)",
+  background: "var(--dash-card-hover)", border: "1px solid var(--dash-border)",
   color: "var(--dash-text)", fontSize: 13, fontFamily: "inherit", outline: "none",
   boxSizing: "border-box",
 };
@@ -93,7 +93,7 @@ function ModalOverlay({ onClose, children }: { onClose: () => void; children: Re
       <div onClick={e => e.stopPropagation()} style={{
         width: "100%", maxWidth: 480, maxHeight: "90vh", overflowY: "auto",
         borderRadius: 20, background: "var(--dash-card)",
-        border: "1px solid rgba(255,255,255,0.1)",
+        border: "1px solid var(--dash-border)",
         boxShadow: "0 24px 64px rgba(0,0,0,0.5)", padding: 24,
       }}>
         {children}
@@ -168,7 +168,7 @@ function QuickSendModal({
           disabled={sending || !message.trim()}
           style={{
             flex: 1, padding: "11px", borderRadius: 12, border: "none", cursor: "pointer",
-            background: sending || !message.trim() ? "rgba(255,255,255,0.06)" : WA_GREEN,
+            background: sending || !message.trim() ? "var(--dash-card-hover)" : WA_GREEN,
             color: sending || !message.trim() ? "var(--dash-text-muted)" : "#fff",
             fontSize: 13, fontWeight: 700,
           }}
@@ -177,7 +177,7 @@ function QuickSendModal({
         </button>
         <button onClick={onClose} style={{
           padding: "11px 18px", borderRadius: 12, border: "none", cursor: "pointer",
-          background: "rgba(255,255,255,0.06)", color: "var(--dash-text-muted)", fontSize: 13,
+          background: "var(--dash-card-hover)", color: "var(--dash-text-muted)", fontSize: 13,
         }}>Fechar</button>
       </div>
     </ModalOverlay>
@@ -300,7 +300,7 @@ function CustomerFormModal({
       {isEdit && customer && (
         <div style={{
           display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 20,
-          padding: 12, borderRadius: 12, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)",
+          padding: 12, borderRadius: 12, background: "var(--dash-card-hover)", border: "1px solid var(--dash-border)",
         }}>
           <div style={{ textAlign: "center" }}>
             <div style={{ fontSize: 15, fontWeight: 800, color: "var(--dash-accent)" }}>{customer.total_orders}</div>
@@ -318,7 +318,7 @@ function CustomerFormModal({
             </div>
             <div style={{ fontSize: 9, color: "var(--dash-text-muted)" }}>Último pedido</div>
           </div>
-          <div style={{ textAlign: "center", gridColumn: "1 / -1", marginTop: 4, borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 8 }}>
+          <div style={{ textAlign: "center", gridColumn: "1 / -1", marginTop: 4, borderTop: "1px solid var(--dash-border)", paddingTop: 8 }}>
             <span style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>
               Fonte: <strong>{customer.source}</strong> · Cadastrado em {new Date(customer.created_at).toLocaleDateString("pt-BR")}
             </span>
@@ -409,7 +409,7 @@ function CustomerFormModal({
         </button>
         <button onClick={onClose} style={{
           padding: "12px 18px", borderRadius: 12, border: "none", cursor: "pointer",
-          background: "rgba(255,255,255,0.06)", color: "var(--dash-text-muted)", fontSize: 13,
+          background: "var(--dash-card-hover)", color: "var(--dash-text-muted)", fontSize: 13,
         }}>Cancelar</button>
       </div>
 
@@ -464,7 +464,7 @@ function DeleteConfirmModal({
           </button>
           <button onClick={onClose} style={{
             flex: 1, padding: "11px", borderRadius: 12, border: "none", cursor: "pointer",
-            background: "rgba(255,255,255,0.06)", color: "var(--dash-text-muted)", fontSize: 13,
+            background: "var(--dash-card-hover)", color: "var(--dash-text-muted)", fontSize: 13,
           }}>Cancelar</button>
         </div>
       </div>
@@ -556,8 +556,8 @@ function ImportModal({ unitId, onImported, onClose }: { unitId: string; onImport
   const previewRows = buildImportRows().slice(0, 5);
 
   const selectStyle: React.CSSProperties = {
-    padding: "7px 10px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.12)",
-    background: "rgba(255,255,255,0.06)", color: "var(--dash-text)", fontSize: 12,
+    padding: "7px 10px", borderRadius: 8, border: "1px solid var(--dash-border)",
+    background: "var(--dash-card-hover)", color: "var(--dash-text)", fontSize: 12,
     flex: 1,
   };
 
@@ -572,9 +572,9 @@ function ImportModal({ unitId, onImported, onClose }: { unitId: string; onImport
       {step === "upload" && (
         <div>
           <div style={{
-            padding: "28px 20px", borderRadius: 14, border: "2px dashed rgba(255,255,255,0.12)",
+            padding: "28px 20px", borderRadius: 14, border: "2px dashed var(--dash-border)",
             textAlign: "center", cursor: "pointer",
-            background: "rgba(255,255,255,0.02)",
+            background: "var(--dash-card)",
           }}
             onClick={() => fileRef.current?.click()}
             onDragOver={e => e.preventDefault()}
@@ -586,7 +586,7 @@ function ImportModal({ unitId, onImported, onClose }: { unitId: string; onImport
             <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls" style={{ display: "none" }}
               onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
           </div>
-          <div style={{ marginTop: 14, padding: "12px 14px", borderRadius: 10, background: "rgba(255,255,255,0.03)", fontSize: 11, color: "var(--dash-text-muted)", lineHeight: 1.8 }}>
+          <div style={{ marginTop: 14, padding: "12px 14px", borderRadius: 10, background: "var(--dash-card-hover)", fontSize: 11, color: "var(--dash-text-muted)", lineHeight: 1.8 }}>
             <strong style={{ color: "var(--dash-text)" }}>Colunas obrigatórias:</strong> nome, telefone<br />
             <strong style={{ color: "var(--dash-text)" }}>Colunas opcionais:</strong> endereco, bairro, cidade
           </div>
@@ -628,7 +628,7 @@ function ImportModal({ unitId, onImported, onClose }: { unitId: string; onImport
             disabled={!colMap.name || !colMap.phone}
             style={{
               width: "100%", marginTop: 16, padding: "11px", borderRadius: 12, border: "none", cursor: "pointer",
-              background: colMap.name && colMap.phone ? "var(--dash-accent)" : "rgba(255,255,255,0.06)",
+              background: colMap.name && colMap.phone ? "var(--dash-accent)" : "var(--dash-card-hover)",
               color: colMap.name && colMap.phone ? "#fff" : "var(--dash-text-muted)",
               fontSize: 13, fontWeight: 700,
             }}
@@ -649,13 +649,13 @@ function ImportModal({ unitId, onImported, onClose }: { unitId: string; onImport
               <thead>
                 <tr>
                   {["Nome", "Telefone", "Bairro", "Cidade"].map(h => (
-                    <th key={h} style={{ padding: "6px 8px", textAlign: "left", color: "var(--dash-text-muted)", borderBottom: "1px solid rgba(255,255,255,0.08)", whiteSpace: "nowrap" }}>{h}</th>
+                    <th key={h} style={{ padding: "6px 8px", textAlign: "left", color: "var(--dash-text-muted)", borderBottom: "1px solid var(--dash-border)", whiteSpace: "nowrap" }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {previewRows.map((r, i) => (
-                  <tr key={i} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                  <tr key={i} style={{ borderBottom: "1px solid var(--dash-border)" }}>
                     <td style={{ padding: "6px 8px", color: "var(--dash-text)" }}>{r.name || "—"}</td>
                     <td style={{ padding: "6px 8px", color: "var(--dash-text-muted)" }}>{fmtPhone(r.phone) || r.phone}</td>
                     <td style={{ padding: "6px 8px", color: "var(--dash-text-muted)" }}>{r.neighborhood || "—"}</td>
@@ -674,7 +674,7 @@ function ImportModal({ unitId, onImported, onClose }: { unitId: string; onImport
             </button>
             <button onClick={() => setStep("map")} style={{
               padding: "11px 16px", borderRadius: 12, border: "none", cursor: "pointer",
-              background: "rgba(255,255,255,0.06)", color: "var(--dash-text-muted)", fontSize: 13,
+              background: "var(--dash-card-hover)", color: "var(--dash-text-muted)", fontSize: 13,
             }}>← Voltar</button>
           </div>
         </div>
@@ -684,7 +684,7 @@ function ImportModal({ unitId, onImported, onClose }: { unitId: string; onImport
       {step === "importing" && (
         <div style={{ textAlign: "center", padding: "16px 0" }}>
           <div style={{ fontSize: 13, color: "var(--dash-text-muted)", marginBottom: 16 }}>Importando clientes...</div>
-          <div style={{ height: 8, borderRadius: 4, background: "rgba(255,255,255,0.08)", marginBottom: 8 }}>
+          <div style={{ height: 8, borderRadius: 4, background: "var(--dash-card-hover)", marginBottom: 8 }}>
             <div style={{ height: "100%", borderRadius: 4, background: "var(--dash-accent)", width: `${progress}%`, transition: "width 0.4s ease" }} />
           </div>
           <div style={{ fontSize: 11, color: "var(--dash-text-muted)" }}>{progress}%</div>
@@ -954,7 +954,7 @@ export default function CrmModal({ unit, restaurant, onOpenImport }: { unit: any
                 <button
                   onClick={() => setImportOpen(true)}
                   style={{
-                    padding: "8px 12px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.12)",
+                    padding: "8px 12px", borderRadius: 10, border: "1px solid var(--dash-border)",
                     background: "transparent", color: "var(--dash-text-muted)", fontSize: 11, fontWeight: 600, cursor: "pointer",
                     display: "flex", alignItems: "center", gap: 5,
                   }}
@@ -998,7 +998,7 @@ export default function CrmModal({ unit, restaurant, onOpenImport }: { unit: any
                             <span style={{ padding: "1px 6px", borderRadius: 4, fontSize: 8, background: "rgba(99,102,241,0.12)", color: "#818cf8" }}>manual</span>
                           )}
                           {c.source === "import" && (
-                            <span style={{ padding: "1px 6px", borderRadius: 4, fontSize: 8, background: "rgba(255,255,255,0.06)", color: "var(--dash-text-muted)" }}>import</span>
+                            <span style={{ padding: "1px 6px", borderRadius: 4, fontSize: 8, background: "var(--dash-card-hover)", color: "var(--dash-text-muted)" }}>import</span>
                           )}
                           {Array.isArray(c.tags) && c.tags.slice(0, 2).map(tag => (
                             <span key={tag} style={{ padding: "1px 6px", borderRadius: 4, fontSize: 8, background: "var(--dash-accent-soft)", color: "var(--dash-accent)" }}>{tag}</span>
