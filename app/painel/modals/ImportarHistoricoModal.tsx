@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import Papa from "papaparse";
 import type { Unit, Restaurant } from "../types";
-import { createImportBatch } from "../importar/actions";
+import { createImportBatch, extractDataWithAI } from "../importar/actions";
 import { parseMoneyToCents } from "../importar/utils";
 import type { ImportTargetTable } from "../importar/utils";
 
@@ -28,7 +28,7 @@ interface FieldDef {
 
 interface TypeConfig {
   label: string;
-  icon: string;
+  icon: React.ReactNode;
   desc: string;
   table: ImportTargetTable;
   templateFile: string;
@@ -41,10 +41,57 @@ const DATE_FORMAT_LABELS: Record<string, string> = {
   "MM/DD/YYYY": "MM/DD/AAAA (EUA)",
 };
 
+// ─── Lucide-style SVG icons ───────────────────────────────────────────────────
+function IconCart() {
+  return (
+    <svg viewBox="0 0 24 24" width={24} height={24} stroke="#00b07a" strokeWidth={2} fill="none" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+      <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+    </svg>
+  );
+}
+function IconWallet() {
+  return (
+    <svg viewBox="0 0 24 24" width={24} height={24} stroke="#00b07a" strokeWidth={2} fill="none" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/>
+      <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/>
+      <path d="M18 12a2 2 0 0 0 0 4h4v-4z"/>
+    </svg>
+  );
+}
+function IconTrendingUp() {
+  return (
+    <svg viewBox="0 0 24 24" width={24} height={24} stroke="#00b07a" strokeWidth={2} fill="none" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+      <polyline points="17 6 23 6 23 12"/>
+    </svg>
+  );
+}
+function IconPackage() {
+  return (
+    <svg viewBox="0 0 24 24" width={24} height={24} stroke="#00b07a" strokeWidth={2} fill="none" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/>
+      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+      <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+      <line x1="12" y1="22.08" x2="12" y2="12"/>
+    </svg>
+  );
+}
+function IconUsers() {
+  return (
+    <svg viewBox="0 0 24 24" width={24} height={24} stroke="#00b07a" strokeWidth={2} fill="none" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+      <circle cx="9" cy="7" r="4"/>
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+    </svg>
+  );
+}
+
 const TYPE_CONFIGS: TypeConfig[] = [
   {
     label: "Pedidos",
-    icon: "🛒",
+    icon: <IconCart />,
     desc: "Pedidos históricos com valor, cliente e forma de pagamento",
     table: "order_intents",
     templateFile: "/templates/import/pedidos.csv",
@@ -60,7 +107,7 @@ const TYPE_CONFIGS: TypeConfig[] = [
   },
   {
     label: "Custos",
-    icon: "💼",
+    icon: <IconWallet />,
     desc: "Despesas operacionais, compras e custos fixos/variáveis",
     table: "business_expenses",
     templateFile: "/templates/import/custos.csv",
@@ -74,7 +121,7 @@ const TYPE_CONFIGS: TypeConfig[] = [
   },
   {
     label: "Pagamentos / Receitas",
-    icon: "💰",
+    icon: <IconTrendingUp />,
     desc: "Recebimentos avulsos, depósitos e receitas não vinculadas a pedidos",
     table: "payments",
     templateFile: "/templates/import/pagamentos.csv",
@@ -88,7 +135,7 @@ const TYPE_CONFIGS: TypeConfig[] = [
   },
   {
     label: "Estoque",
-    icon: "📦",
+    icon: <IconPackage />,
     desc: "Movimentações de estoque: compras, perdas, ajustes retroativos",
     table: "inventory_movements",
     templateFile: "/templates/import/estoque.csv",
@@ -103,7 +150,7 @@ const TYPE_CONFIGS: TypeConfig[] = [
   },
   {
     label: "Clientes / CRM",
-    icon: "👥",
+    icon: <IconUsers />,
     desc: "Base de clientes histórica com histórico de pedidos e gastos",
     table: "crm_customers",
     templateFile: "/templates/import/clientes.csv",
@@ -360,7 +407,14 @@ export default function ImportarHistoricoModal({ unit, restaurant, initialType, 
   const [importStage, setImportStage] = useState("");
   const [result, setResult] = useState<{ batchId: string; count: number; errors?: string[] } | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
+  const [sourceMode, setSourceMode] = useState<"csv" | "ai">("csv");
+  const [aiFile, setAiFile] = useState<File | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [fromAI, setFromAI] = useState(false);
+  const [showAICostConfirm, setShowAICostConfirm] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const aiFileRef = useRef<HTMLInputElement>(null);
 
   const typeConfig = TYPE_CONFIGS.find(t => t.table === selectedType);
 
@@ -387,6 +441,55 @@ export default function ImportarHistoricoModal({ unit, restaurant, initialType, 
     e.preventDefault();
     const f = e.dataTransfer.files[0];
     if (f && (f.name.endsWith(".csv") || f.name.endsWith(".tsv"))) handleFile(f);
+  }
+
+  function handleAIDrop(e: React.DragEvent) {
+    e.preventDefault();
+    const f = e.dataTransfer.files[0];
+    if (f) setAiFile(f);
+  }
+
+  function fileToBase64(f: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(f);
+    });
+  }
+
+  async function handleAIExtract() {
+    if (!aiFile || !typeConfig) return;
+    setAiLoading(true);
+    setAiError(null);
+    setShowAICostConfirm(false);
+    try {
+      const base64 = await fileToBase64(aiFile);
+      const result = await extractDataWithAI({
+        fileBase64: base64,
+        fileName: aiFile.name,
+        fileType: aiFile.type,
+        targetTable: typeConfig.table,
+      });
+      if (!result.ok || !result.records) {
+        setAiError(result.message ?? "Erro na extração.");
+        return;
+      }
+      const rows = result.records.map(rec => ({
+        raw: rec as Record<string, string>,
+        status: "ok" as RowStatus,
+        errors: [],
+        warnings: (result.warnings ?? []) as string[],
+        mapped: rec,
+      }));
+      setPreviewRows(rows);
+      setFromAI(true);
+      setStep(4);
+    } catch (err: any) {
+      setAiError(err.message ?? "Erro inesperado.");
+    } finally {
+      setAiLoading(false);
+    }
   }
 
   // ── Build preview ─────────────────────────────────────────────────────────
@@ -417,11 +520,16 @@ export default function ImportarHistoricoModal({ unit, restaurant, initialType, 
       setImportProgress(50);
       setImportStage(`Inserindo registros (0 de ${validRows.length})...`);
 
+      const aiMime = aiFile?.type ?? "";
+      const aiSourceMethod = fromAI
+        ? (aiMime === "application/pdf" || aiFile?.name?.toLowerCase().endsWith(".pdf") ? "ai_pdf" : "ai_image")
+        : "csv";
+
       const res = await createImportBatch({
         unitId: unit.id,
         targetTable: typeConfig.table,
-        sourceMethod: "csv",
-        sourceFilename: file?.name ?? null,
+        sourceMethod: aiSourceMethod,
+        sourceFilename: fromAI ? (aiFile?.name ?? null) : (file?.name ?? null),
         rows: validRows,
         tags,
       });
@@ -500,8 +608,18 @@ export default function ImportarHistoricoModal({ unit, restaurant, initialType, 
             </div>
           )}
 
+          <div style={{ background: "rgba(0,176,122,0.07)", border: "1px solid rgba(0,176,122,0.18)", borderRadius: 12, padding: "10px 16px", marginBottom: 16, fontSize: 12, color: "var(--dash-text-muted)", lineHeight: 1.6 }}>
+            Não ficou certo? Você pode reverter esta importação a qualquer momento em{" "}
+            <a href="/painel/importacoes" style={{ color: "var(--dash-accent)", fontWeight: 600, textDecoration: "none" }}>
+              Importações Históricas
+            </a>.
+          </div>
+
           <div style={{ display: "flex", gap: 10 }}>
             <button onClick={onClose} style={{ ...S.btnSecondary, flex: 1 }}>Fechar</button>
+            <a href="/painel/importacoes" style={{ ...S.btnPrimary, flex: 1, textAlign: "center", textDecoration: "none", display: "flex", alignItems: "center", justifyContent: "center" } as React.CSSProperties}>
+              Ver importações
+            </a>
           </div>
         </div>
       );
@@ -593,7 +711,14 @@ export default function ImportarHistoricoModal({ unit, restaurant, initialType, 
                 {sel && (
                   <div style={{ position: "absolute", top: 8, right: 8, width: 18, height: 18, borderRadius: "50%", background: "var(--dash-accent)", color: "#000", fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>✓</div>
                 )}
-                <div style={{ fontSize: 26, marginBottom: 8 }}>{tc.icon}</div>
+                <div style={{
+                  width: 48, height: 48, borderRadius: 14,
+                  background: sel ? "rgba(0,176,122,0.18)" : "rgba(0,176,122,0.1)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  marginBottom: 16, transition: "background 0.15s", flexShrink: 0,
+                }}>
+                  {tc.icon}
+                </div>
                 <div style={{ fontSize: 13, fontWeight: 700, color: "var(--dash-text)", marginBottom: 4 }}>{tc.label}</div>
                 <div style={{ fontSize: 11, color: "var(--dash-text-muted)", lineHeight: 1.4 }}>{tc.desc}</div>
                 <a
@@ -622,75 +747,156 @@ export default function ImportarHistoricoModal({ unit, restaurant, initialType, 
   // STEP 2 — UPLOAD
   // ─────────────────────────────────────────────────────────────────────────
   if (step === 2) {
+    const canNextCSV = !!file && csvRows.length > 0;
+    const canNextAI = !!aiFile;
+
     return (
       <div>
         <Stepper current={2} />
-        <div style={{ marginBottom: 20 }}>
+        <div style={{ marginBottom: 16 }}>
           <div style={{ fontSize: 15, fontWeight: 700, color: "var(--dash-text)", marginBottom: 4 }}>
-            Envie o arquivo CSV
+            Envie o arquivo
           </div>
           <div style={{ fontSize: 13, color: "var(--dash-text-muted)" }}>
             Importando: <strong style={{ color: "var(--dash-text)" }}>{typeConfig?.label}</strong>
           </div>
         </div>
 
-        {/* Drop zone */}
-        <div
-          onDrop={handleDrop}
-          onDragOver={e => e.preventDefault()}
-          onClick={() => fileRef.current?.click()}
-          style={{
-            border: `2px dashed ${file ? "var(--dash-accent)" : "var(--dash-border)"}`,
-            borderRadius: 16,
-            padding: "40px 24px",
-            textAlign: "center",
-            cursor: "pointer",
-            background: file ? "var(--dash-accent-soft)" : "var(--dash-card)",
-            transition: "all 0.2s",
-            marginBottom: 20,
-          }}
-        >
-          <input
-            ref={fileRef}
-            type="file"
-            accept=".csv,.tsv"
-            style={{ display: "none" }}
-            onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
-          />
-          {file ? (
-            <div>
-              <div style={{ fontSize: 36, marginBottom: 10 }}>📄</div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: "var(--dash-text)", marginBottom: 4 }}>{file.name}</div>
-              <div style={{ fontSize: 12, color: "var(--dash-text-muted)" }}>
-                {(file.size / 1024).toFixed(1)} KB · {csvRows.length} linhas detectadas
-              </div>
-            </div>
-          ) : (
-            <div>
-              <div style={{ fontSize: 36, marginBottom: 12 }}>📂</div>
-              <div style={{ fontSize: 14, fontWeight: 600, color: "var(--dash-text)", marginBottom: 6 }}>
-                Arraste o arquivo CSV aqui ou clique para selecionar
-              </div>
-              <div style={{ fontSize: 12, color: "var(--dash-text-muted)" }}>Aceita .csv e .tsv · Máximo 10 MB</div>
-            </div>
-          )}
+        {/* Source toggle */}
+        <div style={{ display: "flex", background: "var(--dash-card)", border: "1px solid var(--dash-border)", borderRadius: 12, padding: 4, marginBottom: 20, gap: 4 }}>
+          {(["csv", "ai"] as const).map(mode => (
+            <button
+              key={mode}
+              onClick={() => { setSourceMode(mode); setAiError(null); }}
+              style={{
+                flex: 1, padding: "8px 12px", borderRadius: 9, border: "none",
+                background: sourceMode === mode ? "var(--dash-accent)" : "transparent",
+                color: sourceMode === mode ? "#000" : "var(--dash-text-muted)",
+                fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+                transition: "all 0.15s",
+              }}
+            >
+              {mode === "csv" ? "📄 CSV" : "🤖 IA (PDF/Imagem)"}
+            </button>
+          ))}
         </div>
 
-        <div style={{ marginBottom: 24 }}>
-          <a
-            href={typeConfig?.templateFile}
-            download
-            style={{ fontSize: 13, color: "var(--dash-accent)", textDecoration: "none", fontWeight: 600 }}
-          >
-            ↓ Baixar modelo CSV para {typeConfig?.label}
-          </a>
-        </div>
+        {sourceMode === "csv" ? (
+          <>
+            <div
+              onDrop={handleDrop}
+              onDragOver={e => e.preventDefault()}
+              onClick={() => fileRef.current?.click()}
+              style={{
+                border: `2px dashed ${file ? "var(--dash-accent)" : "var(--dash-border)"}`,
+                borderRadius: 16, padding: "40px 24px", textAlign: "center",
+                cursor: "pointer", background: file ? "var(--dash-accent-soft)" : "var(--dash-card)",
+                transition: "all 0.2s", marginBottom: 20,
+              }}
+            >
+              <input ref={fileRef} type="file" accept=".csv,.tsv" style={{ display: "none" }}
+                onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
+              {file ? (
+                <div>
+                  <div style={{ fontSize: 36, marginBottom: 10 }}>📄</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "var(--dash-text)", marginBottom: 4 }}>{file.name}</div>
+                  <div style={{ fontSize: 12, color: "var(--dash-text-muted)" }}>
+                    {(file.size / 1024).toFixed(1)} KB · {csvRows.length} linhas detectadas
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <div style={{ fontSize: 36, marginBottom: 12 }}>📂</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: "var(--dash-text)", marginBottom: 6 }}>
+                    Arraste o arquivo CSV aqui ou clique para selecionar
+                  </div>
+                  <div style={{ fontSize: 12, color: "var(--dash-text-muted)" }}>Aceita .csv e .tsv · Máximo 10 MB</div>
+                </div>
+              )}
+            </div>
+            <div style={{ marginBottom: 24 }}>
+              <a href={typeConfig?.templateFile} download
+                style={{ fontSize: 13, color: "var(--dash-accent)", textDecoration: "none", fontWeight: 600 }}>
+                ↓ Baixar modelo CSV para {typeConfig?.label}
+              </a>
+            </div>
+          </>
+        ) : (
+          <>
+            <div
+              onDrop={handleAIDrop}
+              onDragOver={e => e.preventDefault()}
+              onClick={() => aiFileRef.current?.click()}
+              style={{
+                border: `2px dashed ${aiFile ? "var(--dash-accent)" : "var(--dash-border)"}`,
+                borderRadius: 16, padding: "40px 24px", textAlign: "center",
+                cursor: "pointer", background: aiFile ? "var(--dash-accent-soft)" : "var(--dash-card)",
+                transition: "all 0.2s", marginBottom: 16,
+              }}
+            >
+              <input ref={aiFileRef} type="file" accept=".pdf,.png,.jpg,.jpeg,.heic" style={{ display: "none" }}
+                onChange={e => { const f = e.target.files?.[0]; if (f) { setAiFile(f); setAiError(null); } }} />
+              {aiFile ? (
+                <div>
+                  <div style={{ fontSize: 36, marginBottom: 10 }}>🤖</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "var(--dash-text)", marginBottom: 4 }}>{aiFile.name}</div>
+                  <div style={{ fontSize: 12, color: "var(--dash-text-muted)" }}>
+                    {(aiFile.size / 1024).toFixed(1)} KB · pronto para processar
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <div style={{ fontSize: 36, marginBottom: 12 }}>🤖</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: "var(--dash-text)", marginBottom: 6 }}>
+                    Arraste o arquivo aqui ou clique para selecionar
+                  </div>
+                  <div style={{ fontSize: 12, color: "var(--dash-text-muted)" }}>
+                    Tire foto do extrato, recibo, planilha impressa ou envie PDF
+                  </div>
+                  <div style={{ fontSize: 11, color: "var(--dash-text-muted)", marginTop: 6 }}>
+                    Aceita .pdf, .png, .jpg, .jpeg, .heic · Máximo 5 MB
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {aiFile && !showAICostConfirm && !aiLoading && (
+              <div style={{ background: "rgba(234,179,8,0.08)", border: "1px solid rgba(234,179,8,0.2)", borderRadius: 12, padding: "12px 16px", marginBottom: 16, fontSize: 13, color: "#ca8a04" }}>
+                Esta operação usará IA. Custo estimado: <strong>~R$0,05 por página/imagem</strong>
+              </div>
+            )}
+
+            {aiError && (
+              <div style={{ background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.2)", borderRadius: 12, padding: "12px 16px", marginBottom: 16, fontSize: 13, color: "#dc2626" }}>
+                {aiError}
+              </div>
+            )}
+
+            {aiLoading && (
+              <div style={{ textAlign: "center", padding: "20px 0", fontSize: 14, color: "var(--dash-text-muted)", fontWeight: 600 }}>
+                <div style={{ marginBottom: 8 }}>Extraindo dados com IA...</div>
+                <div style={{ fontSize: 12, color: "var(--dash-text-muted)" }}>Aguarde, isso pode levar alguns segundos</div>
+              </div>
+            )}
+          </>
+        )}
 
         <div style={{ display: "flex", gap: 10, justifyContent: "space-between" }}>
           <button onClick={() => setStep(1)} style={S.btnSecondary}>← Voltar</button>
-          <button onClick={() => setStep(3)} disabled={!file || csvRows.length === 0} style={{ ...S.btnPrimary, opacity: file && csvRows.length > 0 ? 1 : 0.4 }}>
-            Próximo →
-          </button>
+          {sourceMode === "csv" ? (
+            <button onClick={() => setStep(3)} disabled={!canNextCSV}
+              style={{ ...S.btnPrimary, opacity: canNextCSV ? 1 : 0.4 }}>
+              Próximo →
+            </button>
+          ) : (
+            <button
+              onClick={handleAIExtract}
+              disabled={!canNextAI || aiLoading}
+              style={{ ...S.btnPrimary, opacity: canNextAI && !aiLoading ? 1 : 0.4 }}
+            >
+              {aiLoading ? "Processando..." : "Processar com IA →"}
+            </button>
+          )}
         </div>
       </div>
     );
@@ -881,7 +1087,7 @@ export default function ImportarHistoricoModal({ unit, restaurant, initialType, 
         </div>
 
         <div style={{ display: "flex", gap: 10, justifyContent: "space-between" }}>
-          <button onClick={() => setStep(3)} style={S.btnSecondary}>← Voltar</button>
+          <button onClick={() => setStep(fromAI ? 2 : 3)} style={S.btnSecondary}>← Voltar</button>
           <button
             onClick={() => { setStep(5); handleImport(); }}
             disabled={willImport === 0}

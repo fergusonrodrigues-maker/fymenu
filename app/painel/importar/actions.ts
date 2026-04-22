@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { normalizePlanName } from "@/lib/plan";
 import { parseMoneyToCents } from "./utils";
 import type { ImportTargetTable, ImportSourceMethod, ImportResult } from "./utils";
+import OpenAI from "openai";
 
 export type { ImportTargetTable, ImportSourceMethod, ImportResult };
 
@@ -279,4 +280,166 @@ function getDateField(table: ImportTargetTable): string {
 function cleanPhone(raw: string): string | null {
   const d = String(raw ?? "").replace(/\D/g, "");
   return d.length >= 10 ? d : null;
+}
+
+// ─── AI prompts per table ──────────────────────────────────────────────────────
+const AI_PROMPTS: Record<ImportTargetTable, string> = {
+  order_intents: `Extraia pedidos com data, nome do cliente (se houver), valor total, forma de pagamento. Retorne APENAS JSON válido sem markdown: { "records": [{"occurred_at": "YYYY-MM-DD", "customer_name": null, "total": 0.00, "payment_method": null}] }`,
+  business_expenses: `Extraia despesas com data, descrição, categoria, valor. Categorias válidas: aluguel, salarios, fornecedores, marketing, impostos, manutencao, delivery, geral. Retorne APENAS JSON válido sem markdown: { "records": [{"date": "YYYY-MM-DD", "name": "string", "category": "geral", "amount": 0.00}] }`,
+  payments: `Extraia recebimentos/pagamentos com data, valor, método. Retorne APENAS JSON válido sem markdown: { "records": [{"occurred_at": "YYYY-MM-DD", "amount": 0.00, "method": null}] }`,
+  inventory_movements: `Extraia movimentações de estoque com data, item, tipo (purchase/usage/waste), quantidade, custo. Retorne APENAS JSON válido sem markdown: { "records": [{"occurred_at": "YYYY-MM-DD", "item_name": "string", "type": "purchase", "quantity": 0, "cost_total": 0.00}] }`,
+  crm_customers: `Extraia clientes com nome, telefone, email, cidade. Retorne APENAS JSON válido sem markdown: { "records": [{"name": "string", "phone": null, "email": null, "city": null}] }`,
+};
+
+// ─── AI extraction server action ───────────────────────────────────────────────
+export async function extractDataWithAI(params: {
+  fileBase64: string;
+  fileName: string;
+  fileType: string;
+  targetTable: ImportTargetTable;
+}): Promise<{ ok: boolean; records?: Record<string, any>[]; warnings?: string[]; message?: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false, message: "Não autenticado." };
+
+  const { data: restaurant } = await supabase
+    .from("restaurants")
+    .select("id, plan")
+    .eq("owner_id", user.id)
+    .maybeSingle();
+
+  if (!restaurant) return { ok: false, message: "Restaurante não encontrado." };
+  if (normalizePlanName(restaurant.plan) !== "business") {
+    return { ok: false, message: "Extração com IA disponível apenas no plano Business." };
+  }
+
+  const allowedTypes = ["application/pdf", "image/png", "image/jpeg", "image/jpg", "image/heic", "image/heif"];
+  if (!allowedTypes.includes(params.fileType) && !params.fileName.match(/\.(pdf|png|jpg|jpeg|heic)$/i)) {
+    return { ok: false, message: "Tipo de arquivo não suportado. Use PDF, PNG ou JPG." };
+  }
+
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) return { ok: false, message: "Chave OpenAI não configurada." };
+
+  const openai = new OpenAI({ apiKey });
+  const systemPrompt = AI_PROMPTS[params.targetTable];
+
+  // Extract the base64 payload (strip data URL prefix)
+  const base64Data = params.fileBase64.includes(",")
+    ? params.fileBase64.split(",")[1]
+    : params.fileBase64;
+  const mimeType = params.fileBase64.includes(";")
+    ? params.fileBase64.split(";")[0].replace("data:", "")
+    : params.fileType;
+
+  let rawJson = "";
+
+  try {
+    if (mimeType === "application/pdf" || params.fileName.toLowerCase().endsWith(".pdf")) {
+      // PDF → extract text → send as text prompt
+      const pdfMod = await import("pdf-parse");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const pdfParse: (buf: Buffer) => Promise<{ text: string }> = (pdfMod as any).default ?? pdfMod;
+      const buffer = Buffer.from(base64Data, "base64");
+      const pdfData = await pdfParse(buffer);
+      const text = pdfData.text?.slice(0, 12000) ?? "";
+      if (!text.trim()) return { ok: false, message: "Não foi possível extrair texto do PDF." };
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: `Extraia os dados deste documento:\n\n${text}` },
+        ],
+        response_format: { type: "json_object" },
+        max_tokens: 4096,
+      });
+      rawJson = response.choices[0]?.message?.content ?? "{}";
+    } else {
+      // Image → send to vision
+      const dataUrl = params.fileBase64.startsWith("data:")
+        ? params.fileBase64
+        : `data:${params.fileType};base64,${base64Data}`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: systemPrompt },
+          {
+            role: "user",
+            content: [
+              { type: "text", text: "Extraia os dados desta imagem e retorne apenas JSON." },
+              { type: "image_url", image_url: { url: dataUrl } },
+            ],
+          },
+        ],
+        response_format: { type: "json_object" },
+        max_tokens: 4096,
+      });
+      rawJson = response.choices[0]?.message?.content ?? "{}";
+    }
+
+    const parsed = JSON.parse(rawJson);
+    const records: Record<string, any>[] = Array.isArray(parsed.records) ? parsed.records : [];
+
+    if (records.length === 0) {
+      return { ok: false, message: "A IA não encontrou registros no arquivo. Tente uma imagem mais clara ou um PDF com texto selecionável." };
+    }
+
+    return { ok: true, records, warnings: [] };
+  } catch (err: any) {
+    return { ok: false, message: `Erro na extração com IA: ${err.message ?? "Erro desconhecido"}` };
+  }
+}
+
+// ─── Batch rollback server action ──────────────────────────────────────────────
+export async function revertImportBatch(
+  batchId: string,
+): Promise<{ ok: boolean; deletedCount?: number; message?: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false, message: "Não autenticado." };
+
+  const { data: restaurant } = await supabase
+    .from("restaurants")
+    .select("id, plan")
+    .eq("owner_id", user.id)
+    .maybeSingle();
+
+  if (!restaurant) return { ok: false, message: "Restaurante não encontrado." };
+  if (normalizePlanName(restaurant.plan) !== "business") {
+    return { ok: false, message: "Rollback disponível apenas no plano Business." };
+  }
+
+  // Validate batch ownership and status
+  const { data: batch } = await supabase
+    .from("import_batches")
+    .select("id, target_table, status, records_count")
+    .eq("id", batchId)
+    .eq("restaurant_id", restaurant.id)
+    .maybeSingle();
+
+  if (!batch) return { ok: false, message: "Lote não encontrado ou sem permissão." };
+  if (batch.status !== "completed") return { ok: false, message: `Lote não pode ser revertido (status: ${batch.status}).` };
+
+  const targetTable = batch.target_table as ImportTargetTable;
+
+  // Delete all records from the target table that belong to this batch
+  const { error: deleteErr, count } = await supabase
+    .from(targetTable)
+    .delete({ count: "exact" })
+    .eq("import_batch_id", batchId);
+
+  if (deleteErr) {
+    return { ok: false, message: `Erro ao deletar registros: ${deleteErr.message}` };
+  }
+
+  // Mark batch as reverted
+  await supabase
+    .from("import_batches")
+    .update({ status: "reverted", reverted_at: new Date().toISOString() })
+    .eq("id", batchId);
+
+  const deletedCount = count ?? batch.records_count ?? 0;
+  return { ok: true, deletedCount, message: `${deletedCount} registros removidos. Lote revertido.` };
 }
