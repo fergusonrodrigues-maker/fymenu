@@ -3,8 +3,9 @@
 import { useState, useRef, useCallback } from "react";
 import Papa from "papaparse";
 import type { Unit, Restaurant } from "../types";
-import { createImportBatch, parseMoneyToCents } from "../importar/actions";
-import type { ImportTargetTable } from "../importar/actions";
+import { createImportBatch } from "../importar/actions";
+import { parseMoneyToCents } from "../importar/utils";
+import type { ImportTargetTable } from "../importar/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Props {

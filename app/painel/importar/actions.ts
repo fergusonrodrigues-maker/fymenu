@@ -2,23 +2,10 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { normalizePlanName } from "@/lib/plan";
+import { parseMoneyToCents } from "./utils";
+import type { ImportTargetTable, ImportSourceMethod, ImportResult } from "./utils";
 
-export type ImportTargetTable =
-  | "order_intents"
-  | "business_expenses"
-  | "payments"
-  | "inventory_movements"
-  | "crm_customers";
-
-export type ImportSourceMethod = "csv" | "ai_pdf" | "ai_image" | "manual";
-
-export type ImportResult = {
-  ok: boolean;
-  batchId?: string;
-  recordsCount?: number;
-  errors?: string[];
-  message?: string;
-};
+export type { ImportTargetTable, ImportSourceMethod, ImportResult };
 
 // ─── Date guard: rejects dates outside [now-3years, now] ──────────────────────
 const THREE_YEARS_MS = 3 * 365.25 * 24 * 60 * 60 * 1000;
@@ -287,24 +274,6 @@ function getDateField(table: ImportTargetTable): string {
   if (table === "business_expenses") return "date";
   if (table === "crm_customers") return "first_order_at";
   return "occurred_at";
-}
-
-// ─── Money parsing: "R$ 1.234,56" | "1234,56" | "1234.56" → cents ────────────
-export function parseMoneyToCents(raw: string): number | null {
-  if (!raw && raw !== "0") return null;
-  const str = String(raw).trim()
-    .replace(/R\$\s*/g, "")
-    .replace(/\s/g, "");
-
-  // BR format: 1.234,56
-  if (/^\d{1,3}(\.\d{3})*(,\d{1,2})?$/.test(str)) {
-    const norm = str.replace(/\./g, "").replace(",", ".");
-    return Math.round(parseFloat(norm) * 100);
-  }
-  // EN format: 1234.56 or 1234
-  const num = parseFloat(str.replace(",", "."));
-  if (isNaN(num)) return null;
-  return Math.round(num * 100);
 }
 
 function cleanPhone(raw: string): string | null {
