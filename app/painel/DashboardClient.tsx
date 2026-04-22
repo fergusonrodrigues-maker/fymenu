@@ -8,6 +8,8 @@ import dynamic from "next/dynamic";
 import type { Restaurant, Unit, StockStats, Category, Product, Profile, ReportData } from "./types";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { hasPlanFeature, planLabel, maxUnits as planMaxUnits } from "@/lib/plan";
+import { Icon } from "@/components/ui/Icon";
+import { Package, AlertCircle, Target, Star, CreditCard, Link2, Bell, Store, Lock, Timer, UtensilsCrossed, ChefHat, Tv, Wallet, ClipboardList, MapPin, Users, Printer, Link, MessageCircle, Headphones, Truck, Settings, BarChart3, Bike, FileText, UserCircle } from "lucide-react";
 
 const loadingFallback = <div style={{padding:40,display:"flex",justifyContent:"center"}}><LoadingSpinner size="sm" /></div>;
 
@@ -353,7 +355,7 @@ const MODULE_INFO: Record<string, { name: string; plan: string; desc: string }> 
 function UpgradeGatePopup({
   moduleId, icon, onClose, onViewPlans,
 }: {
-  moduleId: string; icon: string; onClose: () => void; onViewPlans: () => void;
+  moduleId: string; icon: React.ReactNode; onClose: () => void; onViewPlans: () => void;
 }) {
   const info = MODULE_INFO[moduleId];
   if (!info) return null;
@@ -384,7 +386,7 @@ function UpgradeGatePopup({
         animation: "upgradePopupIn 0.2s cubic-bezier(0.16,1,0.3,1)",
       }}>
         <div style={{ textAlign: "center", marginBottom: 24 }}>
-          <div style={{ fontSize: 44, marginBottom: 14, lineHeight: 1 }}>{icon}</div>
+          <div style={{ fontSize: 44, marginBottom: 14, lineHeight: 1, display: "flex", justifyContent: "center", color: "var(--dash-accent)" }}>{icon}</div>
           <div style={{ fontSize: 18, fontWeight: 800, color: "var(--dash-text, #fff)", marginBottom: 10, letterSpacing: "-0.3px" }}>
             Recurso do plano {info.plan}
           </div>
@@ -442,7 +444,7 @@ export default function DashboardClient({
 
   // ── Plan gate state ──
   const [deniedCardId, setDeniedCardId] = useState<string | null>(null);
-  const [upgradePopup, setUpgradePopup] = useState<{ moduleId: string; icon: string } | null>(null);
+  const [upgradePopup, setUpgradePopup] = useState<{ moduleId: string; icon: React.ReactNode } | null>(null);
   const [highlightPlan, setHighlightPlan] = useState<string | null>(null);
 
   const trialDays = Math.max(0, Math.ceil((new Date(restaurant.trial_ends_at).getTime() - Date.now()) / 86400000));
@@ -509,7 +511,7 @@ export default function DashboardClient({
           if (item.current_stock <= item.min_stock) {
             notifs.push({
               type: "stock_low",
-              icon: "📦",
+              icon: <Package size={18} color="var(--dash-warning)" />,
               title: `${item.name} com estoque baixo`,
               desc: `${item.current_stock} ${item.unit_measure} (mín: ${item.min_stock})`,
               color: "var(--dash-danger)",
@@ -533,9 +535,9 @@ export default function DashboardClient({
           const diffDays = Math.floor((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
           const alertDays = item.expiry_alert_days || 7;
           if (diffDays < 0) {
-            notifs.push({ type: "expired", icon: "🔴", title: `${item.name} VENCIDO`, desc: `Venceu há ${Math.abs(diffDays)} dias`, color: "var(--dash-danger)", priority: 0 });
+            notifs.push({ type: "expired", icon: <AlertCircle size={18} color="var(--dash-danger)" />, title: `${item.name} VENCIDO`, desc: `Venceu há ${Math.abs(diffDays)} dias`, color: "var(--dash-danger)", priority: 0 });
           } else if (diffDays <= alertDays) {
-            notifs.push({ type: "expiring", icon: "🟡", title: `${item.name} vencendo`, desc: `Vence em ${diffDays} dia${diffDays !== 1 ? "s" : ""}`, color: "var(--dash-warning)", priority: 2 });
+            notifs.push({ type: "expiring", icon: <AlertCircle size={18} color="var(--dash-warning)" />, title: `${item.name} vencendo`, desc: `Vence em ${diffDays} dia${diffDays !== 1 ? "s" : ""}`, color: "var(--dash-warning)", priority: 2 });
           }
         }
       }
@@ -555,7 +557,7 @@ export default function DashboardClient({
         if (todayRevenue < goal) {
           const falta = goal - todayRevenue;
           const fmtVal = goal > 1000 ? `R$ ${(falta / 100).toFixed(2).replace(".", ",")}` : `R$ ${falta.toFixed(2).replace(".", ",")}`;
-          notifs.push({ type: "daily_goal", icon: "🎯", title: "Meta diária não atingida", desc: `Faltam ${fmtVal}`, color: "var(--dash-warning)", priority: 3 });
+          notifs.push({ type: "daily_goal", icon: <Target size={18} color="var(--dash-warning)" />, title: "Meta diária não atingida", desc: `Faltam ${fmtVal}`, color: "var(--dash-warning)", priority: 3 });
         }
       }
 
@@ -572,7 +574,7 @@ export default function DashboardClient({
         for (const r of badReviews || []) {
           notifs.push({
             type: "bad_review",
-            icon: "⭐",
+            icon: <Star size={18} color="var(--dash-danger)" />,
             title: `Avaliação ${r.restaurant_rating}★`,
             desc: r.comment ? `"${r.comment.slice(0, 50)}..."` : `Garçom: ${r.waiter_name || "N/A"}`,
             color: "var(--dash-danger)",
@@ -585,7 +587,7 @@ export default function DashboardClient({
       if (restaurantState?.status === "overdue" || restaurantState?.status === "suspended") {
         notifs.push({
           type: "payment",
-          icon: "💳",
+          icon: <CreditCard size={18} color="var(--dash-danger)" />,
           title: restaurant.status === "overdue" ? "Pagamento atrasado" : "Conta suspensa",
           desc: "Ative um plano pra manter o cardápio publicado",
           color: "var(--dash-danger)",
@@ -645,7 +647,7 @@ export default function DashboardClient({
     return PLAN_ACCESS[plan]?.includes(moduleId) ?? true;
   }, [restaurantState.free_access, restaurantState.plan]);
 
-  const triggerDenied = useCallback((cardId: string, icon: string) => {
+  const triggerDenied = useCallback((cardId: string, icon: React.ReactNode) => {
     const moduleId = CARD_TO_MODULE[cardId];
     if (!moduleId) return;
     setDeniedCardId(cardId);
@@ -653,24 +655,24 @@ export default function DashboardClient({
     setTimeout(() => setDeniedCardId(null), 600);
   }, []);
 
-  const CARD_CONFIGS: Record<string, { icon: string; label: string; sub: string | (() => string); modalKey: string }> = useMemo(() => ({
-    analytics: { icon: "📊", label: "Analytics", sub: () => `${analytics.views} visitas · ${analytics.clicks} cliques`, modalKey: "analytics" },
-    cardapio: { icon: "📋", label: "Cardápio", sub: () => `${products.length} produto${products.length !== 1 ? "s" : ""}`, modalKey: "cardapio" },
-    pedidos: { icon: "🛒", label: "Pedidos", sub: () => `${analytics.orders} pedido${analytics.orders !== 1 ? "s" : ""} hoje`, modalKey: "pedidos" },
-    financeiro: { icon: "💰", label: "Financeiro", sub: "Relatórios e receita", modalKey: "financeiro" },
-    unidade: { icon: "📍", label: "Unidade", sub: () => unit?.is_published ? "Publicado" : "Não publicado", modalKey: "unidade" },
-    tv: { icon: "📺", label: "Modo TV", sub: () => `${tvCount} vídeo${tvCount !== 1 ? "s" : ""} ativo${tvCount !== 1 ? "s" : ""}`, modalKey: "modotv" },
-    plano: { icon: "⭐", label: "Plano", sub: () => restaurantState.status === "trial" ? `Trial · ${trialDays}d` : (restaurantState.status === "active" || restaurantState.free_access) ? planLabel(restaurantState.plan) : "Nenhum plano ativo", modalKey: "plano" },
-    config: { icon: "⚙️", label: "Configurações", sub: () => `Perfil · ${planLabel(restaurantState.plan)} · Segurança`, modalKey: "config" },
-    estoque: { icon: "📦", label: "Estoque", sub: () => stockStats.out > 0 ? `${stockStats.out} esgotado${stockStats.out !== 1 ? "s" : ""}` : stockStats.low > 0 ? `${stockStats.low} baixo${stockStats.low !== 1 ? "s" : ""}` : "Tudo em ordem", modalKey: "estoque" },
-    operacoes: { icon: "🎛️", label: "Operações", sub: "Cozinha · Garçom · Andamento", modalKey: "operacoes" },
-    equipe: { icon: "👥", label: "Equipe", sub: "Funcionários · Avaliações", modalKey: "equipe" },
-    impressoras: { icon: "🖨️", label: "Impressoras", sub: "Roteamento por categoria", modalKey: "impressoras" },
-    links: { icon: "🔗", label: "Links Rápidos", sub: "Acessos do sistema", modalKey: "links" },
-    crm: { icon: "📇", label: "CRM", sub: "Clientes e contatos", modalKey: "crm" },
-    whatsapp: { icon: "💬", label: "WhatsApp", sub: "Mensagens e notificações", modalKey: "whatsapp" },
-    delivery: { icon: "🚚", label: "Delivery", sub: "Taxas de entrega por distância", modalKey: "delivery" },
-    suporte: { icon: "🎧", label: "Suporte", sub: "Chat com nossa equipe", modalKey: "suporte" },
+  const CARD_CONFIGS: Record<string, { icon: React.ReactNode; label: string; sub: string | (() => string); modalKey: string }> = useMemo(() => ({
+    analytics:   { icon: <BarChart3 size={22} />,     label: "Analytics",       sub: () => `${analytics.views} visitas · ${analytics.clicks} cliques`, modalKey: "analytics" },
+    cardapio:    { icon: <ClipboardList size={22} />,  label: "Cardápio",        sub: () => `${products.length} produto${products.length !== 1 ? "s" : ""}`, modalKey: "cardapio" },
+    pedidos:     { icon: <Icon name="pedidos" size={22} />, label: "Pedidos",    sub: () => `${analytics.orders} pedido${analytics.orders !== 1 ? "s" : ""} hoje`, modalKey: "pedidos" },
+    financeiro:  { icon: <Wallet size={22} />,         label: "Financeiro",      sub: "Relatórios e receita", modalKey: "financeiro" },
+    unidade:     { icon: <MapPin size={22} />,          label: "Unidade",         sub: () => unit?.is_published ? "Publicado" : "Não publicado", modalKey: "unidade" },
+    tv:          { icon: <Tv size={22} />,              label: "Modo TV",         sub: () => `${tvCount} vídeo${tvCount !== 1 ? "s" : ""} ativo${tvCount !== 1 ? "s" : ""}`, modalKey: "modotv" },
+    plano:       { icon: <Star size={22} />,            label: "Plano",           sub: () => restaurantState.status === "trial" ? `Trial · ${trialDays}d` : (restaurantState.status === "active" || restaurantState.free_access) ? planLabel(restaurantState.plan) : "Nenhum plano ativo", modalKey: "plano" },
+    config:      { icon: <Settings size={22} />,        label: "Configurações",   sub: () => `Perfil · ${planLabel(restaurantState.plan)} · Segurança`, modalKey: "config" },
+    estoque:     { icon: <Package size={22} />,         label: "Estoque",         sub: () => stockStats.out > 0 ? `${stockStats.out} esgotado${stockStats.out !== 1 ? "s" : ""}` : stockStats.low > 0 ? `${stockStats.low} baixo${stockStats.low !== 1 ? "s" : ""}` : "Tudo em ordem", modalKey: "estoque" },
+    operacoes:   { icon: <BarChart3 size={22} />,       label: "Operações",       sub: "Cozinha · Garçom · Andamento", modalKey: "operacoes" },
+    equipe:      { icon: <Users size={22} />,            label: "Equipe",          sub: "Funcionários · Avaliações", modalKey: "equipe" },
+    impressoras: { icon: <Printer size={22} />,          label: "Impressoras",     sub: "Roteamento por categoria", modalKey: "impressoras" },
+    links:       { icon: <Link2 size={22} />,            label: "Links Rápidos",   sub: "Acessos do sistema", modalKey: "links" },
+    crm:         { icon: <UserCircle size={22} />,       label: "CRM",             sub: "Clientes e contatos", modalKey: "crm" },
+    whatsapp:    { icon: <MessageCircle size={22} />,    label: "WhatsApp",        sub: "Mensagens e notificações", modalKey: "whatsapp" },
+    delivery:    { icon: <Truck size={22} />,            label: "Delivery",        sub: "Taxas de entrega por distância", modalKey: "delivery" },
+    suporte:     { icon: <Headphones size={22} />,       label: "Suporte",         sub: "Chat com nossa equipe", modalKey: "suporte" },
   }), [analytics, products.length, unit?.is_published, tvCount, restaurantState, trialDays, stockStats]);
 
   return (
@@ -1302,7 +1304,7 @@ export default function DashboardClient({
               {unit?.logo_url ? (
                 <img src={unit.logo_url} alt="" style={{ width: 36, height: 36, borderRadius: 10, objectFit: "cover" }} />
               ) : (
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: "var(--dash-accent-soft)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>🍽</div>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: "var(--dash-accent-soft)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--dash-accent)" }}><UtensilsCrossed size={18} /></div>
               )}
               <div>
                 {/* Unit selector dropdown */}
@@ -1400,7 +1402,7 @@ export default function DashboardClient({
               display: "flex", alignItems: "center", justifyContent: "center",
               fontSize: 16, cursor: "pointer", color: "var(--dash-text-muted)",
               boxShadow: "var(--dash-shadow)",
-            }}>🔗</button>
+            }}><Link2 size={16} /></button>
             {/* Notificações */}
             <div style={{ position: "relative" }} data-notifications>
               <button
@@ -1413,7 +1415,7 @@ export default function DashboardClient({
                   fontSize: 18, position: "relative",
                 }}
               >
-                🔔
+                <Bell size={18} />
                 {notifications.length > 0 && (
                   <div style={{
                     position: "absolute", top: -2, right: -2,
@@ -1474,7 +1476,7 @@ export default function DashboardClient({
                           onMouseEnter={(e) => { e.currentTarget.style.background = "var(--dash-card)"; }}
                           onMouseLeave={(e) => { e.currentTarget.style.background = "var(--dash-card-subtle)"; }}
                         >
-                          <span style={{ fontSize: 18, flexShrink: 0 }}>{n.icon}</span>
+                          <span style={{ flexShrink: 0, display: "flex", alignItems: "center" }}>{n.icon}</span>
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ color: n.color, fontSize: 12, fontWeight: 700 }}>{n.title}</div>
                             <div style={{ color: "var(--dash-text-muted)", fontSize: 10, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{n.desc}</div>
@@ -1502,8 +1504,8 @@ export default function DashboardClient({
         {/* Trial banner */}
         {restaurant.status === "trial" && trialDays <= 5 && (
           <div style={{ margin: "12px 24px", padding: "12px 16px", borderRadius: 14, background: "rgba(255,180,0,0.08)", border: "1px solid rgba(255,180,0,0.2)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ color: "var(--dash-warning)", fontSize: 13, fontWeight: 600 }}>
-              ⏳ {trialDays} dia{trialDays !== 1 ? "s" : ""} de trial restante{trialDays !== 1 ? "s" : ""}
+            <div style={{ color: "var(--dash-warning)", fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+              <Timer size={14} /> {trialDays} dia{trialDays !== 1 ? "s" : ""} de trial restante{trialDays !== 1 ? "s" : ""}
             </div>
             <button onClick={() => open("plano")} style={{ padding: "6px 12px", borderRadius: 8, border: "none", background: "rgba(255,180,0,0.2)", color: "var(--dash-warning)", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Ver planos</button>
           </div>
@@ -1512,8 +1514,8 @@ export default function DashboardClient({
         {/* Offline banner: sem assinatura ativa */}
         {restaurant.status !== "active" && restaurant.status !== "trial" && !restaurant.free_access && (
           <div style={{ margin: "12px 24px", padding: "12px 16px", borderRadius: 14, background: "rgba(255,80,80,0.06)", border: "1px solid rgba(255,80,80,0.18)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-            <div style={{ color: "var(--dash-danger)", fontSize: 13, fontWeight: 600 }}>
-              🔒 Seu cardápio está offline. Assine um plano para publicar.
+            <div style={{ color: "var(--dash-danger)", fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+              <Lock size={14} /> Seu cardápio está offline. Assine um plano para publicar.
             </div>
             <button onClick={() => open("plano")} style={{ padding: "6px 14px", borderRadius: 8, border: "none", background: "var(--dash-danger-soft)", color: "var(--dash-danger)", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>Ver planos</button>
           </div>
@@ -1541,8 +1543,8 @@ export default function DashboardClient({
                 width: 72, height: 72, borderRadius: "50%",
                 background: "rgba(22,163,74,0.1)",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 36,
-              }}>🏪</div>
+                color: "var(--dash-accent)",
+              }}><Store size={36} /></div>
               <div>
                 <div style={{ fontSize: 18, fontWeight: 800, color: "var(--dash-text)", marginBottom: 8, letterSpacing: "-0.3px" }}>
                   Crie sua primeira unidade
@@ -1671,7 +1673,7 @@ export default function DashboardClient({
                     display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3,
                     zIndex: 2, pointerEvents: "none",
                   }}>
-                    <span style={{ fontSize: 12, lineHeight: 1 }}>🔒</span>
+                    <Lock size={12} color="var(--dash-text-muted)" />
                     <span style={{
                       fontSize: 10, padding: "2px 6px",
                       background: "rgba(255,255,255,0.08)",
@@ -1891,20 +1893,20 @@ export default function DashboardClient({
 
           {/* Grid simétrico 3 colunas */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
-            {[
-              { icon: "🍽️", label: "Cardápio Delivery", href: `/delivery/${unit?.slug}`, color: "var(--dash-accent-soft)" },
-              { icon: "📋", label: "Cardápio Mesa", href: `/delivery/${unit?.slug}?mode=mesa`, color: "var(--dash-accent-soft)" },
-              { icon: "📺", label: "Modo TV", href: `/delivery/${unit?.slug}/tv`, color: "var(--dash-card)" },
-              { icon: "👨‍🍳", label: "Cozinha", href: `/cozinha/${unit?.slug}`, color: "var(--dash-warning-soft)" },
-              { icon: "🧑‍🍳", label: "Garçom", href: `/garcom/${unit?.slug}`, color: "var(--dash-warning-soft)" },
-              { icon: "💳", label: "PDV", href: `/pdv/${unit?.slug}`, color: "var(--dash-info-soft)" },
-              { icon: "🏠", label: "Hub Central", href: `/hub/${unit?.slug}`, color: "var(--dash-purple-soft)" },
-              { icon: "📊", label: "Operações", href: `/operacoes/${unit?.slug}`, color: "var(--dash-purple-soft)" },
-              { icon: "🔑", label: "Portal Funcionário", href: "/funcionario/login", color: "var(--dash-card)" },
-              { icon: "📦", label: "Entregador", href: `/entrega/${unit?.slug}`, color: "var(--dash-warning-soft)" },
-              { icon: "📝", label: "Comanda", href: `/comanda/${unit?.slug}/demo`, color: "var(--dash-info-soft)" },
-              { icon: "⚙️", label: "Configurações", href: null, color: "var(--dash-card)" },
-            ].map((item, i) => (
+            {([
+              { icon: <UtensilsCrossed size={26} />, label: "Cardápio Delivery",  href: `/delivery/${unit?.slug}`,         color: "var(--dash-accent-soft)" },
+              { icon: <ClipboardList size={26} />,   label: "Cardápio Mesa",      href: `/delivery/${unit?.slug}?mode=mesa`, color: "var(--dash-accent-soft)" },
+              { icon: <Tv size={26} />,              label: "Modo TV",            href: `/delivery/${unit?.slug}/tv`,       color: "var(--dash-card)" },
+              { icon: <ChefHat size={26} />,         label: "Cozinha",            href: `/cozinha/${unit?.slug}`,           color: "var(--dash-warning-soft)" },
+              { icon: <Target size={26} />,          label: "Garçom",             href: `/garcom/${unit?.slug}`,            color: "var(--dash-warning-soft)" },
+              { icon: <CreditCard size={26} />,      label: "PDV",                href: `/pdv/${unit?.slug}`,               color: "var(--dash-info-soft)" },
+              { icon: <Store size={26} />,           label: "Hub Central",        href: `/hub/${unit?.slug}`,               color: "var(--dash-purple-soft)" },
+              { icon: <BarChart3 size={26} />,       label: "Operações",          href: `/operacoes/${unit?.slug}`,         color: "var(--dash-purple-soft)" },
+              { icon: <UserCircle size={26} />,      label: "Portal Funcionário", href: "/funcionario/login",               color: "var(--dash-card)" },
+              { icon: <Bike size={26} />,            label: "Entregador",         href: `/entrega/${unit?.slug}`,           color: "var(--dash-warning-soft)" },
+              { icon: <FileText size={26} />,        label: "Comanda",            href: `/comanda/${unit?.slug}/demo`,      color: "var(--dash-info-soft)" },
+              { icon: <Settings size={26} />,        label: "Configurações",      href: null,                               color: "var(--dash-card)" },
+            ] as { icon: React.ReactNode; label: string; href: string | null; color: string }[]).map((item, i) => (
               <a
                 key={i}
                 href={item.href ?? "#"}
@@ -1934,7 +1936,7 @@ export default function DashboardClient({
                   e.currentTarget.style.boxShadow = "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset";
                 }}
               >
-                <span style={{ fontSize: 28, lineHeight: 1 }}>{item.icon}</span>
+                <span style={{ display: "flex", color: "var(--dash-text-muted)" }}>{item.icon}</span>
                 <span style={{ fontSize: 11, fontWeight: 600, color: "var(--dash-text-muted)", textAlign: "center", lineHeight: 1.2 }}>
                   {item.label}
                 </span>
