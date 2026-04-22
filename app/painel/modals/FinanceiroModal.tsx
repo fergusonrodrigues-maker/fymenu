@@ -127,12 +127,13 @@ function getSource(order: any): string {
   return "delivery";
 }
 
-export default function FinanceiroModal({ unit, analytics, reportData, restaurant, onOpenPlano }: {
+export default function FinanceiroModal({ unit, analytics, reportData, restaurant, onOpenPlano, onOpenImport }: {
   unit: Unit | null;
   analytics: { views: number; clicks: number; orders: number };
   reportData: ReportData;
   restaurant: Restaurant;
   onOpenPlano: () => void;
+  onOpenImport?: (type: string) => void;
 }) {
   const hasFeature = (feature: string) => {
     const plan = restaurant?.plan || "menu";
@@ -590,6 +591,24 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingTop: 8 }}>
+
+      {/* ── Importar histórico ── */}
+      {onOpenImport && restaurant.plan === "business" && (
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+          <button
+            onClick={() => onOpenImport("business_expenses")}
+            style={{ padding: "7px 14px", borderRadius: 10, border: "1px solid var(--dash-border)", background: "transparent", color: "var(--dash-text-muted)", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
+          >
+            📥 Importar custos históricos
+          </button>
+          <button
+            onClick={() => onOpenImport("payments")}
+            style={{ padding: "7px 14px", borderRadius: 10, border: "1px solid var(--dash-border)", background: "transparent", color: "var(--dash-text-muted)", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
+          >
+            📥 Importar pagamentos
+          </button>
+        </div>
+      )}
 
       {/* ── Tab Bar ── */}
       <div className="tabs-scroll" style={{ display: "flex", gap: 2, padding: 3, background: "var(--dash-card)", borderRadius: 12, marginBottom: 0, overflowX: "auto", scrollbarWidth: "none" as any }}>

@@ -1,0 +1,4 @@
+data,nome_cliente,telefone_cliente,total,forma_pagamento,origem,observacoes
+15/01/2024,João Silva,(11) 99999-1111,4590,pix,whatsapp,Pedido retroativo
+20/02/2024,Maria Santos,(21) 98888-2222,8750,cartao,telefone,
+10/03/2024,Pedro Oliveira,,3200,dinheiro,balcao,Sem dados de cliente

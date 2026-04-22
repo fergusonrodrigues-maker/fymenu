@@ -1,0 +1,4 @@
+data,item,tipo_movimentacao,quantidade,custo_total,observacoes
+10/01/2024,Farinha de trigo,purchase,50,12500,Compra inicial
+15/01/2024,Tomate,purchase,30,4500,
+20/01/2024,Farinha de trigo,usage,-5,,Uso na produção

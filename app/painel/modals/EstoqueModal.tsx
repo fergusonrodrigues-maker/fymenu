@@ -34,7 +34,7 @@ function fmtBRL(v: number) {
   return `R$ ${(v / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
 }
 
-export default function EstoqueModal({ unit, restaurant }: { unit: any; restaurant: any }) {
+export default function EstoqueModal({ unit, restaurant, onOpenImport }: { unit: any; restaurant: any; onOpenImport?: (type: string) => void }) {
   const [tab, setTab] = useState<"lista" | "alertas" | "movimentacoes" | "previsao">("lista");
   const [items, setItems] = useState<any[]>([]);
   const [movements, setMovements] = useState<any[]>([]);
@@ -571,6 +571,18 @@ export default function EstoqueModal({ unit, restaurant }: { unit: any; restaura
           <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>Valor em estoque</div>
         </div>
       </div>
+
+      {/* Importar movimentações históricas */}
+      {onOpenImport && restaurant?.plan === "business" && (
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 4 }}>
+          <button
+            onClick={() => onOpenImport("inventory_movements")}
+            style={{ padding: "7px 14px", borderRadius: 10, border: "1px solid var(--dash-border)", background: "transparent", color: "var(--dash-text-muted)", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
+          >
+            📥 Importar movimentações históricas
+          </button>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="tabs-scroll" style={{ display: "flex", gap: 2, padding: 3, background: "var(--dash-card)", borderRadius: 12, marginBottom: 16, overflowX: "auto", scrollbarWidth: "none" as any }}>

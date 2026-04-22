@@ -730,7 +730,7 @@ function WaIcon({ size = 16 }: { size?: number }) {
 }
 
 // ─── Main CRM Modal ───────────────────────────────────────────────────────────
-export default function CrmModal({ unit, restaurant }: { unit: any; restaurant: any }) {
+export default function CrmModal({ unit, restaurant, onOpenImport }: { unit: any; restaurant: any; onOpenImport?: (type: string) => void }) {
   const [tab, setTab] = useState<"clientes" | "frequencia" | "delivery">("clientes");
   // CRM customers (from crm_customers table)
   const [crmCustomers, setCrmCustomers] = useState<CrmCustomer[]>([]);
@@ -894,6 +894,18 @@ export default function CrmModal({ unit, restaurant }: { unit: any; restaurant: 
           <div style={{ fontSize: 9, color: "var(--dash-text-muted)" }}>Inativos (30d+)</div>
         </div>
       </div>
+
+      {/* Importar clientes históricos */}
+      {onOpenImport && restaurant?.plan === "business" && (
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 4 }}>
+          <button
+            onClick={() => onOpenImport("crm_customers")}
+            style={{ padding: "7px 14px", borderRadius: 10, border: "1px solid var(--dash-border)", background: "transparent", color: "var(--dash-text-muted)", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
+          >
+            📥 Importar clientes históricos
+          </button>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="tabs-scroll" style={{ display: "flex", gap: 2, padding: 3, background: "var(--dash-card)", borderRadius: 12, marginBottom: 16, overflowX: "auto", scrollbarWidth: "none" as any }}>

@@ -1,0 +1,4 @@
+nome,telefone,email,bairro,cidade,data_primeiro_pedido,total_pedidos,total_gasto
+João Silva,(11) 99999-1111,joao@email.com,Centro,São Paulo,15/01/2024,5,18500
+Maria Santos,(21) 98888-2222,,Ipanema,Rio de Janeiro,20/02/2024,3,9200
+Pedro Oliveira,(31) 97777-3333,pedro@email.com,Savassi,Belo Horizonte,10/03/2024,1,4590

@@ -28,6 +28,7 @@ const CrmModal = dynamic(() => import("./modals/CrmModal"), { ssr: false, loadin
 const WhatsappModal  = dynamic(() => import("./modals/WhatsappModal"),  { ssr: false, loading: () => loadingFallback });
 const DeliveryModal  = dynamic(() => import("./modals/DeliveryModal"),  { ssr: false, loading: () => loadingFallback });
 const CriarUnidadeModal = dynamic(() => import("./modals/CriarUnidadeModal"), { ssr: false, loading: () => loadingFallback });
+const ImportarHistoricoModal = dynamic(() => import("./modals/ImportarHistoricoModal"), { ssr: false, loading: () => loadingFallback });
 const ChatWidget = dynamic(() => import("./components/ChatWidget"), { ssr: false });
 
 // ─── Modal backdrop ─────────────────────────────────────────────────────────
@@ -432,10 +433,12 @@ export default function DashboardClient({
   reportData: ReportData;
 }) {
   const router = useRouter();
-  const [modal, setModal] = useState<"analytics" | "cardapio" | "pedidos" | "financeiro" | "unidade" | "plano" | "config" | "tv" | "modotv" | "estoque" | "operacoes" | "equipe" | "impressoras" | "links" | "crm" | "whatsapp" | "delivery" | "criar-unidade" | null>(null);
+  const [modal, setModal] = useState<"analytics" | "cardapio" | "pedidos" | "financeiro" | "unidade" | "plano" | "config" | "tv" | "modotv" | "estoque" | "operacoes" | "equipe" | "impressoras" | "links" | "crm" | "whatsapp" | "delivery" | "criar-unidade" | "importar" | null>(null);
+  const [importInitialType, setImportInitialType] = useState<string | undefined>(undefined);
   const [chatOpen, setChatOpen] = useState(false);
   const open = (m: typeof modal) => setModal(m);
   const close = () => setModal(null);
+  const openImport = (type?: string) => { setImportInitialType(type); setModal("importar"); };
 
   // ── Plan gate state ──
   const [deniedCardId, setDeniedCardId] = useState<string | null>(null);
@@ -1837,13 +1840,13 @@ export default function DashboardClient({
         <AnalyticsModal analytics={analytics} unit={unit} products={products} categories={categories} restaurant={restaurantState} />
       </Modal>
       <Modal open={modal === "pedidos"} onClose={close} title="Pedidos de hoje" size="lg">
-        {unit && <PedidosModal unitId={unit.id} unit={unit} />}
+        {unit && <PedidosModal unitId={unit.id} unit={unit} onOpenImport={openImport} />}
       </Modal>
       <Modal open={modal === "cardapio"} onClose={close} title="Cardápio" size="lg">
         <CardapioModal unit={unit} categories={categories} products={products} upsellItems={upsellItems} restaurant={restaurantState} onClose={close} />
       </Modal>
       <Modal open={modal === "financeiro"} onClose={close} title="Financeiro" size="lg">
-        <FinanceiroModal unit={unit} analytics={analytics} reportData={reportData} restaurant={restaurantState} onOpenPlano={() => open("plano")} />
+        <FinanceiroModal unit={unit} analytics={analytics} reportData={reportData} restaurant={restaurantState} onOpenPlano={() => open("plano")} onOpenImport={openImport} />
       </Modal>
       <Modal open={modal === "unidade"} onClose={close} title="Unidade">
         <UnidadeModal unit={unit} canAddUnit={canAddUnit} plan={restaurantState.plan} restaurantStatus={restaurantState.status} onClose={close} onOpenPlans={() => open("plano")} onOpenCreateUnit={() => { close(); open("criar-unidade"); }} />
@@ -1868,7 +1871,7 @@ export default function DashboardClient({
         <ConfigModal profile={profile} restaurant={restaurantState} />
       </Modal>
       <Modal open={modal === "estoque"} onClose={close} title="Estoque" size="lg">
-        <EstoqueModal unit={unit} restaurant={restaurantState} />
+        <EstoqueModal unit={unit} restaurant={restaurantState} onOpenImport={openImport} />
       </Modal>
       <Modal open={modal === "operacoes"} onClose={close} title="Operações" size="lg">
         {unit && <RestaurantOperationsModal unitId={unit.id} comandaClosePermission={unit.comanda_close_permission ?? "somente_caixa"} />}
@@ -1941,13 +1944,22 @@ export default function DashboardClient({
         </div>
       </Modal>
       <Modal open={modal === "crm"} onClose={close} title="CRM" size="lg">
-        {unit && restaurant && <CrmModal unit={unit} restaurant={restaurant} />}
+        {unit && restaurant && <CrmModal unit={unit} restaurant={restaurant} onOpenImport={openImport} />}
       </Modal>
       <Modal open={modal === "whatsapp"} onClose={close} title="WhatsApp" size="lg">
         {unit && <WhatsappModal unit={unit} />}
       </Modal>
       <Modal open={modal === "delivery"} onClose={close} title="Delivery" size="lg">
         {unit && <DeliveryModal unitId={unit.id} />}
+      </Modal>
+      <Modal open={modal === "importar"} onClose={close} title="Importar Dados Históricos" size="lg">
+        <ImportarHistoricoModal
+          unit={unit}
+          restaurant={restaurantState}
+          initialType={importInitialType as any}
+          onClose={close}
+          onOpenPlano={() => { close(); open("plano"); }}
+        />
       </Modal>
       {upgradePopup && (
         <UpgradeGatePopup

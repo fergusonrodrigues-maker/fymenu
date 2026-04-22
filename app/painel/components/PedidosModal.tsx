@@ -123,7 +123,7 @@ function generateTrackingCode(): string {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export default function PedidosModal({ unitId, unit }: { unitId: string; unit?: Unit }) {
+export default function PedidosModal({ unitId, unit, onOpenImport }: { unitId: string; unit?: Unit; onOpenImport?: (type: string) => void }) {
   const supabase = createClient();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -288,6 +288,18 @@ export default function PedidosModal({ unitId, unit }: { unitId: string; unit?: 
 
   return (
     <div>
+      {/* Importar pedidos históricos */}
+      {onOpenImport && (
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
+          <button
+            onClick={() => onOpenImport("order_intents")}
+            style={{ padding: "7px 14px", borderRadius: 10, border: "1px solid var(--dash-border)", background: "transparent", color: "var(--dash-text-muted)", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
+          >
+            📥 Importar pedidos históricos
+          </button>
+        </div>
+      )}
+
       {/* Main tab bar */}
       <div style={{ display: "flex", gap: 4, marginBottom: 16, background: "var(--dash-input-bg)", borderRadius: 12, padding: 3 }}>
         {mainTabs.map((t) => (
