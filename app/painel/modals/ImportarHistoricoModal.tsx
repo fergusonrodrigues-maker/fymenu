@@ -413,6 +413,7 @@ export default function ImportarHistoricoModal({ unit, restaurant, initialType, 
   const [aiError, setAiError] = useState<string | null>(null);
   const [fromAI, setFromAI] = useState(false);
   const [showAICostConfirm, setShowAICostConfirm] = useState(false);
+  const [aiStatus, setAiStatus] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
   const aiFileRef = useRef<HTMLInputElement>(null);
 
@@ -458,23 +459,94 @@ export default function ImportarHistoricoModal({ unit, restaurant, initialType, 
     });
   }
 
+  function compressImage(f: File): Promise<File> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(f);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const MAX = 2000;
+        let w = img.naturalWidth;
+        let h = img.naturalHeight;
+        if (w > MAX || h > MAX) {
+          if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+          else { w = Math.round(w * MAX / h); h = MAX; }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
+        const outName = f.name.replace(/\.[^.]+$/, ".jpg");
+        canvas.toBlob(blob1 => {
+          if (!blob1) { reject(new Error("Falha ao comprimir imagem")); return; }
+          if (blob1.size <= 3 * 1024 * 1024) {
+            resolve(new File([blob1], outName, { type: "image/jpeg" }));
+            return;
+          }
+          // Still big — try lower quality
+          canvas.toBlob(blob2 => {
+            resolve(new File([blob2 ?? blob1], outName, { type: "image/jpeg" }));
+          }, "image/jpeg", 0.7);
+        }, "image/jpeg", 0.85);
+      };
+      img.onerror = () => reject(new Error("Falha ao carregar imagem para compressão"));
+      img.src = url;
+    });
+  }
+
   async function handleAIExtract() {
     if (!aiFile || !typeConfig) return;
+
+    const isPDF = aiFile.type === "application/pdf" || aiFile.name.toLowerCase().endsWith(".pdf");
+    const isHEIC = aiFile.type === "image/heic" || aiFile.type === "image/heif" || aiFile.name.toLowerCase().endsWith(".heic");
+
+    if (isHEIC) {
+      setAiError("Formato HEIC não é suportado pelo navegador. Converta a imagem para JPG antes de enviar.");
+      return;
+    }
+
     setAiLoading(true);
     setAiError(null);
+    setAiStatus("");
     setShowAICostConfirm(false);
+
+    let fileToSend = aiFile;
+
     try {
-      const base64 = await fileToBase64(aiFile);
+      if (!isPDF) {
+        setAiStatus("Otimizando imagem...");
+        const originalSize = aiFile.size;
+        try {
+          const compressed = await compressImage(aiFile);
+          fileToSend = compressed;
+          const origMB = (originalSize / 1048576).toFixed(1);
+          const compMB = (compressed.size / 1048576).toFixed(1);
+          setAiStatus(`Imagem otimizada (${origMB} MB → ${compMB} MB). Enviando para IA...`);
+        } catch {
+          setAiStatus("Enviando imagem original para IA...");
+        }
+      } else {
+        setAiStatus("Extraindo dados do PDF com IA...");
+      }
+
+      if (fileToSend.size > 9 * 1048576) {
+        setAiError("Arquivo muito grande mesmo após otimização. Tente uma imagem menor.");
+        return;
+      }
+
+      const base64 = await fileToBase64(fileToSend);
       const result = await extractDataWithAI({
         fileBase64: base64,
-        fileName: aiFile.name,
-        fileType: aiFile.type,
+        fileName: fileToSend.name,
+        fileType: fileToSend.type,
         targetTable: typeConfig.table,
       });
+
       if (!result.ok || !result.records) {
         setAiError(result.message ?? "Erro na extração.");
         return;
       }
+
       const rows = result.records.map(rec => ({
         raw: rec as Record<string, string>,
         status: "ok" as RowStatus,
@@ -489,6 +561,7 @@ export default function ImportarHistoricoModal({ unit, restaurant, initialType, 
       setAiError(err.message ?? "Erro inesperado.");
     } finally {
       setAiLoading(false);
+      setAiStatus("");
     }
   }
 
@@ -748,7 +821,8 @@ export default function ImportarHistoricoModal({ unit, restaurant, initialType, 
   // ─────────────────────────────────────────────────────────────────────────
   if (step === 2) {
     const canNextCSV = !!file && csvRows.length > 0;
-    const canNextAI = !!aiFile;
+    const isHEICSelected = !!aiFile && (aiFile.type === "image/heic" || aiFile.type === "image/heif" || aiFile.name.toLowerCase().endsWith(".heic"));
+    const canNextAI = !!aiFile && !isHEICSelected;
 
     return (
       <div>
@@ -860,7 +934,19 @@ export default function ImportarHistoricoModal({ unit, restaurant, initialType, 
               )}
             </div>
 
-            {aiFile && !showAICostConfirm && !aiLoading && (
+            {(() => {
+              const isHEIC = aiFile && (aiFile.type === "image/heic" || aiFile.type === "image/heif" || aiFile.name.toLowerCase().endsWith(".heic"));
+              if (isHEIC) {
+                return (
+                  <div style={{ background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.2)", borderRadius: 12, padding: "12px 16px", marginBottom: 16, fontSize: 13, color: "#dc2626" }}>
+                    Formato HEIC não é suportado. Converta a imagem para JPG antes de enviar.
+                  </div>
+                );
+              }
+              return null;
+            })()}
+
+            {aiFile && !aiLoading && (
               <div style={{ background: "rgba(234,179,8,0.08)", border: "1px solid rgba(234,179,8,0.2)", borderRadius: 12, padding: "12px 16px", marginBottom: 16, fontSize: 13, color: "#ca8a04" }}>
                 Esta operação usará IA. Custo estimado: <strong>~R$0,05 por página/imagem</strong>
               </div>
@@ -874,7 +960,7 @@ export default function ImportarHistoricoModal({ unit, restaurant, initialType, 
 
             {aiLoading && (
               <div style={{ textAlign: "center", padding: "20px 0", fontSize: 14, color: "var(--dash-text-muted)", fontWeight: 600 }}>
-                <div style={{ marginBottom: 8 }}>Extraindo dados com IA...</div>
+                <div style={{ marginBottom: 8 }}>{aiStatus || "Processando..."}</div>
                 <div style={{ fontSize: 12, color: "var(--dash-text-muted)" }}>Aguarde, isso pode levar alguns segundos</div>
               </div>
             )}
