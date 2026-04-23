@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Shield, Eye, EyeOff } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function SuporteLoginPage() {
@@ -57,9 +58,9 @@ export default function SuporteLoginPage() {
             width: 48, height: 48, borderRadius: 14,
             background: "linear-gradient(135deg, #7c3aed, #4c1d95)",
             display: "flex", alignItems: "center", justifyContent: "center",
-            margin: "0 auto 16px", fontSize: 22,
+            margin: "0 auto 16px",
           }}>
-            🛡️
+            <Shield size={22} style={{ color: "#fff" }} />
           </div>
           <h1 style={{ color: "#fff", fontSize: 20, fontWeight: 800, margin: 0 }}>
             Portal de Suporte
@@ -107,7 +108,7 @@ export default function SuporteLoginPage() {
                 color: "rgba(255,255,255,0.4)", fontSize: 16, padding: 0,
               }}
             >
-              {showPassword ? "🙈" : "👁️"}
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </div>
 

@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { Handshake, MessageCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function PartnerLoginClient() {
@@ -36,7 +37,7 @@ export default function PartnerLoginClient() {
     <div style={{ minHeight: "100vh", background: "#0a0a0a", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
       <div style={{ width: "100%", maxWidth: 380, background: "#111", borderRadius: 24, border: "1px solid rgba(255,255,255,0.08)", padding: "40px 32px" }}>
         <div style={{ textAlign: "center", marginBottom: 32 }}>
-          <div style={{ width: 48, height: 48, borderRadius: 14, background: "linear-gradient(135deg, #00ffae, #00d9ff)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", fontSize: 22 }}>🤝</div>
+          <div style={{ width: 48, height: 48, borderRadius: 14, background: "linear-gradient(135deg, #00ffae, #00d9ff)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}><Handshake size={22} style={{ color: "#000" }} /></div>
           <h1 style={{ color: "#fff", fontSize: 20, fontWeight: 800, margin: 0 }}>Painel do Parceiro</h1>
           <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 13, marginTop: 4 }}>FyMenu — Área do parceiro</p>
         </div>
@@ -79,7 +80,7 @@ export default function PartnerLoginClient() {
             target="_blank" rel="noopener noreferrer"
             style={{ color: "rgba(37,211,102,0.5)", fontSize: 12, textDecoration: "none" }}
           >
-            💬 Suporte via WhatsApp
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><MessageCircle size={12} /> Suporte via WhatsApp</span>
           </a>
         </div>
       </div>

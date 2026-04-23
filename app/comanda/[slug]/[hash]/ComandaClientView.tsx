@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
+import { UtensilsCrossed, Star, Sparkles, Hand, Briefcase } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 type ComandaRecord = {
@@ -201,12 +202,12 @@ export default function ComandaClientView({ comanda: initialComanda, initialItem
     : { background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.4)" };
 
   function itemStatusLabel(s: string) {
-    if (s === "pending") return "⏳ Aguardando";
-    if (s === "confirmed") return "✅ Confirmado";
-    if (s === "preparing") return "🔥 Preparando";
-    if (s === "ready") return "🍽️ Pronto";
+    if (s === "pending") return "Aguardando";
+    if (s === "confirmed") return "Confirmado";
+    if (s === "preparing") return "Preparando";
+    if (s === "ready") return "Pronto";
     if (s === "delivered") return "✓ Entregue";
-    return "❌ Cancelado";
+    return "Cancelado";
   }
 
   function itemStatusColor(s: string) {
@@ -231,7 +232,7 @@ export default function ComandaClientView({ comanda: initialComanda, initialItem
           animation: "slideDownNotif 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
           boxShadow: "0 4px 20px rgba(0,255,174,0.3)",
         }}>
-          <div style={{ fontSize: 16, fontWeight: 800 }}>🍽️ Pedido pronto!</div>
+          <div style={{ fontSize: 16, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}><UtensilsCrossed size={16} /> Pedido pronto!</div>
           <div style={{ fontSize: 13, fontWeight: 600, marginTop: 4, opacity: 0.8 }}>{latestReadyItem}</div>
           <button onClick={() => setShowReadyNotification(false)} style={{
             position: "absolute", top: 12, right: 12,
@@ -304,7 +305,7 @@ export default function ComandaClientView({ comanda: initialComanda, initialItem
                 </div>
                 {item.notes && (
                   <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, marginTop: 4 }}>
-                    📝 {item.notes}
+                    {item.notes}
                   </p>
                 )}
                 {item.addons && Array.isArray(item.addons) && item.addons.length > 0 && (
@@ -337,7 +338,7 @@ export default function ComandaClientView({ comanda: initialComanda, initialItem
             transition: "all 0.3s",
           }}
         >
-          {callingWaiter ? "✋ Garçom chamado! Aguarde..." : "🖐️ Chamar Garçom"}
+          {callingWaiter ? "Garçom chamado! Aguarde..." : <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Hand size={14} /> Chamar Garçom</span>}
         </button>
 
         {restaurantPlan === "business" && (
@@ -358,7 +359,7 @@ export default function ComandaClientView({ comanda: initialComanda, initialItem
               transition: "all 0.3s",
             }}
           >
-            {callingManager ? "👔 Gerente chamado! Aguarde..." : "👔 Chamar Gerente"}
+            {callingManager ? "Gerente chamado! Aguarde..." : <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Briefcase size={14} /> Chamar Gerente</span>}
           </button>
         )}
       </div>
@@ -380,7 +381,7 @@ export default function ComandaClientView({ comanda: initialComanda, initialItem
             boxShadow: "0 1px 0 rgba(255,255,255,0.04) inset, 0 -1px 0 rgba(0,0,0,0.3) inset, 0 20px 60px rgba(0,0,0,0.5)",
           }}>
             <div style={{ textAlign: "center", marginBottom: 24 }}>
-              <div style={{ fontSize: 36, marginBottom: 10 }}>⭐</div>
+              <div style={{ marginBottom: 10, display: "flex", justifyContent: "center", color: "#fbbf24" }}><Star size={36} /></div>
               <div style={{ fontSize: 18, fontWeight: 800, color: "#fff" }}>Como foi sua experiência?</div>
               <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginTop: 6 }}>
                 Sua avaliação ajuda a melhorar nosso atendimento
@@ -393,11 +394,13 @@ export default function ComandaClientView({ comanda: initialComanda, initialItem
                 {[1, 2, 3, 4, 5].map(star => (
                   <button key={star} onClick={() => setRestaurantRating(star)} style={{
                     background: "transparent", border: "none", cursor: "pointer",
-                    fontSize: 32, padding: 4,
-                    filter: star <= restaurantRating ? "none" : "grayscale(100%) opacity(0.3)",
+                    padding: 4,
                     transform: star <= restaurantRating ? "scale(1.1)" : "scale(1)",
                     transition: "all 0.2s",
-                  }}>⭐</button>
+                    color: star <= restaurantRating ? "#fbbf24" : "rgba(255,255,255,0.3)",
+                  }}>
+                    <Star size={32} fill={star <= restaurantRating ? "#fbbf24" : "none"} />
+                  </button>
                 ))}
               </div>
             </div>
@@ -410,11 +413,13 @@ export default function ComandaClientView({ comanda: initialComanda, initialItem
                 {[1, 2, 3, 4, 5].map(star => (
                   <button key={star} onClick={() => setWaiterRating(star)} style={{
                     background: "transparent", border: "none", cursor: "pointer",
-                    fontSize: 32, padding: 4,
-                    filter: star <= waiterRating ? "none" : "grayscale(100%) opacity(0.3)",
+                    padding: 4,
                     transform: star <= waiterRating ? "scale(1.1)" : "scale(1)",
                     transition: "all 0.2s",
-                  }}>⭐</button>
+                    color: star <= waiterRating ? "#fbbf24" : "rgba(255,255,255,0.3)",
+                  }}>
+                    <Star size={32} fill={star <= waiterRating ? "#fbbf24" : "none"} />
+                  </button>
                 ))}
               </div>
             </div>
@@ -473,7 +478,7 @@ export default function ComandaClientView({ comanda: initialComanda, initialItem
           padding: 20,
         }}>
           <div style={{ textAlign: "center", maxWidth: 320 }}>
-            <div style={{ fontSize: 48, marginBottom: 16 }}>🎉</div>
+            <div style={{ marginBottom: 16, display: "flex", justifyContent: "center", color: "#00ffae" }}><Sparkles size={48} /></div>
             <div style={{ fontSize: 18, fontWeight: 800, color: "#fff", marginBottom: 8 }}>Obrigado pela avaliação!</div>
             <div style={{ fontSize: 14, color: "rgba(255,255,255,0.6)", marginBottom: 20, lineHeight: 1.5 }}>
               Que tal compartilhar essa experiência no Google? Sua avaliação ajuda outros clientes!

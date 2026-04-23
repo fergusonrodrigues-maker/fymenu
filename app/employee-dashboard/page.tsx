@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import { Clock, CalendarDays } from "lucide-react";
 import { useRouter } from "next/navigation";
 import FyLoader from "@/components/FyLoader";
 
@@ -51,11 +52,11 @@ function formatDate(dateStr: string) {
   return `${d}/${m}`;
 }
 
-const STATE_CONFIG: Record<ClockState, { label: string; color: string; icon: string; next: string; nextAction: string }> = {
-  not_started: { label: "Fora do turno", color: "#888", icon: "⚪", next: "Registrar entrada", nextAction: "entry" },
-  working: { label: "Trabalhando", color: "#00ffae", icon: "🟢", next: "Iniciar pausa", nextAction: "break_start" },
-  on_break: { label: "Em pausa", color: "#fbbf24", icon: "🟡", next: "Retornar da pausa", nextAction: "break_end" },
-  done: { label: "Turno encerrado", color: "#888", icon: "⚫", next: "", nextAction: "" },
+const STATE_CONFIG: Record<ClockState, { label: string; color: string; next: string; nextAction: string }> = {
+  not_started: { label: "Fora do turno", color: "#888", next: "Registrar entrada", nextAction: "entry" },
+  working: { label: "Trabalhando", color: "#00ffae", next: "Iniciar pausa", nextAction: "break_start" },
+  on_break: { label: "Em pausa", color: "#fbbf24", next: "Retornar da pausa", nextAction: "break_end" },
+  done: { label: "Turno encerrado", color: "#888", next: "", nextAction: "" },
 };
 
 export default function EmployeeDashboard() {
@@ -173,8 +174,8 @@ export default function EmployeeDashboard() {
       <div style={{ padding: "0 16px 80px" }}>
         {/* Tabs */}
         <div style={{ display: "flex", gap: 4, background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: 4, marginBottom: 20 }}>
-          <button style={tabStyle(tab === "ponto")} onClick={() => setTab("ponto")}>🕐 Ponto de Hoje</button>
-          <button style={tabStyle(tab === "historico")} onClick={() => setTab("historico")}>📅 Histórico</button>
+          <button style={tabStyle(tab === "ponto")} onClick={() => setTab("ponto")}><span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Clock size={14} /> Ponto de Hoje</span></button>
+          <button style={tabStyle(tab === "historico")} onClick={() => setTab("historico")}><span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><CalendarDays size={14} /> Histórico</span></button>
         </div>
 
         {/* ── Ponto ── */}
@@ -187,7 +188,7 @@ export default function EmployeeDashboard() {
               border: `1px solid ${stateConfig.color}33`,
               textAlign: "center",
             }}>
-              <div style={{ fontSize: 48, marginBottom: 10 }}>{stateConfig.icon}</div>
+              <div style={{ marginBottom: 10, display: "flex", justifyContent: "center" }}><div style={{ width: 48, height: 48, borderRadius: "50%", background: stateConfig.color, opacity: clockState === "not_started" || clockState === "done" ? 0.25 : 1 }} /></div>
               <div style={{ color: stateConfig.color, fontSize: 20, fontWeight: 800 }}>{stateConfig.label}</div>
               {todayLog?.entry_time && (
                 <div style={{ color: "#888", fontSize: 14, marginTop: 4 }}>

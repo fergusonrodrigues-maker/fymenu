@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Lock } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 export default function AdminLoginClient() {
@@ -54,9 +55,10 @@ export default function AdminLoginClient() {
             width: 48, height: 48, borderRadius: 14,
             background: "linear-gradient(135deg, #7c3aed, #4c1d95)",
             display: "flex", alignItems: "center", justifyContent: "center",
-            margin: "0 auto 16px", fontSize: 22,
+            margin: "0 auto 16px",
+            display: "flex", alignItems: "center", justifyContent: "center",
           }}>
-            🔒
+            <Lock size={22} style={{ color: "#fff" }} />
           </div>
           <h1 style={{ color: "#fff", fontSize: 20, fontWeight: 800, margin: 0 }}>
             Admin FyMenu

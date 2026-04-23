@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { ChefHat, CreditCard, ShieldAlert, BellRing, CheckCircle2, Link2, Truck, AlertTriangle } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 type HubOrder = {
@@ -131,7 +132,7 @@ export default function HubClient({ unitId, unitName, restaurantName, slug, init
       {/* Header */}
       <header style={{ position: "sticky", top: 0, zIndex: 20, background: "rgba(5,5,5,0.9)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.04)", padding: "12px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
         <div>
-          <div style={{ fontSize: 15, fontWeight: 800, color: "#fff" }}>🍳 Hub Central <span style={{ color: "rgba(255,255,255,0.3)", fontWeight: 400 }}>— {unitName}</span></div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", display: "flex", alignItems: "center", gap: 6 }}><ChefHat size={15} /> Hub Central <span style={{ color: "rgba(255,255,255,0.3)", fontWeight: 400 }}>— {unitName}</span></div>
           <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>{restaurantName}</div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
@@ -144,7 +145,7 @@ export default function HubClient({ unitId, unitName, restaurantName, slug, init
               <span style={{ padding: "4px 10px", borderRadius: 8, background: "rgba(0,255,174,0.06)", color: "#00ffae", fontSize: 10, fontWeight: 700, border: "1px solid rgba(0,255,174,0.15)" }}>{prontos.length} pronto{prontos.length !== 1 ? "s" : ""}</span>
             </>
           )}
-          <a href="/pdv" style={{ marginLeft: 4, padding: "6px 12px", borderRadius: 8, border: "none", cursor: "pointer", background: "rgba(167,139,250,0.12)", color: "#a78bfa", fontSize: 10, fontWeight: 700, textDecoration: "none" }}>💳 PDV</a>
+          <a href="/pdv" style={{ marginLeft: 4, padding: "6px 12px", borderRadius: 8, border: "none", cursor: "pointer", background: "rgba(167,139,250,0.12)", color: "#a78bfa", fontSize: 10, fontWeight: 700, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4 }}><CreditCard size={12} /> PDV</a>
         </div>
       </header>
 
@@ -154,7 +155,7 @@ export default function HubClient({ unitId, unitName, restaurantName, slug, init
           {pendingCalls.filter(c => c.type === "manager").map(call => (
             <div key={call.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", borderRadius: 12, background: "rgba(168,85,247,0.06)", border: "1px solid rgba(168,85,247,0.2)" }}>
               <div>
-                <div style={{ color: "#a855f7", fontSize: 13, fontWeight: 800 }}>👔 Mesa {call.table_number} — GERENTE!</div>
+                <div style={{ color: "#a855f7", fontSize: 13, fontWeight: 800, display: "flex", alignItems: "center", gap: 6 }}><ShieldAlert size={13} /> Mesa {call.table_number} — GERENTE!</div>
                 <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 10, marginTop: 2 }}>{new Date(call.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</div>
               </div>
               <button onClick={async () => { await supabase.from("table_calls").update({ status: "resolved", acknowledged_by: "Gerente", acknowledged_at: new Date().toISOString(), resolved_at: new Date().toISOString() }).eq("id", call.id); }} style={{ padding: "6px 14px", borderRadius: 8, border: "none", cursor: "pointer", background: "rgba(168,85,247,0.12)", color: "#a855f7", fontSize: 11, fontWeight: 700 }}>✓ Atender</button>
@@ -163,7 +164,7 @@ export default function HubClient({ unitId, unitName, restaurantName, slug, init
           {pendingCalls.filter(c => c.type === "waiter").map(call => (
             <div key={call.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", borderRadius: 12, background: "rgba(251,191,36,0.06)", border: "1px solid rgba(251,191,36,0.2)" }}>
               <div>
-                <div style={{ color: "#fbbf24", fontSize: 13, fontWeight: 800 }}>🖐️ Mesa {call.table_number} chamando!</div>
+                <div style={{ color: "#fbbf24", fontSize: 13, fontWeight: 800, display: "flex", alignItems: "center", gap: 6 }}><BellRing size={13} /> Mesa {call.table_number} chamando!</div>
                 <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 10, marginTop: 2 }}>{new Date(call.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</div>
               </div>
               <button onClick={async () => { await supabase.from("table_calls").update({ status: "resolved", acknowledged_by: unitName, acknowledged_at: new Date().toISOString(), resolved_at: new Date().toISOString() }).eq("id", call.id); }} style={{ padding: "6px 14px", borderRadius: 8, border: "none", cursor: "pointer", background: "rgba(0,255,174,0.1)", color: "#00ffae", fontSize: 11, fontWeight: 700 }}>✓ Atender</button>
@@ -175,31 +176,31 @@ export default function HubClient({ unitId, unitName, restaurantName, slug, init
       {/* Kanban */}
       <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", overflow: "hidden" }}>
         {/* NOVOS */}
-        <HubColumn title="🔴 NOVOS" accentColor="rgba(248,113,113,0.5)" titleColor="#f87171" bg="rgba(248,113,113,0.015)">
+        <HubColumn title="NOVOS" accentColor="rgba(248,113,113,0.5)" titleColor="#f87171" bg="rgba(248,113,113,0.015)">
           {novos.length === 0 && <HubEmptyState text="Nenhum pedido novo" />}
           {novos.map((o) => (
             <HubOrderCard key={o.id} order={o} tick={tick}>
-              <button onClick={() => markKitchenStatus(o.id, "preparing")} style={{ width: "100%", padding: 10, borderRadius: 10, border: "none", cursor: "pointer", background: "rgba(251,191,36,0.1)", color: "#fbbf24", fontSize: 12, fontWeight: 700, marginTop: 10, boxShadow: "0 1px 0 rgba(251,191,36,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
-                🍳 Iniciar Preparo
+              <button onClick={() => markKitchenStatus(o.id, "preparing")} style={{ width: "100%", padding: 10, borderRadius: 10, border: "none", cursor: "pointer", background: "rgba(251,191,36,0.1)", color: "#fbbf24", fontSize: 12, fontWeight: 700, marginTop: 10, boxShadow: "0 1px 0 rgba(251,191,36,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                <ChefHat size={14} /> Iniciar Preparo
               </button>
             </HubOrderCard>
           ))}
         </HubColumn>
 
         {/* EM PREPARO */}
-        <HubColumn title="🟡 EM PREPARO" accentColor="rgba(251,191,36,0.5)" titleColor="#fbbf24" bg="rgba(251,191,36,0.015)">
+        <HubColumn title="EM PREPARO" accentColor="rgba(251,191,36,0.5)" titleColor="#fbbf24" bg="rgba(251,191,36,0.015)">
           {preparando.length === 0 && <HubEmptyState text="Nenhum em preparo" />}
           {preparando.map((o) => (
             <HubOrderCard key={o.id} order={o} tick={tick}>
-              <button onClick={() => markKitchenStatus(o.id, "ready")} style={{ width: "100%", padding: 10, borderRadius: 10, border: "none", cursor: "pointer", background: "rgba(0,255,174,0.1)", color: "#00ffae", fontSize: 12, fontWeight: 700, marginTop: 10, boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
-                ✅ Marcar Pronto
+              <button onClick={() => markKitchenStatus(o.id, "ready")} style={{ width: "100%", padding: 10, borderRadius: 10, border: "none", cursor: "pointer", background: "rgba(0,255,174,0.1)", color: "#00ffae", fontSize: 12, fontWeight: 700, marginTop: 10, boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                <CheckCircle2 size={14} /> Marcar Pronto
               </button>
             </HubOrderCard>
           ))}
         </HubColumn>
 
         {/* PRONTOS */}
-        <HubColumn title="🟢 PRONTOS" accentColor="rgba(0,255,174,0.4)" titleColor="#00ffae" bg="rgba(0,255,174,0.01)">
+        <HubColumn title="PRONTOS" accentColor="rgba(0,255,174,0.4)" titleColor="#00ffae" bg="rgba(0,255,174,0.01)">
           {prontos.length === 0 && <HubEmptyState text="Nenhum pronto ainda" />}
           {prontos.map((o) => (
             <HubOrderCard key={o.id} order={o} tick={tick}>
@@ -207,10 +208,10 @@ export default function HubClient({ unitId, unitName, restaurantName, slug, init
                 onClick={() => { const link = `${window.location.origin}/entrega/${o.id}`; navigator.clipboard.writeText(link).then(() => { setCopiedId(o.id); setTimeout(() => setCopiedId(null), 2000); }); }}
                 style={{ width: "100%", padding: 10, borderRadius: 10, border: "1px solid rgba(96,165,250,0.25)", cursor: "pointer", background: "rgba(96,165,250,0.08)", color: "#60a5fa", fontSize: 12, fontWeight: 600, marginTop: 10 }}
               >
-                {copiedId === o.id ? "✓ Link copiado!" : "🔗 Enviar pro entregador"}
+                {copiedId === o.id ? "✓ Link copiado!" : <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Link2 size={12} /> Enviar pro entregador</span>}
               </button>
-              <button onClick={() => markKitchenStatus(o.id, "delivered")} style={{ width: "100%", padding: 10, borderRadius: 10, border: "1px solid rgba(255,255,255,0.06)", cursor: "pointer", background: "rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.4)", fontSize: 12, fontWeight: 600, marginTop: 6 }}>
-                🚀 Entregue — Remover
+              <button onClick={() => markKitchenStatus(o.id, "delivered")} style={{ width: "100%", padding: 10, borderRadius: 10, border: "1px solid rgba(255,255,255,0.06)", cursor: "pointer", background: "rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.4)", fontSize: 12, fontWeight: 600, marginTop: 6, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                <Truck size={12} /> Entregue — Remover
               </button>
             </HubOrderCard>
           ))}
@@ -266,7 +267,7 @@ function HubOrderCard({ order, tick, children }: { order: HubOrder; tick: number
         ))}
       </ul>
       {order.notes && (
-        <div style={{ marginBottom: 6, padding: "5px 10px", borderRadius: 8, background: "rgba(251,191,36,0.06)", border: "1px solid rgba(251,191,36,0.15)", fontSize: 11, color: "#fbbf24" }}>⚠️ {order.notes}</div>
+        <div style={{ marginBottom: 6, padding: "5px 10px", borderRadius: 8, background: "rgba(251,191,36,0.06)", border: "1px solid rgba(251,191,36,0.15)", fontSize: 11, color: "#fbbf24", display: "flex", alignItems: "center", gap: 6 }}><AlertTriangle size={11} /> {order.notes}</div>
       )}
       <div style={{ display: "flex", justifyContent: "flex-end" }}>
         <span style={{ fontSize: 12, fontWeight: 700, color: "#a78bfa" }}>{formatPrice(order.total)}</span>

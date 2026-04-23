@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { ChefHat, CreditCard, Bike, Clock, User, Home } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import FyLoader from "@/components/FyLoader";
@@ -114,8 +115,8 @@ export default function FuncionarioHubPage() {
 
   const statusConfig: Record<string, { label: string; color: string }> = {
     working: { label: "● Trabalhando", color: "#00ffae" },
-    break:   { label: "☕ Descanso",   color: "#fbbf24" },
-    lunch:   { label: "🍽️ Almoço",    color: "#60a5fa" },
+    break:   { label: "Descanso",   color: "#fbbf24" },
+    lunch:   { label: "Almoço",    color: "#60a5fa" },
     off:     { label: "○ Fora",        color: "rgba(255,255,255,0.3)" },
   };
   const sc = statusConfig[status] || statusConfig.off;
@@ -190,7 +191,7 @@ export default function FuncionarioHubPage() {
                 textDecoration: "none",
                 boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
               }}>
-                <span style={{ fontSize: 28 }}>🧑‍🍳</span>
+                <ChefHat size={28} style={{ color: "#00ffae" }} />
                 <span style={{ fontSize: 12, fontWeight: 700, color: "#00ffae" }}>Mesas</span>
               </a>
             )}
@@ -204,7 +205,7 @@ export default function FuncionarioHubPage() {
                 textDecoration: "none",
                 boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
               }}>
-                <span style={{ fontSize: 28 }}>👨‍🍳</span>
+                <ChefHat size={28} style={{ color: "#fbbf24" }} />
                 <span style={{ fontSize: 12, fontWeight: 700, color: "#fbbf24" }}>Cozinha</span>
               </a>
             )}
@@ -218,7 +219,7 @@ export default function FuncionarioHubPage() {
                 textDecoration: "none",
                 boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
               }}>
-                <span style={{ fontSize: 28 }}>💳</span>
+                <CreditCard size={28} style={{ color: "#a78bfa" }} />
                 <span style={{ fontSize: 12, fontWeight: 700, color: "#a78bfa" }}>PDV / Caixa</span>
               </a>
             )}
@@ -232,7 +233,7 @@ export default function FuncionarioHubPage() {
                 textDecoration: "none",
                 boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
               }}>
-                <span style={{ fontSize: 28 }}>🛵</span>
+                <Bike size={28} style={{ color: "#fb923c" }} />
                 <span style={{ fontSize: 12, fontWeight: 700, color: "#fb923c" }}>Entrega</span>
               </a>
             )}
@@ -245,7 +246,7 @@ export default function FuncionarioHubPage() {
               textDecoration: "none",
               boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
             }}>
-              <span style={{ fontSize: 28 }}>⏰</span>
+              <Clock size={28} style={{ color: "#60a5fa" }} />
               <span style={{ fontSize: 12, fontWeight: 700, color: "#60a5fa" }}>Ponto</span>
             </a>
 
@@ -257,7 +258,7 @@ export default function FuncionarioHubPage() {
               textDecoration: "none",
               boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
             }}>
-              <span style={{ fontSize: 28 }}>👤</span>
+              <User size={28} style={{ color: "rgba(255,255,255,0.5)" }} />
               <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.5)" }}>Perfil</span>
             </a>
 
@@ -270,7 +271,7 @@ export default function FuncionarioHubPage() {
                 textDecoration: "none", gridColumn: "1 / -1",
                 boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
               }}>
-                <span style={{ fontSize: 28 }}>🏠</span>
+                <Home size={28} style={{ color: "#a78bfa" }} />
                 <span style={{ fontSize: 12, fontWeight: 700, color: "#a78bfa" }}>Hub Central</span>
               </a>
             )}

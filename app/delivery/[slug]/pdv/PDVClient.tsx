@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
+import { Banknote, CreditCard, Smartphone, CheckCircle2, AlertTriangle, ChefHat, Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useKitchenAlertContext } from "@/lib/context/KitchenAlertContext";
 
@@ -29,10 +30,10 @@ interface Props {
   initialOrders: PDVOrder[];
 }
 
-const METHODS: { id: PaymentMethod; label: string; icon: string; color: string; bg: string }[] = [
-  { id: "cash", label: "Dinheiro", icon: "💵", color: "#22c55e", bg: "rgba(34,197,94,0.08)" },
-  { id: "card", label: "Cartão",   icon: "💳", color: "#60a5fa", bg: "rgba(96,165,250,0.08)" },
-  { id: "pix",  label: "PIX",      icon: "📲", color: "#a78bfa", bg: "rgba(167,139,250,0.08)" },
+const METHODS: { id: PaymentMethod; label: string; icon: React.ReactNode; color: string; bg: string }[] = [
+  { id: "cash", label: "Dinheiro", icon: <Banknote size={24} />,    color: "#22c55e", bg: "rgba(34,197,94,0.08)" },
+  { id: "card", label: "Cartão",   icon: <CreditCard size={24} />,  color: "#60a5fa", bg: "rgba(96,165,250,0.08)" },
+  { id: "pix",  label: "PIX",      icon: <Smartphone size={24} />,  color: "#a78bfa", bg: "rgba(167,139,250,0.08)" },
 ];
 
 function fmt(cents: number) {
@@ -110,14 +111,14 @@ export default function PDVClient({ unitId, unitName, restaurantName, slug, init
       <div style={{ minHeight: "100vh", background: "#050505", color: "#fff", fontFamily: "'Montserrat', system-ui, sans-serif", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
         <div style={{ width: "100%", maxWidth: 400, background: "#0d0d0d", borderRadius: 20, border: "1px solid rgba(255,255,255,0.06)", overflow: "hidden" }}>
           <div style={{ background: "rgba(0,255,174,0.08)", borderBottom: "1px solid rgba(0,255,174,0.15)", padding: "32px 24px", textAlign: "center" }}>
-            <div style={{ fontSize: 48, marginBottom: 8 }}>✅</div>
+            <div style={{ marginBottom: 8, display: "flex", justifyContent: "center", color: "#00ffae" }}><CheckCircle2 size={48} /></div>
             <div style={{ fontSize: 20, fontWeight: 800, color: "#00ffae" }}>Pagamento Confirmado</div>
             <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 4 }}>{tableLabel(order.table_number)}</div>
           </div>
           <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 12 }}>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>Método</span>
-              <span style={{ fontSize: 13, fontWeight: 600, color: mInfo.color }}>{mInfo.icon} {mInfo.label}</span>
+              <span style={{ fontSize: 13, fontWeight: 600, color: mInfo.color, display: "inline-flex", alignItems: "center", gap: 6 }}>{mInfo.icon} {mInfo.label}</span>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>Total</span>
@@ -163,7 +164,7 @@ export default function PDVClient({ unitId, unitName, restaurantName, slug, init
         <header style={{ position: "sticky", top: 0, zIndex: 20, background: "rgba(5,5,5,0.9)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.04)", padding: "12px 16px", display: "flex", alignItems: "center", gap: 12 }}>
           <button onClick={() => setScreen("list")} style={{ width: 36, height: 36, borderRadius: 10, border: "1px solid rgba(255,255,255,0.08)", cursor: "pointer", background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>←</button>
           <div>
-            <div style={{ fontSize: 15, fontWeight: 800 }}>💳 Pagamento — {tableLabel(selected.table_number)}</div>
+            <div style={{ fontSize: 15, fontWeight: 800, display: "flex", alignItems: "center", gap: 6 }}><CreditCard size={15} /> Pagamento — {tableLabel(selected.table_number)}</div>
             <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>{unitName}</div>
           </div>
         </header>
@@ -186,7 +187,7 @@ export default function PDVClient({ unitId, unitName, restaurantName, slug, init
                 </div>
               ))}
               {selected.notes && (
-                <div style={{ padding: "8px 16px", fontSize: 12, color: "#fbbf24", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>⚠️ {selected.notes}</div>
+                <div style={{ padding: "8px 16px", fontSize: 12, color: "#fbbf24", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", alignItems: "center", gap: 6 }}><AlertTriangle size={12} /> {selected.notes}</div>
               )}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 16px", background: "rgba(255,255,255,0.02)" }}>
                 <span style={{ fontSize: 14, fontWeight: 700 }}>Total</span>
@@ -208,7 +209,7 @@ export default function PDVClient({ unitId, unitName, restaurantName, slug, init
                       display: "flex", flexDirection: "column", alignItems: "center", gap: 6, transition: "all 0.2s",
                     }}
                   >
-                    <span style={{ fontSize: 28 }}>{m.icon}</span>
+                    <span style={{ display: "flex", color: m.color }}>{m.icon}</span>
                     <span style={{ fontSize: 12, fontWeight: 700, color: method === m.id ? m.color : "rgba(255,255,255,0.5)" }}>{m.label}</span>
                   </button>
                 ))}
@@ -245,7 +246,7 @@ export default function PDVClient({ unitId, unitName, restaurantName, slug, init
             disabled={!canPay || processing}
             style={{ width: "100%", padding: 16, borderRadius: 14, border: "none", cursor: !canPay || processing ? "not-allowed" : "pointer", background: "rgba(96,165,250,0.14)", color: "#60a5fa", fontSize: 15, fontWeight: 800, opacity: !canPay || processing ? 0.4 : 1, boxShadow: "0 1px 0 rgba(96,165,250,0.1) inset, 0 -1px 0 rgba(0,0,0,0.2) inset" }}
           >
-            {processing ? "Processando..." : "✅ Confirmar Pagamento"}
+            {processing ? "Processando..." : "Confirmar Pagamento"}
           </button>
         </div>
       </div>
@@ -260,7 +261,7 @@ export default function PDVClient({ unitId, unitName, restaurantName, slug, init
     <div style={{ minHeight: "100vh", background: "#050505", color: "#fff", fontFamily: "'Montserrat', system-ui, sans-serif", display: "flex", flexDirection: "column" }}>
       <header style={{ position: "sticky", top: 0, zIndex: 20, background: "rgba(5,5,5,0.9)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.04)", padding: "12px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
-          <div style={{ fontSize: 15, fontWeight: 800 }}>💳 PDV <span style={{ color: "rgba(255,255,255,0.3)", fontWeight: 400, fontSize: 13 }}>— {unitName}</span></div>
+          <div style={{ fontSize: 15, fontWeight: 800, display: "flex", alignItems: "center", gap: 6 }}><CreditCard size={15} /> PDV <span style={{ color: "rgba(255,255,255,0.3)", fontWeight: 400, fontSize: 13 }}>— {unitName}</span></div>
           <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>{restaurantName}</div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -269,8 +270,8 @@ export default function PDVClient({ unitId, unitName, restaurantName, slug, init
               <span style={{ color: "#fff", fontWeight: 700 }}>{orders.length}</span> {orders.length === 1 ? "pedido" : "pedidos"} · <span style={{ color: "#60a5fa", fontWeight: 700 }}>{fmt(totalDia)}</span>
             </span>
           )}
-          <a href="/operacoes" style={{ padding: "6px 12px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.6)", fontSize: 10, fontWeight: 600, textDecoration: "none" }}>
-            🍳 Hub
+          <a href="/operacoes" style={{ padding: "6px 12px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.6)", fontSize: 10, fontWeight: 600, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4 }}>
+            <ChefHat size={12} /> Hub
           </a>
         </div>
       </header>
@@ -278,7 +279,7 @@ export default function PDVClient({ unitId, unitName, restaurantName, slug, init
       <main style={{ flex: 1, overflowY: "auto" }}>
         {orders.length === 0 ? (
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", padding: "80px 20px", color: "rgba(255,255,255,0.2)", textAlign: "center" }}>
-            <div style={{ fontSize: 48, marginBottom: 12 }}>🎉</div>
+            <div style={{ marginBottom: 12, display: "flex", justifyContent: "center", color: "#00ffae" }}><Sparkles size={48} /></div>
             <div style={{ fontSize: 16, fontWeight: 700, color: "rgba(255,255,255,0.4)" }}>Nenhum pedido pendente</div>
             <div style={{ fontSize: 12, marginTop: 4 }}>Todos os pedidos foram pagos!</div>
           </div>

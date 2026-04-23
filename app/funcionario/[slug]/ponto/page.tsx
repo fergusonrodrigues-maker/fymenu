@@ -1,5 +1,6 @@
 "use client";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
+import { Coffee, UtensilsCrossed, Square, Clock, MapPin, Play } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -117,7 +118,7 @@ export default function PontoFuncionarioPage() {
 
   const STATUS_MAP: Record<string, {
     label: string; color: string; glow: string;
-    actions: { type: string; label: string; icon: string; next: string; color: string }[];
+    actions: { type: string; label: string; icon: React.ReactNode; next: string; color: string }[];
   }> = {
     off: {
       label: "Fora", color: "rgba(255,255,255,0.2)", glow: "transparent",
@@ -126,9 +127,9 @@ export default function PontoFuncionarioPage() {
     working: {
       label: "Trabalhando", color: "#00ffae", glow: "rgba(0,255,174,0.15)",
       actions: [
-        { type: "break_start", label: "Descanso", icon: "☕", next: "break", color: "#fbbf24" },
-        { type: "lunch_start", label: "Almoço", icon: "🍽️", next: "lunch", color: "#60a5fa" },
-        { type: "clock_out", label: "Encerrar turno", icon: "⏹", next: "off", color: "#f87171" },
+        { type: "break_start", label: "Descanso", icon: <Coffee size={16} />, next: "break", color: "#fbbf24" },
+        { type: "lunch_start", label: "Almoço", icon: <UtensilsCrossed size={16} />, next: "lunch", color: "#60a5fa" },
+        { type: "clock_out", label: "Encerrar turno", icon: <Square size={20} />, next: "off", color: "#f87171" },
       ],
     },
     break: {
@@ -153,20 +154,20 @@ export default function PontoFuncionarioPage() {
   const progressPct = Math.min((workedToday / targetMs) * 100, 100);
 
   if (loading) return (
-    <div style={{ minHeight: "100vh", background: "#050505", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ fontSize: 32 }}>⏱️</div>
+    <div style={{ minHeight: "100vh", background: "#050505", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.4)" }}>
+      <Clock size={32} />
     </div>
   );
 
   if (!employee) return null;
 
-  const TYPE_LABEL: Record<string, { label: string; icon: string; color: string }> = {
-    clock_in:    { label: "Entrada",  icon: "▶️", color: "#00ffae" },
-    clock_out:   { label: "Saída",    icon: "⏹",  color: "#f87171" },
-    break_start: { label: "Descanso", icon: "☕", color: "#fbbf24" },
-    break_end:   { label: "Retorno",  icon: "▶️", color: "#00ffae" },
-    lunch_start: { label: "Almoço",   icon: "🍽️", color: "#60a5fa" },
-    lunch_end:   { label: "Retorno",  icon: "▶️", color: "#00ffae" },
+  const TYPE_LABEL: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
+    clock_in:    { label: "Entrada",  icon: <Play size={14} />, color: "#00ffae" },
+    clock_out:   { label: "Saída",    icon: <Square size={14} />, color: "#f87171" },
+    break_start: { label: "Descanso", icon: <Coffee size={14} />, color: "#fbbf24" },
+    break_end:   { label: "Retorno",  icon: <Play size={14} />, color: "#00ffae" },
+    lunch_start: { label: "Almoço",   icon: <UtensilsCrossed size={14} />, color: "#60a5fa" },
+    lunch_end:   { label: "Retorno",  icon: <Play size={14} />, color: "#00ffae" },
   };
 
   return (
@@ -284,7 +285,7 @@ export default function PontoFuncionarioPage() {
                 opacity: animatingBtn !== null && animatingBtn !== action.type ? 0.4 : 1,
               }}
             >
-              <span style={{ fontSize: action.type === "clock_in" || action.type === "clock_out" ? 20 : 16 }}>{action.icon}</span>
+              <span style={{ display: "flex" }}>{action.icon}</span>
               {action.label}
             </button>
           ))}
@@ -303,7 +304,7 @@ export default function PontoFuncionarioPage() {
               <div style={{ position: "absolute", left: 6, top: 6, bottom: 6, width: 1, background: "rgba(255,255,255,0.06)" }} />
 
               {todayEntries.map((entry, i) => {
-                const tc = TYPE_LABEL[entry.type] || { label: entry.type, icon: "📌", color: "rgba(255,255,255,0.3)" };
+                const tc = TYPE_LABEL[entry.type] || { label: entry.type, icon: <MapPin size={14} />, color: "rgba(255,255,255,0.3)" };
                 return (
                   <div key={entry.id || i} style={{
                     display: "flex", alignItems: "center", gap: 12,
@@ -316,7 +317,7 @@ export default function PontoFuncionarioPage() {
                       boxShadow: `0 0 6px ${tc.color}50`,
                     }} />
                     <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1 }}>
-                      <span style={{ fontSize: 14 }}>{tc.icon}</span>
+                      <span style={{ display: "flex" }}>{tc.icon}</span>
                       <span style={{ color: tc.color, fontSize: 12, fontWeight: 700 }}>{tc.label}</span>
                     </div>
                     <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 13, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>

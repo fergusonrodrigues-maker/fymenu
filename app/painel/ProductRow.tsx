@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef, useTransition, useEffect } from "react";
+import React, { useState, useRef, useTransition, useEffect } from "react";
+import { ClipboardList, DollarSign, List, Camera, Video, AlertTriangle, Sparkles, RefreshCw, Pencil, Bike, UtensilsCrossed, Ban, Lock } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { updateProduct, deleteProduct, updateProductStock, updateProductNutrition, updateProductVariations } from "./actions";
 import FyLoader from "@/components/FyLoader";
@@ -124,7 +125,7 @@ function RecipeSection({ productId, unitId, basePrice }: { productId: string; un
   return (
     <div style={{ marginTop: 16, padding: 14, borderRadius: 14, background: "var(--dash-card-subtle)", boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.1) inset" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: "var(--dash-text)" }}>📋 Ficha Técnica</div>
+        <div style={{ fontSize: 12, fontWeight: 700, color: "var(--dash-text)", display: "flex", alignItems: "center", gap: 6 }}><ClipboardList size={12} /> Ficha Técnica</div>
         <button onClick={() => setShowAdd(!showAdd)} style={{
           padding: "4px 10px", borderRadius: 8, border: "none", cursor: "pointer",
           background: "rgba(0,255,174,0.08)", color: "var(--dash-accent)", fontSize: 10, fontWeight: 600,
@@ -406,7 +407,7 @@ export default function ProductRow({
                   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                     {descriptionSource && (
                       <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 6, background: "var(--dash-card-hover)", color: "var(--dash-text-muted)" }}>
-                        {descriptionSource === "AI_GENERATED" ? "✨ IA" : descriptionSource === "HYBRID" ? "🔄 Híbrida" : "✏️ Manual"}
+                        {descriptionSource === "AI_GENERATED" ? <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Sparkles size={10} /> IA</span> : descriptionSource === "HYBRID" ? <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><RefreshCw size={10} /> Híbrida</span> : <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Pencil size={10} /> Manual</span>}
                       </span>
                     )}
                   </div>
@@ -430,8 +431,8 @@ export default function ProductRow({
                 <div style={{ fontSize: 10, fontWeight: 600, color: "var(--dash-text-muted)", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.04em" }}>Tipo de preço</div>
                 <div style={{ display: "flex", gap: 4 }}>
                   {[
-                    { value: "fixed", label: "💰 Preço único" },
-                    { value: "variable", label: "📋 Variações" },
+                    { value: "fixed", label: <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><DollarSign size={12} /> Preço único</span> },
+                    { value: "variable", label: <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><List size={12} /> Variações</span> },
                   ].map((opt) => (
                     <button
                       key={opt.value}
@@ -544,7 +545,7 @@ export default function ProductRow({
                   >+ Adicionar variação</button>
 
                   {variations.length === 0 && (
-                    <p style={{ fontSize: 11, color: "#fbbf24", margin: 0 }}>⚠️ Adicione pelo menos uma variação</p>
+                    <p style={{ fontSize: 11, color: "#fbbf24", margin: 0, display: "flex", alignItems: "center", gap: 4 }}><AlertTriangle size={11} /> Adicione pelo menos uma variação</p>
                   )}
                 </div>
               )}
@@ -560,7 +561,7 @@ export default function ProductRow({
                     </div>
                   ) : null}
                   <button type="button" onClick={() => thumbRef.current?.click()} disabled={uploading === "thumb"} style={uploadBtnStyle}>
-                    {uploading === "thumb" ? "Enviando…" : thumbnailUrl ? "Trocar foto" : "📷 Escolher foto"}
+                    {uploading === "thumb" ? "Enviando…" : thumbnailUrl ? "Trocar foto" : <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Camera size={13} /> Escolher foto</span>}
                   </button>
                   <input ref={thumbRef} type="file" accept="image/*" style={{ display: "none" }} onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; const url = await handleFileUpload(f, "thumb"); if (url) setThumbnailUrl(url); }} />
                 </div>
@@ -573,7 +574,7 @@ export default function ProductRow({
                   <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                     {videoUrl ? (
                       <div style={{ display: "flex", alignItems: "center", gap: 6, position: "relative" }}>
-                        <span style={{ fontSize: 12, color: "var(--dash-text-dim)", maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>🎬 {videoUrl.split("/").pop()}</span>
+                        <span style={{ fontSize: 12, color: "var(--dash-text-dim)", maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "inline-flex", alignItems: "center", gap: 4 }}><Video size={12} /> {videoUrl.split("/").pop()}</span>
                         <button type="button" onClick={() => setVideoUrl("")} style={{
                           width: 22, height: 22, borderRadius: "50%",
                           background: "#ef4444", color: "#fff", border: "none",
@@ -584,7 +585,7 @@ export default function ProductRow({
                       </div>
                     ) : null}
                     <button type="button" onClick={() => videoRef.current?.click()} disabled={uploading === "video"} style={uploadBtnStyle}>
-                      {uploading === "video" ? "Enviando…" : videoUrl ? "Trocar vídeo" : "🎬 Escolher vídeo"}
+                      {uploading === "video" ? "Enviando…" : videoUrl ? "Trocar vídeo" : <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Video size={13} /> Escolher vídeo</span>}
                     </button>
                     <input ref={videoRef} type="file" accept="video/*" style={{ display: "none" }} onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; const url = await handleFileUpload(f, "video"); if (url) setVideoUrl(url); }} />
                   </div>
@@ -608,9 +609,9 @@ export default function ProductRow({
                 <div style={{ fontSize: 10, fontWeight: 600, color: "var(--dash-text-muted)", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.04em" }}>Upsell</div>
                 <div style={{ display: "flex", gap: 4 }}>
                   {[
-                    { value: "auto", label: "✨ Auto (IA)" },
-                    { value: "manual", label: "📋 Manual" },
-                    { value: "off", label: "🚫 Off" },
+                    { value: "auto", label: <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Sparkles size={11} /> Auto (IA)</span> },
+                    { value: "manual", label: <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><ClipboardList size={11} /> Manual</span> },
+                    { value: "off", label: <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Ban size={11} /> Off</span> },
                   ].map((opt) => (
                     <button key={opt.value} type="button" onClick={() => setUpsellMode(opt.value)}
                       style={{
@@ -629,9 +630,9 @@ export default function ProductRow({
                 <div style={{ fontSize: 10, fontWeight: 600, color: "var(--dash-text-muted)", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.04em" }}>Disponível em</div>
                 <div style={{ display: "flex", gap: 4 }}>
                   {[
-                    { value: "both", label: "📋 Ambos" },
-                    { value: "delivery", label: "🛵 Delivery" },
-                    { value: "mesa", label: "🍽️ Mesa" },
+                    { value: "both", label: <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><ClipboardList size={11} /> Ambos</span> },
+                    { value: "delivery", label: <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Bike size={11} /> Delivery</span> },
+                    { value: "mesa", label: <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><UtensilsCrossed size={11} /> Mesa</span> },
                   ].map((opt) => (
                     <button key={opt.value} type="button" onClick={() => setAvailMode(opt.value)}
                       style={{
@@ -660,7 +661,7 @@ export default function ProductRow({
                 <RecipeSection productId={product.id} unitId={unitId} basePrice={product.base_price || 0} />
               ) : (
                 <div style={{ marginTop: 12, padding: 12, borderRadius: 12, background: "var(--dash-card-subtle)", textAlign: "center" }}>
-                  <span style={{ fontSize: 14 }}>🔒</span>
+                  <span style={{ display: "flex", justifyContent: "center", color: "var(--dash-text-muted)" }}><Lock size={14} /></span>
                   <div style={{ fontSize: 11, color: "var(--dash-text-muted)", marginTop: 4 }}>Ficha técnica disponível no plano Business</div>
                 </div>
               )}
