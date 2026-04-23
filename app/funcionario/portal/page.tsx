@@ -1,7 +1,9 @@
 "use client";
 
+import React from "react";
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { Clock, User, Star, CheckCircle2, Flag, Play, Square, ChefHat, Bike, UtensilsCrossed, GlassWater, Briefcase, Trash2, ClipboardList } from "lucide-react";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface Employee {
@@ -41,13 +43,13 @@ interface Rating {
 type Tab = "ponto" | "status" | "dados" | "avaliacoes";
 
 // ─── Status config ────────────────────────────────────────────────────────────
-const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: string }> = {
-  working:  { label: "Trabalhando",  color: "#00ffae", bg: "rgba(0,255,174,0.12)",   icon: "🟢" },
-  break:    { label: "Descanso",     color: "#fbbf24", bg: "rgba(251,191,36,0.12)",  icon: "🟡" },
-  lunch:    { label: "Almoço",       color: "#60a5fa", bg: "rgba(96,165,250,0.12)",  icon: "🔵" },
-  off:      { label: "Folga",        color: "rgba(255,255,255,0.4)", bg: "rgba(255,255,255,0.06)", icon: "⚪" },
-  absent:   { label: "Ausente",      color: "#f87171", bg: "rgba(248,113,113,0.12)", icon: "🔴" },
-  vacation: { label: "Férias",       color: "#a855f7", bg: "rgba(168,85,247,0.12)", icon: "🟣" },
+const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
+  working:  { label: "Trabalhando",  color: "#00ffae", bg: "rgba(0,255,174,0.12)"   },
+  break:    { label: "Descanso",     color: "#fbbf24", bg: "rgba(251,191,36,0.12)"  },
+  lunch:    { label: "Almoço",       color: "#60a5fa", bg: "rgba(96,165,250,0.12)"  },
+  off:      { label: "Folga",        color: "rgba(255,255,255,0.4)", bg: "rgba(255,255,255,0.06)" },
+  absent:   { label: "Ausente",      color: "#f87171", bg: "rgba(248,113,113,0.12)" },
+  vacation: { label: "Férias",       color: "#a855f7", bg: "rgba(168,85,247,0.12)"  },
 };
 
 const ROLES: Record<string, string> = {
@@ -61,11 +63,6 @@ const DAYS_PT: Record<string, string> = {
   seg: "Seg", ter: "Ter", qua: "Qua", qui: "Qui", sex: "Sex", sab: "Sáb", dom: "Dom",
 };
 
-const CATEGORY_ICONS: Record<string, string> = {
-  cozinha: "🍳", delivery: "🛵", salao: "🪑", bar: "🍸",
-  gerencia: "👔", limpeza: "🧹", geral: "📋",
-};
-
 const CATEGORY_PERMISSIONS: Record<string, string[]> = {
   cozinha:  ["ver_pedidos_cozinha", "atualizar_status_pedido", "ver_fila"],
   delivery: ["ver_entregas", "aceitar_entrega", "atualizar_entrega", "ver_mapa"],
@@ -76,8 +73,15 @@ const CATEGORY_PERMISSIONS: Record<string, string[]> = {
   geral:    ["ver_status", "registrar_ponto", "ver_dados"],
 };
 
-function getCategoryIcon(name: string): string {
-  return CATEGORY_ICONS[name.toLowerCase()] ?? "📋";
+function getCategoryIcon(name: string, size = 32): React.ReactNode {
+  const key = name.toLowerCase();
+  if (key === "cozinha") return <ChefHat size={size} />;
+  if (key === "delivery") return <Bike size={size} />;
+  if (key === "salao") return <UtensilsCrossed size={size} />;
+  if (key === "bar") return <GlassWater size={size} />;
+  if (key === "gerencia") return <Briefcase size={size} />;
+  if (key === "limpeza") return <Trash2 size={size} />;
+  return <ClipboardList size={size} />;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -325,7 +329,7 @@ export default function FuncionarioPortal() {
                     opacity: categoryLoading ? 0.6 : 1,
                   }}
                 >
-                  <span style={{ fontSize: 32 }}>{getCategoryIcon(cat.name)}</span>
+                  <span style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>{getCategoryIcon(cat.name, 32)}</span>
                   <span style={{ fontSize: 14, fontWeight: 700, color: "#fff", textTransform: "capitalize" }}>{cat.name}</span>
                 </button>
               ))}
@@ -389,8 +393,8 @@ export default function FuncionarioPortal() {
               </div>
               {employee.active_category_name && (
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
-                  <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>
-                    {getCategoryIcon(employee.active_category_name)} {employee.active_category_name}
+                  <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", display: "inline-flex", alignItems: "center", gap: 4 }}>
+                    {getCategoryIcon(employee.active_category_name, 14)} {employee.active_category_name}
                   </span>
                   {(employee.categories?.length ?? 0) > 1 && (
                     <button
@@ -404,8 +408,9 @@ export default function FuncionarioPortal() {
               )}
             </div>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, flexShrink: 0 }}>
-              <div style={{ padding: "4px 10px", borderRadius: 8, background: statusCfg.bg, color: statusCfg.color, fontSize: 10, fontWeight: 700 }}>
-                {statusCfg.icon} {statusCfg.label}
+              <div style={{ padding: "4px 10px", borderRadius: 8, background: statusCfg.bg, color: statusCfg.color, fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}>
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: statusCfg.color, display: "inline-block", flexShrink: 0 }} />
+                {statusCfg.label}
               </div>
               <button onClick={handleLogout} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.25)", fontSize: 11, cursor: "pointer", padding: 0 }}>
                 Sair
@@ -424,7 +429,9 @@ export default function FuncionarioPortal() {
               <div style={{ ...cardStyle, textAlign: "center", padding: "28px 16px" }}>
                 {punchFeedback && (
                   <div className="fade-pop" style={{ fontSize: 13, fontWeight: 700, color: punchFeedback === "in" ? "#00ffae" : "#f87171", marginBottom: 12 }}>
-                    {punchFeedback === "in" ? "✅ Entrada registrada!" : "🏁 Saída registrada!"}
+                    {punchFeedback === "in"
+                      ? <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><CheckCircle2 size={13} /> Entrada registrada!</span>
+                      : <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Flag size={13} /> Saída registrada!</span>}
                   </div>
                 )}
                 <button
@@ -446,7 +453,7 @@ export default function FuncionarioPortal() {
                     transition: "all 0.2s",
                   }}
                 >
-                  <span style={{ fontSize: 28 }}>{isOpen ? "⏹" : "▶"}</span>
+                  {isOpen ? <Square size={28} /> : <Play size={28} />}
                   <span>{punchLoading ? "..." : isOpen ? "SAÍDA" : "ENTRADA"}</span>
                 </button>
                 <div style={{ marginTop: 16, fontSize: 12, color: "rgba(255,255,255,0.3)" }}>
@@ -508,7 +515,7 @@ export default function FuncionarioPortal() {
             <div>
               {/* Current status display */}
               <div style={{ ...cardStyle, textAlign: "center", padding: "28px 16px" }}>
-                <div style={{ fontSize: 48, marginBottom: 8 }}>{statusCfg.icon}</div>
+                <div style={{ width: 48, height: 48, borderRadius: "50%", background: statusCfg.color, margin: "0 auto 8px" }} />
                 <div style={{ fontSize: 24, fontWeight: 900, color: statusCfg.color, marginBottom: 4 }}>
                   {statusCfg.label}
                 </div>
@@ -537,7 +544,7 @@ export default function FuncionarioPortal() {
                           opacity: statusLoading && !isActive ? 0.5 : 1,
                         }}
                       >
-                        <span>{cfg.icon}</span>
+                        <span style={{ width: 10, height: 10, borderRadius: "50%", background: cfg.color, display: "inline-block", flexShrink: 0 }} />
                         <span>{cfg.label}</span>
                         {isActive && <span style={{ marginLeft: "auto", fontSize: 10, opacity: 0.7 }}>✓</span>}
                       </button>
@@ -615,7 +622,7 @@ export default function FuncionarioPortal() {
             <div>
               {ratings.length === 0 ? (
                 <div style={{ ...cardStyle, textAlign: "center", padding: "48px 16px" }}>
-                  <div style={{ fontSize: 36, marginBottom: 10 }}>⭐</div>
+                  <div style={{ display: "flex", justifyContent: "center", marginBottom: 10, color: "#fbbf24" }}><Star size={36} /></div>
                   <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)" }}>Nenhuma avaliação ainda</div>
                 </div>
               ) : (
@@ -663,13 +670,17 @@ export default function FuncionarioPortal() {
         display: "flex", zIndex: 100,
       }}>
         {([
-          { key: "ponto",      icon: "⏱",  label: "Ponto" },
-          { key: "status",     icon: "🔵",  label: "Status" },
-          { key: "dados",      icon: "👤",  label: "Dados" },
-          { key: "avaliacoes", icon: "⭐",  label: "Avaliações" },
-        ] as { key: Tab; icon: string; label: string }[]).map(({ key, icon, label }) => (
+          { key: "ponto",      icon: <Clock size={20} />,  label: "Ponto" },
+          { key: "status",     icon: null,                  label: "Status" },
+          { key: "dados",      icon: <User size={20} />,   label: "Dados" },
+          { key: "avaliacoes", icon: <Star size={20} />,   label: "Avaliações" },
+        ] as { key: Tab; icon: React.ReactNode | null; label: string }[]).map(({ key, icon, label }) => (
           <button key={key} onClick={() => setTab(key)} style={tabBtnStyle(tab === key)}>
-            <span style={{ fontSize: 20 }}>{key === "status" ? statusCfg.icon : icon}</span>
+            <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 20, height: 20 }}>
+              {key === "status"
+                ? <span style={{ width: 14, height: 14, borderRadius: "50%", background: statusCfg.color, display: "inline-block" }} />
+                : icon}
+            </span>
             <span>{label}</span>
             {tab === key && (
               <div style={{ position: "absolute", top: 0, left: "20%", right: "20%", height: 2, borderRadius: 2, background: "#00ffae" }} />

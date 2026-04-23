@@ -1,3 +1,6 @@
+import React from "react";
+import { ChefHat, CheckCircle2, Truck, CreditCard } from "lucide-react";
+
 type Order = {
   id: string;
   table_number: number | null;
@@ -101,7 +104,7 @@ export default function TableCard({ tableKey, orders, canCloseComanda, onStatusC
                     onClick={() => onStatusChange(order.id, "preparing")}
                     className="flex-1 py-1.5 rounded-md bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium transition-colors"
                   >
-                    🍳 Preparar
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><ChefHat size={12} /> Preparar</span>
                   </button>
                 )}
                 {ws === "preparing" && (
@@ -109,7 +112,7 @@ export default function TableCard({ tableKey, orders, canCloseComanda, onStatusC
                     onClick={() => onStatusChange(order.id, "ready")}
                     className="flex-1 py-1.5 rounded-md bg-green-600 hover:bg-green-500 text-white text-xs font-medium transition-colors"
                   >
-                    ✅ Pronto
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><CheckCircle2 size={12} /> Pronto</span>
                   </button>
                 )}
                 {ws === "ready" && canCloseComanda && (
@@ -117,7 +120,7 @@ export default function TableCard({ tableKey, orders, canCloseComanda, onStatusC
                     onClick={() => onStatusChange(order.id, "delivered")}
                     className="flex-1 py-1.5 rounded-md bg-slate-600 hover:bg-slate-500 text-white text-xs font-medium transition-colors"
                   >
-                    🚀 Entregar
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Truck size={12} /> Entregar</span>
                   </button>
                 )}
                 {ws === "ready" && !canCloseComanda && (
@@ -125,7 +128,7 @@ export default function TableCard({ tableKey, orders, canCloseComanda, onStatusC
                     onClick={() => onStatusChange(order.id, "pending_payment")}
                     className="flex-1 py-1.5 rounded-md bg-purple-600 hover:bg-purple-500 text-white text-xs font-medium transition-colors"
                   >
-                    💳 Enviar para Caixa
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><CreditCard size={12} /> Enviar para Caixa</span>
                   </button>
                 )}
               </div>

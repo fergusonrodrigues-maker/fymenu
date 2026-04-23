@@ -1,6 +1,8 @@
 "use client";
 
+import React from "react";
 import { useEffect, useRef, useState } from "react";
+import { ChefHat, CheckCircle2, Truck, AlertCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 type KOrder = {
@@ -120,7 +122,7 @@ export default function KitchenClient({ unitId, unitName, restaurantName, initia
       {/* Header */}
       <header style={{ position: "sticky", top: 0, zIndex: 20, background: "rgba(5,5,5,0.9)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.04)", padding: "12px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
         <div>
-          <div style={{ fontSize: 15, fontWeight: 800, color: "#fff" }}>🍳 Cozinha — {unitName}</div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", display: "inline-flex", alignItems: "center", gap: 6 }}><ChefHat size={15} /> Cozinha — {unitName}</div>
           <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>{restaurantName}</div>
         </div>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
@@ -132,37 +134,37 @@ export default function KitchenClient({ unitId, unitName, restaurantName, initia
 
       <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", overflow: "hidden", height: "calc(100vh - 57px)" }}>
         {/* NOVOS */}
-        <KColumn title="🔴 NOVOS" accentColor="rgba(248,113,113,0.5)" titleColor="#f87171" bg="rgba(248,113,113,0.015)">
+        <KColumn title="NOVOS" accentColor="rgba(248,113,113,0.5)" titleColor="#f87171" bg="rgba(248,113,113,0.015)">
           {waiting.length === 0 && <KEmptyCol text="Nenhum pedido novo" />}
           {waiting.map((o) => (
             <KitchenCard key={o.id} order={o} tick={tick}>
               <button onClick={() => markKitchenStatus(o.id, "preparing")} style={{ width: "100%", padding: 10, borderRadius: 10, border: "none", cursor: "pointer", background: "rgba(251,191,36,0.1)", color: "#fbbf24", fontSize: 12, fontWeight: 700, marginTop: 10, boxShadow: "0 1px 0 rgba(251,191,36,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
-                🍳 Iniciar Preparo
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><ChefHat size={13} /> Iniciar Preparo</span>
               </button>
             </KitchenCard>
           ))}
         </KColumn>
 
         {/* EM PREPARO */}
-        <KColumn title="🟡 EM PREPARO" accentColor="rgba(251,191,36,0.5)" titleColor="#fbbf24" bg="rgba(251,191,36,0.015)">
+        <KColumn title="EM PREPARO" accentColor="rgba(251,191,36,0.5)" titleColor="#fbbf24" bg="rgba(251,191,36,0.015)">
           {preparing.length === 0 && <KEmptyCol text="Nenhum em preparo" />}
           {preparing.map((o) => (
             <KitchenCard key={o.id} order={o} tick={tick}>
               <button onClick={() => markKitchenStatus(o.id, "ready")} style={{ width: "100%", padding: 10, borderRadius: 10, border: "none", cursor: "pointer", background: "rgba(0,255,174,0.1)", color: "#00ffae", fontSize: 12, fontWeight: 700, marginTop: 10, boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
-                ✅ Marcar Pronto
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><CheckCircle2 size={13} /> Marcar Pronto</span>
               </button>
             </KitchenCard>
           ))}
         </KColumn>
 
         {/* PRONTOS */}
-        <KColumn title="🟢 PRONTOS" accentColor="rgba(0,255,174,0.4)" titleColor="#00ffae" bg="rgba(0,255,174,0.01)">
+        <KColumn title="PRONTOS" accentColor="rgba(0,255,174,0.4)" titleColor="#00ffae" bg="rgba(0,255,174,0.01)">
           {ready.length === 0 && <KEmptyCol text="Nenhum pronto ainda" />}
           {ready.map((o) => (
             <KitchenCard key={o.id} order={o} tick={tick}>
               {o.delivery_status !== "delivered" && (
                 <button onClick={() => markKitchenStatus(o.id, "delivered")} style={{ width: "100%", padding: 10, borderRadius: 10, border: "1px solid rgba(255,255,255,0.08)", cursor: "pointer", background: "rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.5)", fontSize: 12, fontWeight: 600, marginTop: 10 }}>
-                  🚀 Entregue — Remover
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Truck size={13} /> Entregue — Remover</span>
                 </button>
               )}
             </KitchenCard>
@@ -228,8 +230,8 @@ function KitchenCard({ order, tick, children }: { order: KOrder; tick: number; c
         ))}
       </ul>
       {order.notes && (
-        <div style={{ marginTop: 8, padding: "6px 10px", borderRadius: 8, background: "rgba(251,191,36,0.06)", border: "1px solid rgba(251,191,36,0.15)", fontSize: 11, color: "#fbbf24" }}>
-          ⚠️ {order.notes}
+        <div style={{ marginTop: 8, padding: "6px 10px", borderRadius: 8, background: "rgba(251,191,36,0.06)", border: "1px solid rgba(251,191,36,0.15)", fontSize: 11, color: "#fbbf24", display: "flex", alignItems: "center", gap: 6 }}>
+          <AlertCircle size={11} style={{ flexShrink: 0 }} /> {order.notes}
         </div>
       )}
       {order.delivery_status && order.delivery_status !== "pending" && deliveryLabels[order.delivery_status] && (

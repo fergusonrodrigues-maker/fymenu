@@ -1,6 +1,8 @@
 "use client";
 
+import React from "react";
 import { useState } from "react";
+import { Pencil, X } from "lucide-react";
 import type { WaiterOrder } from "../WaiterClient";
 import { logComandaAction } from "@/app/hooks/useComandaAudit";
 
@@ -88,15 +90,15 @@ export default function EditOrderModal({ order, unitId, operatorName, onClose, o
         <div className="flex justify-center pt-3"><div className="w-10 h-1 rounded-full bg-slate-700" /></div>
 
         <div className="flex items-center justify-between px-5 pt-3 pb-4 border-b border-slate-700">
-          <h2 className="text-white font-bold">
-            ✏️ Editar Pedido — {order.table_number != null ? `Mesa ${order.table_number}` : "S/ Mesa"}
+          <h2 className="text-white font-bold" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <Pencil size={15} /> Editar Pedido — {order.table_number != null ? `Mesa ${order.table_number}` : "S/ Mesa"}
           </h2>
           <button onClick={onClose} style={{
             width: 32, height: 32, borderRadius: 10, border: "none", cursor: "pointer",
             background: "rgba(220,38,38,0.12)", color: "#ffffff",
             display: "flex", alignItems: "center", justifyContent: "center",
             fontSize: 14, fontWeight: 600, transition: "all 0.2s", flexShrink: 0,
-          }}>✕</button>
+          }}><X size={14} /></button>
         </div>
 
         <div className="overflow-y-auto px-5 pb-6" style={{ maxHeight: "75dvh" }}>

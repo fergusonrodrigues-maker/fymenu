@@ -1,10 +1,12 @@
 "use client";
 
+import React from "react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { QRCodeSVG } from "qrcode.react";
 import { logComandaAction } from "@/app/hooks/useComandaAudit";
+import { X, CheckCircle2, ChefHat, Clock, Flame, UtensilsCrossed, Smartphone, Clipboard, Printer, Send } from "lucide-react";
 
 type ComandaRecord = {
   id: string;
@@ -279,7 +281,7 @@ export default function ComandaGarcomClient({
             onClick={() => setShowQR(true)}
             className="px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold border border-slate-600 transition-colors"
           >
-            📱 QR
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Smartphone size={12} /> QR</span>
           </button>
         </div>
       </header>
@@ -287,7 +289,7 @@ export default function ComandaGarcomClient({
       <main className="max-w-2xl mx-auto px-4 py-4 pb-40">
         {activeItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-slate-500">
-            <span className="text-5xl mb-3">🍽️</span>
+            <span className="mb-3" style={{ color: "#64748b" }}><UtensilsCrossed size={48} /></span>
             <p className="text-lg font-medium">Nenhum item adicionado</p>
             {!isClosed && <p className="text-sm mt-1">Clique em "+ Item" abaixo</p>}
           </div>
@@ -326,7 +328,7 @@ export default function ComandaGarcomClient({
                     <div className="flex-1 min-w-0">
                       <p className="text-white font-semibold text-sm">{item.product_name}</p>
                       {item.notes && (
-                        <p className="text-slate-400 text-xs mt-0.5">📝 {item.notes}</p>
+                        <p className="text-slate-400 text-xs mt-0.5">{item.notes}</p>
                       )}
                       {item.addons && item.addons.length > 0 && (
                         <p className="text-slate-500 text-xs mt-0.5">
@@ -339,10 +341,10 @@ export default function ComandaGarcomClient({
                         : item.status === "confirmed" ? "text-blue-400"
                         : "text-slate-500"
                       }`}>
-                        {item.status === "pending" ? "⏳ Aguardando envio"
-                          : item.status === "confirmed" ? "✅ Confirmado"
-                          : item.status === "preparing" ? "🔥 Preparando"
-                          : item.status === "ready" ? "🍽️ Pronto"
+                        {item.status === "pending" ? <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Clock size={11} /> Aguardando envio</span>
+                          : item.status === "confirmed" ? <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><CheckCircle2 size={11} /> Confirmado</span>
+                          : item.status === "preparing" ? <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Flame size={11} /> Preparando</span>
+                          : item.status === "ready" ? <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><UtensilsCrossed size={11} /> Pronto</span>
                           : item.status === "delivered" ? "✓ Entregue"
                           : ""}
                       </div>
@@ -400,7 +402,7 @@ export default function ComandaGarcomClient({
                   disabled={saving}
                   className="flex-1 py-3 rounded-xl bg-blue-700 hover:bg-blue-600 disabled:opacity-50 text-white font-bold text-sm transition-colors"
                 >
-                  🍳 Cozinha ({pendingItems.length})
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><ChefHat size={14} /> Cozinha ({pendingItems.length})</span>
                 </button>
               )}
 
@@ -410,14 +412,14 @@ export default function ComandaGarcomClient({
                     onClick={() => setShowClose(true)}
                     className="flex-1 py-3 rounded-xl bg-green-700 hover:bg-green-600 text-white font-bold text-sm transition-colors"
                   >
-                    ✅ Fechar
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><CheckCircle2 size={14} /> Fechar</span>
                   </button>
                 ) : (
                   <button
                     onClick={enviarParaCaixa}
                     className="flex-1 py-3 rounded-xl bg-yellow-700 hover:bg-yellow-600 text-white font-bold text-sm transition-colors"
                   >
-                    📤 Caixa
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Send size={14} /> Caixa</span>
                   </button>
                 )
               )}
@@ -427,7 +429,7 @@ export default function ComandaGarcomClient({
                   onClick={() => setShowClose(true)}
                   className="flex-1 py-3 rounded-xl bg-green-700 hover:bg-green-600 text-white font-bold text-sm transition-colors"
                 >
-                  ✅ Receber
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><CheckCircle2 size={14} /> Receber</span>
                 </button>
               )}
             </div>
@@ -577,7 +579,7 @@ function AddItemModal({
             background: "rgba(220,38,38,0.12)", color: "#ffffff",
             display: "flex", alignItems: "center", justifyContent: "center",
             fontSize: 14, fontWeight: 600, transition: "all 0.2s", flexShrink: 0,
-          }}>✕</button>
+          }}><X size={14} /></button>
         </div>
 
         <div className="overflow-y-auto flex-1 p-4">
@@ -733,7 +735,7 @@ function QRModal({
             background: "rgba(220,38,38,0.12)", color: "#ffffff",
             display: "flex", alignItems: "center", justifyContent: "center",
             fontSize: 14, fontWeight: 600, transition: "all 0.2s", flexShrink: 0,
-          }}>✕</button>
+          }}><X size={14} /></button>
         </div>
         <div className="flex flex-col items-center gap-4">
           <div className="bg-white p-4 rounded-xl">
@@ -751,13 +753,13 @@ function QRModal({
               onClick={copy}
               className="flex-1 py-2.5 rounded-xl border border-slate-600 text-slate-300 text-sm font-medium hover:border-slate-500 transition-colors"
             >
-              {copied ? "✓ Copiado" : "📋 Copiar link"}
+              {copied ? "✓ Copiado" : <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Clipboard size={12} /> Copiar link</span>}
             </button>
             <button
               onClick={() => window.print()}
               className="flex-1 py-2.5 rounded-xl border border-slate-600 text-slate-300 text-sm font-medium hover:border-slate-500 transition-colors"
             >
-              🖨️ Imprimir
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Printer size={12} /> Imprimir</span>
             </button>
           </div>
         </div>
@@ -781,9 +783,9 @@ function CloseModal({
 }) {
   const [method, setMethod] = useState("pix");
   const methods = [
-    { id: "pix", label: "💰 Pix" },
-    { id: "cartao", label: "💳 Cartão" },
-    { id: "dinheiro", label: "💵 Dinheiro" },
+    { id: "pix", label: "Pix" },
+    { id: "cartao", label: "Cartão" },
+    { id: "dinheiro", label: "Dinheiro" },
   ];
 
   return (
@@ -799,7 +801,7 @@ function CloseModal({
             background: "rgba(220,38,38,0.12)", color: "#ffffff",
             display: "flex", alignItems: "center", justifyContent: "center",
             fontSize: 14, fontWeight: 600, transition: "all 0.2s", flexShrink: 0,
-          }}>✕</button>
+          }}><X size={14} /></button>
         </div>
         <p className="text-slate-400 text-sm mb-4">
           Total:{" "}

@@ -1,6 +1,8 @@
 "use client";
 
+import React from "react";
 import { useState } from "react";
+import { X, CreditCard, CheckCircle2 } from "lucide-react";
 import type { WaiterOrder } from "../WaiterClient";
 
 interface Props {
@@ -10,9 +12,9 @@ interface Props {
 }
 
 const METHODS = [
-  { id: "cash", label: "💵 Dinheiro", color: "#16a34a" },
-  { id: "card", label: "💳 Cartão", color: "#2563eb" },
-  { id: "pix",  label: "📲 PIX",    color: "#7c3aed" },
+  { id: "cash", label: "Dinheiro", color: "#16a34a" },
+  { id: "card", label: "Cartão",   color: "#2563eb" },
+  { id: "pix",  label: "PIX",      color: "#7c3aed" },
 ];
 
 export default function PDVModal({ order, onClose, onPaid }: Props) {
@@ -38,7 +40,9 @@ export default function PDVModal({ order, onClose, onPaid }: Props) {
 
         <div className="flex items-center justify-between px-5 pt-3 pb-4 border-b border-slate-700">
           <div>
-            <h2 className="text-white font-bold">💳 Pagamento</h2>
+            <h2 className="text-white font-bold" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+              <CreditCard size={16} /> Pagamento
+            </h2>
             <p className="text-slate-400 text-sm">{tableLabel}</p>
           </div>
           <button onClick={onClose} style={{
@@ -46,7 +50,7 @@ export default function PDVModal({ order, onClose, onPaid }: Props) {
             background: "rgba(220,38,38,0.12)", color: "#ffffff",
             display: "flex", alignItems: "center", justifyContent: "center",
             fontSize: 14, fontWeight: 600, transition: "all 0.2s", flexShrink: 0,
-          }}>✕</button>
+          }}><X size={14} /></button>
         </div>
 
         <div className="px-5 py-6">
@@ -96,7 +100,7 @@ export default function PDVModal({ order, onClose, onPaid }: Props) {
               disabled={!method || confirming}
               className="flex-1 py-3 rounded-xl bg-green-600 hover:bg-green-500 text-white font-bold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {confirming ? "Processando..." : "✅ Confirmar Pagamento"}
+              {confirming ? "Processando..." : <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><CheckCircle2 size={14} /> Confirmar Pagamento</span>}
             </button>
           </div>
         </div>

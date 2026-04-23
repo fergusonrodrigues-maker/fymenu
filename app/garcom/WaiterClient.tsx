@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -8,6 +9,7 @@ import TableCard from "./components/TableCard";
 import EditOrderModal from "./components/EditOrderModal";
 import PDVModal from "./components/PDVModal";
 import { logComandaAction } from "@/app/hooks/useComandaAudit";
+import { UtensilsCrossed, Bell, Smartphone, Receipt, LayoutGrid, Download, Clipboard, Pencil, X, CheckCircle2 } from "lucide-react";
 
 export type WaiterOrder = {
   id: string;
@@ -367,7 +369,7 @@ export default function WaiterClient({
       <header style={{ position: "sticky", top: 0, zIndex: 20, background: "rgba(5,5,5,0.9)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
         <div style={{ maxWidth: 700, margin: "0 auto", padding: "12px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
-            <div style={{ fontSize: 15, fontWeight: 800, color: "#fff" }}>🍽️ {unitName}</div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", display: "inline-flex", alignItems: "center", gap: 6 }}><UtensilsCrossed size={15} /> {unitName}</div>
             <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>{restaurantName} · Garçom</div>
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
@@ -389,7 +391,7 @@ export default function WaiterClient({
                   background: pendingCalls.length > 0 ? "rgba(251,191,36,0.1)" : "rgba(255,255,255,0.04)",
                   display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16,
                 }}
-              >🔔</button>
+              ><Bell size={16} /></button>
               {pendingCalls.length > 0 && (
                 <div style={{
                   position: "absolute", top: -4, right: -4,
@@ -405,13 +407,13 @@ export default function WaiterClient({
               onClick={() => setQrOpen(true)}
               style={{ padding: "6px 12px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.08)", cursor: "pointer", background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.6)", fontSize: 10, fontWeight: 600 }}
             >
-              📱 QR Mesa
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Smartphone size={11} /> QR Mesa</span>
             </button>
             <button
               onClick={() => { setTab("comandas"); setShowNewComanda(true); }}
               style={{ padding: "6px 12px", borderRadius: 8, border: "none", cursor: "pointer", background: "rgba(0,255,174,0.1)", color: "#00ffae", fontSize: 10, fontWeight: 700 }}
             >
-              🧾 Comanda
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Receipt size={11} /> Comanda</span>
             </button>
           </div>
         </div>
@@ -431,7 +433,7 @@ export default function WaiterClient({
               }}
             >
               {t === "mesas"
-                ? `🪑 Mesas${mesas.filter(m => m.status === "occupied").length > 0 ? ` (${mesas.filter(m => m.status === "occupied").length})` : ""}`
+                ? <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><LayoutGrid size={12} /> {`Mesas${mesas.filter(m => m.status === "occupied").length > 0 ? ` (${mesas.filter(m => m.status === "occupied").length})` : ""}`}</span>
                 : t === "queue"
                 ? `Fila${queue.length > 0 ? ` (${queue.length})` : ""}`
                 : t === "tables"
@@ -453,8 +455,8 @@ export default function WaiterClient({
                 background: "rgba(251,191,36,0.06)", border: "1px solid rgba(251,191,36,0.2)",
               }}>
                 <div>
-                  <div style={{ color: "#fbbf24", fontSize: 13, fontWeight: 800 }}>
-                    🖐️ Mesa {call.mesa_number ?? call.table_number} chamando!
+                  <div style={{ color: "#fbbf24", fontSize: 13, fontWeight: 800, display: "flex", alignItems: "center", gap: 6 }}>
+                    <Bell size={13} /> Mesa {call.mesa_number ?? call.table_number} chamando!
                   </div>
                   <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 10, marginTop: 2 }}>
                     {call.customer_name ? `${call.customer_name} · ` : ""}
@@ -501,7 +503,7 @@ export default function WaiterClient({
               {/* Grid */}
               {mesas.length === 0 ? (
                 <div style={{ textAlign: "center", padding: 40, color: "rgba(255,255,255,0.2)", fontSize: 12, borderRadius: 16, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)" }}>
-                  <div style={{ fontSize: 32, marginBottom: 8 }}>🪑</div>
+                  <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}><LayoutGrid size={32} /></div>
                   Nenhuma mesa cadastrada.<br />Peça ao gerente pra adicionar em Operações.
                 </div>
               ) : (
@@ -637,7 +639,7 @@ export default function WaiterClient({
         {tab === "queue" && (
           queue.length === 0 ? (
             <div style={{ textAlign: "center", padding: "60px 20px", borderRadius: 16, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.2)" }}>
-              <div style={{ fontSize: 36, marginBottom: 8 }}>📥</div>
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}><Download size={36} /></div>
               <div style={{ fontSize: 14, fontWeight: 600 }}>Fila vazia</div>
               <div style={{ fontSize: 11, marginTop: 4 }}>Novos pedidos aparecerão aqui</div>
             </div>
@@ -660,7 +662,7 @@ export default function WaiterClient({
         {tab === "tables" && (
           Object.keys(tableGroups).length === 0 ? (
             <div style={{ textAlign: "center", padding: "60px 20px", borderRadius: 16, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.2)" }}>
-              <div style={{ fontSize: 36, marginBottom: 8 }}>🪑</div>
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}><LayoutGrid size={36} /></div>
               <div style={{ fontSize: 14, fontWeight: 600 }}>Sem pedidos em preparo</div>
             </div>
           ) : (
@@ -714,7 +716,7 @@ export default function WaiterClient({
             </div>
             {openComandas.length === 0 ? (
               <div style={{ textAlign: "center", padding: "60px 20px", borderRadius: 16, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.2)" }}>
-                <div style={{ fontSize: 36, marginBottom: 8 }}>📋</div>
+                <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}><Clipboard size={36} /></div>
                 <div style={{ fontSize: 14, fontWeight: 600 }}>Sem comandas abertas</div>
                 <div style={{ fontSize: 11, marginTop: 4 }}>Clique em "Abrir Comanda" para criar</div>
               </div>
@@ -752,8 +754,8 @@ export default function WaiterClient({
               width: 44, height: 44, borderRadius: 14,
               background: "rgba(251,191,36,0.15)",
               display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 22, flexShrink: 0,
-            }}>🔔</div>
+              color: "#fbbf24", flexShrink: 0,
+            }}><Bell size={22} /></div>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 15, fontWeight: 900, color: "#fbbf24" }}>
                 Mesa {newCall.mesa_number ?? newCall.table_number} chamando!
@@ -772,8 +774,8 @@ export default function WaiterClient({
               <button onClick={() => handleDismissCall(newCall.id)} style={{
                 padding: "10px 12px", borderRadius: 12, border: "none", cursor: "pointer",
                 background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.3)",
-                fontSize: 12,
-              }}>✕</button>
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}><X size={12} /></button>
             </div>
           </div>
         </div>
@@ -805,8 +807,8 @@ export default function WaiterClient({
                 width: 32, height: 32, borderRadius: 10,
                 background: "rgba(251,191,36,0.1)",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 16, flexShrink: 0,
-              }}>🔔</div>
+                color: "#fbbf24", flexShrink: 0,
+              }}><Bell size={16} /></div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: "#fbbf24" }}>
                   Mesa {call.mesa_number ?? call.table_number}
@@ -920,7 +922,7 @@ function QRMesaModal({ unitSlug, onClose }: { unitSlug: string; onClose: () => v
       <div style={{ width: "100%", maxWidth: 440, background: "#0d0d0d", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "20px 20px 0 0", padding: 24 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
           <div style={{ fontSize: 16, fontWeight: 800, color: "#fff" }}>QR Code da Mesa</div>
-          <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 10, border: "none", cursor: "pointer", background: "rgba(220,38,38,0.12)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 600 }}>✕</button>
+          <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 10, border: "none", cursor: "pointer", background: "rgba(220,38,38,0.12)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 600 }}><X size={14} /></button>
         </div>
         <input
           type="number" min={1} value={mesa}
@@ -938,7 +940,7 @@ function QRMesaModal({ unitSlug, onClose }: { unitSlug: string; onClose: () => v
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "32px 0", color: "rgba(255,255,255,0.2)" }}>
-            <span style={{ fontSize: 36, marginBottom: 8 }}>📱</span>
+            <span style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}><Smartphone size={36} /></span>
             <div style={{ fontSize: 12 }}>Digite o número da mesa para gerar o QR</div>
           </div>
         )}
@@ -995,9 +997,9 @@ function QueueCard({ order, onEdit, onConfirm, onCancel }: { order: WaiterOrder;
       </div>
 
       <div style={{ display: "flex", gap: 6 }}>
-        <button onClick={onEdit} style={{ flex: 1, padding: 10, borderRadius: 10, border: "1px solid rgba(255,255,255,0.08)", cursor: "pointer", background: "rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.6)", fontSize: 12, fontWeight: 600 }}>✏️ Editar</button>
-        <button onClick={onCancel} style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid rgba(248,113,113,0.2)", cursor: "pointer", background: "rgba(248,113,113,0.05)", color: "#f87171", fontSize: 12, fontWeight: 600 }}>✕</button>
-        <button onClick={onConfirm} style={{ flex: 1, padding: 10, borderRadius: 10, border: "none", cursor: "pointer", background: "rgba(0,255,174,0.12)", color: "#00ffae", fontSize: 12, fontWeight: 700, boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>✅ Confirmar</button>
+        <button onClick={onEdit} style={{ flex: 1, padding: 10, borderRadius: 10, border: "1px solid rgba(255,255,255,0.08)", cursor: "pointer", background: "rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.6)", fontSize: 12, fontWeight: 600, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 4 }}><Pencil size={11} /> Editar</button>
+        <button onClick={onCancel} style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid rgba(248,113,113,0.2)", cursor: "pointer", background: "rgba(248,113,113,0.05)", color: "#f87171", fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center" }}><X size={11} /></button>
+        <button onClick={onConfirm} style={{ flex: 1, padding: 10, borderRadius: 10, border: "none", cursor: "pointer", background: "rgba(0,255,174,0.12)", color: "#00ffae", fontSize: 12, fontWeight: 700, boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 4 }}><CheckCircle2 size={11} /> Confirmar</button>
       </div>
     </div>
   );
@@ -1065,7 +1067,7 @@ function AbrirComandaModal({ unitId, unitSlug, userId, waiterName, onClose, onCr
       <div style={{ width: "100%", maxWidth: 440, background: "#0d0d0d", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "20px 20px 0 0", padding: 24 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
           <div style={{ fontSize: 16, fontWeight: 800, color: "#fff" }}>Abrir Comanda</div>
-          <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 10, border: "none", cursor: "pointer", background: "rgba(220,38,38,0.12)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 600 }}>✕</button>
+          <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 10, border: "none", cursor: "pointer", background: "rgba(220,38,38,0.12)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 600 }}><X size={14} /></button>
         </div>
         <div style={{ marginBottom: 20 }}>
           <label style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 6, display: "block" }}>Número da mesa</label>
