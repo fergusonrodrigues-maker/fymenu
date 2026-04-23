@@ -56,7 +56,6 @@ export default function AdminLoginClient() {
             background: "linear-gradient(135deg, #7c3aed, #4c1d95)",
             display: "flex", alignItems: "center", justifyContent: "center",
             margin: "0 auto 16px",
-            display: "flex", alignItems: "center", justifyContent: "center",
           }}>
             <Lock size={22} style={{ color: "#fff" }} />
           </div>
