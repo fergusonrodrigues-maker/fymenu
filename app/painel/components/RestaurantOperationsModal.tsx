@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import FyLoader from "@/components/FyLoader";
+import { Armchair, ChefHat, Target, BarChart3, Search, UserCog, Users, CreditCard, Truck, CheckCircle2, XCircle, AlertCircle, Circle, X } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -223,12 +224,12 @@ export default function RestaurantOperationsModal({
     await supabase.from("units").update({ comanda_close_permission: value }).eq("id", unitId);
   }
 
-  const tabs: { id: Tab; label: string }[] = [
-    { id: "mesas", label: "🪑 Mesas" },
-    { id: "cozinha", label: "🍳 Cozinha" },
-    { id: "garcom", label: "🎯 Garçom" },
-    { id: "andamento", label: "📊 Andamento" },
-    { id: "auditoria", label: "🔍 Auditoria" },
+  const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
+    { id: "mesas",    label: "Mesas",     icon: <Armchair size={13} /> },
+    { id: "cozinha",  label: "Cozinha",   icon: <ChefHat size={13} /> },
+    { id: "garcom",   label: "Garçom",    icon: <Target size={13} /> },
+    { id: "andamento",label: "Andamento", icon: <BarChart3 size={13} /> },
+    { id: "auditoria",label: "Auditoria", icon: <Search size={13} /> },
   ];
 
   if (loading) {
@@ -256,7 +257,7 @@ export default function RestaurantOperationsModal({
               transition: "all 0.15s",
             }}
           >
-            {t.label}
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>{t.icon}{t.label}</span>
           </button>
         ))}
       </div>
@@ -331,9 +332,9 @@ function CozinhaTab({
   };
 
   const nextLabel: Record<string, string> = {
-    waiting: "👨‍🍳 Iniciar preparo",
-    received: "✅ Marcar pronto",
-    ready: "✅ Pronto",
+    waiting: "Iniciar preparo",
+    received: "Marcar pronto",
+    ready: "Pronto",
   };
 
   return (
@@ -411,7 +412,7 @@ function GarcomTab({
             fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 20,
             background: "rgba(0,255,174,0.12)", color: "#00ffae", border: "1px solid rgba(0,255,174,0.3)",
           }}>
-            👨‍💼 DONO · Super Admin
+            DONO · Super Admin
           </span>
         </div>
         <div style={{ color: "var(--dash-text-muted)", fontSize: 11, marginBottom: 6 }}>Visualizar como:</div>
@@ -424,9 +425,9 @@ function GarcomTab({
             color: "var(--dash-text)", fontSize: 13, outline: "none",
           }}
         >
-          <option value="owner">👨‍💼 Sua visão (Dono) — todos os pedidos</option>
-          <option value="garcom">👔 Visão do Garçom — comandas activas</option>
-          <option value="cozinha">👨‍🍳 Visão da Cozinha — fila de preparo</option>
+          <option value="owner">Sua visão (Dono) — todos os pedidos</option>
+          <option value="garcom">Visão do Garçom — comandas ativas</option>
+          <option value="cozinha">Visão da Cozinha — fila de preparo</option>
         </select>
       </div>
 
@@ -446,7 +447,7 @@ function GarcomTab({
               cursor: "pointer", fontSize: 13, fontWeight: 600,
             }}
           >
-            🧑‍🍳 Garçom e Caixa
+            Garçom e Caixa
           </button>
           <button
             onClick={() => onUpdatePermission("somente_caixa")}
@@ -458,7 +459,7 @@ function GarcomTab({
               cursor: "pointer", fontSize: 13, fontWeight: 600,
             }}
           >
-            💳 Somente Caixa
+            Somente Caixa
           </button>
         </div>
         <p style={{ color: "var(--dash-text-muted)", fontSize: 11, marginTop: 6, marginBottom: 0 }}>
@@ -488,8 +489,8 @@ function GarcomTab({
             delivered: null,
           };
           const nextLabel: Record<string, string> = {
-            pending: "✓ Confirmar pedido",
-            confirmed: "🚚 Entregar",
+            pending: "Confirmar pedido",
+            confirmed: "Entregar",
             delivered: "Entregue",
           };
           const canAdvance = ws !== "delivered";
@@ -646,15 +647,15 @@ function AndamentoTab({ orders }: { orders: Order[] }) {
 
 // ── Aba Auditoria ─────────────────────────────────────────────────────────────
 
-const AUDIT_ACTION_CONFIG: Record<string, { icon: string; color: string; label: string }> = {
-  item_added:       { icon: "✅", color: "#00ffae", label: "Item adicionado" },
-  comanda_opened:   { icon: "✅", color: "#00ffae", label: "Comanda aberta" },
-  payment_received: { icon: "✅", color: "#00ffae", label: "Pagamento recebido" },
-  item_removed:     { icon: "🔴", color: "#f87171", label: "Item removido" },
-  item_qty_changed: { icon: "🟡", color: "#fbbf24", label: "Qtd alterada" },
-  price_changed:    { icon: "🟡", color: "#fbbf24", label: "Preço alterado" },
-  comanda_closed:   { icon: "⚪", color: "#94a3b8", label: "Comanda fechada" },
-  sent_to_cashier:  { icon: "⚪", color: "#94a3b8", label: "Enviado ao caixa" },
+const AUDIT_ACTION_CONFIG: Record<string, { color: string; label: string }> = {
+  item_added:       { color: "#00ffae", label: "Item adicionado" },
+  comanda_opened:   { color: "#00ffae", label: "Comanda aberta" },
+  payment_received: { color: "#00ffae", label: "Pagamento recebido" },
+  item_removed:     { color: "#f87171", label: "Item removido" },
+  item_qty_changed: { color: "#fbbf24", label: "Qtd alterada" },
+  price_changed:    { color: "#fbbf24", label: "Preço alterado" },
+  comanda_closed:   { color: "#94a3b8", label: "Comanda fechada" },
+  sent_to_cashier:  { color: "#94a3b8", label: "Enviado ao caixa" },
 };
 
 function AuditoriaTab({ unitId }: { unitId: string }) {
@@ -722,12 +723,12 @@ function AuditoriaTab({ unitId }: { unitId: string }) {
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 0, maxHeight: 420, overflowY: "auto" }}>
           {auditLog.map((entry, idx) => {
-            const cfg = AUDIT_ACTION_CONFIG[entry.action] ?? { icon: "⚪", color: "#94a3b8", label: entry.action };
+            const cfg = AUDIT_ACTION_CONFIG[entry.action] ?? { color: "#94a3b8", label: entry.action };
             const isRemoval = entry.action === "item_removed";
             return (
               <div key={entry.id} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", paddingTop: 3 }}>
-                  <span style={{ fontSize: 14, lineHeight: 1 }}>{cfg.icon}</span>
+                  <span style={{ width: 10, height: 10, borderRadius: "50%", background: cfg.color, flexShrink: 0, display: "inline-block" }} />
                   {idx < auditLog.length - 1 && (
                     <div style={{ width: 1, height: 28, background: "var(--dash-card-border)", marginTop: 3 }} />
                   )}
@@ -937,18 +938,18 @@ function MesasTab({
             <button onClick={() => setSelectedMesa(null)} style={{
               width: 28, height: 28, borderRadius: 8, border: "none", cursor: "pointer",
               background: "rgba(220,38,38,0.12)", color: "var(--dash-danger)",
-              display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12,
-            }}>✕</button>
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}><X size={14} /></button>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
             <div>
               <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>Status</div>
               <div style={{ fontSize: 13, fontWeight: 700, color: "var(--dash-text)" }}>
-                {selectedMesa.status === "available" ? "🟢 Livre"
-                  : selectedMesa.status === "occupied" ? "🟡 Ocupada"
-                  : selectedMesa.status === "reserved" ? "🔵 Reservada"
-                  : "⚫ Inativa"}
+                {selectedMesa.status === "available" ? "● Livre"
+                  : selectedMesa.status === "occupied" ? "● Ocupada"
+                  : selectedMesa.status === "reserved" ? "● Reservada"
+                  : "● Inativa"}
               </div>
             </div>
             <div>

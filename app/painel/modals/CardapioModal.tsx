@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { createCategory, updateCategory, deleteCategory, createProduct } from "../actions";
@@ -9,6 +9,10 @@ import ProductRow from "../ProductRow";
 import { Unit, Category, Product, Restaurant } from "../types";
 import AIButton from "@/components/AIButton";
 import AIWaveLoader from "@/components/AIWaveLoader";
+import {
+  Info, FileText, X, CheckCircle2, Clipboard, Package, Sparkles,
+  AlertCircle, Clock,
+} from "lucide-react";
 
 type CustomSection = { id: string; name: string; icon: string; allows_video: boolean; allows_alcoholic_toggle: boolean };
 
@@ -90,7 +94,7 @@ function NewProductFormInline({ categoryId, section, customSections, anyProductE
       </div>
       {priceType === "variable" && (
         <p style={{ color: "var(--dash-text-muted)", fontSize: 12, margin: 0 }}>
-          💡 Adicione as variações de preço após criar o produto (clique no produto para editar).
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Info size={13} />Adicione as variações de preço após criar o produto (clique no produto para editar).</span>
         </p>
       )}
       {showAlcoholic && (
@@ -209,9 +213,9 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
   }, [restaurant?.id, unit?.id]);
 
   const defaultSections = [
-    { value: "pratos", label: "Pratos", icon: "🍽️", allows_video: true, allows_alcoholic: false },
-    { value: "drinks", label: "Drinks", icon: "🍸", allows_video: true, allows_alcoholic: true },
-    { value: "bebidas", label: "Bebidas", icon: "🥤", allows_video: false, allows_alcoholic: true },
+    { value: "pratos", label: "Pratos", allows_video: true, allows_alcoholic: false },
+    { value: "drinks", label: "Drinks", allows_video: true, allows_alcoholic: true },
+    { value: "bebidas", label: "Bebidas", allows_video: false, allows_alcoholic: true },
   ];
   const allSections = [...defaultSections, ...customSections.map(cs => ({
     value: cs.name.toLowerCase().replace(/\s+/g, "_"),
@@ -722,7 +726,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                   transition: "border-color 0.3s", marginBottom: 16,
                 }}
               >
-                <div style={{ fontSize: 36, marginBottom: 10 }}>📄</div>
+                <div style={{ display: "flex", justifyContent: "center", marginBottom: 10, color: "var(--dash-text-muted)" }}><FileText size={36} /></div>
                 <div style={{ color: "var(--dash-text)", fontSize: 14, fontWeight: 700, marginBottom: 6 }}>Arraste seu cardápio aqui</div>
                 <div style={{ color: "var(--dash-text-muted)", fontSize: 12, marginBottom: 12 }}>ou clique para selecionar</div>
                 <div style={{ display: "flex", justifyContent: "center", gap: 6, flexWrap: "wrap" }}>
@@ -821,7 +825,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                         background: "rgba(220,38,38,0.10)", color: "#ffffff",
                         display: "flex", alignItems: "center", justifyContent: "center",
                         fontSize: 11, transition: "all 0.2s",
-                      }}>✕</button>
+                      }}><X size={13} /></button>
                     </div>
                   ))}
                 </div>
@@ -843,7 +847,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
           {/* Done */}
           {importStep === "done" && (
             <div style={{ textAlign: "center", padding: "60px 20px" }}>
-              <div style={{ fontSize: 40, marginBottom: 16 }}>✅</div>
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: 16, color: "var(--dash-accent)" }}><CheckCircle2 size={40} /></div>
               <div style={{ color: "var(--dash-text)", fontSize: 18, fontWeight: 800 }}>Importação concluída!</div>
               <div style={{ color: "var(--dash-text-muted)", fontSize: 13, marginTop: 8 }}>
                 Seus produtos foram adicionados. Agora adicione fotos e vídeos.
@@ -880,14 +884,14 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
               background: "var(--dash-info-soft)", color: "var(--dash-info)",
               fontSize: 12, fontWeight: 600,
               boxShadow: "0 1px 0 rgba(96,165,250,0.06) inset, 0 -1px 0 rgba(0,0,0,0.12) inset",
-            }}>📋 Copiar de outra unidade</button>
+            }}><span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Clipboard size={13} />Copiar de outra unidade</span></button>
           )}
           <button type="button" onClick={() => setView(view === "combos" ? "categorias" : "combos")} style={{
             padding: "8px 16px", borderRadius: 10, border: "none", cursor: "pointer",
             background: view === "combos" ? "var(--dash-accent-soft)" : "var(--dash-card)",
             color: view === "combos" ? "var(--dash-accent)" : "var(--dash-text-muted)",
             fontSize: 12, fontWeight: 600, boxShadow: "var(--dash-shadow)",
-          }}>🎁 Combos</button>
+          }}><span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Package size={13} />Combos</span></button>
         </div>
 
         {aiSuggestionResult && (
@@ -896,13 +900,13 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
             boxShadow: "0 1px 0 rgba(168,85,247,0.06) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
           }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--dash-text)" }}>✨ Sugestões da IA</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--dash-text)", display: "flex", alignItems: "center", gap: 6 }}><Sparkles size={13} />Sugestões da IA</div>
               <button onClick={() => setAiSuggestionResult(null)} style={{
                 width: 24, height: 24, borderRadius: 6, border: "none", cursor: "pointer",
                 background: "rgba(220,38,38,0.10)", color: "#ffffff",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 fontSize: 11, transition: "all 0.2s",
-              }}>✕</button>
+              }}><X size={13} /></button>
             </div>
             <div style={{ whiteSpace: "pre-wrap", fontSize: 12, color: "var(--dash-text-secondary)", lineHeight: 1.7 }}>
               {aiSuggestionResult}
@@ -920,7 +924,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
               background: "rgba(220,38,38,0.12)", color: "#ffffff",
               display: "flex", alignItems: "center", justifyContent: "center",
               fontSize: 14, fontWeight: 600, transition: "all 0.2s", flexShrink: 0,
-            }}>✕</button>
+            }}><X size={13} /></button>
           </div>
 
           <div style={{ marginBottom: 16 }}>
@@ -982,7 +986,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                 background: "var(--dash-warning-soft)", marginTop: 12,
                 fontSize: 11, color: "var(--dash-warning)",
               }}>
-                ⚠️ Isso vai ADICIONAR categorias e produtos à unidade atual. Produtos existentes não serão alterados.
+                <span style={{ display: "inline-flex", alignItems: "flex-start", gap: 6 }}><AlertCircle size={13} style={{ flexShrink: 0, marginTop: 1 }} />Isso vai ADICIONAR categorias e produtos à unidade atual.</span> Produtos existentes não serão alterados.
                 Fotos e vídeos NÃO são copiados — precisam ser adicionados depois.
               </div>
 
@@ -993,7 +997,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                 boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
                 opacity: copying ? 0.5 : 1,
               }}>
-                {copying ? "Copiando..." : `📋 Copiar ${sourcePreview.totalProducts} produtos`}
+                {copying ? "Copiando..." : <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Clipboard size={14} />{`Copiar ${sourcePreview.totalProducts} produtos`}</span>}
               </button>
             </div>
           )}
@@ -1014,7 +1018,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
 
           {combos.length === 0 ? (
             <div style={{ textAlign: "center", padding: 40, borderRadius: 16, background: "var(--dash-card)", border: "1px solid var(--dash-border)" }}>
-              <div style={{ fontSize: 32, marginBottom: 8 }}>🎁</div>
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: 8, color: "var(--dash-text-muted)" }}><Package size={32} /></div>
               <div style={{ fontSize: 13, fontWeight: 600, color: "var(--dash-text)" }}>Nenhum combo criado</div>
               <div style={{ fontSize: 11, color: "var(--dash-text-muted)", marginTop: 4 }}>Crie combos pra sugerir ao cliente quando ele pedir um produto.</div>
             </div>
@@ -1103,7 +1107,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                     width: 36, height: 36, borderRadius: 12, border: "none", cursor: "pointer",
                     background: "rgba(220,38,38,0.12)", color: "#fff",
                     display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16,
-                  }}>✕</button>
+                  }}><X size={13} /></button>
                 </div>
 
                 {/* SEÇÃO 1: Info do combo */}
@@ -1216,7 +1220,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                           width: 26, height: 26, borderRadius: 8, border: "none", cursor: "pointer",
                           background: "rgba(220,38,38,0.1)", color: "#fff",
                           display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, flexShrink: 0,
-                        }}>✕</button>
+                        }}><X size={13} /></button>
                       </div>
                     ))}
                   </div>
@@ -1388,7 +1392,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                       transition: "all 0.15s",
                       boxShadow: isActive ? "none" : "var(--dash-shadow)",
                     }}>
-                    {s.icon} {s.label}
+                    {s.label}
                   </button>
                 );
               })}
@@ -1489,7 +1493,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                 <span style={{ flex: 1, color: "var(--dash-text)", fontSize: 14, fontWeight: 700 }}>{cat.name}</span>
                 {cat.schedule_enabled && (
                   <span style={{ fontSize: 9, padding: "2px 6px", borderRadius: 4, background: "var(--dash-warning-soft)", color: "var(--dash-warning)", whiteSpace: "nowrap", flexShrink: 0 }}>
-                    🕐 {cat.start_time?.slice(0,5)}-{cat.end_time?.slice(0,5)}
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}><Clock size={9} />{cat.start_time?.slice(0,5)}-{cat.end_time?.slice(0,5)}</span>
                   </span>
                 )}
                 <label className="switch-toggle" onClick={(e) => e.stopPropagation()}>
@@ -1550,7 +1554,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                     background: "rgba(220,38,38,0.12)", color: "#ffffff",
                     display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0,
                     transition: "all 0.2s",
-                  }}>✕</button>
+                  }}><X size={13} /></button>
                   {/* Active toggle */}
                   <label className="switch-toggle" style={{ flexShrink: 0 }}>
                     <input
@@ -1646,9 +1650,9 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                   <div style={{ fontSize: 10, color: "var(--dash-text-muted)", marginBottom: 4 }}>Disponível em:</div>
                   <div style={{ display: "flex", gap: 4 }}>
                     {[
-                      { value: "both", label: "📋 Ambos" },
-                      { value: "delivery", label: "🛵 Só delivery" },
-                      { value: "mesa", label: "🍽️ Só mesa" },
+                      { value: "both", label: "Ambos" },
+                      { value: "delivery", label: "Só delivery" },
+                      { value: "mesa", label: "Só mesa" },
                     ].map((opt) => {
                       const cur = editCatAvailability[cat.id] ?? (cat as any).availability ?? "both";
                       return (

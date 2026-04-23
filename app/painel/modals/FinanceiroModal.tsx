@@ -1,10 +1,15 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Unit, Restaurant, ReportData, ReportProduct, ReportPayments, DayData } from "../types";
 import AIButton from "@/components/AIButton";
 import AIWaveLoader from "@/components/AIWaveLoader";
+import {
+  Download, X, CheckCircle2, MessageCircle, UtensilsCrossed, Lock, Bike,
+  Package, DollarSign, Target, CreditCard, Star, TrendingUp, Calendar,
+  AlertCircle, RefreshCw, Tag, Receipt, BarChart3, Building2, FileText,
+} from "lucide-react";
 
 const supabase = createClient();
 
@@ -32,9 +37,9 @@ function downloadReportCSV(data: ReportProduct[], filename: string) {
 function ReportPaymentBars({ payments }: { payments: ReportPayments }) {
   const total = payments.cash + payments.card + payments.pix;
   const bars = [
-    { label: "💵 Dinheiro", value: payments.cash, color: "rgb(22,163,74)" },
-    { label: "💳 Cartão", value: payments.card, color: "rgb(37,99,235)" },
-    { label: "📲 PIX", value: payments.pix, color: "rgb(124,58,237)" },
+    { label: "Dinheiro", value: payments.cash, color: "rgb(22,163,74)" },
+    { label: "Cartão", value: payments.card, color: "rgb(37,99,235)" },
+    { label: "PIX", value: payments.pix, color: "rgb(124,58,237)" },
   ];
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -434,22 +439,22 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
                 background: "rgba(220,38,38,0.12)", color: "#ffffff",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 fontSize: 14, fontWeight: 600, transition: "all 0.2s", flexShrink: 0,
-              }}>✕</button>
+              }}><X size={13} /></button>
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 20 }}>
               {[
-                { icon: "🧾", label: "Nota fiscal", desc: "PDF ou foto da NF" },
-                { icon: "📊", label: "Planilha de custos", desc: "CSV ou Excel" },
-                { icon: "🏦", label: "Extrato bancário", desc: "CSV do banco" },
-                { icon: "📝", label: "Texto livre", desc: "Cole ou digite" },
+                { icon: <Receipt size={22} />, label: "Nota fiscal", desc: "PDF ou foto da NF" },
+                { icon: <BarChart3 size={22} />, label: "Planilha de custos", desc: "CSV ou Excel" },
+                { icon: <Building2 size={22} />, label: "Extrato bancário", desc: "CSV do banco" },
+                { icon: <FileText size={22} />, label: "Texto livre", desc: "Cole ou digite" },
               ].map((t, i) => (
                 <div key={i} onClick={() => financeFileRef.current?.click()} style={{
                   padding: "16px 14px", borderRadius: 14, cursor: "pointer",
                   background: "var(--dash-card)",
                   boxShadow: "var(--dash-shadow)",
                 }}>
-                  <div style={{ fontSize: 24, marginBottom: 6 }}>{t.icon}</div>
+                  <div style={{ marginBottom: 6, color: "var(--dash-text-muted)" }}>{t.icon}</div>
                   <div style={{ color: "var(--dash-text)", fontSize: 13, fontWeight: 700 }}>{t.label}</div>
                   <div style={{ color: "var(--dash-text-muted)", fontSize: 11, marginTop: 2 }}>{t.desc}</div>
                 </div>
@@ -555,7 +560,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
                   background: "rgba(220,38,38,0.10)", color: "#ffffff",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: 11, transition: "all 0.2s",
-                }}>✕</button>
+                }}><X size={13} /></button>
               </div>
             ))}
 
@@ -566,7 +571,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
               boxShadow: "0 1px 0 rgba(0,255,174,0.12) inset, 0 -1px 0 rgba(0,0,0,0.2) inset",
               opacity: importingFinance ? 0.5 : 1,
             }}>
-              {importingFinance ? "Salvando..." : `✅ Importar ${importFinanceData.items?.length} custos`}
+              {importingFinance ? "Salvando..." : <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><CheckCircle2 size={14} />{`Importar ${importFinanceData.items?.length} custos`}</span>}
             </button>
           </div>
         )}
@@ -574,7 +579,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
         {/* DONE */}
         {importFinanceStep === "done" && (
           <div style={{ textAlign: "center", padding: "50px 20px" }}>
-            <div style={{ fontSize: 36, marginBottom: 12 }}>✅</div>
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 12, color: "var(--dash-accent)" }}><CheckCircle2 size={36} /></div>
             <div style={{ color: "var(--dash-text)", fontSize: 16, fontWeight: 800 }}>Custos importados!</div>
             <div style={{ color: "var(--dash-text-muted)", fontSize: 12, marginTop: 6 }}>Os custos foram adicionados ao financeiro.</div>
             <button onClick={() => { setShowImportFinance(false); setImportFinanceStep("upload"); setImportFinanceData(null); setFinanceText(""); }} style={{
@@ -599,13 +604,13 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
             onClick={() => onOpenImport("business_expenses")}
             style={{ padding: "7px 14px", borderRadius: 10, border: "1px solid var(--dash-border)", background: "transparent", color: "var(--dash-text-muted)", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
           >
-            📥 Importar custos históricos
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Download size={13} />Importar custos históricos</span>
           </button>
           <button
             onClick={() => onOpenImport("payments")}
             style={{ padding: "7px 14px", borderRadius: 10, border: "1px solid var(--dash-border)", background: "transparent", color: "var(--dash-text-muted)", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
           >
-            📥 Importar pagamentos
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Download size={13} />Importar pagamentos</span>
           </button>
         </div>
       )}
@@ -687,7 +692,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 20 }}>
             {/* WhatsApp — sempre visível */}
             <div style={{ padding: 12, borderRadius: 12, background: "var(--dash-card)", textAlign: "center", boxShadow: "var(--dash-shadow)" }}>
-              <div style={{ fontSize: 18, marginBottom: 4 }}>💬</div>
+              <div style={{ marginBottom: 4, color: "#25d366" }}><MessageCircle size={18} /></div>
               <div style={{ fontSize: 16, fontWeight: 800, color: "var(--dash-text)" }}>{formatBRL(revenueBySource.whatsapp)}</div>
               <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>WhatsApp</div>
               <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>{ordersBySource.whatsapp} pedidos</div>
@@ -696,14 +701,14 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
             {/* Mesa — menupro+ */}
             {hasFeature("mesa_revenue") ? (
               <div style={{ padding: 12, borderRadius: 12, background: "var(--dash-card)", textAlign: "center", boxShadow: "var(--dash-shadow)" }}>
-                <div style={{ fontSize: 18, marginBottom: 4 }}>🍽️</div>
+                <div style={{ marginBottom: 4, color: "var(--dash-text-muted)" }}><UtensilsCrossed size={18} /></div>
                 <div style={{ fontSize: 16, fontWeight: 800, color: "var(--dash-text)" }}>{formatBRL(revenueBySource.mesa)}</div>
                 <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>Mesa</div>
                 <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>{ordersBySource.mesa} pedidos</div>
               </div>
             ) : (
               <div style={{ padding: 12, borderRadius: 12, background: "var(--dash-card)", textAlign: "center", opacity: 0.5 }}>
-                <div style={{ fontSize: 18, marginBottom: 4 }}>🔒</div>
+                <div style={{ marginBottom: 4, color: "var(--dash-text-muted)" }}><Lock size={18} /></div>
                 <div style={{ fontSize: 11, color: "var(--dash-text-muted)" }}>Mesa</div>
                 <div style={{ fontSize: 9, color: "var(--dash-text-muted)" }}>MenuPro</div>
               </div>
@@ -712,14 +717,14 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
             {/* Delivery — menupro+ */}
             {hasFeature("delivery_revenue") ? (
               <div style={{ padding: 12, borderRadius: 12, background: "var(--dash-card)", textAlign: "center", boxShadow: "var(--dash-shadow)" }}>
-                <div style={{ fontSize: 18, marginBottom: 4 }}>🛵</div>
+                <div style={{ marginBottom: 4, color: "var(--dash-text-muted)" }}><Bike size={18} /></div>
                 <div style={{ fontSize: 16, fontWeight: 800, color: "var(--dash-text)" }}>{formatBRL(revenueBySource.delivery)}</div>
                 <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>Delivery</div>
                 <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>{ordersBySource.delivery} pedidos</div>
               </div>
             ) : (
               <div style={{ padding: 12, borderRadius: 12, background: "var(--dash-card)", textAlign: "center", opacity: 0.5 }}>
-                <div style={{ fontSize: 18, marginBottom: 4 }}>🔒</div>
+                <div style={{ marginBottom: 4, color: "var(--dash-text-muted)" }}><Lock size={18} /></div>
                 <div style={{ fontSize: 11, color: "var(--dash-text-muted)" }}>Delivery</div>
                 <div style={{ fontSize: 9, color: "var(--dash-text-muted)" }}>MenuPro</div>
               </div>
@@ -831,7 +836,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
               background: "var(--dash-card-hover)", color: "var(--dash-text-muted)", fontSize: 13,
               boxShadow: "var(--dash-shadow)",
             }}>
-              📥 Importar dados financeiros
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Download size={14} />Importar dados financeiros</span>
             </button>
           )}
         </div>
@@ -841,17 +846,17 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
       {tab === "diario" && (
         <>
           <div style={{ color: "var(--dash-text-muted)", fontSize: 11 }}>
-            ☀️ {new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+            {new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
             {[
-              { icon: "📦", label: "Pedidos", value: String(reportData.today.orders), color: "var(--dash-accent)" },
-              { icon: "✅", label: "Entregues", value: String(reportData.today.completed), color: "var(--dash-info)" },
-              { icon: "💰", label: "Receita", value: formatBRL(reportData.today.revenue), color: "var(--dash-warning)" },
-              { icon: "🎯", label: "Ticket Médio", value: formatBRL(reportData.today.avgTicket), color: "#f472b6" },
+              { icon: <Package size={18} />, label: "Pedidos", value: String(reportData.today.orders), color: "var(--dash-accent)" },
+              { icon: <CheckCircle2 size={18} />, label: "Entregues", value: String(reportData.today.completed), color: "var(--dash-info)" },
+              { icon: <DollarSign size={18} />, label: "Receita", value: formatBRL(reportData.today.revenue), color: "var(--dash-warning)" },
+              { icon: <Target size={18} />, label: "Ticket Médio", value: formatBRL(reportData.today.avgTicket), color: "#f472b6" },
             ].map((s) => (
               <div key={s.label} className="modal-neon-card" style={{ borderRadius: 14, padding: "14px 16px", background: "var(--dash-card)" }}>
-                <div style={{ fontSize: 18, marginBottom: 4 }}>{s.icon}</div>
+                <div style={{ marginBottom: 4, color: "var(--dash-text-muted)" }}>{s.icon}</div>
                 <div style={{ color: s.color, fontSize: 20, fontWeight: 900, lineHeight: 1 }}>{s.value}</div>
                 <div style={{ color: "var(--dash-text-muted)", fontSize: 10, marginTop: 4 }}>{s.label}</div>
               </div>
@@ -859,11 +864,11 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
             <div className="modal-neon-card" style={{ borderRadius: 14, padding: "14px 16px", background: "var(--dash-card)" }}>
-              <div style={{ color: "var(--dash-text-dim)", fontSize: 11, fontWeight: 600, marginBottom: 8 }}>💳 Pagamentos</div>
+              <div style={{ color: "var(--dash-text-dim)", fontSize: 11, fontWeight: 600, marginBottom: 8 }}>Pagamentos</div>
               <ReportPaymentBars payments={reportData.today.payments} />
             </div>
             <div className="modal-neon-card" style={{ borderRadius: 14, padding: "14px 16px", background: "var(--dash-card)" }}>
-              <div style={{ color: "var(--dash-text-dim)", fontSize: 11, fontWeight: 600, marginBottom: 8 }}>🏆 Top Produtos</div>
+              <div style={{ color: "var(--dash-text-dim)", fontSize: 11, fontWeight: 600, marginBottom: 8 }}>Top Produtos</div>
               <ReportProductList products={reportData.today.products.slice(0, 5)} />
             </div>
           </div>
@@ -871,7 +876,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
             onClick={() => downloadReportCSV(reportData.today.products, `relatorio-diario-${new Date().toISOString().split("T")[0]}.csv`)}
             style={{ alignSelf: "flex-end", padding: "8px 16px", borderRadius: 10, border: "1px solid var(--dash-card-border)", background: "var(--dash-card)", color: "var(--dash-text-muted)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
           >
-            📥 Baixar CSV
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Download size={13} />Baixar CSV</span>
           </button>
         </>
       )}
@@ -879,36 +884,36 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
       {/* ── SEMANAL ── */}
       {tab === "semanal" && (
         <>
-          <div style={{ color: "var(--dash-text-muted)", fontSize: 11 }}>📈 Últimos 7 Dias</div>
+          <div style={{ color: "var(--dash-text-muted)", fontSize: 11 }}>Últimos 7 Dias</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
             {[
-              { icon: "📦", label: "Pedidos", value: String(reportData.weekly.orders), color: "var(--dash-accent)" },
-              { icon: "✅", label: "Entregues", value: String(reportData.weekly.completed), color: "var(--dash-info)" },
-              { icon: "💰", label: "Receita", value: formatBRL(reportData.weekly.revenue), color: "var(--dash-warning)" },
-              { icon: "🎯", label: "Ticket Médio", value: formatBRL(reportData.weekly.avgTicket), color: "#f472b6" },
+              { icon: <Package size={18} />, label: "Pedidos", value: String(reportData.weekly.orders), color: "var(--dash-accent)" },
+              { icon: <CheckCircle2 size={18} />, label: "Entregues", value: String(reportData.weekly.completed), color: "var(--dash-info)" },
+              { icon: <DollarSign size={18} />, label: "Receita", value: formatBRL(reportData.weekly.revenue), color: "var(--dash-warning)" },
+              { icon: <Target size={18} />, label: "Ticket Médio", value: formatBRL(reportData.weekly.avgTicket), color: "#f472b6" },
             ].map((s) => (
               <div key={s.label} className="modal-neon-card" style={{ borderRadius: 14, padding: "14px 16px", background: "var(--dash-card)" }}>
-                <div style={{ fontSize: 18, marginBottom: 4 }}>{s.icon}</div>
+                <div style={{ marginBottom: 4, color: "var(--dash-text-muted)" }}>{s.icon}</div>
                 <div style={{ color: s.color, fontSize: 20, fontWeight: 900, lineHeight: 1 }}>{s.value}</div>
                 <div style={{ color: "var(--dash-text-muted)", fontSize: 10, marginTop: 4 }}>{s.label}</div>
               </div>
             ))}
           </div>
           <div className="modal-neon-card" style={{ borderRadius: 14, padding: "14px 16px", background: "var(--dash-card)" }}>
-            <div style={{ color: "var(--dash-text-dim)", fontSize: 11, fontWeight: 600, marginBottom: 8 }}>📦 Pedidos por Dia</div>
+            <div style={{ color: "var(--dash-text-dim)", fontSize: 11, fontWeight: 600, marginBottom: 8 }}>Pedidos por Dia</div>
             <ReportBarChart data={reportData.weekly.byDay} valueKey="orders" color="var(--dash-info)" formatter={String} />
           </div>
           <div className="modal-neon-card" style={{ borderRadius: 14, padding: "14px 16px", background: "var(--dash-card)" }}>
-            <div style={{ color: "var(--dash-text-dim)", fontSize: 11, fontWeight: 600, marginBottom: 8 }}>💰 Receita por Dia</div>
+            <div style={{ color: "var(--dash-text-dim)", fontSize: 11, fontWeight: 600, marginBottom: 8 }}>Receita por Dia</div>
             <ReportBarChart data={reportData.weekly.byDay} valueKey="revenue" color="#22c55e" formatter={formatBRL} />
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
             <div className="modal-neon-card" style={{ borderRadius: 14, padding: "14px 16px", background: "var(--dash-card)" }}>
-              <div style={{ color: "var(--dash-text-dim)", fontSize: 11, fontWeight: 600, marginBottom: 8 }}>💳 Pagamentos</div>
+              <div style={{ color: "var(--dash-text-dim)", fontSize: 11, fontWeight: 600, marginBottom: 8 }}>Pagamentos</div>
               <ReportPaymentBars payments={reportData.weekly.payments} />
             </div>
             <div className="modal-neon-card" style={{ borderRadius: 14, padding: "14px 16px", background: "var(--dash-card)" }}>
-              <div style={{ color: "var(--dash-text-dim)", fontSize: 11, fontWeight: 600, marginBottom: 8 }}>🏆 Top 7d</div>
+              <div style={{ color: "var(--dash-text-dim)", fontSize: 11, fontWeight: 600, marginBottom: 8 }}>Top 7d</div>
               <ReportProductList products={reportData.weekly.products.slice(0, 5)} />
             </div>
           </div>
@@ -916,7 +921,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
             onClick={() => downloadReportCSV(reportData.weekly.products, `relatorio-semanal.csv`)}
             style={{ alignSelf: "flex-end", padding: "8px 16px", borderRadius: 10, border: "1px solid var(--dash-card-border)", background: "var(--dash-card)", color: "var(--dash-text-muted)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
           >
-            📥 Baixar CSV
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Download size={13} />Baixar CSV</span>
           </button>
         </>
       )}
@@ -924,10 +929,10 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
       {/* ── MENSAL ── */}
       {tab === "mensal" && (
         <>
-          <div style={{ color: "var(--dash-text-muted)", fontSize: 11 }}>📅 Últimos 30 Dias</div>
+          <div style={{ color: "var(--dash-text-muted)", fontSize: 11 }}>Últimos 30 Dias</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
             <div className="modal-neon-card" style={{ borderRadius: 14, padding: "14px 16px", background: "var(--dash-card)" }}>
-              <div style={{ fontSize: 18, marginBottom: 4 }}>📦</div>
+              <div style={{ marginBottom: 4, color: "var(--dash-text-muted)" }}><Package size={18} /></div>
               <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                 <span style={{ color: "var(--dash-accent)", fontSize: 20, fontWeight: 900, lineHeight: 1 }}>{reportData.monthly.orders}</span>
                 <ReportGrowthBadge value={reportData.monthly.growthOrders} />
@@ -935,7 +940,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
               <div style={{ color: "var(--dash-text-muted)", fontSize: 10, marginTop: 4 }}>Pedidos</div>
             </div>
             <div className="modal-neon-card" style={{ borderRadius: 14, padding: "14px 16px", background: "var(--dash-card)" }}>
-              <div style={{ fontSize: 18, marginBottom: 4 }}>💰</div>
+              <div style={{ marginBottom: 4, color: "var(--dash-text-muted)" }}><DollarSign size={18} /></div>
               <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                 <span style={{ color: "var(--dash-warning)", fontSize: 20, fontWeight: 900, lineHeight: 1 }}>{formatBRL(reportData.monthly.revenue)}</span>
                 <ReportGrowthBadge value={reportData.monthly.growthRevenue} />
@@ -943,27 +948,27 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
               <div style={{ color: "var(--dash-text-muted)", fontSize: 10, marginTop: 4 }}>Receita</div>
             </div>
             <div className="modal-neon-card" style={{ borderRadius: 14, padding: "14px 16px", background: "var(--dash-card)" }}>
-              <div style={{ fontSize: 18, marginBottom: 4 }}>✅</div>
+              <div style={{ marginBottom: 4, color: "var(--dash-text-muted)" }}><CheckCircle2 size={18} /></div>
               <div style={{ color: "var(--dash-info)", fontSize: 20, fontWeight: 900, lineHeight: 1 }}>{reportData.monthly.completed}</div>
               <div style={{ color: "var(--dash-text-muted)", fontSize: 10, marginTop: 4 }}>Entregues</div>
             </div>
             <div className="modal-neon-card" style={{ borderRadius: 14, padding: "14px 16px", background: "var(--dash-card)" }}>
-              <div style={{ fontSize: 18, marginBottom: 4 }}>🎯</div>
+              <div style={{ marginBottom: 4, color: "var(--dash-text-muted)" }}><Target size={18} /></div>
               <div style={{ color: "#f472b6", fontSize: 20, fontWeight: 900, lineHeight: 1 }}>{formatBRL(reportData.monthly.avgTicket)}</div>
               <div style={{ color: "var(--dash-text-muted)", fontSize: 10, marginTop: 4 }}>Ticket Médio</div>
             </div>
           </div>
           <div className="modal-neon-card" style={{ borderRadius: 14, padding: "14px 16px", background: "var(--dash-card)" }}>
-            <div style={{ color: "var(--dash-text-dim)", fontSize: 11, fontWeight: 600, marginBottom: 8 }}>📈 Pedidos — 30 Dias</div>
+            <div style={{ color: "var(--dash-text-dim)", fontSize: 11, fontWeight: 600, marginBottom: 8 }}>Pedidos — 30 Dias</div>
             <ReportBarChart data={reportData.monthly.byDay} valueKey="orders" color="rgb(124,58,237)" formatter={String} />
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
             <div className="modal-neon-card" style={{ borderRadius: 14, padding: "14px 16px", background: "var(--dash-card)" }}>
-              <div style={{ color: "var(--dash-text-dim)", fontSize: 11, fontWeight: 600, marginBottom: 8 }}>💳 Pagamentos</div>
+              <div style={{ color: "var(--dash-text-dim)", fontSize: 11, fontWeight: 600, marginBottom: 8 }}>Pagamentos</div>
               <ReportPaymentBars payments={reportData.monthly.payments} />
             </div>
             <div className="modal-neon-card" style={{ borderRadius: 14, padding: "14px 16px", background: "var(--dash-card)" }}>
-              <div style={{ color: "var(--dash-text-dim)", fontSize: 11, fontWeight: 600, marginBottom: 8 }}>🏆 Top 30d</div>
+              <div style={{ color: "var(--dash-text-dim)", fontSize: 11, fontWeight: 600, marginBottom: 8 }}>Top 30d</div>
               <ReportProductList products={reportData.monthly.products.slice(0, 5)} />
             </div>
           </div>
@@ -971,7 +976,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
             onClick={() => downloadReportCSV(reportData.monthly.products, `relatorio-mensal.csv`)}
             style={{ alignSelf: "flex-end", padding: "8px 16px", borderRadius: 10, border: "1px solid var(--dash-card-border)", background: "var(--dash-card)", color: "var(--dash-text-muted)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
           >
-            📥 Baixar CSV
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Download size={13} />Baixar CSV</span>
           </button>
         </>
       )}
@@ -979,7 +984,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
       {/* ── PRODUTOS ── */}
       {tab === "produtos" && (
         <>
-          <div style={{ color: "var(--dash-text-muted)", fontSize: 11 }}>🍔 Análise de Produtos — últimos 30 dias</div>
+          <div style={{ color: "var(--dash-text-muted)", fontSize: 11 }}>Análise de Produtos — últimos 30 dias</div>
           <div className="modal-neon-card" style={{ borderRadius: 14, overflow: "hidden", background: "var(--dash-card)" }}>
             <div style={{ padding: "14px 16px", borderBottom: "1px solid var(--dash-card-border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div style={{ color: "var(--dash-text)", fontSize: 13, fontWeight: 700 }}>Ranking de Vendas</div>
@@ -987,7 +992,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
                 onClick={() => downloadReportCSV(reportData.monthly.products, "produtos.csv")}
                 style={{ padding: "5px 10px", borderRadius: 8, border: "1px solid var(--dash-card-border)", background: "transparent", color: "var(--dash-text-muted)", fontSize: 11, fontWeight: 600, cursor: "pointer" }}
               >
-                📥 CSV
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Download size={11} />CSV</span>
               </button>
             </div>
             {reportData.monthly.products.length === 0 ? (
@@ -1023,7 +1028,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
           </div>
           {reportData.monthly.products.length > 5 && (
             <div className="modal-neon-card" style={{ borderRadius: 14, padding: "14px 16px", background: "var(--dash-card)" }}>
-              <div style={{ color: "var(--dash-text-dim)", fontSize: 11, fontWeight: 600, marginBottom: 8 }}>⚠️ Baixo Desempenho</div>
+              <div style={{ color: "var(--dash-text-dim)", fontSize: 11, fontWeight: 600, marginBottom: 8, display: "flex", alignItems: "center", gap: 4 }}><AlertCircle size={11} />Baixo Desempenho</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {reportData.monthly.products.slice(-3).reverse().map((p) => (
                   <div key={p.name} style={{ display: "flex", justifyContent: "space-between", fontSize: 11 }}>
@@ -1133,7 +1138,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
                   <div>
                     <div style={{ color: "var(--dash-text)", fontSize: 13, fontWeight: 600 }}>{exp.name}</div>
                     <div style={{ color: "var(--dash-text-muted)", fontSize: 11 }}>
-                      {exp.is_recurring ? "🔄 Recorrente" : "📌 Avulso"} · {new Date(exp.date).toLocaleDateString("pt-BR")}
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>{exp.is_recurring ? <><RefreshCw size={10} />Recorrente</> : <><Tag size={10} />Avulso</>}</span> · {new Date(exp.date).toLocaleDateString("pt-BR")}
                     </div>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -1143,7 +1148,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
                       background: "rgba(220,38,38,0.10)", color: "#ffffff",
                       display: "flex", alignItems: "center", justifyContent: "center",
                       fontSize: 11, transition: "all 0.2s",
-                    }}>✕</button>
+                    }}><X size={13} /></button>
                   </div>
                 </div>
               ))}
@@ -1298,7 +1303,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
                   background: "var(--dash-card-hover)", color: "var(--dash-text-muted)",
                   fontSize: 12, cursor: "pointer",
                 }}>
-                  🔄 Gerar novamente
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><RefreshCw size={13} />Gerar novamente</span>
                 </button>
               </>
             )}

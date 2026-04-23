@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import { MapPin, AlertCircle, Trash2, CheckCircle2, XCircle, Ruler, DollarSign } from "lucide-react";
 
 const GN = "#22c55e";  // green accent
 
@@ -334,7 +335,7 @@ export default function DeliveryModal({
                 cursor: "pointer", marginBottom: 16,
               }}
             >
-              📍 Usar minha localização
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><MapPin size={13} />Usar minha localização</span>
             </button>
 
             {settings.delivery_latitude && settings.delivery_longitude && (
@@ -395,7 +396,7 @@ export default function DeliveryModal({
         <div>
           {!zoneStatus.ok && (
             <div style={{ padding: "8px 12px", borderRadius: 8, marginBottom: 12, fontSize: 11, fontWeight: 600, background: "rgba(251,191,36,0.1)", color: "#fbbf24", border: "1px solid rgba(251,191,36,0.25)" }}>
-              ⚠️ {zoneStatus.msg}
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><AlertCircle size={11} />{zoneStatus.msg}</span>
             </div>
           )}
 
@@ -440,7 +441,7 @@ export default function DeliveryModal({
                 disabled={saving}
                 style={{ width: 28, height: 28, borderRadius: 6, border: "1px solid rgba(239,68,68,0.25)", background: "rgba(239,68,68,0.08)", color: "#f87171", cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center" }}
               >
-                🗑
+                <Trash2 size={13} />
               </button>
             </div>
           ))}
@@ -482,7 +483,7 @@ export default function DeliveryModal({
             onClick={() => getMyLocation((lat, lon) => { setTestLat(lat); setTestLon(lon); })}
             style={{ padding: "7px 12px", borderRadius: 8, border: `1px solid ${GN}22`, background: `${GN}12`, color: GN, fontSize: 12, fontWeight: 600, cursor: "pointer", marginBottom: 12 }}
           >
-            📍 Usar minha localização
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><MapPin size={13} />Usar minha localização</span>
           </button>
 
           <button
@@ -505,16 +506,16 @@ export default function DeliveryModal({
               border: `1px solid ${testResult.available ? "rgba(34,197,94,0.25)" : "rgba(239,68,68,0.25)"}`,
             }}>
               <div style={{ fontSize: 14, fontWeight: 700, color: testResult.available ? GN : "#f87171", marginBottom: 8 }}>
-                {testResult.available ? "✅ Entrega disponível" : "❌ Entrega indisponível"}
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>{testResult.available ? <CheckCircle2 size={16} /> : <XCircle size={16} />}{testResult.available ? "Entrega disponível" : "Entrega indisponível"}</span>
               </div>
               {testResult.distanceKm != null && (
                 <div style={{ fontSize: 13, color: "var(--dash-text)", marginBottom: 4 }}>
-                  📏 Distância: <strong>{testResult.distanceKm.toFixed(2)} km</strong>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Ruler size={13} />Distância: <strong>{testResult.distanceKm.toFixed(2)} km</strong></span>
                 </div>
               )}
               {testResult.available && (
                 <div style={{ fontSize: 13, color: "var(--dash-text)", marginBottom: 4 }}>
-                  💰 Taxa: <strong>R$ {fmtFee(testResult.fee)}</strong>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><DollarSign size={13} />Taxa: <strong>R$ {fmtFee(testResult.fee)}</strong></span>
                 </div>
               )}
               <div style={{ fontSize: 12, color: "var(--dash-text-muted)", marginTop: 4 }}>{testResult.message}</div>

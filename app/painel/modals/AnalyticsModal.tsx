@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Unit } from "../types";
 import LoadingSpinner, { ContentEnter } from "@/components/LoadingSpinner";
 import AIButton from "@/components/AIButton";
 import AIWaveLoader from "@/components/AIWaveLoader";
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell } from "recharts";
+import { Eye, MousePointerClick, CheckCircle2, FileText, Bike, BarChart3, Lock, RefreshCw, Download, X } from "lucide-react";
 
 const supabase = createClient();
 
@@ -140,9 +141,9 @@ export default function AnalyticsModal({
   }, [tab, unit, period]);
 
   const stats = [
-    { label: "Visitas ao cardápio", value: analytics.views, icon: "👁", color: "var(--dash-accent)", desc: "últimos 7 dias" },
-    { label: "Cliques em produtos", value: analytics.clicks, icon: "👆", color: "var(--dash-info)", desc: "últimos 7 dias" },
-    { label: "Pedidos enviados", value: analytics.orders, icon: "✅", color: "#f472b6", desc: "últimos 7 dias" },
+    { label: "Visitas ao cardápio", value: analytics.views, icon: <Eye size={28} />, color: "var(--dash-accent)", desc: "últimos 7 dias" },
+    { label: "Cliques em produtos", value: analytics.clicks, icon: <MousePointerClick size={28} />, color: "var(--dash-info)", desc: "últimos 7 dias" },
+    { label: "Pedidos enviados", value: analytics.orders, icon: <CheckCircle2 size={28} />, color: "#f472b6", desc: "últimos 7 dias" },
   ];
   const conversion = analytics.views > 0 ? ((analytics.orders / analytics.views) * 100).toFixed(1) : "0.0";
 
@@ -518,7 +519,7 @@ export default function AnalyticsModal({
               opacity: generatingPDF ? 0.5 : 1,
             }}
           >
-            {generatingPDF ? "Gerando..." : "📄 Baixar PDF"}
+            {generatingPDF ? "Gerando..." : <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><FileText size={13} />Baixar PDF</span>}
           </button>
         </div>
       )}
@@ -528,7 +529,7 @@ export default function AnalyticsModal({
         <>
           {stats.map((s) => (
             <div key={s.label} className="modal-neon-card" style={{ borderRadius: 16, padding: "18px 20px", background: "var(--dash-card)", display: "flex", alignItems: "center", gap: 16 }}>
-              <div style={{ fontSize: 28 }}>{s.icon}</div>
+              <div style={{ color: s.color }}>{s.icon}</div>
               <div style={{ flex: 1 }}>
                 <div style={{ color: "var(--dash-text-dim)", fontSize: 12 }}>{s.label}</div>
                 <div style={{ color: s.color, fontSize: 28, fontWeight: 900, lineHeight: 1.1 }}>{s.value}</div>
@@ -543,7 +544,7 @@ export default function AnalyticsModal({
           </div>
           {ifoodClicks !== null && ifoodClicks > 0 && unit?.ifood_url && (
             <div className="modal-neon-card" style={{ borderRadius: 16, padding: "18px 20px", background: "var(--dash-card)", display: "flex", alignItems: "center", gap: 16 }}>
-              <div style={{ fontSize: 28 }}>🛵</div>
+              <div style={{ color: "#f59e0b" }}><Bike size={28} /></div>
               <div style={{ flex: 1 }}>
                 <div style={{ color: "var(--dash-text-dim)", fontSize: 12 }}>Cliques plataforma delivery</div>
                 <div style={{ color: "#f59e0b", fontSize: 28, fontWeight: 900, lineHeight: 1.1 }}>{ifoodClicks}</div>
@@ -609,7 +610,7 @@ export default function AnalyticsModal({
             </>
           ) : (
             <div style={{ padding: 30, borderRadius: 16, background: "var(--dash-card)", border: "1px solid var(--dash-border)", textAlign: "center" }}>
-              <div style={{ fontSize: 28, marginBottom: 8 }}>📊</div>
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: 8, color: "var(--dash-text-muted)" }}><BarChart3 size={28} /></div>
               <div style={{ fontSize: 13, fontWeight: 600, color: "var(--dash-text-secondary)" }}>Dados insuficientes</div>
               <div style={{ fontSize: 11, color: "var(--dash-text-muted)", marginTop: 4 }}>
                 Os gráficos aparecerão conforme clientes interagirem com o cardápio.
@@ -780,7 +781,7 @@ export default function AnalyticsModal({
               )
             ) : (
               <div style={{ textAlign: "center", padding: 20 }}>
-                <span style={{ fontSize: 20 }}>🔒</span>
+                <span style={{ display: "flex", justifyContent: "center", color: "var(--dash-text-muted)" }}><Lock size={20} /></span>
                 <div style={{ fontSize: 11, color: "var(--dash-text-muted)", marginTop: 6 }}>Disponível no plano MenuPro</div>
               </div>
             )}
@@ -913,7 +914,7 @@ export default function AnalyticsModal({
                   <>
                     <div style={{ whiteSpace: "pre-wrap", fontSize: 12, color: "var(--dash-text-secondary)", lineHeight: 1.7 }}>{reviewsAI}</div>
                     <button onClick={() => setReviewsAI(null)} style={{ marginTop: 10, padding: "6px 14px", borderRadius: 8, background: "var(--dash-card-hover)", border: "none", color: "var(--dash-text-muted)", fontSize: 11, cursor: "pointer" }}>
-                      🔄 Gerar novamente
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><RefreshCw size={12} />Gerar novamente</span>
                     </button>
                   </>
                 )}
@@ -935,7 +936,7 @@ export default function AnalyticsModal({
                     padding: "8px 14px", borderRadius: 10, border: "none", cursor: "pointer",
                     background: "var(--dash-card-hover)", color: "var(--dash-text-muted)", fontSize: 12,
                     boxShadow: "var(--dash-shadow)",
-                  }}>📥 Importar dados</button>
+                  }}><span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Download size={13} />Importar dados</span></button>
                 )}
               </div>
               <div style={{ fontSize: 12, color: "var(--dash-text-muted)", marginBottom: 16 }}>
@@ -983,7 +984,7 @@ export default function AnalyticsModal({
                   background: "rgba(220,38,38,0.12)", color: "#ffffff",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: 14, fontWeight: 600, transition: "all 0.2s", flexShrink: 0,
-                }}>✕</button>
+                }}><X size={13} /></button>
               </div>
 
               {/* UPLOAD */}
@@ -1004,7 +1005,7 @@ export default function AnalyticsModal({
                       transition: "border-color 0.3s", marginBottom: 14,
                     }}
                   >
-                    <div style={{ fontSize: 32, marginBottom: 8 }}>📊</div>
+                    <div style={{ display: "flex", justifyContent: "center", marginBottom: 8, color: "var(--dash-text-muted)" }}><BarChart3 size={32} /></div>
                     <div style={{ color: "var(--dash-text)", fontSize: 13, fontWeight: 700, marginBottom: 4 }}>Arraste o arquivo aqui</div>
                     <div style={{ color: "var(--dash-text-muted)", fontSize: 11 }}>CSV, Excel, ou dados exportados de outro sistema</div>
                   </div>
@@ -1096,7 +1097,7 @@ export default function AnalyticsModal({
                     boxShadow: "0 1px 0 rgba(0,255,174,0.12) inset, 0 -1px 0 rgba(0,0,0,0.2) inset",
                     opacity: importingAnalytics ? 0.5 : 1,
                   }}>
-                    {importingAnalytics ? "Importando..." : `✅ Importar ${importAnalyticsData.events?.length} eventos`}
+                    {importingAnalytics ? "Importando..." : <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><CheckCircle2 size={14} />{`Importar ${importAnalyticsData.events?.length} eventos`}</span>}
                   </button>
                 </>
               )}
@@ -1104,7 +1105,7 @@ export default function AnalyticsModal({
               {/* DONE */}
               {importAnalyticsStep === "done" && (
                 <div style={{ textAlign: "center", padding: "50px 20px" }}>
-                  <div style={{ fontSize: 36, marginBottom: 12 }}>✅</div>
+                  <div style={{ display: "flex", justifyContent: "center", marginBottom: 12, color: "var(--dash-accent)" }}><CheckCircle2 size={36} /></div>
                   <div style={{ color: "var(--dash-text)", fontSize: 16, fontWeight: 800 }}>Dados importados!</div>
                   <div style={{ color: "var(--dash-text-muted)", fontSize: 12, marginTop: 6 }}>Os dados históricos já aparecem nos gráficos.</div>
                   <button onClick={resetImport} style={{

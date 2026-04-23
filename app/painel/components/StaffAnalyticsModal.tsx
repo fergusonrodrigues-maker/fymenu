@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { createClient } from "@/lib/supabase/client";
 import FyLoader from "@/components/FyLoader";
+import { Users, Target, Bike, ChefHat, Eye, EyeOff, BarChart3, Pencil, X, Timer, Clock } from "lucide-react";
 
 interface Employee {
   id: string;
@@ -53,13 +54,13 @@ const ROLES: Record<string, string> = {
   freelancer: "Freelancer",
 };
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; icon: string }> = {
-  working: { label: "Trabalhando", color: "#00ffae", icon: "🟢" },
-  break: { label: "Descanso", color: "#fbbf24", icon: "🟡" },
-  lunch: { label: "Almoço", color: "#60a5fa", icon: "🔵" },
-  off: { label: "Folga", color: "var(--dash-text-muted)", icon: "⚪" },
-  absent: { label: "Ausente", color: "#f87171", icon: "🔴" },
-  vacation: { label: "Férias", color: "#a855f7", icon: "🟣" },
+const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
+  working: { label: "Trabalhando", color: "#00ffae" },
+  break: { label: "Descanso", color: "#fbbf24" },
+  lunch: { label: "Almoço", color: "#60a5fa" },
+  off: { label: "Folga", color: "var(--dash-text-muted)" },
+  absent: { label: "Ausente", color: "#f87171" },
+  vacation: { label: "Férias", color: "#a855f7" },
 };
 
 function formatCpf(raw: string): string {
@@ -544,11 +545,11 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
     <div>
       {/* Tabs */}
       <div style={{ display: "flex", gap: 4, background: "var(--dash-input-bg)", borderRadius: 12, padding: 4, marginBottom: 20 }}>
-        <button style={tabStyle(tab === "equipe")} onClick={() => setTab("equipe")}>👥 Equipe</button>
-        <button style={tabStyle(tab === "garcons")} onClick={() => setTab("garcons")}>🧑‍🍳 Garçons</button>
-        <button style={tabStyle(tab === "entregadores")} onClick={() => setTab("entregadores")}>🛵 Entregadores</button>
+        <button style={tabStyle(tab === "equipe")} onClick={() => setTab("equipe")}><span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Users size={13} />Equipe</span></button>
+        <button style={tabStyle(tab === "garcons")} onClick={() => setTab("garcons")}><span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Target size={13} />Garçons</span></button>
+        <button style={tabStyle(tab === "entregadores")} onClick={() => setTab("entregadores")}><span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Bike size={13} />Entregadores</span></button>
         {isBusiness && (
-          <button style={tabStyle(tab === "ponto")} onClick={() => setTab("ponto")}>⏱️ Ponto</button>
+          <button style={tabStyle(tab === "ponto")} onClick={() => setTab("ponto")}><span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Clock size={13} />Ponto</span></button>
         )}
       </div>
 
@@ -577,12 +578,12 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
               <div style={{ fontSize: 13, fontWeight: 700, color: "var(--dash-text)", marginBottom: 10 }}>Status da equipe agora</div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                 {[
-                  { key: "working", label: "Trabalhando", color: "var(--dash-accent)", icon: "🟢" },
-                  { key: "break", label: "Descanso", color: "#fbbf24", icon: "🟡" },
-                  { key: "lunch", label: "Almoço", color: "#60a5fa", icon: "🔵" },
-                  { key: "off", label: "Folga", color: "var(--dash-text-muted)", icon: "⚪" },
-                  { key: "absent", label: "Ausente", color: "#f87171", icon: "🔴" },
-                  { key: "vacation", label: "Férias", color: "#a855f7", icon: "🟣" },
+                  { key: "working", label: "Trabalhando", color: "var(--dash-accent)" },
+                  { key: "break", label: "Descanso", color: "#fbbf24" },
+                  { key: "lunch", label: "Almoço", color: "#60a5fa" },
+                  { key: "off", label: "Folga", color: "var(--dash-text-muted)" },
+                  { key: "absent", label: "Ausente", color: "#f87171" },
+                  { key: "vacation", label: "Férias", color: "#a855f7" },
                 ].map(s => {
                   const count = employees.filter(e => (e.current_status || "off") === s.key).length;
                   return (
@@ -593,7 +594,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                       display: "flex", alignItems: "center", gap: 6,
                       minWidth: 100,
                     }}>
-                      <span style={{ fontSize: 12 }}>{s.icon}</span>
+                      <span style={{ width: 8, height: 8, borderRadius: "50%", background: s.color, display: "inline-block", flexShrink: 0 }} />
                       <div>
                         <div style={{ fontSize: 14, fontWeight: 800, color: count > 0 ? s.color : "var(--dash-text-muted)" }}>{count}</div>
                         <div style={{ fontSize: 9, color: "var(--dash-text-muted)" }}>{s.label}</div>
@@ -659,7 +660,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                 </select>
                 {newEmployee.role === "freelancer" && (
                   <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "10px 12px", borderRadius: 10, background: "rgba(168,85,247,0.06)", border: "1px solid rgba(168,85,247,0.25)" }}>
-                    <div style={{ color: "#c084fc", fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>🤝 Dados do freelancer</div>
+                    <div style={{ color: "#c084fc", fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>Dados do freelancer</div>
                     <input
                       style={inp} placeholder="Tipo de serviço (ex: Bartender, Fotógrafo)"
                       value={newEmployee.freelancer_service}
@@ -736,7 +737,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                     style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "var(--dash-text-muted)", cursor: "pointer", fontSize: 14, padding: 4 }}
                     tabIndex={-1}
                   >
-                    {showAddPassword ? "🙈" : "👁️"}
+                    {showAddPassword ? <EyeOff size={14} /> : <Eye size={14} />}
                   </button>
                 </div>
                 {/* Salário */}
@@ -895,7 +896,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
 
           {filteredEmployees.length === 0 ? (
             <div style={{ textAlign: "center", padding: "32px 0", color: "#666" }}>
-              <div style={{ fontSize: 32, marginBottom: 8 }}>👥</div>
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: 8, color: "var(--dash-text-muted)" }}><Users size={32} /></div>
               <div style={{ fontSize: 14 }}>{employees.length === 0 ? "Nenhum funcionário cadastrado" : "Nenhum funcionário nessa equipe"}</div>
             </div>
           ) : (
@@ -904,8 +905,8 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                 const status = STATUS_CONFIG[emp.current_status || "off"];
                 return (
                   <div key={emp.id} style={{ background: "var(--dash-card)", borderRadius: 12, padding: "12px 14px", border: "1px solid var(--dash-border)", display: "flex", alignItems: "center", gap: 12 }}>
-                    <div style={{ width: 36, height: 36, borderRadius: "50%", background: emp.is_active ? "rgba(0,255,174,0.12)" : "var(--dash-card-hover)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>
-                      {emp.role === "deliverer" ? "🚴" : emp.role === "kitchen" ? "👨‍🍳" : emp.role === "freelancer" ? "🤝" : "🧑‍🍳"}
+                    <div style={{ width: 36, height: 36, borderRadius: "50%", background: emp.is_active ? "rgba(0,255,174,0.12)" : "var(--dash-card-hover)", display: "flex", alignItems: "center", justifyContent: "center", color: emp.is_active ? "var(--dash-accent)" : "var(--dash-text-muted)", flexShrink: 0 }}>
+                      {emp.role === "deliverer" ? <Bike size={16} /> : emp.role === "kitchen" ? <ChefHat size={16} /> : emp.role === "freelancer" ? <Users size={16} /> : <Target size={16} />}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 4 }}>
@@ -915,7 +916,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                           background: `${status.color}15`,
                           color: status.color,
                         }}>
-                          {status.icon} {status.label}
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><span style={{ width: 6, height: 6, borderRadius: "50%", background: status.color, display: "inline-block" }} />{status.label}</span>
                         </span>
                         <span style={{
                           padding: "2px 8px", borderRadius: 6, fontSize: 9,
@@ -956,12 +957,12 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                           color: "var(--dash-text)", fontSize: 10, outline: "none",
                         }}
                       >
-                        <option value="working">🟢 Trabalhando</option>
-                        <option value="break">🟡 Descanso</option>
-                        <option value="lunch">🔵 Almoço</option>
-                        <option value="off">⚪ Folga</option>
-                        <option value="absent">🔴 Ausente</option>
-                        <option value="vacation">🟣 Férias</option>
+                        <option value="working">Trabalhando</option>
+                        <option value="break">Descanso</option>
+                        <option value="lunch">Almoço</option>
+                        <option value="off">Folga</option>
+                        <option value="absent">Ausente</option>
+                        <option value="vacation">Férias</option>
                       </select>
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", gap: 4, flexShrink: 0 }}>
@@ -969,7 +970,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                         onClick={() => openEditModal(emp)}
                         style={{ padding: "5px 10px", borderRadius: 8, border: "none", background: "var(--dash-card-hover)", color: "var(--dash-text)", fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}
                       >
-                        ✏️ Editar
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Pencil size={11} />Editar</span>
                       </button>
                       <button
                         onClick={() => toggleActive(emp)}
@@ -1007,8 +1008,8 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                       border: "1px solid var(--dash-border)",
                       display: "flex", alignItems: "center", gap: 10, opacity: 0.5,
                     }}>
-                      <div style={{ width: 32, height: 32, borderRadius: "50%", background: "var(--dash-card-hover)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>
-                        {emp.role === "deliverer" ? "🚴" : emp.role === "kitchen" ? "👨‍🍳" : emp.role === "freelancer" ? "🤝" : "🧑‍🍳"}
+                      <div style={{ width: 32, height: 32, borderRadius: "50%", background: "var(--dash-card-hover)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--dash-text-muted)", flexShrink: 0 }}>
+                        {emp.role === "deliverer" ? <Bike size={14} /> : emp.role === "kitchen" ? <ChefHat size={14} /> : emp.role === "freelancer" ? <Users size={14} /> : <Target size={14} />}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ color: "#666", fontSize: 13, fontWeight: 700 }}>{emp.name}</div>
@@ -1034,7 +1035,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
         <div>
           {waiterStats.length === 0 ? (
             <div style={{ textAlign: "center", padding: "32px 0", color: "#666" }}>
-              <div style={{ fontSize: 32, marginBottom: 8 }}>📊</div>
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: 8, color: "var(--dash-text-muted)" }}><BarChart3 size={32} /></div>
               <div style={{ fontSize: 14 }}>Nenhum dado de garçom ainda</div>
             </div>
           ) : (
@@ -1075,7 +1076,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
         <div>
           {delivererStats.length === 0 ? (
             <div style={{ textAlign: "center", padding: "32px 0", color: "#666" }}>
-              <div style={{ fontSize: 32, marginBottom: 8 }}>🚴</div>
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: 8, color: "var(--dash-text-muted)" }}><Bike size={32} /></div>
               <div style={{ fontSize: 14 }}>Nenhum dado de entrega ainda</div>
             </div>
           ) : (
@@ -1136,30 +1137,30 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
               <div style={{ fontSize: 13, fontWeight: 700, color: "var(--dash-text)", marginBottom: 12 }}>Registrar ponto</div>
               {employees.filter(e => e.is_active).map(emp => {
                 const status = emp.current_status || "off";
-                const statusConfig: Record<string, { label: string; color: string; actions: { type: string; label: string; icon: string; nextStatus: string }[] }> = {
+                const statusConfig: Record<string, { label: string; color: string; actions: { type: string; label: string; nextStatus: string }[] }> = {
                   off: {
                     label: "Fora", color: "var(--dash-text-muted)",
-                    actions: [{ type: "clock_in", label: "Entrada", icon: "▶️", nextStatus: "working" }],
+                    actions: [{ type: "clock_in", label: "Entrada", nextStatus: "working" }],
                   },
                   working: {
                     label: "Trabalhando", color: "#00ffae",
                     actions: [
-                      { type: "break_start", label: "Descanso", icon: "☕", nextStatus: "break" },
-                      { type: "lunch_start", label: "Almoço", icon: "🍽️", nextStatus: "lunch" },
-                      { type: "clock_out", label: "Saída", icon: "⏹️", nextStatus: "off" },
+                      { type: "break_start", label: "Descanso", nextStatus: "break" },
+                      { type: "lunch_start", label: "Almoço", nextStatus: "lunch" },
+                      { type: "clock_out", label: "Saída", nextStatus: "off" },
                     ],
                   },
                   break: {
                     label: "Descanso", color: "#fbbf24",
-                    actions: [{ type: "break_end", label: "Retornar", icon: "▶️", nextStatus: "working" }],
+                    actions: [{ type: "break_end", label: "Retornar", nextStatus: "working" }],
                   },
                   lunch: {
                     label: "Almoço", color: "#60a5fa",
-                    actions: [{ type: "lunch_end", label: "Retornar", icon: "▶️", nextStatus: "working" }],
+                    actions: [{ type: "lunch_end", label: "Retornar", nextStatus: "working" }],
                   },
                   absent: {
                     label: "Ausente", color: "#f87171",
-                    actions: [{ type: "clock_in", label: "Entrada", icon: "▶️", nextStatus: "working" }],
+                    actions: [{ type: "clock_in", label: "Entrada", nextStatus: "working" }],
                   },
                   vacation: {
                     label: "Férias", color: "#a855f7",
@@ -1202,7 +1203,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                             fontSize: 10, fontWeight: 700, whiteSpace: "nowrap",
                           }}
                         >
-                          {action.icon} {action.label}
+                          {action.label}
                         </button>
                       ))}
                     </div>
@@ -1221,21 +1222,21 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                   {timeEntries.slice(0, 50).map(entry => {
-                    const typeConfig: Record<string, { label: string; icon: string; color: string }> = {
-                      clock_in: { label: "Entrada", icon: "▶️", color: "#00ffae" },
-                      clock_out: { label: "Saída", icon: "⏹️", color: "#f87171" },
-                      break_start: { label: "Início descanso", icon: "☕", color: "#fbbf24" },
-                      break_end: { label: "Fim descanso", icon: "▶️", color: "#00ffae" },
-                      lunch_start: { label: "Início almoço", icon: "🍽️", color: "#60a5fa" },
-                      lunch_end: { label: "Fim almoço", icon: "▶️", color: "#00ffae" },
+                    const typeConfig: Record<string, { label: string; color: string }> = {
+                      clock_in: { label: "Entrada", color: "#00ffae" },
+                      clock_out: { label: "Saída", color: "#f87171" },
+                      break_start: { label: "Início descanso", color: "#fbbf24" },
+                      break_end: { label: "Fim descanso", color: "#00ffae" },
+                      lunch_start: { label: "Início almoço", color: "#60a5fa" },
+                      lunch_end: { label: "Fim almoço", color: "#00ffae" },
                     };
-                    const tc = typeConfig[entry.type] || { label: entry.type, icon: "📌", color: "var(--dash-text-muted)" };
+                    const tc = typeConfig[entry.type] || { label: entry.type, color: "var(--dash-text-muted)" };
                     return (
                       <div key={entry.id} style={{
                         display: "flex", alignItems: "center", gap: 8,
                         padding: "8px 12px", borderRadius: 10, background: "var(--dash-card)",
                       }}>
-                        <span style={{ fontSize: 12 }}>{tc.icon}</span>
+                        <span style={{ width: 8, height: 8, borderRadius: "50%", background: tc.color, display: "inline-block", flexShrink: 0 }} />
                         <div style={{ flex: 1 }}>
                           <div style={{ color: "var(--dash-text)", fontSize: 12, fontWeight: 600 }}>
                             {entry.employees?.name || "?"} — <span style={{ color: tc.color }}>{tc.label}</span>
@@ -1363,7 +1364,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
           }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
               <div style={{ fontSize: 16, fontWeight: 800, color: "var(--dash-text, #fff)" }}>Editar funcionário</div>
-              <button onClick={() => setEditingEmployee(null)} style={{ background: "none", border: "none", color: "var(--dash-text-muted)", fontSize: 20, cursor: "pointer", lineHeight: 1 }}>✕</button>
+              <button onClick={() => setEditingEmployee(null)} style={{ background: "none", border: "none", color: "var(--dash-text-muted)", display: "flex", alignItems: "center", cursor: "pointer" }}><X size={18} /></button>
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -1412,7 +1413,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
                     style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "var(--dash-text-muted)", cursor: "pointer", fontSize: 14, padding: 4 }}
                     tabIndex={-1}
                   >
-                    {editShowPassword ? "🙈" : "👁️"}
+                    {editShowPassword ? <EyeOff size={14} /> : <Eye size={14} />}
                   </button>
                 </div>
               </div>

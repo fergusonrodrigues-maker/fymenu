@@ -1,22 +1,25 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import LoadingSpinner, { ContentEnter } from "@/components/LoadingSpinner";
 import AIButton from "@/components/AIButton";
 import AIWaveLoader from "@/components/AIWaveLoader";
+import {
+  X, CheckCircle2, Download, Package, Pencil, Calendar, AlertCircle, RefreshCw, Tag,
+} from "lucide-react";
 
 const supabase = createClient();
 
 const CATEGORIES = [
-  { value: "proteinas", label: "Proteínas", icon: "🥩" },
-  { value: "hortifruti", label: "Hortifruti", icon: "🥬" },
-  { value: "laticinios", label: "Laticínios", icon: "🧀" },
-  { value: "graos", label: "Grãos", icon: "🌾" },
-  { value: "bebidas", label: "Bebidas", icon: "🥤" },
-  { value: "temperos", label: "Temperos", icon: "🧂" },
-  { value: "embalagens", label: "Embalagens", icon: "📦" },
-  { value: "limpeza", label: "Limpeza", icon: "🧹" },
-  { value: "geral", label: "Geral", icon: "📋" },
+  { value: "proteinas", label: "Proteínas" },
+  { value: "hortifruti", label: "Hortifruti" },
+  { value: "laticinios", label: "Laticínios" },
+  { value: "graos", label: "Grãos" },
+  { value: "bebidas", label: "Bebidas" },
+  { value: "temperos", label: "Temperos" },
+  { value: "embalagens", label: "Embalagens" },
+  { value: "limpeza", label: "Limpeza" },
+  { value: "geral", label: "Geral" },
 ];
 
 const UNITS = [
@@ -196,8 +199,8 @@ export default function EstoqueModal({ unit, restaurant, onOpenImport }: { unit:
 
   const isBusiness = restaurant?.plan === "business";
 
-  function getExpiryStatus(item: any): { label: string; color: string; icon: string; priority: number } {
-    if (!item.expiry_date) return { label: "", color: "", icon: "", priority: 99 };
+  function getExpiryStatus(item: any): { label: string; color: string; priority: number } {
+    if (!item.expiry_date) return { label: "", color: "", priority: 99 };
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const expiry = new Date(item.expiry_date);
@@ -205,13 +208,13 @@ export default function EstoqueModal({ unit, restaurant, onOpenImport }: { unit:
     const diffDays = Math.floor((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
     const alertDays = item.expiry_alert_days || 7;
     if (diffDays < 0) {
-      return { label: `Vencido há ${Math.abs(diffDays)}d`, color: "var(--dash-danger)", icon: "🔴", priority: 0 };
+      return { label: `Vencido há ${Math.abs(diffDays)}d`, color: "var(--dash-danger)", priority: 0 };
     } else if (diffDays === 0) {
-      return { label: "Vence hoje!", color: "var(--dash-danger)", icon: "🔴", priority: 1 };
+      return { label: "Vence hoje!", color: "var(--dash-danger)", priority: 1 };
     } else if (diffDays <= alertDays) {
-      return { label: `Vence em ${diffDays}d`, color: "var(--dash-warning)", icon: "🟡", priority: 2 };
+      return { label: `Vence em ${diffDays}d`, color: "var(--dash-warning)", priority: 2 };
     } else {
-      return { label: `Válido (${diffDays}d)`, color: "var(--dash-accent)", icon: "🟢", priority: 3 };
+      return { label: `Válido (${diffDays}d)`, color: "var(--dash-accent)", priority: 3 };
     }
   }
 
@@ -413,7 +416,7 @@ export default function EstoqueModal({ unit, restaurant, onOpenImport }: { unit:
               background: "rgba(220,38,38,0.12)", color: "#ffffff",
               display: "flex", alignItems: "center", justifyContent: "center",
               fontSize: 14, fontWeight: 600, transition: "all 0.2s", flexShrink: 0,
-            }}>✕</button>
+            }}><X size={13} /></button>
           </div>
 
           {/* Upload */}
@@ -433,7 +436,7 @@ export default function EstoqueModal({ unit, restaurant, onOpenImport }: { unit:
                   transition: "border-color 0.3s", marginBottom: 14,
                 }}
               >
-                <div style={{ fontSize: 32, marginBottom: 8 }}>📦</div>
+                <div style={{ display: "flex", justifyContent: "center", marginBottom: 8, color: "var(--dash-text-muted)" }}><Package size={32} /></div>
                 <div style={{ color: "var(--dash-text)", fontSize: 13, fontWeight: 700, marginBottom: 4 }}>Arraste o arquivo aqui</div>
                 <div style={{ color: "var(--dash-text-muted)", fontSize: 11 }}>CSV, Excel, PDF, Foto (lista de compras)</div>
               </div>
@@ -493,7 +496,7 @@ export default function EstoqueModal({ unit, restaurant, onOpenImport }: { unit:
                   <select value={item.category || "geral"} onChange={(e) => {
                     const u = { ...importStockData, items: [...importStockData.items] }; u.items[i] = { ...u.items[i], category: e.target.value }; setImportStockData(u);
                   }} style={{ padding: "4px 6px", borderRadius: 6, backgroundColor: "var(--dash-card-hover)", border: "none", color: "var(--dash-text)", fontSize: 10, outline: "none", width: 80, fontFamily: "inherit" }}>
-                    {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.icon} {c.label}</option>)}
+                    {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                   </select>
                   <input value={item.name} onChange={(e) => {
                     const u = { ...importStockData, items: [...importStockData.items] }; u.items[i] = { ...u.items[i], name: e.target.value }; setImportStockData(u);
@@ -517,7 +520,7 @@ export default function EstoqueModal({ unit, restaurant, onOpenImport }: { unit:
                     background: "rgba(220,38,38,0.10)", color: "#ffffff",
                     display: "flex", alignItems: "center", justifyContent: "center",
                     fontSize: 11, transition: "all 0.2s",
-                  }}>✕</button>
+                  }}><X size={13} /></button>
                 </div>
               ))}
               <button onClick={handleConfirmStockImport} disabled={importingStock} style={{
@@ -527,7 +530,7 @@ export default function EstoqueModal({ unit, restaurant, onOpenImport }: { unit:
                 boxShadow: "0 1px 0 rgba(0,255,174,0.12) inset, 0 -1px 0 rgba(0,0,0,0.2) inset",
                 opacity: importingStock ? 0.5 : 1,
               }}>
-                {importingStock ? "Salvando..." : `✅ Importar ${importStockData.items?.length} ingredientes`}
+                {importingStock ? "Salvando..." : <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><CheckCircle2 size={14} />{`Importar ${importStockData.items?.length} ingredientes`}</span>}
               </button>
             </>
           )}
@@ -535,7 +538,7 @@ export default function EstoqueModal({ unit, restaurant, onOpenImport }: { unit:
           {/* Done */}
           {importStockStep === "done" && (
             <div style={{ textAlign: "center", padding: "50px 20px" }}>
-              <div style={{ fontSize: 36, marginBottom: 12 }}>✅</div>
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: 12, color: "var(--dash-accent)" }}><CheckCircle2 size={36} /></div>
               <div style={{ color: "var(--dash-text)", fontSize: 16, fontWeight: 800 }}>Estoque importado!</div>
               <div style={{ color: "var(--dash-text-muted)", fontSize: 12, marginTop: 6 }}>Ingredientes adicionados ao inventário.</div>
               <button onClick={() => { setShowImportStock(false); setImportStockStep("upload"); setImportStockData(null); setStockText(""); loadData(); }} style={{
@@ -579,7 +582,7 @@ export default function EstoqueModal({ unit, restaurant, onOpenImport }: { unit:
             onClick={() => onOpenImport("inventory_movements")}
             style={{ padding: "7px 14px", borderRadius: 10, border: "1px solid var(--dash-border)", background: "transparent", color: "var(--dash-text-muted)", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
           >
-            📥 Importar movimentações históricas
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Download size={13} />Importar movimentações históricas</span>
           </button>
         </div>
       )}
@@ -611,7 +614,7 @@ export default function EstoqueModal({ unit, restaurant, onOpenImport }: { unit:
             <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)}
               style={{ padding: "8px 10px", borderRadius: 10, backgroundColor: "var(--dash-card-hover)", border: "1px solid var(--dash-border)", color: "var(--dash-text)", fontSize: 12, outline: "none" }}>
               <option value="all">Todas</option>
-              {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.icon} {c.label}</option>)}
+              {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
             </select>
             <button onClick={() => { resetForm(); setShowForm(true); }} style={{
               padding: "8px 14px", borderRadius: 10, border: "none", cursor: "pointer",
@@ -624,7 +627,7 @@ export default function EstoqueModal({ unit, restaurant, onOpenImport }: { unit:
               background: "var(--dash-card-hover)", color: "var(--dash-text-muted)", fontSize: 12,
               boxShadow: "var(--dash-shadow)",
               whiteSpace: "nowrap", fontFamily: "inherit",
-            }}>📥 Importar</button>
+            }}><span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Download size={13} />Importar</span></button>
           </div>
 
           {/* Inline form */}
@@ -639,7 +642,7 @@ export default function EstoqueModal({ unit, restaurant, onOpenImport }: { unit:
               />
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                 <select value={formCategory} onChange={e => setFormCategory(e.target.value)} style={{ ...inputStyle, background: undefined as any, backgroundColor: "var(--dash-card-hover)" }}>
-                  {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.icon} {c.label}</option>)}
+                  {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                 </select>
                 <select value={formUnit} onChange={e => setFormUnit(e.target.value)} style={{ ...inputStyle, background: undefined as any, backgroundColor: "var(--dash-card-hover)" }}>
                   {UNITS.map(u => <option key={u.value} value={u.value}>{u.label}</option>)}
@@ -719,7 +722,7 @@ export default function EstoqueModal({ unit, restaurant, onOpenImport }: { unit:
                         ? "0 1px 0 rgba(248,113,113,0.06) inset, 0 -1px 0 rgba(0,0,0,0.15) inset"
                         : "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
                     }}>
-                      <span style={{ fontSize: 20 }}>{catInfo?.icon || "📋"}</span>
+                      <span style={{ display: "flex", color: "var(--dash-text-muted)" }}><Tag size={18} /></span>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: "flex", alignItems: "center" }}>
                         <div style={{ color: "var(--dash-text)", fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.name}</div>
@@ -731,7 +734,7 @@ export default function EstoqueModal({ unit, restaurant, onOpenImport }: { unit:
                               padding: "2px 8px", borderRadius: 6, fontSize: 9, fontWeight: 700,
                               background: `${expiry.color}15`, color: expiry.color,
                               marginLeft: 6, whiteSpace: "nowrap" as const,
-                            }}>{expiry.icon} {expiry.label}</span>
+                            }}><span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}><span style={{ width: 6, height: 6, borderRadius: "50%", background: expiry.color, display: "inline-block" }} />{expiry.label}</span></span>
                           );
                         })()}
                       </div>
@@ -742,7 +745,7 @@ export default function EstoqueModal({ unit, restaurant, onOpenImport }: { unit:
                         </div>
                         {isLow && (
                           <div style={{ color: "var(--dash-danger)", fontSize: 10, fontWeight: 700, marginTop: 2 }}>
-                            ⚠️ Estoque baixo (mín: {item.min_stock} {item.unit_measure})
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><AlertCircle size={10} />Estoque baixo (mín: {item.min_stock} {item.unit_measure})</span>
                           </div>
                         )}
                       </div>
@@ -754,13 +757,13 @@ export default function EstoqueModal({ unit, restaurant, onOpenImport }: { unit:
                         <button onClick={() => startEdit(item)} style={{
                           padding: "4px 8px", borderRadius: 6, background: "var(--dash-card-hover)", border: "none",
                           color: "var(--dash-text-muted)", fontSize: 11, cursor: "pointer", fontFamily: "inherit",
-                        }}>✏️</button>
+                        }}><Pencil size={11} /></button>
                         <button onClick={() => handleDelete(item.id)} style={{
                           width: 24, height: 24, borderRadius: 6, border: "none", cursor: "pointer",
                           background: "rgba(220,38,38,0.10)", color: "#ffffff",
                           display: "flex", alignItems: "center", justifyContent: "center",
                           fontSize: 11, transition: "all 0.2s",
-                        }}>✕</button>
+                        }}><X size={13} /></button>
                       </div>
                     </div>
 
@@ -816,7 +819,7 @@ export default function EstoqueModal({ unit, restaurant, onOpenImport }: { unit:
           {expiryItems.length > 0 && (
             <div style={{ marginBottom: 20 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: "var(--dash-text)", marginBottom: 10 }}>
-                🗓️ Validade ({expiryItems.length})
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Calendar size={14} />Validade ({expiryItems.length})</span>
               </div>
               {expiryItems.map(item => {
                 const catInfo = CATEGORIES.find(c => c.value === item.category);
@@ -829,11 +832,11 @@ export default function EstoqueModal({ unit, restaurant, onOpenImport }: { unit:
                       : "var(--dash-warning-soft)",
                     boxShadow: `0 1px 0 ${item.expiryStatus.color}10 inset, 0 -1px 0 rgba(0,0,0,0.15) inset`,
                   }}>
-                    <span style={{ fontSize: 20 }}>{catInfo?.icon || "📋"}</span>
+                    <span style={{ display: "flex", color: "var(--dash-text-muted)" }}><Tag size={18} /></span>
                     <div style={{ flex: 1 }}>
                       <div style={{ color: "var(--dash-text)", fontSize: 13, fontWeight: 600 }}>{item.name}</div>
-                      <div style={{ color: item.expiryStatus.color, fontSize: 12, fontWeight: 700, marginTop: 2 }}>
-                        {item.expiryStatus.icon} {item.expiryStatus.label}
+                      <div style={{ color: item.expiryStatus.color, fontSize: 12, fontWeight: 700, marginTop: 2, display: "flex", alignItems: "center", gap: 4 }}>
+                        <span style={{ width: 6, height: 6, borderRadius: "50%", background: item.expiryStatus.color, display: "inline-block" }} />{item.expiryStatus.label}
                       </div>
                       <div style={{ color: "var(--dash-text-muted)", fontSize: 10, marginTop: 2 }}>
                         Validade: {new Date(item.expiry_date).toLocaleDateString("pt-BR")}
@@ -862,7 +865,7 @@ export default function EstoqueModal({ unit, restaurant, onOpenImport }: { unit:
           {lowStockItems.length > 0 && (
             <div>
               <div style={{ fontSize: 13, fontWeight: 700, color: "var(--dash-text)", marginBottom: 10 }}>
-                📦 Estoque baixo ({lowStockItems.length})
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Package size={14} />Estoque baixo ({lowStockItems.length})</span>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {lowStockItems.map(item => {
@@ -874,7 +877,7 @@ export default function EstoqueModal({ unit, restaurant, onOpenImport }: { unit:
                       background: "var(--dash-danger-soft)",
                       boxShadow: "0 1px 0 rgba(248,113,113,0.06) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
                     }}>
-                      <span style={{ fontSize: 20 }}>{catInfo?.icon || "📋"}</span>
+                      <span style={{ display: "flex", color: "var(--dash-text-muted)" }}><Tag size={18} /></span>
                       <div style={{ flex: 1 }}>
                         <div style={{ color: "var(--dash-text)", fontSize: 14, fontWeight: 600 }}>{item.name}</div>
                         <div style={{ color: "var(--dash-danger)", fontSize: 12, marginTop: 2 }}>
@@ -898,7 +901,7 @@ export default function EstoqueModal({ unit, restaurant, onOpenImport }: { unit:
           {/* Tudo ok */}
           {expiryItems.length === 0 && lowStockItems.length === 0 && (
             <div style={{ textAlign: "center", padding: 40, color: "var(--dash-text-muted)" }}>
-              ✅ Tudo em ordem! Nenhum alerta no momento.
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><CheckCircle2 size={16} color="var(--dash-accent)" />Tudo em ordem! Nenhum alerta no momento.</span>
             </div>
           )}
         </div>
@@ -916,8 +919,8 @@ export default function EstoqueModal({ unit, restaurant, onOpenImport }: { unit:
                   display: "flex", alignItems: "center", gap: 10,
                   padding: "10px 14px", borderRadius: 12, background: "var(--dash-card)",
                 }}>
-                  <span style={{ fontSize: 16, flexShrink: 0 }}>
-                    {m.type === "purchase" ? "📥" : m.type === "usage" ? "📤" : m.type === "waste" ? "🗑️" : "🔄"}
+                  <span style={{ flexShrink: 0, display: "flex", color: m.type === "purchase" ? "var(--dash-accent)" : m.type === "usage" ? "var(--dash-warning)" : m.type === "waste" ? "var(--dash-danger)" : "var(--dash-text-muted)" }}>
+                    {m.type === "purchase" ? <Download size={14} /> : m.type === "usage" ? <Package size={14} /> : m.type === "waste" ? <X size={14} /> : <RefreshCw size={14} />}
                   </span>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ color: "var(--dash-text)", fontSize: 12, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -955,7 +958,7 @@ export default function EstoqueModal({ unit, restaurant, onOpenImport }: { unit:
 
           {productsWithoutRecipe > 0 && (
             <div style={{ padding: 10, borderRadius: 10, background: "var(--dash-warning-soft)", marginBottom: 16, fontSize: 11, color: "var(--dash-warning)" }}>
-              ⚠️ {productsWithoutRecipe} produto{productsWithoutRecipe > 1 ? "s" : ""} sem ficha técnica — adicione ingredientes no Cardápio pra previsão completa.
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><AlertCircle size={13} />{productsWithoutRecipe} produto{productsWithoutRecipe > 1 ? "s" : ""} sem ficha técnica — adicione ingredientes no Cardápio pra previsão completa.</span>
             </div>
           )}
 
@@ -989,7 +992,7 @@ export default function EstoqueModal({ unit, restaurant, onOpenImport }: { unit:
                   </div>
                   {p.bottleneck && (
                     <div style={{ fontSize: 10, color: "var(--dash-warning)", marginTop: 3 }}>
-                      ⚠️ Gargalo: {p.bottleneck} (limita produção)
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><AlertCircle size={10} />Gargalo: {p.bottleneck} (limita produção)</span>
                     </div>
                   )}
                 </div>
@@ -1049,7 +1052,7 @@ export default function EstoqueModal({ unit, restaurant, onOpenImport }: { unit:
                 <button onClick={() => setPurchaseAI(null)} style={{
                   marginTop: 10, padding: "6px 14px", borderRadius: 8, background: "var(--dash-card-hover)",
                   border: "none", color: "var(--dash-text-muted)", fontSize: 11, cursor: "pointer", fontFamily: "inherit",
-                }}>🔄 Gerar novamente</button>
+                }}><span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><RefreshCw size={13} />Gerar novamente</span></button>
               </>
             )}
           </div>

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Unit } from "../types";
 import FyLoader from "@/components/FyLoader";
+import { Download, ChefHat, MessageCircle, Pencil, Bike } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -295,7 +296,7 @@ export default function PedidosModal({ unitId, unit, onOpenImport }: { unitId: s
             onClick={() => onOpenImport("order_intents")}
             style={{ padding: "7px 14px", borderRadius: 10, border: "1px solid var(--dash-border)", background: "transparent", color: "var(--dash-text-muted)", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
           >
-            📥 Importar pedidos históricos
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Download size={13} />Importar pedidos históricos</span>
           </button>
         </div>
       )}
@@ -465,7 +466,7 @@ export default function PedidosModal({ unitId, unit, onOpenImport }: { unitId: s
                                 background: "var(--dash-card-hover)", color: "var(--dash-text-muted)",
                                 border: "1px solid var(--dash-card-border)",
                               }}>
-                                🍳 {KITCHEN_LABEL[ks] ?? ks}
+                                <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><ChefHat size={11} />{KITCHEN_LABEL[ks] ?? ks}</span>
                               </span>
                             </div>
 
@@ -522,7 +523,7 @@ export default function PedidosModal({ unitId, unit, onOpenImport }: { unitId: s
                                   justifyContent: "center",
                                 }}
                               >
-                                💬 Notificar cliente via WhatsApp
+                                <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><MessageCircle size={13} />Notificar cliente via WhatsApp</span>
                               </button>
                             )}
 
@@ -555,7 +556,7 @@ export default function PedidosModal({ unitId, unit, onOpenImport }: { unitId: s
                                 padding: "8px", background: "var(--dash-card)", borderRadius: 8,
                                 marginBottom: 8,
                               }}>
-                                💬 {order.notes}
+                                {order.notes}
                               </div>
                             )}
 
@@ -583,7 +584,7 @@ export default function PedidosModal({ unitId, unit, onOpenImport }: { unitId: s
           {/* WhatsApp */}
           <div className="modal-neon-card" style={{ borderRadius: 14, padding: "16px", background: "var(--dash-card)", border: "1px solid rgba(22,163,74,0.25)" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-              <span style={{ fontSize: 18 }}>💬</span>
+              <span style={{ display: "flex", color: "#25d366" }}><MessageCircle size={18} /></span>
               <div style={{ color: "var(--dash-text)", fontSize: 14, fontWeight: 700 }}>WhatsApp</div>
             </div>
             <div style={{ color: "var(--dash-text-muted)", fontSize: 12, marginBottom: 10 }}>
@@ -604,7 +605,7 @@ export default function PedidosModal({ unitId, unit, onOpenImport }: { unitId: s
                     {waCopied ? "✓ Copiado!" : "Copiar link"}
                   </button>
                   <a href="/painel" style={{ flex: 1, padding: "9px", borderRadius: 9, border: "1px solid var(--dash-btn-border)", background: "transparent", color: "var(--dash-text-dim)", fontSize: 12, fontWeight: 600, cursor: "pointer", textDecoration: "none", textAlign: "center" }}>
-                    ✎ Editar número
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Pencil size={12} />Editar número</span>
                   </a>
                 </div>
               </>
@@ -616,7 +617,7 @@ export default function PedidosModal({ unitId, unit, onOpenImport }: { unitId: s
           {/* iFood / Delivery */}
           <div className="modal-neon-card" style={{ borderRadius: 14, padding: "16px", background: "var(--dash-card)", border: "1px solid rgba(234,88,12,0.25)" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-              <span style={{ fontSize: 18 }}>🛵</span>
+              <span style={{ display: "flex", color: "#ea580c" }}><Bike size={18} /></span>
               <div style={{ color: "var(--dash-text)", fontSize: 14, fontWeight: 700 }}>iFood / Delivery</div>
             </div>
             <div style={{ color: "var(--dash-text-muted)", fontSize: 12, marginBottom: 10 }}>
