@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
+import { Pencil, Lock, AlertTriangle, RefreshCw } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 const MAIN_DOMAIN = process.env.NEXT_PUBLIC_DOMAIN ?? "fymenu.com";
@@ -108,7 +109,7 @@ export default function DominioSection({
                 cursor: "pointer",
               }}
             >
-              ✎ Editar
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Pencil size={12} /> Editar</span>
             </button>
           ) : (
             <button
@@ -119,7 +120,7 @@ export default function DominioSection({
                 fontSize: 10, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap",
               }}
             >
-              🔒 Assinar
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Lock size={10} /> Assinar</span>
             </button>
           )
         )}
@@ -133,7 +134,7 @@ export default function DominioSection({
           borderTop: "1px solid rgba(251,191,36,0.08)",
           display: "flex", alignItems: "center", gap: 8,
         }}>
-          <span style={{ fontSize: 13 }}>⚠️</span>
+          <AlertTriangle size={13} style={{ flexShrink: 0, color: "#fbbf24" }} />
           <span style={{ fontSize: 11, color: "#fbbf24", flex: 1 }}>
             Assine um plano pra personalizar e publicar seu cardápio
           </span>
@@ -199,7 +200,7 @@ export default function DominioSection({
                 disabled={loadingSug}
                 style={{ background: "none", border: "none", color: "#00ffae", fontSize: 11, cursor: "pointer", opacity: loadingSug ? 0.5 : 1 }}
               >
-                🔄 Recarregar
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><RefreshCw size={11} /> Recarregar</span>
               </button>
             </div>
             {loadingSug ? (

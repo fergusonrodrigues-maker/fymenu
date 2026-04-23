@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { X, MessageCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import LoadingSpinner from "@/components/LoadingSpinner";
 
@@ -222,7 +223,7 @@ export default function ChatWidget({
         onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)"; }}
         title="Suporte"
       >
-        {panelOpen ? "✕" : "💬"}
+        {panelOpen ? <X size={14} /> : <MessageCircle size={16} />}
         {!panelOpen && totalUnread > 0 && (
           <span style={{
             position: "absolute", top: -2, right: -2,
@@ -261,7 +262,7 @@ export default function ChatWidget({
             {view === "list" && (
               <button onClick={() => setView("new")} style={{ padding: "5px 12px", borderRadius: 8, border: "none", background: `rgba(0,255,174,0.12)`, color: ACCENT, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>+ Nova</button>
             )}
-            <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 8, border: "none", background: "rgba(255,255,255,0.06)", color: "#fff", cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+            <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 8, border: "none", background: "rgba(255,255,255,0.06)", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><X size={14} /></button>
           </div>
         </div>
 
@@ -270,7 +271,7 @@ export default function ChatWidget({
           <div style={{ flex: 1, overflowY: "auto", padding: "12px 0" }}>
             {conversations.length === 0 ? (
               <div style={{ padding: "40px 20px", textAlign: "center" }}>
-                <div style={{ fontSize: 40, marginBottom: 12 }}>💬</div>
+                <div style={{ marginBottom: 12, display: "flex", justifyContent: "center", color: "rgba(255,255,255,0.3)" }}><MessageCircle size={40} /></div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", marginBottom: 6 }}>Nenhuma conversa ainda</div>
                 <div style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginBottom: 20 }}>Inicie uma conversa com nossa equipe de suporte</div>
                 <button onClick={() => setView("new")} style={{ padding: "10px 20px", borderRadius: 12, border: "none", background: `linear-gradient(135deg, ${ACCENT}, #00c896)`, color: "#000", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>

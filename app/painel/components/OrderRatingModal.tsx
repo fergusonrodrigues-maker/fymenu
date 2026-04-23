@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
+import { CheckCircle2, Bike, ChefHat } from "lucide-react";
 
 interface Employee {
   id: string;
@@ -125,7 +126,7 @@ export default function OrderRatingModal({ orderId, employees, onClose }: OrderR
 
         {submitted ? (
           <div style={{ textAlign: "center", padding: "24px 0" }}>
-            <div style={{ fontSize: 48, marginBottom: 12 }}>🎉</div>
+            <div style={{ marginBottom: 12, display: "flex", justifyContent: "center", color: "#00ffae" }}><CheckCircle2 size={48} /></div>
             <div style={{ color: "#00ffae", fontSize: 20, fontWeight: 800, marginBottom: 8 }}>Obrigado!</div>
             <div style={{ color: "#888", fontSize: 14, marginBottom: 24 }}>Sua avaliação foi enviada com sucesso.</div>
             <button
@@ -146,8 +147,8 @@ export default function OrderRatingModal({ orderId, employees, onClose }: OrderR
                 return (
                   <div key={emp.id} style={{ background: "rgba(255,255,255,0.04)", borderRadius: 16, padding: 16, border: "1px solid rgba(255,255,255,0.07)" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                      <div style={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(0,255,174,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>
-                        {emp.role === "deliverer" ? "🚴" : "🧑‍🍳"}
+                      <div style={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(0,255,174,0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        {emp.role === "deliverer" ? <Bike size={18} /> : <ChefHat size={18} />}
                       </div>
                       <div>
                         <div style={{ color: "#fff", fontSize: 15, fontWeight: 700 }}>{emp.name}</div>

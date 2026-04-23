@@ -9,7 +9,7 @@ import type { Restaurant, Unit, StockStats, Category, Product, Profile, ReportDa
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { hasPlanFeature, planLabel, maxUnits as planMaxUnits } from "@/lib/plan";
 import { Icon } from "@/components/ui/Icon";
-import { Package, AlertCircle, Target, Star, CreditCard, Link2, Bell, Store, Lock, Timer, UtensilsCrossed, ChefHat, Tv, Wallet, ClipboardList, MapPin, Users, Printer, Link, MessageCircle, Headphones, Truck, Settings, BarChart3, Bike, FileText, UserCircle } from "lucide-react";
+import { Package, AlertCircle, Target, Star, CreditCard, Link2, Bell, Store, Lock, Timer, UtensilsCrossed, ChefHat, Tv, Wallet, ClipboardList, MapPin, Users, Printer, Link, MessageCircle, Headphones, Truck, Settings, BarChart3, Bike, FileText, UserCircle, X } from "lucide-react";
 
 const loadingFallback = <div style={{padding:40,display:"flex",justifyContent:"center"}}><LoadingSpinner size="sm" /></div>;
 
@@ -185,7 +185,7 @@ function Modal({ open, onClose, children, title, size = "md" }: {
                 e.currentTarget.style.background = closeBg;
                 e.currentTarget.style.color = closeColor;
               }}
-            >✕</button>
+            ><X size={14} /></button>
           </div>
           {/* ── Scrollable body ── */}
           <div className="modal-desktop-scroll" style={{ padding: "24px 28px 32px", overflowY: "auto", overscrollBehavior: "contain", flex: 1, minHeight: 0 }}>
@@ -255,7 +255,7 @@ function Modal({ open, onClose, children, title, size = "md" }: {
                 display: "flex", alignItems: "center", justifyContent: "center",
                 fontSize: 14, fontWeight: 600, transition: "all 0.2s", flexShrink: 0,
               }}
-            >✕</button>
+            ><X size={14} /></button>
           </div>
         </div>
         <div className="dashboard-modal" style={{ padding: "16px 20px 32px" }}>
@@ -1449,7 +1449,7 @@ export default function DashboardClient({
                       background: "rgba(220,38,38,0.12)", color: "#ffffff",
                       display: "flex", alignItems: "center", justifyContent: "center",
                       fontSize: 12, transition: "all 0.2s", flexShrink: 0,
-                    }}>✕</button>
+                    }}><X size={14} /></button>
                   </div>
 
                   <div style={{ maxHeight: 340, overflowY: "auto", padding: "8px" }}>

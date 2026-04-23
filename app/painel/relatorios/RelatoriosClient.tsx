@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
+import { Package, CheckCircle2, DollarSign, Target, CreditCard, Trophy, Download, Sun, TrendingUp, CalendarDays, ShoppingBag, AlertTriangle, Banknote } from "lucide-react";
 
 type DayData = { date: string; orders: number; revenue: number };
 type Product = { name: string; qty: number; revenue: number };
@@ -52,10 +53,10 @@ function GrowthBadge({ value }: { value: number | null }) {
   );
 }
 
-function StatCard({ icon, label, value, sub }: { icon: string; label: string; value: string; sub?: string }) {
+function StatCard({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: string; sub?: string }) {
   return (
     <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-5">
-      <div className="text-2xl mb-2">{icon}</div>
+      <div className="mb-2 text-gray-400">{icon}</div>
       <div className="text-2xl font-black text-white">{value}</div>
       <div className="text-gray-400 text-sm mt-1">{label}</div>
       {sub && <div className="text-gray-600 text-xs mt-0.5">{sub}</div>}
@@ -104,9 +105,9 @@ function BarChart({ data, valueKey, color = "bg-purple-500", formatter = String 
 function PaymentBars({ payments }: { payments: Payments }) {
   const total = payments.cash + payments.card + payments.pix;
   const bars = [
-    { key: "cash", label: "💵 Dinheiro", color: "bg-green-600", value: payments.cash },
-    { key: "card", label: "💳 Cartão", color: "bg-blue-600", value: payments.card },
-    { key: "pix", label: "📲 PIX", color: "bg-violet-600", value: payments.pix },
+    { key: "cash", label: "Dinheiro", color: "bg-green-600", value: payments.cash },
+    { key: "card", label: "Cartão", color: "bg-blue-600", value: payments.card },
+    { key: "pix", label: "PIX", color: "bg-violet-600", value: payments.pix },
   ];
   return (
     <div className="space-y-3">
@@ -152,7 +153,7 @@ export default function RelatoriosClient({ unitName, restaurantName, today, week
     <div className="min-h-screen bg-gray-950 text-white">
       {/* Header */}
       <header className="bg-gray-900 border-b border-gray-800 px-6 py-4 sticky top-0 z-10">
-        <h1 className="text-2xl font-black tracking-tight">📊 Relatórios — {unitName}</h1>
+        <h1 className="text-2xl font-black tracking-tight">Relatórios — {unitName}</h1>
         <p className="text-gray-400 text-sm">{restaurantName}</p>
       </header>
 
@@ -177,19 +178,19 @@ export default function RelatoriosClient({ unitName, restaurantName, today, week
         {/* DIÁRIO */}
         {tab === "Diário" && (
           <>
-            <SectionTitle title="☀️ Hoje" sub={new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })} />
+            <SectionTitle title="Hoje" sub={new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })} />
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <StatCard icon="📦" label="Pedidos" value={String(today.orders)} />
-              <StatCard icon="✅" label="Entregues" value={String(today.completed)} />
-              <StatCard icon="💰" label="Receita" value={R(today.revenue)} />
-              <StatCard icon="🎯" label="Ticket Médio" value={R(today.avgTicket)} />
+              <StatCard icon={<Package size={22} />} label="Pedidos" value={String(today.orders)} />
+              <StatCard icon={<CheckCircle2 size={22} />} label="Entregues" value={String(today.completed)} />
+              <StatCard icon={<DollarSign size={22} />} label="Receita" value={R(today.revenue)} />
+              <StatCard icon={<Target size={22} />} label="Ticket Médio" value={R(today.avgTicket)} />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card title="💳 Formas de Pagamento">
+              <Card title="Formas de Pagamento">
                 <PaymentBars payments={today.payments} />
               </Card>
-              <Card title="🏆 Produtos do Dia">
+              <Card title="Produtos do Dia">
                 <ProductList products={today.products.slice(0, 5)} />
               </Card>
             </div>
@@ -199,7 +200,7 @@ export default function RelatoriosClient({ unitName, restaurantName, today, week
                 onClick={() => downloadCSV(today.products, `relatorio-diario-${new Date().toISOString().split("T")[0]}.csv`)}
                 className="px-4 py-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-sm text-gray-300 transition-colors"
               >
-                📥 Baixar CSV
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Download size={13} /> Baixar CSV</span>
               </button>
             </div>
           </>
@@ -208,28 +209,28 @@ export default function RelatoriosClient({ unitName, restaurantName, today, week
         {/* SEMANAL */}
         {tab === "Semanal" && (
           <>
-            <SectionTitle title="📈 Últimos 7 Dias" />
+            <SectionTitle title="Últimos 7 Dias" />
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <StatCard icon="📦" label="Pedidos" value={String(weekly.orders)} />
-              <StatCard icon="✅" label="Entregues" value={String(weekly.completed)} />
-              <StatCard icon="💰" label="Receita" value={R(weekly.revenue)} />
-              <StatCard icon="🎯" label="Ticket Médio" value={R(weekly.avgTicket)} />
+              <StatCard icon={<Package size={22} />} label="Pedidos" value={String(weekly.orders)} />
+              <StatCard icon={<CheckCircle2 size={22} />} label="Entregues" value={String(weekly.completed)} />
+              <StatCard icon={<DollarSign size={22} />} label="Receita" value={R(weekly.revenue)} />
+              <StatCard icon={<Target size={22} />} label="Ticket Médio" value={R(weekly.avgTicket)} />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card title="📦 Pedidos por Dia">
+              <Card title="Pedidos por Dia">
                 <BarChart data={weekly.byDay} valueKey="orders" color="bg-blue-500" formatter={String} />
               </Card>
-              <Card title="💰 Receita por Dia">
+              <Card title="Receita por Dia">
                 <BarChart data={weekly.byDay} valueKey="revenue" color="bg-green-500" formatter={R} />
               </Card>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card title="💳 Formas de Pagamento">
+              <Card title="Formas de Pagamento">
                 <PaymentBars payments={weekly.payments} />
               </Card>
-              <Card title="🏆 Top Produtos (7d)">
+              <Card title="Top Produtos (7d)">
                 <ProductList products={weekly.products.slice(0, 5)} />
               </Card>
             </div>
@@ -239,7 +240,7 @@ export default function RelatoriosClient({ unitName, restaurantName, today, week
                 onClick={() => downloadCSV(weekly.products, `relatorio-semanal.csv`)}
                 className="px-4 py-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-sm text-gray-300 transition-colors"
               >
-                📥 Baixar CSV
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Download size={13} /> Baixar CSV</span>
               </button>
             </div>
           </>
@@ -248,10 +249,10 @@ export default function RelatoriosClient({ unitName, restaurantName, today, week
         {/* MENSAL */}
         {tab === "Mensal" && (
           <>
-            <SectionTitle title="📅 Últimos 30 Dias" />
+            <SectionTitle title="Últimos 30 Dias" />
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-5">
-                <div className="text-2xl mb-2">📦</div>
+                <div className="mb-2 text-gray-400"><Package size={22} /></div>
                 <div className="flex items-baseline gap-2">
                   <span className="text-2xl font-black text-white">{monthly.orders}</span>
                   <GrowthBadge value={monthly.growthOrders} />
@@ -259,26 +260,26 @@ export default function RelatoriosClient({ unitName, restaurantName, today, week
                 <div className="text-gray-400 text-sm mt-1">Pedidos</div>
               </div>
               <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-5">
-                <div className="text-2xl mb-2">💰</div>
+                <div className="mb-2 text-gray-400"><DollarSign size={22} /></div>
                 <div className="flex items-baseline gap-2 flex-wrap">
                   <span className="text-2xl font-black text-white">{R(monthly.revenue)}</span>
                   <GrowthBadge value={monthly.growthRevenue} />
                 </div>
                 <div className="text-gray-400 text-sm mt-1">Receita</div>
               </div>
-              <StatCard icon="✅" label="Entregues" value={String(monthly.completed)} />
-              <StatCard icon="🎯" label="Ticket Médio" value={R(monthly.avgTicket)} />
+              <StatCard icon={<CheckCircle2 size={22} />} label="Entregues" value={String(monthly.completed)} />
+              <StatCard icon={<Target size={22} />} label="Ticket Médio" value={R(monthly.avgTicket)} />
             </div>
 
-            <Card title="📈 Pedidos — 30 Dias">
+            <Card title="Pedidos — 30 Dias">
               <BarChart data={monthly.byDay} valueKey="orders" color="bg-purple-500" formatter={String} />
             </Card>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card title="💳 Formas de Pagamento">
+              <Card title="Formas de Pagamento">
                 <PaymentBars payments={monthly.payments} />
               </Card>
-              <Card title="🏆 Top Produtos (30d)">
+              <Card title="Top Produtos (30d)">
                 <ProductList products={monthly.products.slice(0, 5)} />
               </Card>
             </div>
@@ -288,7 +289,7 @@ export default function RelatoriosClient({ unitName, restaurantName, today, week
                 onClick={() => downloadCSV(monthly.products, `relatorio-mensal.csv`)}
                 className="px-4 py-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-sm text-gray-300 transition-colors"
               >
-                📥 Baixar CSV
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Download size={13} /> Baixar CSV</span>
               </button>
             </div>
           </>
@@ -297,7 +298,7 @@ export default function RelatoriosClient({ unitName, restaurantName, today, week
         {/* PRODUTOS */}
         {tab === "Produtos" && (
           <>
-            <SectionTitle title="🍔 Análise de Produtos" sub="Baseado nos últimos 30 dias" />
+            <SectionTitle title="Análise de Produtos" sub="Baseado nos últimos 30 dias" />
 
             <div className="bg-gray-900/60 rounded-2xl border border-gray-800 overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
@@ -306,7 +307,7 @@ export default function RelatoriosClient({ unitName, restaurantName, today, week
                   onClick={() => downloadCSV(monthly.products, "produtos.csv")}
                   className="px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-sm text-gray-300 transition-colors"
                 >
-                  📥 CSV
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Download size={12} /> CSV</span>
                 </button>
               </div>
               {monthly.products.length === 0 ? (
@@ -352,7 +353,7 @@ export default function RelatoriosClient({ unitName, restaurantName, today, week
 
             {/* Bottom performers */}
             {monthly.products.length > 5 && (
-              <Card title="⚠️ Produtos com Baixo Desempenho">
+              <Card title="Produtos com Baixo Desempenho">
                 <div className="space-y-2">
                   {monthly.products.slice(-3).reverse().map((p) => (
                     <div key={p.name} className="flex justify-between text-sm">
