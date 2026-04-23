@@ -262,7 +262,7 @@ export default function ChatWidget({
             {view === "list" && (
               <button onClick={() => setView("new")} style={{ padding: "5px 12px", borderRadius: 8, border: "none", background: `rgba(0,255,174,0.12)`, color: ACCENT, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>+ Nova</button>
             )}
-            <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 8, border: "none", background: "rgba(255,255,255,0.06)", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><X size={14} /></button>
+            <button onClick={onClose} className="btn-close-x"><X size={16} strokeWidth={2.5} /></button>
           </div>
         </div>
 

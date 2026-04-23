@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import { UtensilsCrossed } from "lucide-react";
+import { UtensilsCrossed, X } from "lucide-react";
 import { Product, ProductVariation } from "./menuTypes";
 import { OrderPayload, UpsellItem } from "./orderBuilder";
 import { useSwipeGesture } from "./useSwipeGesture";
@@ -352,20 +352,10 @@ export default function ProductModal({
           {/* Close — esquerda */}
           <button
             onClick={handleClose}
-            className="flex items-center justify-center"
-            style={{
-              width: 36, height: 36, borderRadius: "50%",
-              background: "rgba(0,0,0,0.45)",
-              backdropFilter: "blur(12px)",
-              WebkitBackdropFilter: "blur(12px)",
-              border: "0.5px solid rgba(255,255,255,0.12)",
-              cursor: "pointer",
-            }}
+            className="btn-close-x"
             aria-label="Fechar"
           >
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path d="M1 1L13 13M13 1L1 13" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
-            </svg>
+            <X size={16} strokeWidth={2.5} />
           </button>
 
           {/* Indicador numérico — centro */}

@@ -901,12 +901,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
           }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: "var(--dash-text)", display: "flex", alignItems: "center", gap: 6 }}><Sparkles size={13} />Sugestões da IA</div>
-              <button onClick={() => setAiSuggestionResult(null)} style={{
-                width: 24, height: 24, borderRadius: 6, border: "none", cursor: "pointer",
-                background: "rgba(220,38,38,0.10)", color: "#ffffff",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 11, transition: "all 0.2s",
-              }}><X size={13} /></button>
+              <button onClick={() => setAiSuggestionResult(null)} className="btn-close-x"><X size={16} strokeWidth={2.5} /></button>
             </div>
             <div style={{ whiteSpace: "pre-wrap", fontSize: 12, color: "var(--dash-text-secondary)", lineHeight: 1.7 }}>
               {aiSuggestionResult}
@@ -919,12 +914,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
         <div style={{ padding: "0 4px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
             <div style={{ fontSize: 15, fontWeight: 800, color: "var(--dash-text)" }}>Copiar cardápio de outra unidade</div>
-            <button onClick={() => { setShowCopyFromUnit(false); setSourcePreview(null); setSelectedSourceUnit(""); }} style={{
-              width: 32, height: 32, borderRadius: 10, border: "none", cursor: "pointer",
-              background: "rgba(220,38,38,0.12)", color: "#ffffff",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 14, fontWeight: 600, transition: "all 0.2s", flexShrink: 0,
-            }}><X size={13} /></button>
+            <button onClick={() => { setShowCopyFromUnit(false); setSourcePreview(null); setSelectedSourceUnit(""); }} className="btn-close-x"><X size={16} strokeWidth={2.5} /></button>
           </div>
 
           <div style={{ marginBottom: 16 }}>
@@ -1103,11 +1093,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                       Monte um combo com produtos do seu cardápio
                     </div>
                   </div>
-                  <button onClick={() => { setShowCreateCombo(false); setEditingCombo(null); resetComboForm(); }} style={{
-                    width: 36, height: 36, borderRadius: 12, border: "none", cursor: "pointer",
-                    background: "rgba(220,38,38,0.12)", color: "#fff",
-                    display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16,
-                  }}><X size={13} /></button>
+                  <button onClick={() => { setShowCreateCombo(false); setEditingCombo(null); resetComboForm(); }} className="btn-close-x"><X size={16} strokeWidth={2.5} /></button>
                 </div>
 
                 {/* SEÇÃO 1: Info do combo */}
@@ -1549,12 +1535,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                     boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
                   }}>Salvar</button>
                   {/* Cancel edit */}
-                  <button type="button" onClick={() => { setExpandedCat(null); setShowAllProducts(prev => ({ ...prev, [cat.id]: false })); }} style={{
-                    width: 32, height: 32, borderRadius: 10, border: "none", cursor: "pointer",
-                    background: "rgba(220,38,38,0.12)", color: "#ffffff",
-                    display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0,
-                    transition: "all 0.2s",
-                  }}><X size={13} /></button>
+                  <button type="button" onClick={() => { setExpandedCat(null); setShowAllProducts(prev => ({ ...prev, [cat.id]: false })); }} className="btn-close-x"><X size={16} strokeWidth={2.5} /></button>
                   {/* Active toggle */}
                   <label className="switch-toggle" style={{ flexShrink: 0 }}>
                     <input

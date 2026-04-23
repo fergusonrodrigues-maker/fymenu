@@ -128,8 +128,6 @@ function Modal({ open, onClose, children, title, size = "md" }: {
   const modalBg = isDark ? "rgba(10,10,10,0.94)" : "rgba(253,253,253,0.97)";
   const borderColor = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.08)";
   const textColor = isDark ? "#ffffff" : "#111111";
-  const closeBg = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)";
-  const closeColor = isDark ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.45)";
 
   // ── Desktop ──────────────────────────────────────────────────────────────
   if (isDesktop) {
@@ -168,24 +166,7 @@ function Modal({ open, onClose, children, title, size = "md" }: {
             <div style={{ fontSize: 18, fontWeight: 800, color: textColor, letterSpacing: "-0.3px" }}>
               {title}
             </div>
-            <button
-              onClick={onClose}
-              style={{
-                width: 36, height: 36, borderRadius: 10,
-                background: closeBg, border: "none", color: closeColor,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                cursor: "pointer", fontSize: 14, fontWeight: 600,
-                transition: "all 0.15s ease", flexShrink: 0,
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.1)";
-                e.currentTarget.style.color = isDark ? "#fff" : "#111";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = closeBg;
-                e.currentTarget.style.color = closeColor;
-              }}
-            ><X size={14} /></button>
+            <button onClick={onClose} className="btn-close-x"><X size={16} strokeWidth={2.5} /></button>
           </div>
           {/* ── Scrollable body ── */}
           <div className="modal-desktop-scroll" style={{ padding: "24px 28px 32px", overflowY: "auto", overscrollBehavior: "contain", flex: 1, minHeight: 0 }}>
@@ -247,15 +228,7 @@ function Modal({ open, onClose, children, title, size = "md" }: {
             borderBottom: "1px solid var(--dash-card-border)",
           }}>
             <h2 style={{ color: "var(--dash-text)", fontSize: 18, fontWeight: 800, margin: 0 }}>{title}</h2>
-            <button
-              onClick={onClose}
-              style={{
-                width: 32, height: 32, borderRadius: 10, border: "none", cursor: "pointer",
-                background: "rgba(220,38,38,0.12)", color: "#ffffff",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 14, fontWeight: 600, transition: "all 0.2s", flexShrink: 0,
-              }}
-            ><X size={14} /></button>
+            <button onClick={onClose} className="btn-close-x"><X size={16} strokeWidth={2.5} /></button>
           </div>
         </div>
         <div className="dashboard-modal" style={{ padding: "16px 20px 32px" }}>
@@ -1444,12 +1417,7 @@ export default function DashboardClient({
                     padding: "14px 16px", borderBottom: "1px solid var(--dash-section-border)",
                   }}>
                     <span style={{ fontSize: 14, fontWeight: 800, color: "var(--dash-text)" }}>Notificações</span>
-                    <button onClick={() => setShowNotifications(false)} style={{
-                      width: 28, height: 28, borderRadius: 8, border: "none", cursor: "pointer",
-                      background: "rgba(220,38,38,0.12)", color: "#ffffff",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      fontSize: 12, transition: "all 0.2s", flexShrink: 0,
-                    }}><X size={14} /></button>
+                    <button onClick={() => setShowNotifications(false)} className="btn-close-x"><X size={16} strokeWidth={2.5} /></button>
                   </div>
 
                   <div style={{ maxHeight: 340, overflowY: "auto", padding: "8px" }}>

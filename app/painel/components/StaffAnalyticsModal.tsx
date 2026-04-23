@@ -1364,7 +1364,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
           }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
               <div style={{ fontSize: 16, fontWeight: 800, color: "var(--dash-text, #fff)" }}>Editar funcionário</div>
-              <button onClick={() => setEditingEmployee(null)} style={{ background: "none", border: "none", color: "var(--dash-text-muted)", display: "flex", alignItems: "center", cursor: "pointer" }}><X size={18} /></button>
+              <button onClick={() => setEditingEmployee(null)} className="btn-close-x"><X size={16} strokeWidth={2.5} /></button>
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>

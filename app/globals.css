@@ -938,3 +938,28 @@ html:not(.dark) .dash-tab.active {
   box-shadow: 0 1px 3px rgba(0,0,0,0.08);
 }
 html:not(.dark) .dash-tab:hover:not(.active) { color: #555555; }
+
+/* ===== MODAL CLOSE BUTTON — high-contrast red X, both themes ===== */
+.btn-close-x {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  background: #ef4444;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(239,68,68,0.25);
+  transition: all 0.2s ease;
+}
+.btn-close-x:hover {
+  background: #dc2626;
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(239,68,68,0.4);
+}
+.btn-close-x:active {
+  transform: scale(0.95);
+}

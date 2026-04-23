@@ -217,11 +217,7 @@ export default function PaymentModal({ planKey, planName, accent, accentRgb, onC
             <div style={{ fontSize: 18, fontWeight: 900, color: "#fff" }}>Assinar {planName}</div>
             <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>Pagamento seguro via Asaas</div>
           </div>
-          <button onClick={onClose} style={{
-            width: 32, height: 32, borderRadius: 10, border: "none", cursor: "pointer",
-            background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.5)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}><X size={14} /></button>
+          <button onClick={onClose} className="btn-close-x"><X size={16} strokeWidth={2.5} /></button>
         </div>
 
         {/* Step indicator */}

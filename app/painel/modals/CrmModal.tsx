@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { AlertTriangle, FolderOpen, CheckCircle2, Download, Gem, RefreshCw, Sparkles, ClipboardList, Moon, UserMinus } from "lucide-react";
+import { AlertTriangle, FolderOpen, CheckCircle2, Download, Gem, RefreshCw, Sparkles, ClipboardList, Moon, UserMinus, X } from "lucide-react";
 import { createPortal } from "react-dom";
 import { createClient } from "@/lib/supabase/client";
 import LoadingSpinner, { ContentEnter } from "@/components/LoadingSpinner";
@@ -140,7 +140,7 @@ function QuickSendModal({
           <div style={{ fontSize: 15, fontWeight: 800, color: "var(--dash-text)" }}>Enviar WhatsApp</div>
           <div style={{ fontSize: 12, color: "var(--dash-text-muted)" }}>{customer.name} · {fmtPhone(customer.phone)}</div>
         </div>
-        <button onClick={onClose} style={{ marginLeft: "auto", background: "none", border: "none", color: "var(--dash-text-muted)", fontSize: 20, cursor: "pointer", lineHeight: 1 }}>×</button>
+        <button onClick={onClose} className="btn-close-x" style={{ marginLeft: "auto" }}><X size={16} strokeWidth={2.5} /></button>
       </div>
 
       <textarea
@@ -294,7 +294,7 @@ function CustomerFormModal({
         <div style={{ fontSize: 16, fontWeight: 800, color: "var(--dash-text)" }}>
           {isEdit ? "Editar cliente" : "Adicionar cliente"}
         </div>
-        <button onClick={onClose} style={{ background: "none", border: "none", color: "var(--dash-text-muted)", fontSize: 22, cursor: "pointer", lineHeight: 1 }}>×</button>
+        <button onClick={onClose} className="btn-close-x"><X size={16} strokeWidth={2.5} /></button>
       </div>
 
       {/* Read-only stats when editing */}
@@ -566,7 +566,7 @@ function ImportModal({ unitId, onImported, onClose }: { unitId: string; onImport
     <ModalOverlay onClose={onClose}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
         <div style={{ fontSize: 16, fontWeight: 800, color: "var(--dash-text)" }}>Importar clientes</div>
-        <button onClick={onClose} style={{ background: "none", border: "none", color: "var(--dash-text-muted)", fontSize: 22, cursor: "pointer", lineHeight: 1 }}>×</button>
+        <button onClick={onClose} className="btn-close-x"><X size={16} strokeWidth={2.5} /></button>
       </div>
 
       {/* Step: upload */}

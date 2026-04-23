@@ -935,11 +935,7 @@ function MesasTab({
             <div style={{ fontSize: 16, fontWeight: 800, color: "var(--dash-text)" }}>
               Mesa {selectedMesa.number}
             </div>
-            <button onClick={() => setSelectedMesa(null)} style={{
-              width: 28, height: 28, borderRadius: 8, border: "none", cursor: "pointer",
-              background: "rgba(220,38,38,0.12)", color: "var(--dash-danger)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}><X size={14} /></button>
+            <button onClick={() => setSelectedMesa(null)} className="btn-close-x"><X size={16} strokeWidth={2.5} /></button>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>

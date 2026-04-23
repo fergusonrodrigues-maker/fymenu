@@ -434,12 +434,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
           <div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
               <div style={{ fontSize: 16, fontWeight: 800, color: "var(--dash-text)" }}>Importar dados financeiros</div>
-              <button onClick={() => setShowImportFinance(false)} style={{
-                width: 32, height: 32, borderRadius: 10, border: "none", cursor: "pointer",
-                background: "rgba(220,38,38,0.12)", color: "#ffffff",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 14, fontWeight: 600, transition: "all 0.2s", flexShrink: 0,
-              }}><X size={13} /></button>
+              <button onClick={() => setShowImportFinance(false)} className="btn-close-x"><X size={16} strokeWidth={2.5} /></button>
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 20 }}>
