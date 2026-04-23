@@ -3,6 +3,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PasswordReqs, { passwordValid, translatePasswordError } from "@/components/PasswordReqs";
+import { X, Users, TrendingUp, BarChart3, DollarSign, Target, Handshake, Tag, Camera, Clock, Building2, Gem, CheckCircle2, CreditCard, TrendingDown, Receipt, Package, Store, Calendar, Phone, RefreshCw, Eye, EyeOff, MessageCircle, Pencil, Shield, Trash2 } from "lucide-react";
 
 type Stats = {
   totalRestaurants: number;
@@ -379,7 +380,7 @@ function ManagePanel({
             background: "rgba(220,38,38,0.12)", color: "#ffffff",
             display: "flex", alignItems: "center", justifyContent: "center",
             fontSize: 14, fontWeight: 600, transition: "all 0.2s", flexShrink: 0,
-          }}>✕</button>
+          }}><X size={14} /></button>
         </div>
 
         <div className="p-6 space-y-6 flex-1">
@@ -1098,7 +1099,7 @@ export default function AdminClient({
       {/* Header */}
       <header className="border-b px-6 py-4 flex items-center justify-between sticky top-0 z-10" style={{ background: "rgba(8,8,8,0.95)", borderColor: "rgba(255,255,255,0.06)", backdropFilter: "blur(20px)" }}>
         <div>
-          <h1 className="text-2xl font-black tracking-tight">📊 Painel Admin</h1>
+          <h1 className="text-2xl font-black tracking-tight">Painel Admin</h1>
           <p className="text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>Plataforma FyMenu — painel administrativo</p>
         </div>
         <div className="flex items-center gap-3">
@@ -1139,14 +1140,14 @@ export default function AdminClient({
         {tab === "Visão Geral" && (
           <div className="space-y-6">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <StatCard icon="👥" label="Total de Restaurantes" value={stats.totalRestaurants.toLocaleString("pt-BR")} sub="na plataforma" color="text-[#00ffae]" />
-              <StatCard icon="📈" label="Novos (7 dias)" value={stats.activeRestaurants.toLocaleString("pt-BR")} sub="trial ou ativos recentemente" color="text-[#00ffae]" />
-              <StatCard icon="📊" label="Total de Pedidos" value={stats.totalOrders.toLocaleString("pt-BR")} sub="todos os confirmados" color="text-[#00ffae]" />
-              <StatCard icon="💰" label="Receita (30d)" value={fmt(stats.revenue30d)} sub="via PDV registrado" color="text-[#00ffae]" />
+              <StatCard icon={<Users size={20} />} label="Total de Restaurantes" value={stats.totalRestaurants.toLocaleString("pt-BR")} sub="na plataforma" color="text-[#00ffae]" />
+              <StatCard icon={<TrendingUp size={20} />} label="Novos (7 dias)" value={stats.activeRestaurants.toLocaleString("pt-BR")} sub="trial ou ativos recentemente" color="text-[#00ffae]" />
+              <StatCard icon={<BarChart3 size={20} />} label="Total de Pedidos" value={stats.totalOrders.toLocaleString("pt-BR")} sub="todos os confirmados" color="text-[#00ffae]" />
+              <StatCard icon={<DollarSign size={20} />} label="Receita (30d)" value={fmt(stats.revenue30d)} sub="via PDV registrado" color="text-[#00ffae]" />
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <StatCard icon="🎯" label="Ticket Médio" value={fmt(ticketMedio)} sub="receita / pedidos" color="text-[#00ffae]" />
-              <StatCard icon="📊" label="Taxa de Atividade" value={`${taxaAtividade}%`} sub="novos / total nos últimos 7d" color="text-[#00ffae]" />
+              <StatCard icon={<Target size={20} />} label="Ticket Médio" value={fmt(ticketMedio)} sub="receita / pedidos" color="text-[#00ffae]" />
+              <StatCard icon={<BarChart3 size={20} />} label="Taxa de Atividade" value={`${taxaAtividade}%`} sub="novos / total nos últimos 7d" color="text-[#00ffae]" />
             </div>
             <div className="rounded-2xl p-6" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(0,255,174,0.1)" }}>
               <h3 className="font-bold mb-4" style={{ color: "rgba(255,255,255,0.9)" }}>Últimos Pagamentos</h3>
@@ -1165,7 +1166,7 @@ export default function AdminClient({
                             ? { background: "rgba(0,217,255,0.1)", color: "#00d9ff", border: "1px solid rgba(0,217,255,0.2)" }
                             : { background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.5)", border: "1px solid rgba(255,255,255,0.08)" }
                         }>
-                          {p.method === "cash" ? "💵 Dinheiro" : p.method === "card" ? "💳 Cartão" : "📲 PIX"}
+                          {p.method === "cash" ? "Dinheiro" : p.method === "card" ? "Cartão" : "PIX"}
                         </span>
                       </div>
                       <span className="font-semibold" style={{ color: "#00ffae" }}>{fmt(p.amount)}</span>
@@ -1332,21 +1333,21 @@ export default function AdminClient({
           return (
             <div className="space-y-6">
               <div>
-                <h2 className="text-lg font-bold text-gray-200 mb-1">💎 FyMenu Financeiro — Receita da Plataforma</h2>
+                <h2 className="text-lg font-bold text-gray-200 mb-1">FyMenu Financeiro — Receita da Plataforma</h2>
                 <p className="text-gray-500 text-sm mb-4">Receita recorrente gerada pelos planos contratados pelos restaurantes.</p>
               </div>
 
               {/* Cards */}
               <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
                 {[
-                  { icon: "💎", label: "MRR Estimado", value: fmt(mrr), sub: "planos ativos × preço", color: "text-[#00ffae]" },
-                  { icon: "✅", label: "Receita 30d", value: fmt(subRevenue30d), sub: "assinaturas pagas", color: "text-green-400" },
-                  { icon: "💳", label: "Clientes Pagantes", value: String(payingCount), sub: "ativos sem free access", color: "text-blue-400" },
-                  { icon: "📉", label: "Churn Rate", value: `${churnRate}%`, sub: "cancelados + pausados", color: "text-red-400" },
-                  { icon: "🎯", label: "Ticket Médio", value: fmt(ticketMedioMRR), sub: "MRR / clientes", color: "text-yellow-400" },
+                  { icon: <Gem size={22} />,          label: "MRR Estimado",     value: fmt(mrr), sub: "planos ativos × preço", color: "text-[#00ffae]" },
+                  { icon: <CheckCircle2 size={22} />,  label: "Receita 30d",      value: fmt(subRevenue30d), sub: "assinaturas pagas", color: "text-green-400" },
+                  { icon: <CreditCard size={22} />,    label: "Clientes Pagantes", value: String(payingCount), sub: "ativos sem free access", color: "text-blue-400" },
+                  { icon: <TrendingDown size={22} />,  label: "Churn Rate",       value: `${churnRate}%`, sub: "cancelados + pausados", color: "text-red-400" },
+                  { icon: <Target size={22} />,        label: "Ticket Médio",     value: fmt(ticketMedioMRR), sub: "MRR / clientes", color: "text-yellow-400" },
                 ].map(({ icon, label, value, sub, color }) => (
                   <div key={label} className="bg-gray-900/60 rounded-2xl border border-gray-800 p-5">
-                    <div className="text-2xl mb-2">{icon}</div>
+                    <div className="mb-2 text-gray-400">{icon}</div>
                     <p className="text-gray-500 text-xs uppercase tracking-wider">{label}</p>
                     <p className={`text-2xl font-black mt-1 ${color}`}>{value}</p>
                     <p className="text-gray-600 text-xs mt-0.5">{sub}</p>
@@ -1356,7 +1357,7 @@ export default function AdminClient({
 
               {/* Gráfico receita assinaturas */}
               <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
-                <h3 className="font-bold text-gray-200 mb-4">📈 Receita de Assinaturas por Mês</h3>
+                <h3 className="font-bold text-gray-200 mb-4">Receita de Assinaturas por Mês</h3>
                 {subChartData.length === 0 ? (
                   <p className="text-gray-600 text-sm">Sem pagamentos de assinatura registrados ainda.</p>
                 ) : (
@@ -1374,7 +1375,7 @@ export default function AdminClient({
               {/* Distribuição MRR por plano */}
               {mrrPlanEntries.length > 0 && (
                 <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
-                  <h3 className="font-bold text-gray-200 mb-4">💰 Distribuição MRR por Plano</h3>
+                  <h3 className="font-bold text-gray-200 mb-4">Distribuição MRR por Plano</h3>
                   <div className="space-y-4">
                     {mrrPlanEntries.map(({ plan, count, revenue }) => {
                       const pct = mrr > 0 ? Math.round((revenue / mrr) * 100) : 0;
@@ -1591,32 +1592,32 @@ export default function AdminClient({
           return (
             <div className="space-y-6">
               <div>
-                <h2 className="text-lg font-bold text-gray-200 mb-1">💰 Restaurantes Financeiro — Vendas dos Restaurantes</h2>
+                <h2 className="text-lg font-bold text-gray-200 mb-1">Restaurantes Financeiro — Vendas dos Restaurantes</h2>
                 <p className="text-gray-500 text-sm mb-4">Vendas realizadas pelos restaurantes aos seus clientes finais via PDV/delivery.</p>
               </div>
 
               {/* Cards */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-5">
-                  <div className="text-2xl mb-2">🧾</div>
+                  <div className="mb-2 text-gray-400"><Receipt size={22} /></div>
                   <p className="text-gray-500 text-xs uppercase tracking-wider">Total de Vendas</p>
                   <p className="text-2xl font-black mt-1 text-green-400">{fmt(Math.round(totalVendas))}</p>
                   <p className="text-gray-600 text-xs mt-0.5">pedidos confirmados</p>
                 </div>
                 <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-5">
-                  <div className="text-2xl mb-2">🎯</div>
+                  <div className="mb-2 text-gray-400"><Target size={22} /></div>
                   <p className="text-gray-500 text-xs uppercase tracking-wider">Ticket Médio</p>
                   <p className="text-2xl font-black mt-1 text-yellow-400">{fmt(Math.round(ticketMedioRest))}</p>
                   <p className="text-gray-600 text-xs mt-0.5">por pedido</p>
                 </div>
                 <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-5">
-                  <div className="text-2xl mb-2">📦</div>
+                  <div className="mb-2 text-gray-400"><Package size={22} /></div>
                   <p className="text-gray-500 text-xs uppercase tracking-wider">Total de Pedidos</p>
                   <p className="text-2xl font-black mt-1 text-blue-400">{totalPedidos.toLocaleString("pt-BR")}</p>
                   <p className="text-gray-600 text-xs mt-0.5">confirmados</p>
                 </div>
                 <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-5">
-                  <div className="text-2xl mb-2">💳</div>
+                  <div className="mb-2 text-gray-400"><CreditCard size={22} /></div>
                   <p className="text-gray-500 text-xs uppercase tracking-wider">Métodos</p>
                   <div className="flex flex-wrap gap-1 mt-2">
                     {Object.entries(metodosCount).slice(0, 3).map(([m, c]) => (
@@ -1698,7 +1699,7 @@ export default function AdminClient({
                               <td className="px-4 py-2.5 text-gray-400 text-xs">{fmtDate(o.created_at)}</td>
                               <td className="px-4 py-2.5 text-gray-300">{unitToRest[o.unit_id]?.name ?? "—"}</td>
                               <td className="px-4 py-2.5 text-gray-400 text-xs">
-                                {o.payment_method === "pix" ? "📲 PIX" : o.payment_method === "card" ? "💳 Cartão" : o.payment_method === "cash" ? "💵 Dinheiro" : o.payment_method ?? "—"}
+                                {o.payment_method === "pix" ? "PIX" : o.payment_method === "card" ? "Cartão" : o.payment_method === "cash" ? "Dinheiro" : o.payment_method ?? "—"}
                               </td>
                               <td className="px-4 py-2.5">
                                 <span className={`text-xs px-2 py-0.5 rounded font-semibold ${STATUS_BADGE[o.status] ?? "bg-gray-700 text-gray-400"}`}>{o.status}</span>
@@ -1870,7 +1871,7 @@ export default function AdminClient({
             <div className="space-y-6">
               {/* Tempo Médio no Plano */}
               <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
-                <h3 className="font-bold text-gray-200 mb-4">📅 Tempo Médio no Plano</h3>
+                <h3 className="font-bold text-gray-200 mb-4">Tempo Médio no Plano</h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   {planTenureAvg.map(({ plan, avg }) => (
                     <div key={plan} className="bg-gray-800/60 rounded-xl p-4 text-center">
@@ -1885,7 +1886,7 @@ export default function AdminClient({
 
               {/* Status */}
               <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
-                <h3 className="font-bold text-gray-200 mb-4">⚡ Tempo Ativo vs Inativo</h3>
+                <h3 className="font-bold text-gray-200 mb-4">Tempo Ativo vs Inativo</h3>
                 <div className="space-y-3">
                   {["active", "trial", "paused", "canceled"].map((s) => {
                     const count = statusMap[s] ?? 0;
@@ -1907,13 +1908,13 @@ export default function AdminClient({
 
               {/* Crescimento 30d */}
               <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
-                <h3 className="font-bold text-gray-200 mb-4">📈 Crescimento de Cadastros (últimos 30 dias)</h3>
+                <h3 className="font-bold text-gray-200 mb-4">Crescimento de Cadastros (últimos 30 dias)</h3>
                 <BarChart data={growthData} />
               </div>
 
               {/* Clientes por Cidade */}
               <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
-                <h3 className="font-bold text-gray-200 mb-4">🌆 Clientes por Cidade (top 10)</h3>
+                <h3 className="font-bold text-gray-200 mb-4">Clientes por Cidade (top 10)</h3>
                 {cityData.length === 0 ? (
                   <p className="text-gray-600 text-sm">Sem dados de cidade.</p>
                 ) : (
@@ -1938,7 +1939,7 @@ export default function AdminClient({
 
               {/* Atividade por Restaurante */}
               <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
-                <h3 className="font-bold text-gray-200 mb-4">🏃 Atividade por Restaurante (top 20)</h3>
+                <h3 className="font-bold text-gray-200 mb-4">Atividade por Restaurante (top 20)</h3>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
@@ -1973,7 +1974,7 @@ export default function AdminClient({
 
               {/* Top Produtos */}
               <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
-                <h3 className="font-bold text-gray-200 mb-4">🏆 Produtos Mais Pedidos</h3>
+                <h3 className="font-bold text-gray-200 mb-4">Produtos Mais Pedidos</h3>
                 {topProducts.length === 0 ? (
                   <p className="text-gray-600 text-sm">Nenhum pedido registrado ainda.</p>
                 ) : (
@@ -2049,20 +2050,20 @@ export default function AdminClient({
           return (
             <div className="space-y-6">
               <div>
-                <h2 className="text-lg font-bold text-gray-200 mb-1">🏢 CRM FyMenu — Clientes da Plataforma</h2>
+                <h2 className="text-lg font-bold text-gray-200 mb-1">CRM FyMenu — Clientes da Plataforma</h2>
                 <p className="text-gray-500 text-sm mb-4">Restaurantes que contrataram o FyMenu.</p>
               </div>
 
               {/* Cards */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
-                  { icon: "🏪", label: "Total Restaurantes", value: String(crmData.owners.length), sub: "cadastrados", color: "text-[#00ffae]" },
-                  { icon: "✅", label: "Ativos / Trial", value: `${active} / ${trial}`, sub: `${canceled} cancelados`, color: "text-green-400" },
-                  { icon: "📅", label: "Novos (30d)", value: String(newLast30), sub: "novos cadastros", color: "text-blue-400" },
-                  { icon: "📞", label: "Com Telefone", value: String(withPhone), sub: `${uniqueCities} cidades`, color: "text-yellow-400" },
+                  { icon: <Store size={22} />,        label: "Total Restaurantes", value: String(crmData.owners.length), sub: "cadastrados", color: "text-[#00ffae]" },
+                  { icon: <CheckCircle2 size={22} />,  label: "Ativos / Trial",     value: `${active} / ${trial}`, sub: `${canceled} cancelados`, color: "text-green-400" },
+                  { icon: <Calendar size={22} />,      label: "Novos (30d)",        value: String(newLast30), sub: "novos cadastros", color: "text-blue-400" },
+                  { icon: <Phone size={22} />,         label: "Com Telefone",       value: String(withPhone), sub: `${uniqueCities} cidades`, color: "text-yellow-400" },
                 ].map(({ icon, label, value, sub, color }) => (
                   <div key={label} className="bg-gray-900/60 rounded-2xl border border-gray-800 p-5">
-                    <div className="text-2xl mb-2">{icon}</div>
+                    <div className="mb-2 text-gray-400">{icon}</div>
                     <p className="text-gray-500 text-xs uppercase tracking-wider">{label}</p>
                     <p className={`text-2xl font-black mt-1 ${color}`}>{value}</p>
                     <p className="text-gray-600 text-xs mt-0.5">{sub}</p>
@@ -2199,20 +2200,20 @@ export default function AdminClient({
           return (
             <div className="space-y-6">
               <div>
-                <h2 className="text-lg font-bold text-gray-200 mb-1">👥 CRM Restaurantes — Clientes dos Restaurantes</h2>
+                <h2 className="text-lg font-bold text-gray-200 mb-1">CRM Restaurantes — Clientes dos Restaurantes</h2>
                 <p className="text-gray-500 text-sm mb-4">Consumidores finais que fizeram pedidos/comandas nos restaurantes.</p>
               </div>
 
               {/* Cards */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
-                  { icon: "👥", label: "Total de Clientes", value: totalConsumers.toLocaleString("pt-BR"), sub: "no filtro atual", color: "text-[#00ffae]" },
-                  { icon: "🔁", label: "Recorrentes", value: recurring.toLocaleString("pt-BR"), sub: "total_orders > 1", color: "text-green-400" },
-                  { icon: "🎯", label: "Ticket Médio", value: fmt(Math.round(ticketMedioConsumer)), sub: "gasto / pedidos", color: "text-yellow-400" },
-                  { icon: "📅", label: "Novos (30d)", value: newLast30.toLocaleString("pt-BR"), sub: "novos clientes", color: "text-blue-400" },
+                  { icon: <Users size={22} />,     label: "Total de Clientes", value: totalConsumers.toLocaleString("pt-BR"), sub: "no filtro atual", color: "text-[#00ffae]" },
+                  { icon: <RefreshCw size={22} />,  label: "Recorrentes", value: recurring.toLocaleString("pt-BR"), sub: "total_orders > 1", color: "text-green-400" },
+                  { icon: <Target size={22} />,     label: "Ticket Médio", value: fmt(Math.round(ticketMedioConsumer)), sub: "gasto / pedidos", color: "text-yellow-400" },
+                  { icon: <Calendar size={22} />,   label: "Novos (30d)", value: newLast30.toLocaleString("pt-BR"), sub: "novos clientes", color: "text-blue-400" },
                 ].map(({ icon, label, value, sub, color }) => (
                   <div key={label} className="bg-gray-900/60 rounded-2xl border border-gray-800 p-5">
-                    <div className="text-2xl mb-2">{icon}</div>
+                    <div className="mb-2 text-gray-400">{icon}</div>
                     <p className="text-gray-500 text-xs uppercase tracking-wider">{label}</p>
                     <p className={`text-2xl font-black mt-1 ${color}`}>{value}</p>
                     <p className="text-gray-600 text-xs mt-0.5">{sub}</p>
@@ -2323,10 +2324,10 @@ export default function AdminClient({
           <div className="space-y-6">
             {/* Resumo */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <StatCard icon="🤝" label="Parceiros Ativos" value={String(activePartners)} sub="total" color="text-[#00ffae]" />
-              <StatCard icon="🎟️" label="Cupons Ativos" value={String(activeCoupons)} sub="em circulação" color="text-blue-400" />
-              <StatCard icon="👥" label="Clientes Indicados" value={String(totalReferrals)} sub="restaurantes" color="text-green-400" />
-              <StatCard icon="💰" label="Comissões Pendentes" value={fmtBRL(pendingCommissions)} sub="a pagar" color="text-yellow-400" />
+              <StatCard icon={<Handshake size={20} />} label="Parceiros Ativos" value={String(activePartners)} sub="total" color="text-[#00ffae]" />
+              <StatCard icon={<Tag size={20} />} label="Cupons Ativos" value={String(activeCoupons)} sub="em circulação" color="text-blue-400" />
+              <StatCard icon={<Users size={20} />} label="Clientes Indicados" value={String(totalReferrals)} sub="restaurantes" color="text-green-400" />
+              <StatCard icon={<DollarSign size={20} />} label="Comissões Pendentes" value={fmtBRL(pendingCommissions)} sub="a pagar" color="text-yellow-400" />
             </div>
 
             {/* Sub-tabs */}
@@ -2411,7 +2412,7 @@ export default function AdminClient({
                                         <button
                                           onClick={() => { setExpandedPartnerId(expandedPartnerId === p.id ? null : p.id); setEditPartnerCommission(String(p.commission_percent)); }}
                                           className="text-[#00ffae]/70 text-xs hover:text-[#00ffae]">
-                                          ✎
+                                          <Pencil size={12} />
                                         </button>
                                       )}
                                     </div>
@@ -2419,7 +2420,7 @@ export default function AdminClient({
                                   <td className="px-4 py-3 text-right text-gray-300">{partnerReferralCount}</td>
                                   <td className="px-4 py-3 text-right text-green-400 font-semibold">{fmtBRL(p.total_earned)}</td>
                                   <td className="px-4 py-3">
-                                    {p.is_photographer && <span className="px-2 py-0.5 rounded text-xs bg-blue-900/40 text-blue-300 border border-blue-700/50">📸 Fotógrafo</span>}
+                                    {p.is_photographer && <span className="px-2 py-0.5 rounded text-xs bg-blue-900/40 text-blue-300 border border-blue-700/50">Fotógrafo</span>}
                                   </td>
                                   <td className="px-4 py-3">
                                     <button onClick={() => handleTogglePartner(p.id, !p.is_active)}
@@ -2747,10 +2748,10 @@ export default function AdminClient({
           <div className="space-y-6">
             {/* Resumo */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <StatCard icon="📸" label="Sessões Realizadas" value={String(photoSessionsState.filter((s) => s.status === "completed").length)} sub="total" color="text-[#00ffae]" />
-              <StatCard icon="⏳" label="Pendentes" value={String(photoSessionsState.filter((s) => s.status === "pending" || s.status === "confirmed").length)} sub="agendadas" color="text-yellow-400" />
-              <StatCard icon="💰" label="Faturamento Fotos" value={fmt(photoSessionsState.filter((s) => s.payment_status === "paid").reduce((acc, x) => acc + x.price_charged, 0))} sub="recebido" color="text-green-400" />
-              <StatCard icon="🏙️" label="Cidades Ativas" value={String(photoCitiesState.filter((c) => c.is_active).length)} sub="cobertura" color="text-blue-400" />
+              <StatCard icon={<Camera size={20} />} label="Sessões Realizadas" value={String(photoSessionsState.filter((s) => s.status === "completed").length)} sub="total" color="text-[#00ffae]" />
+              <StatCard icon={<Clock size={20} />} label="Pendentes" value={String(photoSessionsState.filter((s) => s.status === "pending" || s.status === "confirmed").length)} sub="agendadas" color="text-yellow-400" />
+              <StatCard icon={<DollarSign size={20} />} label="Faturamento Fotos" value={fmt(photoSessionsState.filter((s) => s.payment_status === "paid").reduce((acc, x) => acc + x.price_charged, 0))} sub="recebido" color="text-green-400" />
+              <StatCard icon={<Building2 size={20} />} label="Cidades Ativas" value={String(photoCitiesState.filter((c) => c.is_active).length)} sub="cobertura" color="text-blue-400" />
             </div>
 
             {/* Sub-tabs */}
@@ -3009,7 +3010,7 @@ export default function AdminClient({
           <div className="space-y-6">
             {/* Minha Conta */}
             <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-6 mb-6">
-              <h3 className="font-bold text-gray-200 mb-4">🔐 Minha Conta</h3>
+              <h3 className="font-bold text-gray-200 mb-4">Minha Conta</h3>
               <div className="space-y-3">
                 <div>
                   <label className="text-gray-500 text-xs uppercase tracking-wider">Email do admin</label>
@@ -3058,7 +3059,7 @@ export default function AdminClient({
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {/* Trial */}
               <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-6 space-y-3">
-                <h3 className="font-bold text-gray-200 text-sm">⏳ Adicionar Dias de Trial</h3>
+                <h3 className="font-bold text-gray-200 text-sm">Adicionar Dias de Trial</h3>
                 <input
                   placeholder="Restaurant ID (uuid)"
                   value={trialRestaurantId}
@@ -3088,7 +3089,7 @@ export default function AdminClient({
 
               {/* Cache */}
               <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-6 space-y-3">
-                <h3 className="font-bold text-gray-200 text-sm">🗑️ Limpar Cache de Cardápio</h3>
+                <h3 className="font-bold text-gray-200 text-sm">Limpar Cache de Cardápio</h3>
                 <input
                   placeholder="Unit ID (uuid)"
                   value={cacheUnitId}
@@ -3111,7 +3112,7 @@ export default function AdminClient({
             {/* Resumo planos + MRR */}
             <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-gray-200">📦 Distribuição por Plano</h3>
+                <h3 className="font-bold text-gray-200">Distribuição por Plano</h3>
                 <span className="text-[#00ffae] font-black text-lg">{fmt(mrr)} <span className="text-gray-500 text-sm font-normal">MRR est.</span></span>
               </div>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -3127,7 +3128,7 @@ export default function AdminClient({
 
             {/* Status counts */}
             <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
-              <h3 className="font-bold text-gray-200 mb-4">🔄 Distribuição por Status</h3>
+              <h3 className="font-bold text-gray-200 mb-4">Distribuição por Status</h3>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 {Object.entries(statusCounts).sort((a, b) => b[1] - a[1]).map(([st, count]) => (
                   <div key={st} className="bg-gray-900 rounded-xl border border-gray-800 p-4">
@@ -3141,7 +3142,7 @@ export default function AdminClient({
             {/* Cidades */}
             {cities.length > 0 && (
               <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
-                <h3 className="font-bold text-gray-200 mb-4">🏙️ Cidades ({cities.length})</h3>
+                <h3 className="font-bold text-gray-200 mb-4">Cidades ({cities.length})</h3>
                 <div className="space-y-2">
                   {cities.map(({ city, count }) => {
                     const pct = Math.round((count / cities[0].count) * 100);
@@ -3164,7 +3165,7 @@ export default function AdminClient({
             {/* Funcionários de Suporte */}
             <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-gray-200">👨‍💼 Funcionários de Suporte</h3>
+                <h3 className="font-bold text-gray-200">Funcionários de Suporte</h3>
                 <button
                   onClick={() => setShowAddStaff(true)}
                   className="px-3 py-1.5 rounded-lg text-[#050505] text-xs font-semibold transition-colors" style={{ background: "linear-gradient(135deg, #00ffae, #00d9ff)" }}
@@ -3369,7 +3370,7 @@ export default function AdminClient({
                   onClick={() => setEditStaffShowPw((v) => !v)}
                   style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.4)", fontSize: 15, padding: 0 }}
                 >
-                  {editStaffShowPw ? "🙈" : "👁️"}
+                  {editStaffShowPw ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
               </div>
               <input
@@ -3545,7 +3546,7 @@ function AdminChatsTab() {
         <div className="p-4 border-b border-gray-800">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-bold text-gray-200 flex items-center gap-2">
-              💬 Chats
+              <MessageCircle size={14} /> Chats
               {totalUnread > 0 && <span className="px-2 py-0.5 rounded-full bg-red-500 text-white text-xs font-black">{totalUnread}</span>}
             </h3>
           </div>
@@ -3588,7 +3589,7 @@ function AdminChatsTab() {
       <div className="flex-1 min-w-0 flex flex-col bg-gray-950/50">
         {!active ? (
           <div className="flex-1 flex items-center justify-center flex-col gap-3 text-gray-600">
-            <span className="text-4xl">💬</span>
+            <MessageCircle size={48} />
             <p className="text-sm">Selecione uma conversa</p>
           </div>
         ) : (
@@ -3668,10 +3669,10 @@ function AdminChatsTab() {
   );
 }
 
-function StatCard({ icon, label, value, sub, color }: { icon: string; label: string; value: string; sub: string; color: string }) {
+function StatCard({ icon, label, value, sub, color }: { icon: React.ReactNode; label: string; value: string; sub: string; color: string }) {
   return (
     <div className="rounded-2xl p-5" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(0,255,174,0.1)" }}>
-      <div className="text-2xl mb-3 w-10 h-10 flex items-center justify-center rounded-xl" style={{ background: "rgba(0,255,174,0.08)" }}>{icon}</div>
+      <div className="mb-3 w-10 h-10 flex items-center justify-center rounded-xl" style={{ background: "rgba(0,255,174,0.08)", color: "#00ffae" }}>{icon}</div>
       <div className={`text-2xl font-black ${color}`}>{value}</div>
       <div className="text-sm font-semibold mt-1" style={{ color: "rgba(255,255,255,0.8)" }}>{label}</div>
       <div className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.3)" }}>{sub}</div>

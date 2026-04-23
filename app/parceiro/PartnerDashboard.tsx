@@ -1,6 +1,8 @@
 "use client";
+import React from "react";
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { Handshake, CheckCircle2, MessageCircle } from "lucide-react";
 import FyLoader from "@/components/FyLoader";
 
 const PLAN_PRICES: Record<string, number> = {
@@ -221,7 +223,7 @@ export default function PartnerDashboard() {
       <div style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", padding: "0 24px" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", height: 64 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg, #00ffae, #00d9ff)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>🤝</div>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg, #00ffae, #00d9ff)", display: "flex", alignItems: "center", justifyContent: "center", color: "#000" }}><Handshake size={18} /></div>
             <div>
               <p style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>{partner.name}</p>
               <p style={{ margin: 0, fontSize: 11, color: "rgba(255,255,255,0.35)" }}>
@@ -493,7 +495,7 @@ export default function PartnerDashboard() {
               )}
               {pwSuccess && (
                 <div style={{ marginTop: 10, padding: "8px 12px", borderRadius: 10, background: "rgba(0,255,174,0.06)", color: "#00ffae", fontSize: 13 }}>
-                  ✅ Senha alterada com sucesso!
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><CheckCircle2 size={14} /> Senha alterada com sucesso!</span>
                 </div>
               )}
               <button
@@ -521,7 +523,7 @@ export default function PartnerDashboard() {
                 fontSize: 14, fontWeight: 700, textDecoration: "none",
               }}
             >
-              💬 Canal de suporte do parceiro
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><MessageCircle size={16} /> Canal de suporte do parceiro</span>
             </a>
           </div>
         )}

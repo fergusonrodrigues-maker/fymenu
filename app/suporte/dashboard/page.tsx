@@ -1,8 +1,10 @@
 "use client";
 
+import React from "react";
 import { useEffect, useState, useCallback, useRef, Fragment } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { Shield, Truck, ClipboardList, Store, Package, UtensilsCrossed, MessageCircle, BarChart3, DollarSign, Settings, Tag, Users, X, Menu } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type Staff = {
@@ -83,11 +85,11 @@ function pill(ok: boolean, yes = "Sim", no = "Não") {
 }
 
 // ── Shared UI components ──────────────────────────────────────────────────────
-function SectionHeader({ title, icon, sub }: { title: string; icon: string; sub?: string }) {
+function SectionHeader({ title, icon, sub }: { title: string; icon: React.ReactNode; sub?: string }) {
   return (
     <div style={{ marginBottom: 24 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <span style={{ fontSize: 22 }}>{icon}</span>
+        <span style={{ display: "flex", alignItems: "center", color: TEXT }}>{icon}</span>
         <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: TEXT }}>{title}</h2>
       </div>
       {sub && <p style={{ margin: "4px 0 0 32px", fontSize: 13, color: MUTED }}>{sub}</p>}
@@ -237,7 +239,7 @@ function RestaurantesSection({ token, staff }: { token: string; staff: Staff }) 
 
   return (
     <div>
-      <SectionHeader title="Restaurantes" icon="📋" sub="Todos os restaurantes cadastrados na plataforma" />
+      <SectionHeader title="Restaurantes" icon={<ClipboardList size={22} />} sub="Todos os restaurantes cadastrados na plataforma" />
       <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
         <SearchBar value={q} onChange={handleSearch} placeholder="Buscar por nome..." />
         <Sel value={plan} onChange={(v) => { setPlan(v); setPage(1); }} options={[
@@ -369,7 +371,7 @@ function DeliveryPanel({ unitId, token }: { unitId: string; token: string }) {
           <input style={{ ...inp, flex: 1, borderColor: z._dirty ? `${GN}55` : undefined }} type="number" step="0.1" value={z.min_km} onChange={e => setZones(p => p.map((item, i) => i === idx ? { ...item, min_km: e.target.value, _dirty: true } : item))} onBlur={() => saveZone(idx)} />
           <input style={{ ...inp, flex: 1, borderColor: z._dirty ? `${GN}55` : undefined }} type="number" step="0.1" value={z.max_km} onChange={e => setZones(p => p.map((item, i) => i === idx ? { ...item, max_km: e.target.value, _dirty: true } : item))} onBlur={() => saveZone(idx)} />
           <input style={{ ...inp, flex: 1, borderColor: z._dirty ? `${GN}55` : undefined }} value={z.fee} onChange={e => setZones(p => p.map((item, i) => i === idx ? { ...item, fee: e.target.value, _dirty: true } : item))} onBlur={() => saveZone(idx)} />
-          <button onClick={() => deleteZone(idx)} style={{ width: 24, height: 24, borderRadius: 4, border: "none", background: "rgba(239,68,68,0.12)", color: "#f87171", cursor: "pointer", fontSize: 11, flexShrink: 0 }}>✕</button>
+          <button onClick={() => deleteZone(idx)} style={{ width: 24, height: 24, borderRadius: 4, border: "none", background: "rgba(239,68,68,0.12)", color: "#f87171", cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}><X size={10} /></button>
         </div>
       ))}
       <button onClick={() => { const last = zones[zones.length - 1]; setZones(p => [...p, { min_km: last?.max_km ?? "0", max_km: "", fee: "0,00", _new: true, _dirty: true }]); }} style={{ fontSize: 11, color: GN, background: "none", border: `1px solid ${GN}33`, borderRadius: 6, padding: "4px 10px", cursor: "pointer" }}>+ Faixa</button>
@@ -390,7 +392,7 @@ function UnidadesSection({ token, staff }: { token: string; staff: Staff }) {
 
   return (
     <div>
-      <SectionHeader title="Unidades" icon="🏪" sub="Todas as unidades agrupadas por restaurante" />
+      <SectionHeader title="Unidades" icon={<Store size={22} />} sub="Todas as unidades agrupadas por restaurante" />
       <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
         <SearchBar value={q} onChange={handleSearch} placeholder="Buscar por nome, slug ou cidade..." />
         <Sel value={status} onChange={(v) => { setStatus(v); setPage(1); }} options={[
@@ -401,7 +403,7 @@ function UnidadesSection({ token, staff }: { token: string; staff: Staff }) {
       {error && <Err msg={error} />}
       {data && (
         <>
-          <Table headers={["Unidade", "Slug", "Restaurante", "Plano", "Cidade", "Status", "Criada em", canDelivery ? "🚚" : ""]} empty={!data.data?.length}>
+          <Table headers={["Unidade", "Slug", "Restaurante", "Plano", "Cidade", "Status", "Criada em", canDelivery ? "Entrega" : ""]} empty={!data.data?.length}>
             {data.data?.map((u: any) => (
               <Fragment key={u.id}>
                 <TR>
@@ -418,7 +420,7 @@ function UnidadesSection({ token, staff }: { token: string; staff: Staff }) {
                         onClick={() => setDeliveryUnit(deliveryUnit === u.id ? null : u.id)}
                         style={{ padding: "3px 8px", borderRadius: 6, border: "1px solid rgba(34,197,94,0.25)", background: deliveryUnit === u.id ? "rgba(34,197,94,0.15)" : "transparent", color: "#22c55e", fontSize: 11, cursor: "pointer", fontWeight: 600 }}
                       >
-                        🚚
+                        <Truck size={13} />
                       </button>
                     )}
                   </TD>
@@ -450,7 +452,7 @@ function PedidosSection({ token }: { token: string }) {
 
   return (
     <div>
-      <SectionHeader title="Pedidos" icon="📦" sub="Pedidos de todas as unidades — somente leitura" />
+      <SectionHeader title="Pedidos" icon={<Package size={22} />} sub="Pedidos de todas as unidades — somente leitura" />
       <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
         <Sel value={range} onChange={(v) => { setRange(v); setPage(1); }} options={[
           { value: "today", label: "Hoje" }, { value: "7d", label: "Últimos 7 dias" }, { value: "30d", label: "Últimos 30 dias" },
@@ -514,7 +516,7 @@ function CardapiosSection({ token, staff }: { token: string; staff: Staff }) {
 
   return (
     <div>
-      <SectionHeader title="Cardápios" icon="🍽️" sub={canEdit ? "Selecione uma unidade para ver e editar produtos" : "Somente leitura"} />
+      <SectionHeader title="Cardápios" icon={<UtensilsCrossed size={22} />} sub={canEdit ? "Selecione uma unidade para ver e editar produtos" : "Somente leitura"} />
       <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
         <UnitSelector token={token} value={unitId} onChange={(v) => { setUnitId(v); setPage(1); }} />
         <SearchBar value={q} onChange={handleSearch} placeholder="Buscar produto..." />
@@ -584,7 +586,7 @@ function CRMSection({ token }: { token: string }) {
 
   return (
     <div>
-      <SectionHeader title="CRM — Clientes" icon="💬" sub="Todos os clientes cadastrados" />
+      <SectionHeader title="CRM — Clientes" icon={<MessageCircle size={22} />} sub="Todos os clientes cadastrados" />
       <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
         <SearchBar value={q} onChange={handleSearch} placeholder="Buscar por nome, telefone ou email..." />
       </div>
@@ -621,7 +623,7 @@ function AnalyticsSection({ token }: { token: string }) {
 
   return (
     <div>
-      <SectionHeader title="Analytics" icon="📊" sub="Métricas de engajamento por unidade" />
+      <SectionHeader title="Analytics" icon={<BarChart3 size={22} />} sub="Métricas de engajamento por unidade" />
       <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
         <UnitSelector token={token} value={unitId} onChange={setUnitId} />
         <Sel value={range} onChange={setRange} options={[{ value: "7d", label: "Últimos 7 dias" }, { value: "30d", label: "Últimos 30 dias" }]} />
@@ -682,7 +684,7 @@ function FinanceiroSection({ token, staff }: { token: string; staff: Staff }) {
 
   return (
     <div>
-      <SectionHeader title="Financeiro" icon="💰" sub={isGerente ? "Visão por unidade ou global" : "Receita por unidade"} />
+      <SectionHeader title="Financeiro" icon={<DollarSign size={22} />} sub={isGerente ? "Visão por unidade ou global" : "Receita por unidade"} />
       <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap", alignItems: "center" }}>
         {isGerente && (
           <Sel value={mode} onChange={(v) => setMode(v as any)} options={[{ value: "unit", label: "Por unidade" }, { value: "global", label: "Visão global" }]} />
@@ -765,7 +767,7 @@ function FeaturesSection({ token }: { token: string }) {
 
   return (
     <div>
-      <SectionHeader title="Features" icon="⚙️" sub="Ativar e desativar funcionalidades por unidade" />
+      <SectionHeader title="Features" icon={<Settings size={22} />} sub="Ativar e desativar funcionalidades por unidade" />
       <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
         <UnitSelector token={token} value={unitId} onChange={setUnitId} placeholder="Todas as unidades" />
         <SearchBar value={q} onChange={handleSearch} placeholder="Buscar feature..." />
@@ -819,7 +821,7 @@ function PlanosSection({ token }: { token: string }) {
 
   return (
     <div>
-      <SectionHeader title="Planos" icon="📋" sub="Gerenciar plano de assinatura dos restaurantes" />
+      <SectionHeader title="Planos" icon={<Tag size={22} />} sub="Gerenciar plano de assinatura dos restaurantes" />
       <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
         <SearchBar value={q} onChange={handleSearch} placeholder="Buscar restaurante..." />
       </div>
@@ -905,7 +907,7 @@ function EquipeSection({ token, currentStaff }: { token: string; currentStaff: S
 
   return (
     <div>
-      <SectionHeader title="Equipe de Suporte" icon="👥" sub="Gerenciar funcionários do portal de suporte" />
+      <SectionHeader title="Equipe de Suporte" icon={<Users size={22} />} sub="Gerenciar funcionários do portal de suporte" />
       <div style={{ marginBottom: 16 }}>
         <Btn variant="primary" onClick={() => setModal("create")}>+ Novo funcionário</Btn>
       </div>
@@ -1143,7 +1145,7 @@ function ChatsSection({ token, staff }: { token: string; staff: Staff }) {
         <div style={{ padding: "0 0 12px" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: 18 }}>💬</span>
+              <span style={{ display: "flex", alignItems: "center", color: TEXT }}><MessageCircle size={18} /></span>
               <h2 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: TEXT }}>Chats</h2>
               {totalUnread > 0 && <span style={{ padding: "1px 8px", borderRadius: 20, background: "#ef4444", color: "#fff", fontSize: 11, fontWeight: 800 }}>{totalUnread}</span>}
             </div>
@@ -1208,7 +1210,7 @@ function ChatsSection({ token, staff }: { token: string; staff: Staff }) {
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
         {!activeConv ? (
           <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 12 }}>
-            <span style={{ fontSize: 48 }}>💬</span>
+            <span style={{ color: MUTED }}><MessageCircle size={48} /></span>
             <p style={{ color: MUTED, fontSize: 14 }}>Selecione uma conversa para ver as mensagens</p>
           </div>
         ) : (
@@ -1351,18 +1353,18 @@ export default function SuporteDashboard() {
 
   const badge = ROLE_BADGE[staff.role] ?? ROLE_BADGE["viewer"];
 
-  const MENU_ITEMS: { id: Section; icon: string; label: string; perm: string }[] = [
-    { id: "restaurantes", icon: "📋", label: "Restaurantes", perm: "ver_restaurantes" },
-    { id: "unidades",     icon: "🏪", label: "Unidades",     perm: "ver_unidades" },
-    { id: "pedidos",      icon: "📦", label: "Pedidos",      perm: "ver_pedidos" },
-    { id: "cardapios",    icon: "🍽️", label: "Cardápios",   perm: "ver_cardapios" },
-    { id: "crm",          icon: "💬", label: "CRM",          perm: "ver_crm" },
-    { id: "analytics",    icon: "📊", label: "Analytics",    perm: "ver_analytics" },
-    { id: "financeiro",   icon: "💰", label: "Financeiro",   perm: "ver_financeiro_unidade" },
-    { id: "features",     icon: "⚙️", label: "Features",    perm: "gerenciar_features" },
-    { id: "planos",       icon: "🏷️", label: "Planos",      perm: "gerenciar_planos" },
-    { id: "equipe",       icon: "👥", label: "Equipe",       perm: "gerenciar_staff" },
-    { id: "chats",        icon: "💬", label: "Chats",        perm: "responder_tickets" },
+  const MENU_ITEMS: { id: Section; icon: React.ReactNode; label: string; perm: string }[] = [
+    { id: "restaurantes", icon: <ClipboardList size={16} />, label: "Restaurantes", perm: "ver_restaurantes" },
+    { id: "unidades",     icon: <Store size={16} />,         label: "Unidades",     perm: "ver_unidades" },
+    { id: "pedidos",      icon: <Package size={16} />,       label: "Pedidos",      perm: "ver_pedidos" },
+    { id: "cardapios",    icon: <UtensilsCrossed size={16} />, label: "Cardápios",  perm: "ver_cardapios" },
+    { id: "crm",          icon: <MessageCircle size={16} />, label: "CRM",          perm: "ver_crm" },
+    { id: "analytics",    icon: <BarChart3 size={16} />,     label: "Analytics",    perm: "ver_analytics" },
+    { id: "financeiro",   icon: <DollarSign size={16} />,    label: "Financeiro",   perm: "ver_financeiro_unidade" },
+    { id: "features",     icon: <Settings size={16} />,      label: "Features",     perm: "gerenciar_features" },
+    { id: "planos",       icon: <Tag size={16} />,           label: "Planos",       perm: "gerenciar_planos" },
+    { id: "equipe",       icon: <Users size={16} />,         label: "Equipe",       perm: "gerenciar_staff" },
+    { id: "chats",        icon: <MessageCircle size={16} />, label: "Chats",        perm: "responder_tickets" },
   ];
 
   const visibleItems = MENU_ITEMS.filter((m) => can(staff, m.perm));
@@ -1394,7 +1396,7 @@ export default function SuporteDashboard() {
       {/* Logo */}
       <div style={{ padding: "0 16px 20px", borderBottom: `1px solid ${BORDER}` }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg, #7c3aed, #4c1d95)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>🛡️</div>
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg, #7c3aed, #4c1d95)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff" }}><Shield size={18} /></div>
           <div>
             <div style={{ fontSize: 14, fontWeight: 800, color: TEXT }}>Portal de Suporte</div>
             <div style={{ fontSize: 11, color: MUTED }}>FyMenu</div>
@@ -1411,7 +1413,7 @@ export default function SuporteDashboard() {
               style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "9px 12px", borderRadius: 10, border: "none", cursor: "pointer", textAlign: "left", marginBottom: 2, transition: "background 0.15s",
                 background: active ? "rgba(124,58,237,0.18)" : "transparent",
                 color: active ? "#c4b5fd" : "rgba(255,255,255,0.55)" }}>
-              <span style={{ fontSize: 16, width: 20, textAlign: "center" }}>{item.icon}</span>
+              <span style={{ width: 20, display: "flex", alignItems: "center", justifyContent: "center" }}>{item.icon}</span>
               <span style={{ fontSize: 13, fontWeight: active ? 700 : 500 }}>{item.label}</span>
               {item.id === "chats" && chatUnread > 0 && !active && (
                 <span style={{ marginLeft: "auto", padding: "1px 6px", borderRadius: 20, background: "#ef4444", color: "#fff", fontSize: 10, fontWeight: 800 }}>{chatUnread}</span>
@@ -1476,7 +1478,7 @@ export default function SuporteDashboard() {
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
         {/* Mobile topbar */}
         <div className="mobile-topbar" style={{ display: "none", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderBottom: `1px solid ${BORDER}`, background: "rgba(255,255,255,0.02)", position: "sticky", top: 0, zIndex: 10 }}>
-          <button onClick={() => setMobileSidebar(true)} style={{ background: "none", border: "none", color: TEXT, fontSize: 22, cursor: "pointer", padding: 4 }}>☰</button>
+          <button onClick={() => setMobileSidebar(true)} style={{ background: "none", border: "none", color: TEXT, cursor: "pointer", padding: 4, display: "flex", alignItems: "center" }}><Menu size={22} /></button>
           <div style={{ fontSize: 13, fontWeight: 700, color: TEXT }}>Portal de Suporte</div>
           <span style={{ padding: "2px 10px", borderRadius: 20, fontSize: 11, fontWeight: 700, background: badge.bg, color: badge.color }}>{badge.label}</span>
         </div>
