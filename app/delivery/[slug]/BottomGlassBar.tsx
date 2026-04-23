@@ -1,7 +1,8 @@
 // FILE: /app/u/[slug]/BottomGlassBar.tsx
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
+import { ShoppingCart, MapPin, MessageCircle, Camera, Smartphone, ShoppingBag, Bike, Package, X, Gift } from "lucide-react";
 import type { Unit, Product } from "./menuTypes";
 import type { CartItem } from "./CartModal";
 import { buildCartWhatsAppMessage } from "./orderBuilder";
@@ -73,8 +74,12 @@ function getPlatformGradient(platform: string | null | undefined): string {
     default: return "linear-gradient(135deg, #6B7280, #4B5563)";
   }
 }
-function getPlatformIcon(p: string | null | undefined) {
-  return p === "ifood" ? "🍔" : p === "rappi" ? "🛵" : p === "uber_eats" ? "🥡" : p === "aiqfome" ? "🍕" : "📱";
+function getPlatformIcon(p: string | null | undefined): React.ReactNode {
+  if (p === "ifood") return <ShoppingBag size={20} />;
+  if (p === "rappi") return <Bike size={20} />;
+  if (p === "uber_eats") return <Package size={20} />;
+  if (p === "aiqfome") return <Gift size={20} />;
+  return <Smartphone size={20} />;
 }
 function getPlatformName(p: string | null | undefined) {
   return p === "ifood" ? "iFood" : p === "rappi" ? "Rappi" : p === "uber_eats" ? "Uber Eats" : p === "aiqfome" ? "AiQFome" : "Delivery";
@@ -427,7 +432,7 @@ export default function BottomGlassBar({
           <a href={maps} target="_blank" rel="noreferrer"
             onClick={e => e.stopPropagation()}
             style={{ ...iconBase, background: isDark ? "rgba(239,68,68,0.12)" : "rgba(239,68,68,0.08)" }}
-          >📍</a>
+          ><MapPin size={16} /></a>
         )}
 
         {/* Cart icon — replaces city/neighborhood */}
@@ -446,7 +451,7 @@ export default function BottomGlassBar({
             border: "none", cursor: "pointer",
           }}
         >
-          <span style={{ fontSize: 18 }}>🛒</span>
+          <ShoppingCart size={18} />
           {cartCount > 0 && (
             <div style={{
               position: "absolute", top: -4, right: -4,
@@ -488,7 +493,7 @@ export default function BottomGlassBar({
           <a href={wa} target="_blank" rel="noreferrer"
             onClick={e => e.stopPropagation()}
             style={{ ...iconBase, background: isDark ? "rgba(37,211,102,0.12)" : "rgba(37,211,102,0.1)" }}
-          >💬</a>
+          ><MessageCircle size={16} /></a>
         )}
 
         {/* Instagram */}
@@ -501,7 +506,7 @@ export default function BottomGlassBar({
                 ? "linear-gradient(135deg, rgba(131,58,180,0.12), rgba(253,29,29,0.12))"
                 : "linear-gradient(135deg, rgba(131,58,180,0.08), rgba(253,29,29,0.08))",
             }}
-          >📸</a>
+          ><Camera size={16} /></a>
         )}
 
         {/* iFood / external platform */}
@@ -672,8 +677,8 @@ export default function BottomGlassBar({
                       width: 42, height: 42, borderRadius: 13,
                       background: "rgba(37,211,102,0.15)",
                       display: "flex", alignItems: "center", justifyContent: "center",
-                      fontSize: 22, flexShrink: 0,
-                    }}>💬</div>
+                      flexShrink: 0,
+                    }}><MessageCircle size={22} /></div>
                     <div>
                       <div style={{ fontSize: 15, fontWeight: 800, color: "#25d366" }}>Pedir no WhatsApp</div>
                       <div style={{ fontSize: 10, color: textSecondary }}>Envie seu pedido direto</div>
@@ -690,7 +695,7 @@ export default function BottomGlassBar({
                       : "linear-gradient(135deg, rgba(131,58,180,0.05), rgba(253,29,29,0.05))",
                     border: `1px solid ${cardBorder}`, textDecoration: "none",
                   }}>
-                    <div style={{ width: 40, height: 40, borderRadius: 12, background: "linear-gradient(135deg, rgba(131,58,180,0.15), rgba(253,29,29,0.15))", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>📸</div>
+                    <div style={{ width: 40, height: 40, borderRadius: 12, background: "linear-gradient(135deg, rgba(131,58,180,0.15), rgba(253,29,29,0.15))", display: "flex", alignItems: "center", justifyContent: "center" }}><Camera size={20} /></div>
                     <span style={{ fontSize: 12, fontWeight: 700, color: textSecondary }}>Instagram</span>
                   </a>
                 )}
@@ -703,7 +708,7 @@ export default function BottomGlassBar({
                     background: isDark ? "rgba(239,68,68,0.07)" : "rgba(239,68,68,0.05)",
                     border: `1px solid ${cardBorder}`, textDecoration: "none",
                   }}>
-                    <div style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(239,68,68,0.14)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>📍</div>
+                    <div style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(239,68,68,0.14)", display: "flex", alignItems: "center", justifyContent: "center" }}><MapPin size={20} /></div>
                     <span style={{ fontSize: 12, fontWeight: 700, color: textSecondary }}>Como Chegar</span>
                   </a>
                 )}
@@ -716,7 +721,7 @@ export default function BottomGlassBar({
                       gap: 8, padding: "18px 10px", borderRadius: 18,
                       background: cardBg, border: `1px solid ${cardBorder}`, textDecoration: "none",
                     }}>
-                    <div style={{ width: 40, height: 40, borderRadius: 12, background: getPlatformGradient(unit.ifood_platform), display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>
+                    <div style={{ width: 40, height: 40, borderRadius: 12, background: getPlatformGradient(unit.ifood_platform), display: "flex", alignItems: "center", justifyContent: "center" }}>
                       {getPlatformIcon(unit.ifood_platform)}
                     </div>
                     <span style={{ fontSize: 12, fontWeight: 700, color: textSecondary }}>{getPlatformName(unit.ifood_platform)}</span>
@@ -756,7 +761,7 @@ export default function BottomGlassBar({
             <>
               {cart.length === 0 ? (
                 <div style={{ textAlign: "center", padding: "40px 20px", color: textSecondary }}>
-                  <div style={{ fontSize: 36, marginBottom: 8 }}>🛒</div>
+                  <div style={{ marginBottom: 8, display: "flex", justifyContent: "center" }}><ShoppingCart size={36} /></div>
                   <div style={{ fontSize: 13, fontWeight: 700 }}>Carrinho vazio</div>
                   <div style={{ fontSize: 11, marginTop: 4, color: textSecondary }}>Adicione itens do cardápio</div>
                   <button onClick={collapse} style={{
@@ -808,8 +813,8 @@ export default function BottomGlassBar({
                         <button onClick={e => { e.stopPropagation(); onUpdateQty?.(item.product_id, 0); }} style={{
                           width: 22, height: 22, borderRadius: 6, border: "none", cursor: "pointer",
                           background: "rgba(220,38,38,0.12)", color: "#f87171",
-                          display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, flexShrink: 0,
-                        }}>✕</button>
+                          display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                        }}><X size={10} /></button>
                       </div>
                     ))}
                   </div>
@@ -817,7 +822,7 @@ export default function BottomGlassBar({
                   {/* Combos */}
                   {upsellData.combos.length > 0 && (
                     <div style={{ marginBottom: 14 }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, marginBottom: 8, color: textSecondary }}>🎁 Combos disponíveis</div>
+                      <div style={{ fontSize: 11, fontWeight: 700, marginBottom: 8, color: textSecondary }}>Combos disponíveis</div>
                       {upsellData.combos.map(combo => (
                         <div key={combo.id} style={{
                           padding: "12px 14px", borderRadius: 12, marginBottom: 6,
@@ -844,7 +849,7 @@ export default function BottomGlassBar({
                   {/* AI Suggestions */}
                   {(loadingUpsell || upsellData.suggestions.length > 0) && (
                     <div style={{ marginBottom: 14 }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, marginBottom: 8, color: textSecondary }}>✨ Sugestões pra você</div>
+                      <div style={{ fontSize: 11, fontWeight: 700, marginBottom: 8, color: textSecondary }}>Sugestões pra você</div>
                       {loadingUpsell ? (
                         <div style={{ fontSize: 11, color: textSecondary, padding: "8px 0" }}>Carregando sugestões...</div>
                       ) : (

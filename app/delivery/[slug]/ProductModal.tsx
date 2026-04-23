@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
+import { UtensilsCrossed } from "lucide-react";
 import { Product, ProductVariation } from "./menuTypes";
 import { OrderPayload, UpsellItem } from "./orderBuilder";
 import { useSwipeGesture } from "./useSwipeGesture";
@@ -328,7 +329,7 @@ export default function ProductModal({
                 className="flex h-24 w-24 items-center justify-center rounded-full"
                 style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}
               >
-                <span style={{ fontSize: 34, opacity: 0.4 }}>🍽️</span>
+                <span style={{ opacity: 0.4, display: "flex" }}><UtensilsCrossed size={34} /></span>
               </div>
             </div>
           )}
@@ -433,7 +434,7 @@ export default function ProductModal({
           )}
           {currentProduct.description_source === "AI_GENERATED" && (
             <p style={{ fontSize: 10, color: "rgba(139,92,246,0.8)", textAlign: "center", margin: "0 0 6px" }}>
-              ✨ Descrição gerada por IA
+              Descrição gerada por IA
             </p>
           )}
 
@@ -535,7 +536,7 @@ export default function ProductModal({
                   style={{ width: 16, height: 16, accentColor: "#FF6B00", cursor: "pointer" }}
                 />
                 <span style={{ fontSize: 12, color: "rgba(255,255,255,0.75)", lineHeight: 1.4 }}>
-                  🔞 Confirmo que tenho 18 anos ou mais
+                  Confirmo que tenho 18 anos ou mais
                 </span>
               </label>
             </div>

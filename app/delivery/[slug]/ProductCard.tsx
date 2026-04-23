@@ -1,5 +1,7 @@
 "use client";
 
+import React from "react";
+import { UtensilsCrossed } from "lucide-react";
 import { Product } from "./menuTypes";
 
 interface ProductCardProps {
@@ -44,7 +46,7 @@ export default function ProductCard({ product, onOrder }: ProductCardProps) {
           )
         ) : (
           <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-zinc-800 to-zinc-900">
-            <span className="text-4xl opacity-20">🍽️</span>
+            <UtensilsCrossed size={36} className="opacity-20" />
           </div>
         )}
 

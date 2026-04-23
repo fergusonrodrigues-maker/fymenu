@@ -1,5 +1,6 @@
 "use client";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
+import { UtensilsCrossed, CheckCircle2, CreditCard, Bell, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 type ComandaItem = {
@@ -174,11 +175,11 @@ export default function ComandaClient({
   }
 
   function itemStatusLabel(status: string) {
-    if (status === "delivered") return "✓ Entregue";
-    if (status === "ready") return "🍽️ Pronto";
-    if (status === "preparing") return "🔥 Preparando";
-    if (status === "confirmed") return "✅ Confirmado";
-    return "⏳ Aguardando";
+    if (status === "delivered") return "Entregue";
+    if (status === "ready") return "Pronto";
+    if (status === "preparing") return "Preparando";
+    if (status === "confirmed") return "Confirmado";
+    return "Aguardando";
   }
 
   // ── Status badge ─────────────────────────────────────────────────────────────
@@ -217,7 +218,7 @@ export default function ComandaClient({
             boxShadow: "0 4px 20px rgba(0,255,174,0.3)",
           }}
         >
-          <div style={{ fontSize: 15, fontWeight: 800 }}>🍽️ Pedido pronto!</div>
+          <div style={{ fontSize: 15, fontWeight: 800 }}>Pedido pronto!</div>
           <div style={{ fontSize: 13, fontWeight: 600, marginTop: 2, opacity: 0.8 }}>
             {readyItemName}
           </div>
@@ -234,11 +235,10 @@ export default function ComandaClient({
               cursor: "pointer",
               background: "rgba(0,0,0,0.15)",
               color: "#000",
-              fontSize: 11,
-              fontWeight: 700,
+              display: "flex", alignItems: "center", justifyContent: "center",
             }}
           >
-            ✕
+            <X size={11} />
           </button>
         </div>
       )}
@@ -415,7 +415,7 @@ export default function ComandaClient({
               color: "rgba(255,255,255,0.15)",
             }}
           >
-            <div style={{ fontSize: 32, marginBottom: 8 }}>🍽️</div>
+            <div style={{ marginBottom: 8, display: "flex", justifyContent: "center", color: "rgba(255,255,255,0.15)" }}><UtensilsCrossed size={32} /></div>
             <div style={{ fontSize: 13 }}>Nenhum pedido ainda</div>
             <div style={{ fontSize: 11, marginTop: 4 }}>
               Os pedidos aparecerão aqui em tempo real
@@ -471,7 +471,7 @@ export default function ComandaClient({
                         marginTop: 2,
                       }}
                     >
-                      📝 {item.notes}
+                      {item.notes}
                     </div>
                   )}
                 </div>
@@ -548,8 +548,8 @@ export default function ComandaClient({
               textAlign: "center",
             }}
           >
-            <div style={{ fontSize: 28, marginBottom: 8 }}>
-              {isClosed ? "✅" : "💳"}
+            <div style={{ marginBottom: 8, display: "flex", justifyContent: "center", color: isClosed ? "#00ffae" : "#fbbf24" }}>
+              {isClosed ? <CheckCircle2 size={28} /> : <CreditCard size={28} />}
             </div>
             <div style={{ fontSize: 16, fontWeight: 800, color: "#fff" }}>
               {isClosed ? "Comanda fechada" : "Aguardando pagamento"}
@@ -628,10 +628,10 @@ export default function ComandaClient({
             }}
           >
             {callSent
-              ? "✓ Garçom chamado!"
+              ? "Garçom chamado!"
               : calling
               ? "Chamando..."
-              : "🔔 Chamar garçom"}
+              : <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><Bell size={14} /> Chamar garçom</span>}
           </button>
         </div>
       )}
@@ -670,7 +670,7 @@ export default function ComandaClient({
               transition: "all 0.2s",
             }}
           >
-            {callSent ? "✓ Garçom chamado!" : calling ? "Chamando..." : "💳 Chamar para pagar"}
+            {callSent ? "Garçom chamado!" : calling ? "Chamando..." : <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><CreditCard size={14} /> Chamar para pagar</span>}
           </button>
         </div>
       )}

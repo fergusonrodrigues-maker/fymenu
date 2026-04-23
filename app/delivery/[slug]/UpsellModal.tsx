@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
+import { X, MessageCircle, Plus } from "lucide-react";
 import { OrderPayload, UpsellItem, buildOrderPayload, buildWhatsAppMessage, formatPrice } from "./orderBuilder";
 import { useTrack } from "./useTrack";
 
@@ -308,7 +309,7 @@ export default function UpsellModal({
             className="w-8 h-8 flex items-center justify-center
               rounded-xl bg-zinc-800/80 text-white text-sm"
           >
-            ✕
+            <X size={14} />
           </button>
         </div>
 
@@ -339,7 +340,7 @@ export default function UpsellModal({
           {hasCombos && (
             <div className="mb-4">
               <p className="text-zinc-500 text-xs font-semibold uppercase tracking-widest mb-2">
-                🎁 Combos disponíveis
+                Combos disponíveis
               </p>
               <div className="flex flex-col gap-2">
                 {upsellData.combos.map((combo) => {
@@ -439,7 +440,7 @@ export default function UpsellModal({
           {hasAiSuggestions && (
             <div className="mb-4">
               <p className="text-zinc-500 text-xs font-semibold uppercase tracking-widest mb-2">
-                ✨ Sugestões para você
+                Sugestões para você
               </p>
               <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
                 {upsellData.suggestions.map((s) => {
@@ -477,7 +478,7 @@ export default function UpsellModal({
           {/* ── AI loading indicator ────────────────────────────────────── */}
           {loadingAi && (
             <div className="flex items-center gap-2 mb-4 px-1">
-              <span className="text-zinc-600 text-xs">✨ Buscando sugestões...</span>
+              <span className="text-zinc-600 text-xs">Buscando sugestões...</span>
             </div>
           )}
 
@@ -497,7 +498,7 @@ export default function UpsellModal({
                       className="w-5 h-5 rounded-full bg-zinc-700/80 text-zinc-400 text-xs
                         flex items-center justify-center flex-shrink-0 hover:bg-red-900/40 hover:text-red-400"
                     >
-                      ✕
+                      <X size={10} />
                     </button>
                     <span className="text-white text-sm truncate">{u.name}</span>
                   </div>
@@ -514,7 +515,7 @@ export default function UpsellModal({
               border border-zinc-800/60 bg-zinc-900/40 hover:border-zinc-700 mb-4
               transition-colors"
           >
-            ➕ Adicionar mais itens
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Plus size={13} /> Adicionar mais itens</span>
           </button>
 
           {/* ── Customer data (optional, for CRM) ──────────────────────── */}
@@ -569,7 +570,7 @@ export default function UpsellModal({
                   bg-white text-black active:scale-95 transition-transform
                   flex items-center justify-center gap-2"
               >
-                <span>💬</span>
+                <MessageCircle size={16} />
                 Pedir pelo WhatsApp
               </button>
             )}

@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState, useEffect, useCallback } from "react";
+import React, { useRef, useState, useEffect, useCallback } from "react";
+import { Search, Clock, Flame, Camera } from "lucide-react";
 import { Unit, Category, Product, ProductVariation } from "./menuTypes";
 import { useTrack } from "./useTrack";
 import CategoryPillsTop from "./CategoryPillsTop";
@@ -657,7 +658,7 @@ export default function MenuClient({
                   }}
                   aria-label="Buscar"
                 >
-                  🔍
+                  <Search size={16} />
                 </button>
               </div>
             </div>
@@ -852,7 +853,7 @@ export default function MenuClient({
             padding: "48px 24px",
             color: "rgba(255,255,255,0.4)",
           }}>
-            <div style={{ fontSize: 36, marginBottom: 12 }}>🕐</div>
+            <div style={{ marginBottom: 12, display: "flex", justifyContent: "center" }}><Clock size={36} /></div>
             <div style={{ fontSize: 15, fontWeight: 600, color: "rgba(255,255,255,0.6)", marginBottom: 6 }}>
               Cardápio indisponível neste horário
             </div>
@@ -943,7 +944,7 @@ export default function MenuClient({
                             color: "#fff",
                           }}
                         >
-                          🔥 Mais pedido hoje
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Flame size={10} /> Mais pedido hoje</span>
                         </div>
 
                         {/* Logo do restaurante */}
@@ -1144,7 +1145,7 @@ export default function MenuClient({
                                   gap: 6,
                                 }}
                               >
-                                <span style={{ fontSize: 22, opacity: 0.2 }}>📷</span>
+                                <span style={{ opacity: 0.2, display: "flex" }}><Camera size={22} /></span>
                                 <span style={{
                                   fontSize: 10,
                                   fontWeight: 500,

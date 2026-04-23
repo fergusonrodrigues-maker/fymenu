@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
+import { X, CheckCircle2 } from "lucide-react";
 
 export interface CartItem {
   product_id: string;
@@ -167,7 +168,7 @@ export default function CartModal({
             disabled={loading}
             className="w-8 h-8 flex items-center justify-center rounded-full bg-zinc-800 text-zinc-400 text-sm"
           >
-            ✕
+            <X size={14} />
           </button>
         </div>
 
@@ -175,7 +176,7 @@ export default function CartModal({
 
           {sent ? (
             <div className="flex flex-col items-center justify-center py-16 gap-4">
-              <span className="text-5xl">✅</span>
+              <CheckCircle2 size={48} style={{ color: "#10b981" }} />
               <p className="text-white font-bold text-xl">Pedido enviado!</p>
               <p className="text-zinc-400 text-sm text-center">
                 O garçom recebeu seu pedido e logo virá confirmar.
@@ -244,7 +245,7 @@ export default function CartModal({
                       onClick={calculateDelivery}
                       className="w-full py-3 rounded-xl text-sm font-bold border border-green-500/30 bg-green-500/10 text-green-400 flex items-center justify-center gap-2"
                     >
-                      📍 Calcular taxa de entrega
+                      Calcular taxa de entrega
                     </button>
                   )}
 
@@ -262,13 +263,13 @@ export default function CartModal({
                     <div className={`rounded-xl px-3 py-3 ${deliveryFee.available ? "bg-green-500/10 border border-green-500/25" : "bg-red-500/10 border border-red-500/25"}`}>
                       {deliveryFee.distanceKm != null && (
                         <p className="text-zinc-300 text-xs mb-1">
-                          📏 Distância: <strong>{deliveryFee.distanceKm.toFixed(1)} km</strong>
+                          Distância: <strong>{deliveryFee.distanceKm.toFixed(1)} km</strong>
                         </p>
                       )}
                       <p className={`text-sm font-bold ${deliveryFee.available ? "text-green-400" : "text-red-400"}`}>
                         {deliveryFee.available
-                          ? `💰 Taxa: ${moneyBR(deliveryFee.fee / 100)}`
-                          : `❌ ${deliveryFee.message}`}
+                          ? `Taxa: ${moneyBR(deliveryFee.fee / 100)}`
+                          : deliveryFee.message}
                       </p>
                       {!deliveryFee.available && (
                         <p className="text-zinc-500 text-xs mt-1">
