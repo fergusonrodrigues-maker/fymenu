@@ -470,8 +470,8 @@ export default function WaiterClient({
                   >✓ Atender</button>
                   <button
                     onClick={() => handleDismissCall(call.id)}
-                    style={{ padding: "8px 10px", borderRadius: 10, border: "none", cursor: "pointer", background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.3)", fontSize: 11 }}
-                  >✕</button>
+                    style={{ padding: "8px 10px", borderRadius: 10, border: "none", cursor: "pointer", background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.3)", fontSize: 11, display: "flex", alignItems: "center" }}
+                  ><X size={11} /></button>
                 </div>
               </div>
             ))}
