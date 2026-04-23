@@ -1353,17 +1353,18 @@ export default function LandingPage() {
             left: 50%;
             right: auto;
             transform: translateX(-50%);
-            width: fit-content;
-            max-width: calc(100vw - 24px);
+            width: calc(100vw - 40px);
+            max-width: calc(100vw - 40px);
             min-width: auto;
-            gap: 14px;
-            padding: 8px 12px;
+            gap: 12px;
+            padding: 10px 18px;
             display: flex;
             align-items: center;
+            justify-content: space-between;
           }
-          .fy-nav-logo { height: 22px !important; flex-shrink: 0; margin: 0 !important; }
-          .fy-nav a { font-size: 13px; font-weight: 600; flex-shrink: 0; }
-          .fy-nav .btn-primary { padding: 6px 14px !important; font-size: 12px !important; flex-shrink: 0; border-radius: 999px !important; }
+          .fy-nav-logo { height: 24px !important; flex-shrink: 0; margin: 0 !important; }
+          .fy-nav a { font-size: 14px; font-weight: 600; flex-shrink: 0; }
+          .fy-nav .btn-primary { padding: 7px 16px !important; font-size: 13px !important; flex-shrink: 0; border-radius: 999px !important; }
         }
       `}</style>
 
