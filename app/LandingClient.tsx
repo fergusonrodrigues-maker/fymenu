@@ -1350,18 +1350,20 @@ export default function LandingPage() {
         @media (max-width: 640px) {
           .fy-nav {
             top: 12px;
-            left: 12px;
-            right: 12px;
-            transform: none;
-            width: calc(100vw - 24px);
+            left: 50%;
+            right: auto;
+            transform: translateX(-50%);
+            width: fit-content;
             max-width: calc(100vw - 24px);
-            gap: 10px;
+            min-width: auto;
+            gap: 14px;
             padding: 8px 12px;
-            justify-content: space-between;
+            display: flex;
+            align-items: center;
           }
           .fy-nav-logo { height: 22px !important; flex-shrink: 0; margin: 0 !important; }
-          .fy-nav a { font-size: 12px; font-weight: 600; flex-shrink: 0; }
-          .fy-nav .btn-primary { padding: 6px 12px !important; font-size: 11px !important; flex-shrink: 0; border-radius: 999px !important; }
+          .fy-nav a { font-size: 13px; font-weight: 600; flex-shrink: 0; }
+          .fy-nav .btn-primary { padding: 6px 14px !important; font-size: 12px !important; flex-shrink: 0; border-radius: 999px !important; }
         }
       `}</style>
 
