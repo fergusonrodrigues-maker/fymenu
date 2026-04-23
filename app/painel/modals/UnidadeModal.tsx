@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
+import React, { useRef, useState } from "react";
+import { Camera, Clock, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
 import { updateUnit, uploadCoverAction } from "../actions";
 import LogoUploader from "../LogoUploader";
 import DominioSection from "../components/DominioSection";
@@ -208,7 +209,7 @@ export default function UnidadeModal({ unit, canAddUnit, plan, restaurantStatus,
                 background: "linear-gradient(135deg, rgba(0,255,174,0.05), rgba(0,217,255,0.05))",
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>
-                <span style={{ fontSize: 32, opacity: 0.15 }}>📷</span>
+                <span style={{ opacity: 0.15, display: "flex" }}><Camera size={32} /></span>
               </div>
             )}
 
@@ -270,7 +271,7 @@ export default function UnidadeModal({ unit, canAddUnit, plan, restaurantStatus,
                   flexShrink: 0,
                 }}
               >
-                📷 {coverUrl || coverPreview ? "Trocar" : "Adicionar capa"}
+                <Camera size={12} /> {coverUrl || coverPreview ? "Trocar" : "Adicionar capa"}
               </button>
             </div>
           </div>
@@ -491,9 +492,9 @@ export default function UnidadeModal({ unit, canAddUnit, plan, restaurantStatus,
           {/* Override manual */}
           <div style={{ display: "flex", gap: 4, marginBottom: 14 }}>
             {[
-              { key: "auto", label: "Automático", icon: "🕐" },
-              { key: "open", label: "Forçar aberto", icon: "🟢" },
-              { key: "closed", label: "Forçar fechado", icon: "🔴" },
+              { key: "auto", label: "Automático", icon: <Clock size={14} /> },
+              { key: "open", label: "Forçar aberto", icon: <CheckCircle2 size={14} /> },
+              { key: "closed", label: "Forçar fechado", icon: <XCircle size={14} /> },
             ].map(opt => (
               <button key={opt.key} type="button" onClick={() => {
                 setForceStatus(opt.key);
@@ -505,6 +506,7 @@ export default function UnidadeModal({ unit, canAddUnit, plan, restaurantStatus,
                 color: forceStatus === opt.key ? "var(--dash-accent)" : "var(--dash-text-muted)",
                 fontSize: 11, fontWeight: 600,
                 boxShadow: "var(--dash-shadow)",
+                display: "inline-flex", alignItems: "center", gap: 4,
               }}>{opt.icon} {opt.label}</button>
             ))}
           </div>
@@ -607,7 +609,7 @@ export default function UnidadeModal({ unit, canAddUnit, plan, restaurantStatus,
           </div>
         ) : (
           <div style={{ borderRadius: 14, padding: "16px", border: "1px solid rgba(250,204,21,0.2)", background: "var(--dash-warning-soft)" }}>
-            <div style={{ color: "var(--dash-warning)", fontSize: 14, fontWeight: 700, marginBottom: 6 }}>★ Limite atingido</div>
+            <div style={{ color: "var(--dash-warning)", fontSize: 14, fontWeight: 700, marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}><AlertTriangle size={16} /> Limite atingido</div>
             <div style={{ color: "var(--dash-text-muted)", fontSize: 13, marginBottom: 14, lineHeight: 1.5 }}>
               {plan === "business"
                 ? "Você está no plano máximo (Business). Entre em contato para soluções personalizadas."

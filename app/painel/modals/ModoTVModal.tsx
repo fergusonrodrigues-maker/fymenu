@@ -1,5 +1,6 @@
 "use client";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
+import { Tv, Monitor, Smartphone } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 const supabase = createClient();
@@ -71,7 +72,7 @@ export default function ModoTVModal({ unit, onClose }: { unit: any; onClose: () 
           transform: `rotate(${config.rotation}deg)`,
           position: "relative", overflow: "hidden",
         }}>
-          <div style={{ fontSize: 28 }}>📺</div>
+          <div style={{ display: "flex", justifyContent: "center", color: "var(--dash-text-muted)" }}><Tv size={28} /></div>
           <div style={{
             position: "absolute", bottom: 4, left: 0, right: 0,
             textAlign: "center", fontSize: 8, color: "var(--dash-text-muted)",
@@ -86,8 +87,8 @@ export default function ModoTVModal({ unit, onClose }: { unit: any; onClose: () 
         <div style={{ fontSize: 11, fontWeight: 600, color: "var(--dash-text-muted)", marginBottom: 8 }}>Orientação da tela</div>
         <div style={{ display: "flex", gap: 6 }}>
           {[
-            { key: "horizontal", label: "Horizontal (16:9)", icon: "🖥️" },
-            { key: "vertical", label: "Vertical (9:16)", icon: "📱" },
+            { key: "horizontal", label: "Horizontal (16:9)", icon: <Monitor size={14} /> },
+            { key: "vertical", label: "Vertical (9:16)", icon: <Smartphone size={14} /> },
           ].map(opt => (
             <button key={opt.key} onClick={() => saveConfig({ ...config, orientation: opt.key as "horizontal" | "vertical", rotation: 0 })} style={{
               flex: 1, padding: "12px 10px", borderRadius: 12, border: "none", cursor: "pointer",
@@ -198,7 +199,7 @@ export default function ModoTVModal({ unit, onClose }: { unit: any; onClose: () 
         boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
         marginBottom: 8,
       }}>
-        📺 Abrir Modo TV
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><Tv size={15} /> Abrir Modo TV</span>
       </button>
 
       <div style={{ textAlign: "center", fontSize: 10, color: "var(--dash-text-muted)" }}>

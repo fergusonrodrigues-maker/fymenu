@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { CheckCircle2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import LoadingSpinner from "@/components/LoadingSpinner";
 
@@ -84,7 +85,7 @@ const TRIGGER_LABELS: Record<string, string> = {
 };
 
 const MSG_STATUS_ICON: Record<string, string> = {
-  pending:   "⏳",
+  pending:   "·",
   sent:      "✓",
   delivered: "✓✓",
   read:      "✓✓",
@@ -185,7 +186,7 @@ function QrScreen({
   if (connected) {
     return (
       <div style={{ textAlign: "center", padding: "60px 24px" }}>
-        <div style={{ fontSize: 48, marginBottom: 12 }}>✓</div>
+        <div style={{ marginBottom: 12, display: "flex", justifyContent: "center", color: "#25d366" }}><CheckCircle2 size={48} /></div>
         <div style={{ fontSize: 18, fontWeight: 800, color: WA_GREEN }}>Conectado!</div>
       </div>
     );

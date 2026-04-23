@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback } from "react";
+import { AlertTriangle, Printer } from "lucide-react";
 import { usePrinterConfig } from "@/lib/hooks/usePrinterConfig";
 import { createClient } from "@/lib/supabase/client";
 
@@ -253,7 +254,7 @@ export default function PrinterModal({ unitId, categories }: PrinterModalProps) 
               background: "var(--dash-danger-soft)", border: "1px solid rgba(248,113,113,0.25)",
               fontSize: 12, color: "var(--dash-danger)",
             }}>
-              ⚠️ {hookError}
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><AlertTriangle size={12} /> {hookError}</span>
             </div>
           )}
 
@@ -280,7 +281,7 @@ export default function PrinterModal({ unitId, categories }: PrinterModalProps) 
               background: "var(--dash-warning-soft)", border: "1px solid rgba(251,191,36,0.2)",
               fontSize: 12, color: "var(--dash-warning)",
             }}>
-              <strong>⚠️ Sem impressora:</strong>{" "}
+              <strong style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><AlertTriangle size={12} /> Sem impressora:</strong>{" "}
               {unassignedCats.map((c) => c.name).join(", ")}
             </div>
           )}
@@ -299,7 +300,7 @@ export default function PrinterModal({ unitId, categories }: PrinterModalProps) 
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontWeight: 700, fontSize: 15, color: "var(--dash-text)" }}>
-                        🖨️ {printer.name}
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Printer size={15} /> {printer.name}</span>
                       </div>
                       <div style={{ marginTop: 6, display: "flex", flexWrap: "wrap", gap: 4 }}>
                         {isExpanded && cats.length > 0

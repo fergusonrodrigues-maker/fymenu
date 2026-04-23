@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, lazy, Suspense } from "react";
+import React, { useState, lazy, Suspense } from "react";
+import { UtensilsCrossed, Star, Building2, MessageCircle, LogOut } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { Profile, Restaurant } from "../types";
 import PasswordReqs, { passwordValid, translatePasswordError } from "@/components/PasswordReqs";
@@ -13,19 +14,19 @@ const FYMENU_SUPPORT_WHATSAPP = "https://wa.me/5562982301642?text=Olá! Preciso 
 
 const PLANS = [
   {
-    key: "menu", name: "Menu", icon: "🍽️", units: "1 unidade",
+    key: "menu", name: "Menu", icon: <UtensilsCrossed size={26} />, units: "1 unidade",
     price: "199,90", badge: null, highlight: false,
     accent: "#a78bfa", accentRgb: "139,92,246",
     features: ["Cardápio de vídeo 9:16", "Pedidos via WhatsApp", "Link público + QR Code", "Modo TV", "Analytics básico"],
   },
   {
-    key: "menupro", name: "MenuPro", icon: "⭐", units: "Até 3 unidades",
+    key: "menupro", name: "MenuPro", icon: <Star size={26} />, units: "Até 3 unidades",
     price: "399,90", badge: "MAIS VENDIDO", highlight: true,
     accent: "#00ffae", accentRgb: "0,255,174",
     features: ["Tudo do Menu +", "Comanda Digital", "Cozinha + Garçom em tempo real", "CRM de clientes", "Analytics avançado com IA", "Relatórios em PDF", "Estoque básico"],
   },
   {
-    key: "business", name: "Business", icon: "🏢", units: "Até 4 unidades",
+    key: "business", name: "Business", icon: <Building2 size={26} />, units: "Até 4 unidades",
     price: "1.599", badge: "7 DIAS GRÁTIS", highlight: false,
     accent: "#d4af37", accentRgb: "212,175,55",
     features: ["Tudo do MenuPro +", "Gestão completa de equipe + ponto", "Estoque completo com IA", "CRM com disparo de mensagens", "Financeiro com custos e margens", "Relatórios financeiros com IA", "Hub do gerente"],
@@ -215,7 +216,7 @@ export default function ConfigModal({ profile, restaurant }: { profile: Profile;
             boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
             opacity: saving ? 0.5 : 1,
           }}>
-            {saved ? "✅ Salvo!" : saving ? "Salvando..." : "Salvar"}
+            {saved ? "Salvo!" : saving ? "Salvando..." : "Salvar"}
           </button>
 
           {/* WhatsApp */}
@@ -231,7 +232,7 @@ export default function ConfigModal({ profile, restaurant }: { profile: Profile;
               fontSize: 14, fontWeight: 800, textDecoration: "none",
               boxShadow: "0 1px 0 rgba(37,211,102,0.15) inset, 0 -1px 0 rgba(0,0,0,0.2) inset",
             }}>
-              💬 Suporte WhatsApp
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><MessageCircle size={14} /> Suporte WhatsApp</span>
             </a>
           </div>
 
@@ -242,7 +243,7 @@ export default function ConfigModal({ profile, restaurant }: { profile: Profile;
               background: "var(--dash-danger-soft)", color: "var(--dash-danger)",
               fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
             }}>
-              🚪 Sair da conta
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><LogOut size={14} /> Sair da conta</span>
             </button>
           </form>
         </div>
@@ -353,7 +354,7 @@ export default function ConfigModal({ profile, restaurant }: { profile: Profile;
 
                   {/* Icon + name + subtitle */}
                   <div style={{ textAlign: "center", marginBottom: 14 }}>
-                    <div style={{ fontSize: 26, marginBottom: 4 }}>{plan.icon}</div>
+                    <div style={{ marginBottom: 4, display: "flex", justifyContent: "center", color: plan.accent }}>{plan.icon}</div>
                     <div style={{ fontSize: 18, fontWeight: 900, color: isGold ? "#d4af37" : "var(--dash-text)" }}>{plan.name}</div>
                     <div style={{ fontSize: 11, color: "var(--dash-text-muted)", marginTop: 2 }}>{plan.units}</div>
                   </div>
@@ -460,7 +461,7 @@ export default function ConfigModal({ profile, restaurant }: { profile: Profile;
 
           {passwordSuccess && (
             <div style={{ padding: "8px 12px", borderRadius: 10, background: "var(--dash-accent-soft)", color: "var(--dash-accent)", fontSize: 12 }}>
-              ✅ Senha alterada com sucesso!
+              Senha alterada com sucesso!
             </div>
           )}
 
@@ -483,7 +484,7 @@ export default function ConfigModal({ profile, restaurant }: { profile: Profile;
               background: "rgba(37,211,102,0.1)", color: "#25d366",
               fontSize: 13, fontWeight: 700, textDecoration: "none",
             }}>
-              💬 Falar com suporte
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><MessageCircle size={14} /> Falar com suporte</span>
             </a>
           </div>
         </div>

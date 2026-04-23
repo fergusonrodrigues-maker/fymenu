@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useCallback } from "react";
+import { Lock, CheckCircle2, XCircle, FileText, FolderOpen, Bot, AlertTriangle } from "lucide-react";
 import Papa from "papaparse";
 import type { Unit, Restaurant } from "../types";
 import { createImportBatch, extractDataWithAI } from "../importar/actions";
@@ -632,7 +633,7 @@ export default function ImportarHistoricoModal({ unit, restaurant, initialType, 
   if (!isBusiness) {
     return (
       <div style={{ padding: "8px 0", textAlign: "center" }}>
-        <div style={{ fontSize: 48, marginBottom: 16 }}>🔒</div>
+        <div style={{ marginBottom: 16, display: "flex", justifyContent: "center", color: "var(--dash-text-muted)" }}><Lock size={48} /></div>
         <div style={{ fontSize: 17, fontWeight: 800, color: "var(--dash-text)", marginBottom: 10 }}>
           Recurso exclusivo Business
         </div>
@@ -655,7 +656,7 @@ export default function ImportarHistoricoModal({ unit, restaurant, initialType, 
       return (
         <div style={{ padding: "8px 0" }}>
           <div style={{ textAlign: "center", marginBottom: 28 }}>
-            <div style={{ fontSize: 52, marginBottom: 12 }}>✅</div>
+            <div style={{ marginBottom: 12, display: "flex", justifyContent: "center", color: "var(--dash-accent)" }}><CheckCircle2 size={52} /></div>
             <div style={{ fontSize: 18, fontWeight: 800, color: "var(--dash-text)", marginBottom: 8 }}>
               Importação concluída!
             </div>
@@ -705,7 +706,7 @@ export default function ImportarHistoricoModal({ unit, restaurant, initialType, 
 
         {importError ? (
           <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 40, marginBottom: 12 }}>❌</div>
+            <div style={{ marginBottom: 12, display: "flex", justifyContent: "center", color: "#dc2626" }}><XCircle size={40} /></div>
             <div style={{ fontSize: 16, fontWeight: 700, color: "#dc2626", marginBottom: 12 }}>Erro na importação</div>
             <div style={{ fontSize: 13, color: "var(--dash-text-muted)", marginBottom: 20 }}>{importError}</div>
             <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
@@ -850,7 +851,9 @@ export default function ImportarHistoricoModal({ unit, restaurant, initialType, 
                 transition: "all 0.15s",
               }}
             >
-              {mode === "csv" ? "📄 CSV" : "🤖 IA (PDF/Imagem)"}
+              {mode === "csv"
+                ? <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><FileText size={14} /> CSV</span>
+                : <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Bot size={14} /> IA (PDF/Imagem)</span>}
             </button>
           ))}
         </div>
@@ -872,7 +875,7 @@ export default function ImportarHistoricoModal({ unit, restaurant, initialType, 
                 onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
               {file ? (
                 <div>
-                  <div style={{ fontSize: 36, marginBottom: 10 }}>📄</div>
+                  <div style={{ marginBottom: 10, display: "flex", justifyContent: "center", color: "var(--dash-accent)" }}><FileText size={36} /></div>
                   <div style={{ fontSize: 14, fontWeight: 700, color: "var(--dash-text)", marginBottom: 4 }}>{file.name}</div>
                   <div style={{ fontSize: 12, color: "var(--dash-text-muted)" }}>
                     {(file.size / 1024).toFixed(1)} KB · {csvRows.length} linhas detectadas
@@ -880,7 +883,7 @@ export default function ImportarHistoricoModal({ unit, restaurant, initialType, 
                 </div>
               ) : (
                 <div>
-                  <div style={{ fontSize: 36, marginBottom: 12 }}>📂</div>
+                  <div style={{ marginBottom: 12, display: "flex", justifyContent: "center", color: "var(--dash-text-muted)" }}><FolderOpen size={36} /></div>
                   <div style={{ fontSize: 14, fontWeight: 600, color: "var(--dash-text)", marginBottom: 6 }}>
                     Arraste o arquivo CSV aqui ou clique para selecionar
                   </div>
@@ -912,7 +915,7 @@ export default function ImportarHistoricoModal({ unit, restaurant, initialType, 
                 onChange={e => { const f = e.target.files?.[0]; if (f) { setAiFile(f); setAiError(null); } }} />
               {aiFile ? (
                 <div>
-                  <div style={{ fontSize: 36, marginBottom: 10 }}>🤖</div>
+                  <div style={{ marginBottom: 10, display: "flex", justifyContent: "center", color: "var(--dash-accent)" }}><Bot size={36} /></div>
                   <div style={{ fontSize: 14, fontWeight: 700, color: "var(--dash-text)", marginBottom: 4 }}>{aiFile.name}</div>
                   <div style={{ fontSize: 12, color: "var(--dash-text-muted)" }}>
                     {(aiFile.size / 1024).toFixed(1)} KB · pronto para processar
@@ -920,7 +923,7 @@ export default function ImportarHistoricoModal({ unit, restaurant, initialType, 
                 </div>
               ) : (
                 <div>
-                  <div style={{ fontSize: 36, marginBottom: 12 }}>🤖</div>
+                  <div style={{ marginBottom: 12, display: "flex", justifyContent: "center", color: "var(--dash-text-muted)" }}><Bot size={36} /></div>
                   <div style={{ fontSize: 14, fontWeight: 600, color: "var(--dash-text)", marginBottom: 6 }}>
                     Arraste o arquivo aqui ou clique para selecionar
                   </div>
@@ -1123,7 +1126,7 @@ export default function ImportarHistoricoModal({ unit, restaurant, initialType, 
 
         {hasManyErrors && (
           <div style={{ background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.2)", borderRadius: 12, padding: "10px 14px", marginBottom: 16, fontSize: 13, color: "#dc2626", fontWeight: 600 }}>
-            ⚠️ Muitos erros detectados ({Math.round(errorPct * 100)}%). Revise o mapeamento de colunas.
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><AlertTriangle size={13} /> Muitos erros detectados ({Math.round(errorPct * 100)}%). Revise o mapeamento de colunas.</span>
           </div>
         )}
 

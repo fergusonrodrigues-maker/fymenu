@@ -1,5 +1,6 @@
 "use client";
-import { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { AlertTriangle, FolderOpen, CheckCircle2, Download, Gem, RefreshCw, Sparkles, ClipboardList, Moon, UserMinus } from "lucide-react";
 import { createPortal } from "react-dom";
 import { createClient } from "@/lib/supabase/client";
 import LoadingSpinner, { ContentEnter } from "@/components/LoadingSpinner";
@@ -446,7 +447,7 @@ function DeleteConfirmModal({
   return (
     <ModalOverlay onClose={onClose}>
       <div style={{ textAlign: "center", padding: "8px 0 16px" }}>
-        <div style={{ fontSize: 36, marginBottom: 12 }}>⚠️</div>
+        <div style={{ marginBottom: 12, display: "flex", justifyContent: "center", color: "#ef4444" }}><AlertTriangle size={36} /></div>
         <div style={{ fontSize: 15, fontWeight: 800, color: "var(--dash-text)", marginBottom: 8 }}>Excluir cliente?</div>
         <div style={{ fontSize: 13, color: "var(--dash-text-muted)", marginBottom: 24 }}>
           <strong>{customer.name}</strong> será removido do CRM.<br />Esta ação pode ser revertida pelo suporte.
@@ -580,7 +581,7 @@ function ImportModal({ unitId, onImported, onClose }: { unitId: string; onImport
             onDragOver={e => e.preventDefault()}
             onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
           >
-            <div style={{ fontSize: 28, marginBottom: 8 }}>📂</div>
+            <div style={{ marginBottom: 8, display: "flex", justifyContent: "center", color: "var(--dash-text-muted)" }}><FolderOpen size={28} /></div>
             <div style={{ fontSize: 13, fontWeight: 700, color: "var(--dash-text)", marginBottom: 4 }}>Clique ou arraste o arquivo</div>
             <div style={{ fontSize: 11, color: "var(--dash-text-muted)" }}>CSV ou XLSX</div>
             <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls" style={{ display: "none" }}
@@ -694,7 +695,7 @@ function ImportModal({ unitId, onImported, onClose }: { unitId: string; onImport
       {/* Step: done */}
       {step === "done" && result && (
         <div style={{ textAlign: "center", padding: "8px 0 16px" }}>
-          <div style={{ fontSize: 32, marginBottom: 12 }}>✅</div>
+          <div style={{ marginBottom: 12, display: "flex", justifyContent: "center", color: "var(--dash-accent)" }}><CheckCircle2 size={32} /></div>
           <div style={{ fontSize: 15, fontWeight: 800, color: "var(--dash-text)", marginBottom: 16 }}>Importação concluída</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 20 }}>
             <div style={{ padding: 12, borderRadius: 12, background: `${WA_GREEN}14`, textAlign: "center" }}>
@@ -902,7 +903,7 @@ export default function CrmModal({ unit, restaurant, onOpenImport }: { unit: any
             onClick={() => onOpenImport("crm_customers")}
             style={{ padding: "7px 14px", borderRadius: 10, border: "1px solid var(--dash-border)", background: "transparent", color: "var(--dash-text-muted)", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
           >
-            📥 Importar clientes históricos
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Download size={12} /> Importar clientes históricos</span>
           </button>
         </div>
       )}
@@ -1053,12 +1054,12 @@ export default function CrmModal({ unit, restaurant, onOpenImport }: { unit: any
             <div>
               <div style={{ fontSize: 13, fontWeight: 700, color: "var(--dash-text)", marginBottom: 12 }}>Segmentação por frequência</div>
               {[
-                { label: "Fiéis (5+ pedidos)", filter: (c: CrmCustomer) => c.total_orders >= 5, color: "var(--dash-accent)", icon: "💎" },
-                { label: "Recorrentes (2-4 pedidos)", filter: (c: CrmCustomer) => c.total_orders >= 2 && c.total_orders < 5, color: "var(--dash-info)", icon: "🔄" },
-                { label: "Novos (1 pedido)", filter: (c: CrmCustomer) => c.total_orders === 1, color: "var(--dash-warning)", icon: "🆕" },
-                { label: "Sem pedidos (manual/import)", filter: (c: CrmCustomer) => c.total_orders === 0, color: "var(--dash-text-muted)", icon: "📋" },
-                { label: "Inativos (30d+ sem pedir)", filter: (c: CrmCustomer) => c.total_orders > 0 && daysSince(c.last_order_at) > 30, color: "var(--dash-danger)", icon: "💤" },
-                { label: "Perdidos (90d+ sem pedir)", filter: (c: CrmCustomer) => c.total_orders > 0 && daysSince(c.last_order_at) > 90, color: "var(--dash-text-muted)", icon: "👋" },
+                { label: "Fiéis (5+ pedidos)", filter: (c: CrmCustomer) => c.total_orders >= 5, color: "var(--dash-accent)", icon: <Gem size={20} /> },
+                { label: "Recorrentes (2-4 pedidos)", filter: (c: CrmCustomer) => c.total_orders >= 2 && c.total_orders < 5, color: "var(--dash-info)", icon: <RefreshCw size={20} /> },
+                { label: "Novos (1 pedido)", filter: (c: CrmCustomer) => c.total_orders === 1, color: "var(--dash-warning)", icon: <Sparkles size={20} /> },
+                { label: "Sem pedidos (manual/import)", filter: (c: CrmCustomer) => c.total_orders === 0, color: "var(--dash-text-muted)", icon: <ClipboardList size={20} /> },
+                { label: "Inativos (30d+ sem pedir)", filter: (c: CrmCustomer) => c.total_orders > 0 && daysSince(c.last_order_at) > 30, color: "var(--dash-danger)", icon: <Moon size={20} /> },
+                { label: "Perdidos (90d+ sem pedir)", filter: (c: CrmCustomer) => c.total_orders > 0 && daysSince(c.last_order_at) > 90, color: "var(--dash-text-muted)", icon: <UserMinus size={20} /> },
               ].map(segment => {
                 const segClients = crmCustomers.filter(segment.filter);
                 const segRevenue = segClients.reduce((s, c) => s + (c.total_spent ?? 0), 0);
@@ -1067,7 +1068,7 @@ export default function CrmModal({ unit, restaurant, onOpenImport }: { unit: any
                     display: "flex", alignItems: "center", gap: 10, padding: "12px 14px",
                     borderRadius: 14, background: "var(--dash-card)", marginBottom: 6, boxShadow: "var(--dash-shadow)",
                   }}>
-                    <span style={{ fontSize: 20 }}>{segment.icon}</span>
+                    <span style={{ display: "flex", color: segment.color }}>{segment.icon}</span>
                     <div style={{ flex: 1 }}>
                       <div style={{ color: "var(--dash-text)", fontSize: 13, fontWeight: 600 }}>{segment.label}</div>
                       <div style={{ color: "var(--dash-text-muted)", fontSize: 10, marginTop: 2 }}>

@@ -749,7 +749,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
                     }} />
                   </div>
                   {todayRevenue >= dailyGoal && (
-                    <div style={{ fontSize: 11, color: "var(--dash-accent)", marginTop: 6, fontWeight: 700 }}>Meta atingida! 🎉</div>
+                    <div style={{ fontSize: 11, color: "var(--dash-accent)", marginTop: 6, fontWeight: 700 }}>Meta atingida!</div>
                   )}
                 </>
               )}

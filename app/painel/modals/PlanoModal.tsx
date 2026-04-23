@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import { UtensilsCrossed, Star, Building2, Sparkles, AlertTriangle, Tag } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Restaurant } from "../types";
 
@@ -17,7 +18,7 @@ const PLANS = [
   {
     key: "menu",
     name: "Menu",
-    icon: "🍽️",
+    icon: <UtensilsCrossed size={32} />,
     tagline: "1 unidade",
     prices: { monthly: 199.90, quarterly: 179.90, semiannual: 159.90 },
     accent: "#a78bfa",
@@ -38,7 +39,7 @@ const PLANS = [
   {
     key: "menupro",
     name: "MenuPro",
-    icon: "⭐",
+    icon: <Star size={32} />,
     tagline: "Até 3 unidades",
     badge: "MAIS VENDIDO",
     prices: { monthly: 399.90, quarterly: 359.90, semiannual: 319.90 },
@@ -62,7 +63,7 @@ const PLANS = [
   {
     key: "business",
     name: "Business",
-    icon: "🏢",
+    icon: <Building2 size={32} />,
     tagline: "Até 4 unidades",
     badge: "7 DIAS GRÁTIS",
     prices: { monthly: 1599, quarterly: 1399, semiannual: 1199 },
@@ -187,7 +188,7 @@ export default function PlanoModal({
 
         const msg =
           planKey === "business"
-            ? `Trial Business ativado! ${7 + trialExtensionDays} dias grátis iniciados 🎉`
+            ? `Trial Business ativado! ${7 + trialExtensionDays} dias grátis iniciados`
             : "Plano ativado com sucesso!";
         setToast(msg);
         setTimeout(() => window.location.reload(), 2200);
@@ -233,7 +234,7 @@ export default function PlanoModal({
           background: "rgba(0,255,174,0.06)", border: "1px solid rgba(0,255,174,0.18)",
           animation: "planGoldSpin 0s",
         }}>
-          <div style={{ fontSize: 36, marginBottom: 12 }}>🎉</div>
+          <div style={{ marginBottom: 12, display: "flex", justifyContent: "center", color: "var(--dash-accent)" }}><Sparkles size={36} /></div>
           <div style={{ fontSize: 16, fontWeight: 900, color: "var(--dash-accent)", marginBottom: 8 }}>
             {toast}
           </div>
@@ -254,7 +255,7 @@ export default function PlanoModal({
           background: "rgba(248,113,113,0.05)", border: "1px solid rgba(248,113,113,0.12)",
           marginBottom: 20, textAlign: "center",
         }}>
-          <div style={{ fontSize: 28, marginBottom: 12 }}>⚠️</div>
+          <div style={{ marginBottom: 12, display: "flex", justifyContent: "center", color: "#f87171" }}><AlertTriangle size={28} /></div>
           <div style={{ fontSize: 16, fontWeight: 900, color: "#f87171", marginBottom: 8 }}>
             Cancelar plano?
           </div>
@@ -314,7 +315,7 @@ export default function PlanoModal({
               background: "rgba(0,255,174,0.08)", border: "1px solid rgba(0,255,174,0.22)",
               color: "var(--dash-accent)", fontSize: 11, fontWeight: 700,
             }}>
-              🎟 {c.coupon_code}
+              <Tag size={12} /> {c.coupon_code}
               {c.discount_type === "trial_extension" && c.trial_extra_days > 0 && (
                 <span style={{ opacity: 0.7 }}> +{c.trial_extra_days}d</span>
               )}
@@ -502,7 +503,7 @@ export default function PlanoModal({
 
                 {/* Icon + Name + Tagline */}
                 <div style={{ textAlign: "center", marginBottom: 18 }}>
-                  <div style={{ fontSize: 32, marginBottom: 8 }}>{plan.icon}</div>
+                  <div style={{ marginBottom: 8, display: "flex", justifyContent: "center", color: plan.accent }}>{plan.icon}</div>
                   <div style={{ fontSize: 22, fontWeight: 900, color: plan.accent, marginBottom: 2 }}>
                     {plan.name}
                   </div>

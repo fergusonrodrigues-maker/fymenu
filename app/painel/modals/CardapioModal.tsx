@@ -1284,7 +1284,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                     Selecione os produtos que mostrarão este combo como sugestão.
                   </div>
                   <input value={comboProductSearch} onChange={e => setComboProductSearch(e.target.value)}
-                    placeholder="🔍 Buscar produto..."
+                    placeholder="Buscar produto..."
                     style={{
                       width: "100%", padding: "8px 12px", borderRadius: 10,
                       background: "var(--dash-input-bg)", border: "1px solid var(--dash-input-border)",

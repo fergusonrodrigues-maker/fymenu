@@ -7,7 +7,7 @@ import LoadingSpinner, { ContentEnter } from "@/components/LoadingSpinner";
 import AIButton from "@/components/AIButton";
 import AIWaveLoader from "@/components/AIWaveLoader";
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell } from "recharts";
-import { Eye, MousePointerClick, CheckCircle2, FileText, Bike, BarChart3, Lock, RefreshCw, Download, X } from "lucide-react";
+import { Eye, MousePointerClick, CheckCircle2, FileText, Bike, BarChart3, Lock, RefreshCw, Download, X, Star } from "lucide-react";
 
 const supabase = createClient();
 
@@ -719,7 +719,7 @@ export default function AnalyticsModal({
 
           {/* Product Attention Time */}
           <div style={{ marginTop: 20 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "var(--dash-text)", marginBottom: 12 }}>⏱️ Product Attention Time</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "var(--dash-text)", marginBottom: 12 }}>Product Attention Time</div>
             <div style={{ fontSize: 11, color: "var(--dash-text-muted)", marginBottom: 12 }}>
               Tempo médio que cada cliente fica vendo o produto
             </div>
@@ -794,7 +794,7 @@ export default function AnalyticsModal({
         <div>
           {totalReviews === 0 ? (
             <div style={{ textAlign: "center", padding: 40, color: "var(--dash-text-muted)" }}>
-              <div style={{ fontSize: 32, marginBottom: 12 }}>⭐</div>
+              <div style={{ marginBottom: 12, display: "flex", justifyContent: "center", color: "#fbbf24" }}><Star size={32} /></div>
               <div style={{ fontSize: 14, fontWeight: 700, color: "var(--dash-text)" }}>Nenhuma avaliação ainda</div>
               <div style={{ fontSize: 12, marginTop: 6 }}>As avaliações aparecem quando clientes fecham comandas.</div>
             </div>
@@ -803,8 +803,8 @@ export default function AnalyticsModal({
               {/* Resumo */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8, marginBottom: 16 }}>
                 {[
-                  { value: avgRestaurant, label: "Restaurante ⭐", color: "var(--dash-accent)" },
-                  { value: avgWaiter, label: "Garçons ⭐", color: "var(--dash-accent)" },
+                  { value: avgRestaurant, label: "Restaurante", color: "var(--dash-accent)" },
+                  { value: avgWaiter, label: "Garçons", color: "var(--dash-accent)" },
                   { value: String(totalReviews), label: "Avaliações", color: "var(--dash-text)" },
                   { value: String(googleRedirects), label: "→ Google", color: "#4285f4" },
                 ].map((card) => (
@@ -823,7 +823,7 @@ export default function AnalyticsModal({
                   const pct = totalReviews > 0 ? (count / totalReviews) * 100 : 0;
                   return (
                     <div key={star} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                      <span style={{ fontSize: 12, color: "var(--dash-text-muted)", width: 30 }}>{star} ⭐</span>
+                      <span style={{ fontSize: 12, color: "var(--dash-text-muted)", width: 30, display: "inline-flex", alignItems: "center", gap: 2 }}>{star} <Star size={10} style={{ color: "#fbbf24" }} /></span>
                       <div style={{ flex: 1, height: 8, borderRadius: 4, background: "var(--dash-card-hover)", overflow: "hidden" }}>
                         <div style={{
                           height: "100%", borderRadius: 4, width: `${pct}%`,
@@ -849,7 +849,7 @@ export default function AnalyticsModal({
                         <div style={{ color: "var(--dash-text-muted)", fontSize: 10 }}>{w.count} avaliações</div>
                       </div>
                       <div style={{ fontSize: 16, fontWeight: 800, color: parseFloat(w.avg) >= 4 ? "var(--dash-accent)" : parseFloat(w.avg) >= 3 ? "var(--dash-warning)" : "var(--dash-danger)" }}>
-                        {w.avg} ⭐
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>{w.avg} <Star size={14} style={{ color: "#fbbf24" }} /></span>
                       </div>
                     </div>
                   ))}
@@ -867,7 +867,7 @@ export default function AnalyticsModal({
                       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
                         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                           <span style={{ fontSize: 11, fontWeight: 700, color: r.restaurant_rating >= 4 ? "var(--dash-accent)" : r.restaurant_rating >= 3 ? "var(--dash-warning)" : "var(--dash-danger)" }}>
-                            {r.restaurant_rating}⭐
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: 2 }}>{r.restaurant_rating}<Star size={11} style={{ color: "#fbbf24" }} /></span>
                           </span>
                           {r.waiter_name && <span style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>Garçom: {r.waiter_name}</span>}
                         </div>

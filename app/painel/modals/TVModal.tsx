@@ -1,12 +1,14 @@
 "use client";
 
+import React from "react";
+import { Tv, Clapperboard } from "lucide-react";
 import { Unit } from "../types";
 
 export default function TVModal({ unit, tvCount }: { unit: Unit | null; tvCount: number }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingTop: 8 }}>
       <div style={{ borderRadius: 16, padding: "20px", background: "var(--dash-card)", border: "1px solid var(--dash-card-border)", textAlign: "center" }}>
-        <div style={{ fontSize: 40, marginBottom: 12 }}>📺</div>
+        <div style={{ marginBottom: 12, display: "flex", justifyContent: "center", color: "var(--dash-text-muted)" }}><Tv size={40} /></div>
         <div style={{ color: "var(--dash-text)", fontSize: 16, fontWeight: 700, marginBottom: 4 }}>{tvCount} vídeo{tvCount !== 1 ? "s" : ""} ativo{tvCount !== 1 ? "s" : ""}</div>
         <div style={{ color: "var(--dash-text-muted)", fontSize: 13, marginBottom: 16 }}>Exiba seus produtos em modo fullscreen para TV, totem ou projetor.</div>
         {unit && (
@@ -20,7 +22,7 @@ export default function TVModal({ unit, tvCount }: { unit: Unit | null; tvCount:
       </div>
       <div style={{ borderRadius: 14, padding: "14px 16px", background: "var(--dash-card-subtle)", border: "1px solid var(--dash-card-border)" }}>
         <div style={{ color: "var(--dash-text-muted)", fontSize: 13 }}>
-          🎬 Vídeos até 15 segundos · Sem som · Autoplay · Vertical ou horizontal
+          Vídeos até 15 segundos · Sem som · Autoplay · Vertical ou horizontal
         </div>
       </div>
     </div>

@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import { X, QrCode, CreditCard, Clock, CheckCircle2 } from "lucide-react";
 import { createPortal } from "react-dom";
 
 type CycleKey = "monthly" | "quarterly" | "semiannual";
@@ -218,9 +219,9 @@ export default function PaymentModal({ planKey, planName, accent, accentRgb, onC
           </div>
           <button onClick={onClose} style={{
             width: 32, height: 32, borderRadius: 10, border: "none", cursor: "pointer",
-            background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.5)", fontSize: 16,
+            background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.5)",
             display: "flex", alignItems: "center", justifyContent: "center",
-          }}>✕</button>
+          }}><X size={14} /></button>
         </div>
 
         {/* Step indicator */}
@@ -340,7 +341,7 @@ export default function PaymentModal({ planKey, planName, accent, accentRgb, onC
                 display: "flex", alignItems: "center", gap: 14,
                 fontFamily: "inherit",
               }}>
-                <span style={{ fontSize: 28 }}>🟩</span>
+                <span style={{ display: "flex" }}><QrCode size={28} style={{ color: "#00ffae" }} /></span>
                 <div style={{ textAlign: "left" }}>
                   <div style={{ fontSize: 15, fontWeight: 800, color: "#00ffae" }}>PIX</div>
                   <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>Aprovação instantânea · QR Code</div>
@@ -352,7 +353,7 @@ export default function PaymentModal({ planKey, planName, accent, accentRgb, onC
                 display: "flex", alignItems: "center", gap: 14,
                 fontFamily: "inherit",
               }}>
-                <span style={{ fontSize: 28 }}>💳</span>
+                <span style={{ display: "flex" }}><CreditCard size={28} style={{ color: "#fff" }} /></span>
                 <div style={{ textAlign: "left" }}>
                   <div style={{ fontSize: 15, fontWeight: 800, color: "#fff" }}>Cartão de Crédito</div>
                   <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>Visa, Mastercard, Elo · Processamento imediato</div>
@@ -371,7 +372,7 @@ export default function PaymentModal({ planKey, planName, accent, accentRgb, onC
           <div style={{ textAlign: "center" }}>
             {pixLoading && (
               <div style={{ padding: "40px 0", color: "rgba(255,255,255,0.5)", fontSize: 13 }}>
-                <div style={{ fontSize: 32, marginBottom: 12 }}>⏳</div>
+                <div style={{ marginBottom: 12, display: "flex", justifyContent: "center", color: "rgba(255,255,255,0.4)" }}><Clock size={32} /></div>
                 Gerando QR Code PIX...
               </div>
             )}
@@ -392,7 +393,7 @@ export default function PaymentModal({ planKey, planName, accent, accentRgb, onC
               <>
                 {isPaid ? (
                   <div style={{ padding: "32px 0" }}>
-                    <div style={{ fontSize: 48, marginBottom: 12 }}>✅</div>
+                    <div style={{ marginBottom: 12, display: "flex", justifyContent: "center", color: "#00ffae" }}><CheckCircle2 size={48} /></div>
                     <div style={{ fontSize: 20, fontWeight: 900, color: "#00ffae", marginBottom: 4 }}>Pagamento confirmado!</div>
                     <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)" }}>Ativando seu plano...</div>
                   </div>
@@ -467,7 +468,7 @@ export default function PaymentModal({ planKey, planName, accent, accentRgb, onC
           <div>
             {cardSuccess ? (
               <div style={{ textAlign: "center", padding: "32px 0" }}>
-                <div style={{ fontSize: 48, marginBottom: 12 }}>✅</div>
+                <div style={{ marginBottom: 12, display: "flex", justifyContent: "center", color: "#00ffae" }}><CheckCircle2 size={48} /></div>
                 <div style={{ fontSize: 20, fontWeight: 900, color: "#00ffae", marginBottom: 4 }}>Pagamento confirmado!</div>
                 <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)" }}>Ativando seu plano...</div>
               </div>
