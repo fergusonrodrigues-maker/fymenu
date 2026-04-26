@@ -40,6 +40,12 @@ export async function middleware(request: NextRequest) {
   if (isSubdomain) {
     const subdomain = hostname.replace(`.${mainDomain}`, "");
 
+    // ── Reserved subdomains — never route to delivery/employee ────────────
+    const RESERVED_SUBDOMAINS = ["vercel", "git-main"];
+    if (RESERVED_SUBDOMAINS.includes(subdomain)) {
+      return NextResponse.next();
+    }
+
     // ── Employee subdomain: [role]-[username].fymenu.com ─────────────────
     // e.g. garcom-joao.fymenu.com → /employee-login?subdomain=garcom-joao
     const EMPLOYEE_ROLES = ["cozinha", "garcom", "entregador", "gerente", "financeiro", "limpeza", "caixa"];
@@ -82,6 +88,11 @@ export async function middleware(request: NextRequest) {
     } else if (pathname.startsWith("/comanda/")) {
       const hash = pathname.slice("/comanda/".length);
       url.pathname = `/comanda/${slug}/${hash}`;
+    } else if (pathname === "/mesa") {
+      url.pathname = `/u/${slug}/mesa`;
+    } else if (pathname === "/colaborador" || pathname.startsWith("/colaborador/")) {
+      const subPath = pathname.slice("/colaborador".length);
+      url.pathname = `/colaborador-app/${slug}${subPath}`;
     } else {
       // /pdv, /pdv/* and any other sub-paths remain under delivery
       url.pathname = `/delivery/${slug}${pathname}`;
