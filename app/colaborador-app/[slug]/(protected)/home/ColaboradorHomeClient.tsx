@@ -3,7 +3,8 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
-import { revokeSession, getRoleLabel } from "@/app/colaborador-app/actions";
+import { revokeSession } from "@/app/colaborador-app/actions";
+import { getRoleLabel } from "@/app/colaborador-app/roleUtils";
 
 interface Props {
   slug: string;
