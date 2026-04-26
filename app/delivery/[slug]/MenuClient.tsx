@@ -542,11 +542,13 @@ export default function MenuClient({
         className="min-h-dvh menu-bg-themed"
         style={{
           paddingTop: "env(safe-area-inset-top, 0px)",
-          paddingBottom: glassBarMaximized
-            ? "calc(360px + env(safe-area-inset-bottom, 0px))"
-            : pillsSticky
-              ? "calc(110px + env(safe-area-inset-bottom, 0px))"
-              : "calc(24px + env(safe-area-inset-bottom, 0px))",
+          paddingBottom: mode === "mesa"
+            ? "calc(56px + env(safe-area-inset-bottom, 0px))"
+            : glassBarMaximized
+              ? "calc(360px + env(safe-area-inset-bottom, 0px))"
+              : pillsSticky
+                ? "calc(110px + env(safe-area-inset-bottom, 0px))"
+                : "calc(24px + env(safe-area-inset-bottom, 0px))",
         }}
       >
         {/* ── HEADER: Capa + Logo + Busca ──────────────────────────────── */}
@@ -697,16 +699,29 @@ export default function MenuClient({
                 </div>
               ) : null;
             })()}
-            <div
-              style={{
-                fontSize: 12,
-                color: isDark ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.3)",
-                marginTop: 6,
-                letterSpacing: "0.5px",
-              }}
-            >
-              Assista · Escolha · Peça
-            </div>
+            {mode === "mesa" ? (
+              <div style={{
+                display: "inline-flex", alignItems: "center", gap: 5,
+                padding: "4px 12px", borderRadius: 20, marginTop: 8,
+                background: "rgba(0,255,174,0.08)",
+                border: "1px solid rgba(0,255,174,0.18)",
+              }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: "#00ffae", letterSpacing: "0.3px" }}>
+                  🍽 Cardápio do Salão
+                </span>
+              </div>
+            ) : (
+              <div
+                style={{
+                  fontSize: 12,
+                  color: isDark ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.3)",
+                  marginTop: 6,
+                  letterSpacing: "0.5px",
+                }}
+              >
+                Assista · Escolha · Peça
+              </div>
+            )}
           </div>
 
           {/* C) Campo de busca expansível */}
@@ -1299,6 +1314,24 @@ export default function MenuClient({
           onUpdateQty={updateCartQty}
           deliveryEnabled={mode === "delivery" && !!unit.delivery_enabled}
         />
+      )}
+
+      {/* Mesa footer — fixed bar, replaces cart bar */}
+      {mode === "mesa" && (
+        <div style={{
+          position: "fixed", bottom: 0, left: 0, right: 0,
+          padding: "14px 16px",
+          paddingBottom: "calc(14px + env(safe-area-inset-bottom, 0px))",
+          background: isDark ? "rgba(5,5,5,0.92)" : "rgba(255,255,255,0.95)",
+          backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
+          borderTop: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.07)",
+          textAlign: "center",
+          zIndex: 50,
+        }}>
+          <p style={{ margin: 0, fontSize: 13, color: isDark ? "rgba(255,255,255,0.45)" : "#555" }}>
+            Para fazer seu pedido, <strong style={{ color: isDark ? "rgba(255,255,255,0.7)" : "#222" }}>chame um garçom</strong>
+          </p>
+        </div>
       )}
 
     </>

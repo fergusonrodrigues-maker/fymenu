@@ -1,9 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { getOrBuildMenuCache } from "@/lib/cache/buildMenuCache";
 import type { MenuCacheData } from "@/lib/cache/buildMenuCache";
-import MesaMenuClient from "./MesaMenuClient";
+import MenuClient from "@/app/delivery/[slug]/MenuClient";
 import type { Category, Product, ProductVariation, Unit } from "@/app/delivery/[slug]/menuTypes";
 import { normalizePublicSlug, slugify, toNumberOrNull } from "@/app/delivery/[slug]/menuTypes";
+import type { Metadata } from "next";
 
 export const revalidate = 0;
 
@@ -19,6 +20,27 @@ async function fetchMenuCache(slug: string, unitId: string): Promise<MenuCacheDa
   return getOrBuildMenuCache(unitId);
 }
 
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const publicSlug = normalizePublicSlug(slug);
+  const supabase = await createClient();
+  try {
+    const { data: unit } = await supabase
+      .from("units")
+      .select("name, logo_url")
+      .eq("slug", publicSlug)
+      .single();
+    if (!unit) return { title: "Cardápio do Salão" };
+    return { title: `${unit.name} — Cardápio do Salão` };
+  } catch {
+    return { title: "Cardápio do Salão" };
+  }
+}
+
 export default async function MesaPage({
   params,
 }: {
@@ -31,35 +53,21 @@ export default async function MesaPage({
   const { data: unitData, error: unitErr } = await supabase
     .from("units")
     .select(
-      "id, restaurant_id, name, slug, logo_url, cover_url, business_hours, force_status, payment_active"
+      "id, restaurant_id, name, slug, city, neighborhood, whatsapp, instagram, maps_url, logo_url, cover_url, banner_url, description, payment_active, facebook_pixel_id, ifood_url, ifood_platform, business_hours, force_status, delivery_enabled"
     )
     .eq("slug", publicSlug)
     .maybeSingle();
 
-  if (unitErr || !unitData) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center p-6">
-        <p className="text-gray-500">Cardápio não encontrado.</p>
-      </div>
-    );
-  }
+  if (unitErr) return <ErrorScreen message={unitErr.message} />;
+  if (!unitData) return <NotFoundScreen slug={publicSlug} />;
 
   if (unitData.payment_active === false && unitData.restaurant_id) {
-    const { data: restaurant } = await supabase
+    const { data: restaurantData } = await supabase
       .from("restaurants")
       .select("free_access")
       .eq("id", unitData.restaurant_id)
       .single();
-    if (!restaurant?.free_access) {
-      return (
-        <div className="min-h-screen bg-white flex items-center justify-center p-6 text-center">
-          <div>
-            <p className="text-lg font-semibold text-gray-800">Cardápio inativo</p>
-            <p className="mt-2 text-sm text-gray-500">O proprietário precisa ativar um plano.</p>
-          </div>
-        </div>
-      );
-    }
+    if (!restaurantData?.free_access) return <InactiveScreen />;
   }
 
   const unit: Unit = {
@@ -67,18 +75,21 @@ export default async function MesaPage({
     restaurant_id: unitData.restaurant_id ?? null,
     name: unitData.name ?? "",
     slug: unitData.slug ?? publicSlug,
-    city: null,
-    neighborhood: null,
-    whatsapp: null,
-    instagram: null,
-    maps_url: null,
+    city: unitData.city ?? null,
+    neighborhood: unitData.neighborhood ?? null,
+    whatsapp: unitData.whatsapp ?? null,
+    instagram: unitData.instagram ?? null,
+    maps_url: unitData.maps_url ?? null,
     logo_url: unitData.logo_url ?? null,
     cover_url: unitData.cover_url ?? null,
-    banner_url: null,
-    description: null,
+    banner_url: unitData.banner_url ?? null,
+    description: unitData.description ?? null,
+    facebook_pixel_id: unitData.facebook_pixel_id ?? null,
+    ifood_url: unitData.ifood_url ?? null,
+    ifood_platform: unitData.ifood_platform ?? null,
     business_hours: unitData.business_hours ?? null,
     force_status: unitData.force_status ?? "auto",
-    delivery_enabled: false,
+    delivery_enabled: (unitData as any).delivery_enabled ?? false,
   };
 
   const cachedMenu = await fetchMenuCache(unit.slug, unit.id);
@@ -98,11 +109,13 @@ export default async function MesaPage({
     availability: c.availability ?? null,
   }));
 
+  if (!categories.length) {
+    return <MenuClient unit={unit} categories={[]} products={[]} variations={{}} upsells={{}} mode="mesa" />;
+  }
+
   const products: Product[] = cachedMenu.categories.flatMap((c) =>
     c.products
       .filter((p) => p.is_active !== false)
-      // exclude delivery-only products
-      .filter((p) => !p.avail_mode || p.avail_mode === "both" || p.avail_mode === "mesa")
       .map((p) => ({
         id: p.id,
         category_id: c.id,
@@ -111,14 +124,18 @@ export default async function MesaPage({
         price_type: (p.variations.length > 0 ? "variable" : "fixed") as "fixed" | "variable",
         base_price: toNumberOrNull(p.base_price),
         thumbnail_url: p.thumbnail_url ?? null,
-        video_url: null,
+        video_url: p.video_url ?? null,
         is_active: p.is_active,
         is_age_restricted: p.is_age_restricted ?? false,
         order_index: null,
-        upsell_mode: null,
+        upsell_mode: p.upsell_mode ?? null,
         avail_mode: p.avail_mode ?? null,
       }))
   );
+
+  if (!products.length) {
+    return <MenuClient unit={unit} categories={categories} products={[]} variations={{}} upsells={{}} mode="mesa" />;
+  }
 
   const variations: Record<string, ProductVariation[]> = {};
   for (const cat of cachedMenu.categories) {
@@ -136,11 +153,47 @@ export default async function MesaPage({
   }
 
   return (
-    <MesaMenuClient
+    <MenuClient
       unit={unit}
       categories={categories}
       products={products}
       variations={variations}
+      upsells={{}}
+      mode="mesa"
     />
+  );
+}
+
+function ErrorScreen({ message }: { message: string }) {
+  return (
+    <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
+      <div className="max-w-md w-full">
+        <p className="text-lg font-semibold">Erro ao carregar cardápio</p>
+        <p className="mt-2 text-sm text-white/60">{message}</p>
+      </div>
+    </div>
+  );
+}
+
+function NotFoundScreen({ slug }: { slug: string }) {
+  return (
+    <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
+      <div className="max-w-md w-full">
+        <p className="text-lg font-semibold">Cardápio não encontrado</p>
+        <p className="mt-2 text-sm text-white/60">Slug: <span className="text-white">{slug}</span></p>
+      </div>
+    </div>
+  );
+}
+
+function InactiveScreen() {
+  return (
+    <div className="min-h-screen bg-black text-white flex items-center justify-center p-6 text-center">
+      <div className="max-w-md w-full">
+        <div style={{ fontSize: 48, marginBottom: 16 }}>🔒</div>
+        <p className="text-lg font-semibold">Cardápio inativo</p>
+        <p className="mt-2 text-sm text-white/60">O proprietário precisa ativar um plano.</p>
+      </div>
+    </div>
   );
 }
