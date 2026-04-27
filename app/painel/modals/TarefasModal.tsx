@@ -126,6 +126,7 @@ export default function TarefasModal({ unit, restaurant }: { unit: Unit | null; 
   const [mAssignRole, setMAssignRole] = useState("geral");
   const [mAssignEmployee, setMAssignEmployee] = useState("");
   const [mRequiresPhoto, setMRequiresPhoto] = useState(false);
+  const [mNotifyOwner, setMNotifyOwner] = useState(true);
 
   // ── Data loading ────────────────────────────────────────────────────────────
 
@@ -206,9 +207,11 @@ export default function TarefasModal({ unit, restaurant }: { unit: Unit | null; 
       setMDate(instance.due_date); setMTime(instance.due_time ?? "");
       setMAssignType(instance.assignment_type as any); setMAssignRole(instance.assigned_role ?? "geral");
       setMAssignEmployee(instance.assigned_employee_id ?? ""); setMRequiresPhoto(instance.requires_photo);
+      setMNotifyOwner(instance.notify_owner_on_complete ?? true);
     } else {
       setMName(""); setMDesc(""); setMDate(todayStr()); setMTime("");
       setMAssignType("role"); setMAssignRole("geral"); setMAssignEmployee(""); setMRequiresPhoto(false);
+      setMNotifyOwner(true);
     }
     setErr(null);
     setSubView("manual-form");
@@ -270,6 +273,7 @@ export default function TarefasModal({ unit, restaurant }: { unit: Unit | null; 
         assigned_role: mAssignType === "role" ? mAssignRole : undefined,
         assigned_employee_id: mAssignType === "employee" ? mAssignEmployee : undefined,
         requires_photo: mRequiresPhoto,
+        notify_owner_on_complete: mNotifyOwner,
       };
       if (editingInstance) {
         await updateTaskInstance(editingInstance.id, input);
@@ -595,10 +599,14 @@ export default function TarefasModal({ unit, restaurant }: { unit: Unit | null; 
           assignRole={mAssignRole} setAssignRole={setMAssignRole}
           assignEmployee={mAssignEmployee} setAssignEmployee={setMAssignEmployee} />
 
-        <div style={{ marginBottom: 20 }}>
+        <div style={{ marginBottom: 20, display: "flex", flexDirection: "column", gap: 10 }}>
           <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
             <input type="checkbox" checked={mRequiresPhoto} onChange={(e) => setMRequiresPhoto(e.target.checked)} style={{ accentColor: "var(--dash-accent)", width: 16, height: 16 }} />
             <span style={{ color: "var(--dash-text)", fontSize: 13 }}>📷 Exigir foto ao concluir</span>
+          </label>
+          <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+            <input type="checkbox" checked={mNotifyOwner} onChange={(e) => setMNotifyOwner(e.target.checked)} style={{ accentColor: "var(--dash-accent)", width: 16, height: 16 }} />
+            <span style={{ color: "var(--dash-text)", fontSize: 13 }}>🔔 Notificar dono no WhatsApp ao concluir</span>
           </label>
         </div>
 

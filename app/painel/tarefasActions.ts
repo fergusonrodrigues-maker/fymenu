@@ -52,6 +52,7 @@ export type ManualTaskInput = {
   assigned_role?: string;
   assigned_employee_id?: string;
   requires_photo: boolean;
+  notify_owner_on_complete: boolean;
 };
 
 export type TaskTemplateRow = {
@@ -81,6 +82,7 @@ export type TaskInstanceRow = {
   assigned_role: string | null;
   assigned_employee_id: string | null;
   requires_photo: boolean;
+  notify_owner_on_complete: boolean;
   status: string;
   source: string;
   template_id: string | null;
@@ -259,7 +261,7 @@ export async function createManualTaskInstance(input: ManualTaskInput): Promise<
     assigned_role: input.assigned_role || null,
     assigned_employee_id: input.assigned_employee_id || null,
     requires_photo: input.requires_photo,
-    notify_owner_on_complete: true,
+    notify_owner_on_complete: input.notify_owner_on_complete,
     status: "pending",
     created_by: user.id,
   }).select("id").single();
@@ -293,6 +295,7 @@ export async function updateTaskInstance(id: string, input: ManualTaskInput): Pr
     assigned_role: input.assigned_role || null,
     assigned_employee_id: input.assigned_employee_id || null,
     requires_photo: input.requires_photo,
+    notify_owner_on_complete: input.notify_owner_on_complete,
     updated_at: new Date().toISOString(),
   }).eq("id", id);
 
