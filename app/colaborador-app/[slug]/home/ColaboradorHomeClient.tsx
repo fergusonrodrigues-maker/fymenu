@@ -1,14 +1,16 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { ListChecks, ChevronRight, Clock, Timer, UtensilsCrossed, Receipt, Bell } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 import { getRoleLabel } from "@/app/colaborador-app/roleUtils";
 import { listMyTasks } from "@/app/colaborador-app/tarefasActions";
 import { getEmployeeSchedule, type EmployeeSchedule } from "@/app/colaborador-app/actions";
 import { getCurrentPointStatus, type PointStateResult } from "../ponto/actions";
 import { getAtendimentoCounts, type AtendimentoCounts } from "@/app/colaborador-app/atendimentoActions";
 import BottomNav from "../_components/BottomNav";
+import { playAlertSound } from "../_components/alertSound";
 
 const WAITER_ROLES = new Set(["waiter", "manager"]);
 
@@ -71,6 +73,23 @@ export default function ColaboradorHomeClient({ slug }: Props) {
     } catch { /* */ }
   }, []);
 
+  const prevPendingCallsRef = useRef<number | null>(null);
+
+  const refreshAtendimento = useCallback(async () => {
+    try {
+      const token = sessionStorage.getItem("fy_emp_token") ?? "";
+      if (!token) return;
+      const atend = await getAtendimentoCounts(token);
+      setAtendimento((prev) => {
+        const before = prev?.callsPending ?? prevPendingCallsRef.current ?? 0;
+        const after = atend?.callsPending ?? 0;
+        if (after > before) playAlertSound();
+        prevPendingCallsRef.current = after;
+        return atend;
+      });
+    } catch { /* */ }
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     async function load() {
@@ -88,11 +107,35 @@ export default function ColaboradorHomeClient({ slug }: Props) {
         setSchedule(sched);
         setPointState(point);
         setAtendimento(atend);
+        prevPendingCallsRef.current = atend?.callsPending ?? 0;
       } catch { /* silent */ }
     }
     load();
     return () => { cancelled = true; };
   }, []);
+
+  // Realtime: keep atendimento counts fresh + chime on new call. Waiters only.
+  useEffect(() => {
+    if (!isWaiter) return;
+    let unitId: string | null = null;
+    try { unitId = sessionStorage.getItem("fy_emp_unit"); } catch { /* */ }
+    if (!unitId) return;
+
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`home-table-calls-${unitId}`)
+      .on("postgres_changes",
+        { event: "*", schema: "public", table: "table_calls", filter: `unit_id=eq.${unitId}` },
+        () => { void refreshAtendimento(); })
+      .on("postgres_changes",
+        { event: "*", schema: "public", table: "comandas", filter: `unit_id=eq.${unitId}` },
+        () => { void refreshAtendimento(); })
+      .on("postgres_changes",
+        { event: "*", schema: "public", table: "mesas", filter: `unit_id=eq.${unitId}` },
+        () => { void refreshAtendimento(); })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [isWaiter, refreshAtendimento]);
 
   const roleLabels = roles.map(getRoleLabel).join(", ") || "—";
 

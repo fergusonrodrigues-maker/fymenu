@@ -31,6 +31,16 @@ function assertWaiterRole(role: string | null) {
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
+export type TableCallType = "order" | "question" | "close_bill" | "waiter" | "manager" | string;
+export type TableCallStatus = "pending" | "acknowledged" | "resolved" | "dismissed" | string;
+
+export type TableCallSummary = {
+  id: string;
+  type: TableCallType | null;
+  status: TableCallStatus;
+  created_at: string;
+};
+
 export type MesaWithStatus = {
   id: string;
   number: number;
@@ -38,7 +48,8 @@ export type MesaWithStatus = {
   capacity: number | null;
   status: string;
   current_comanda_id: string | null;
-  has_pending_call: boolean;
+  /** Latest open (pending|acknowledged) call for this mesa, if any. */
+  active_call: TableCallSummary | null;
   comanda: {
     id: string;
     customer_name: string | null;
@@ -116,27 +127,45 @@ export async function listMesasWithStatus(token: string): Promise<MesasResult> {
     db.from("comandas")
       .select("id, mesa_id, customer_name, created_at, total")
       .eq("unit_id", unitId).eq("status", "open"),
+    // Match calls to mesas via mesa_id when available, else table_number.
+    // Only "open" calls (pending or acknowledged) — resolved/dismissed are gone.
     db.from("table_calls")
-      .select("id, mesa_id")
-      .eq("unit_id", unitId).eq("status", "pending"),
+      .select("id, mesa_id, table_number, type, status, created_at")
+      .eq("unit_id", unitId)
+      .in("status", ["pending", "acknowledged"])
+      .order("created_at", { ascending: false }),
     db.from("units")
       .select("comanda_require_phone").eq("id", unitId).maybeSingle(),
   ]);
 
   const comandaByMesa = new Map<string, any>();
   (comandasRes.data ?? []).forEach((c: any) => { if (c.mesa_id) comandaByMesa.set(c.mesa_id, c); });
-  const callMesaIds = new Set<string>(
-    (callsRes.data ?? []).map((c: any) => c.mesa_id).filter(Boolean),
-  );
+
+  // Index calls by mesa_id (preferred) AND by table_number (customer-facing
+  // call inserts may not set mesa_id). Both maps keep only the most recent.
+  const callByMesaId = new Map<string, any>();
+  const callByMesaNumber = new Map<number, any>();
+  (callsRes.data ?? []).forEach((c: any) => {
+    if (c.mesa_id && !callByMesaId.has(c.mesa_id)) callByMesaId.set(c.mesa_id, c);
+    if (c.table_number != null && !callByMesaNumber.has(c.table_number)) {
+      callByMesaNumber.set(c.table_number, c);
+    }
+  });
 
   const mesas: MesaWithStatus[] = (mesasRes.data ?? []).map((m: any) => {
     const c = comandaByMesa.get(m.id);
+    const call = callByMesaId.get(m.id) ?? callByMesaNumber.get(m.number);
     return {
       id: m.id, number: m.number, label: m.label,
       capacity: m.capacity ?? null,
       status: m.status,
       current_comanda_id: m.current_comanda_id,
-      has_pending_call: callMesaIds.has(m.id),
+      active_call: call ? {
+        id: call.id,
+        type: call.type ?? null,
+        status: call.status ?? "pending",
+        created_at: call.created_at,
+      } : null,
       comanda: c ? {
         id: c.id,
         customer_name: c.customer_name,
@@ -146,10 +175,12 @@ export async function listMesasWithStatus(token: string): Promise<MesasResult> {
     };
   });
 
+  const pendingCallsCount = (callsRes.data ?? []).filter((c: any) => c.status === "pending").length;
+
   return {
     mesas,
     openComandasCount: comandasRes.data?.length ?? 0,
-    pendingCallsCount: callsRes.data?.length ?? 0,
+    pendingCallsCount,
     unitRequiresPhone: unitRes.data?.comanda_require_phone ?? false,
   };
 }
@@ -203,6 +234,7 @@ export async function getAtendimentoCounts(token: string): Promise<AtendimentoCo
       .eq("unit_id", unitId).eq("is_active", true).eq("status", "occupied"),
     db.from("comandas").select("id", { count: "exact", head: true })
       .eq("unit_id", unitId).eq("status", "open"),
+    // "pending" calls only — acknowledged ones are already being attended.
     db.from("table_calls").select("id", { count: "exact", head: true })
       .eq("unit_id", unitId).eq("status", "pending"),
   ]);
@@ -382,4 +414,94 @@ export async function createComanda(
   });
 
   return { ok: true, id: comanda.id };
+}
+
+// ─── Table calls ─────────────────────────────────────────────────────────────
+
+export type TableCallRow = {
+  id: string;
+  unit_id: string;
+  mesa_id: string | null;
+  table_number: number | null;
+  type: string | null;
+  status: string;
+  source: string | null;
+  created_at: string;
+  acknowledged_at: string | null;
+  acknowledged_by: string | null;
+  resolved_at: string | null;
+  resolved_by: string | null;
+};
+
+export async function listTableCalls(
+  token: string,
+  status?: "pending" | "acknowledged" | "resolved" | "dismissed",
+): Promise<TableCallRow[]> {
+  const { db, employeeRole, unitId } = await authenticate(token);
+  assertWaiterRole(employeeRole);
+
+  let query = db.from("table_calls")
+    .select("id, unit_id, mesa_id, table_number, type, status, source, created_at, acknowledged_at, acknowledged_by, resolved_at, resolved_by")
+    .eq("unit_id", unitId)
+    .order("created_at", { ascending: false })
+    .limit(50);
+  if (status) query = query.eq("status", status);
+  else query = query.in("status", ["pending", "acknowledged"]);
+
+  const { data, error } = await query;
+  if (error) throw new Error(error.message);
+  return (data ?? []) as TableCallRow[];
+}
+
+async function updateCallStatus(
+  token: string,
+  callId: string,
+  next: "acknowledged" | "resolved",
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  let auth;
+  try { auth = await authenticate(token); } catch (e: any) {
+    return { ok: false, error: e?.message ?? "Sessão inválida" };
+  }
+  const { db, employeeId, employeeRole, unitId } = auth;
+  if (!WAITER_ROLES.has(employeeRole ?? "")) {
+    return { ok: false, error: "Acesso restrito a garçons e gerentes." };
+  }
+
+  // Validate ownership before updating.
+  const { data: call } = await db
+    .from("table_calls")
+    .select("id, unit_id, status")
+    .eq("id", callId)
+    .maybeSingle();
+  if (!call || call.unit_id !== unitId) return { ok: false, error: "Chamada não encontrada." };
+  if (call.status === "resolved" || call.status === "dismissed") {
+    return { ok: false, error: "Chamada já foi resolvida." };
+  }
+
+  const nowIso = new Date().toISOString();
+  const update: Record<string, unknown> = { status: next };
+  if (next === "acknowledged") {
+    update.acknowledged_at = nowIso;
+    update.acknowledged_by = employeeId;
+  } else {
+    update.resolved_at = nowIso;
+    update.resolved_by = employeeId;
+    // If never acknowledged, fill that too so analytics aren't lopsided.
+    if (call.status === "pending") {
+      update.acknowledged_at = nowIso;
+      update.acknowledged_by = employeeId;
+    }
+  }
+
+  const { error } = await db.from("table_calls").update(update).eq("id", callId);
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
+export async function acknowledgeTableCall(token: string, callId: string) {
+  return updateCallStatus(token, callId, "acknowledged");
+}
+
+export async function resolveTableCall(token: string, callId: string) {
+  return updateCallStatus(token, callId, "resolved");
 }

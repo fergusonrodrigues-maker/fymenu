@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Bell } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 import {
   listMesasWithStatus,
   type MesaWithStatus,
@@ -10,6 +11,8 @@ import {
 } from "@/app/colaborador-app/atendimentoActions";
 import BottomNav from "../_components/BottomNav";
 import OpenComandaModal from "../_components/OpenComandaModal";
+import TableCallModal from "../_components/TableCallModal";
+import { playAlertSound } from "../_components/alertSound";
 
 type Tab = "todas" | "ocupadas" | "livres" | "reservadas";
 
@@ -29,23 +32,61 @@ export default function MesasClient({ slug }: { slug: string }) {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [modalMesa, setModalMesa] = useState<MesaWithStatus | null>(null);
+  const [callModalMesa, setCallModalMesa] = useState<MesaWithStatus | null>(null);
+  const [unitId, setUnitId] = useState<string | null>(null);
+  const knownCallIdsRef = useRef<Set<string>>(new Set());
 
-  const reload = useCallback(async () => {
-    setLoading(true);
+  const reload = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const token = sessionStorage.getItem("fy_emp_token") ?? "";
       if (!token) { router.replace("/colaborador"); return; }
       const result = await listMesasWithStatus(token);
+      // Detect newly-arrived pending calls so we only chime/vibrate once each.
+      const seen = knownCallIdsRef.current;
+      let firstPaint = seen.size === 0;
+      const ringNeeded: boolean[] = [];
+      result.mesas.forEach((m) => {
+        if (m.active_call && m.active_call.status === "pending") {
+          if (!seen.has(m.active_call.id) && !firstPaint) ringNeeded.push(true);
+          seen.add(m.active_call.id);
+        }
+      });
+      if (ringNeeded.length > 0) playAlertSound();
       setData(result);
       setErr(null);
     } catch (e: any) {
       setErr(e?.message ?? "Erro ao carregar mesas");
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [router]);
 
   useEffect(() => { reload(); }, [reload]);
+
+  // Resolve unit_id once for the realtime channel filter.
+  useEffect(() => {
+    try { setUnitId(sessionStorage.getItem("fy_emp_unit")); } catch { /* */ }
+  }, []);
+
+  // Realtime: refetch on any change to mesas, comandas, or table_calls for this unit.
+  useEffect(() => {
+    if (!unitId) return;
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`mesas-watcher-${unitId}`)
+      .on("postgres_changes",
+        { event: "*", schema: "public", table: "table_calls", filter: `unit_id=eq.${unitId}` },
+        () => { reload(true); })
+      .on("postgres_changes",
+        { event: "*", schema: "public", table: "mesas", filter: `unit_id=eq.${unitId}` },
+        () => { reload(true); })
+      .on("postgres_changes",
+        { event: "*", schema: "public", table: "comandas", filter: `unit_id=eq.${unitId}` },
+        () => { reload(true); })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [unitId, reload]);
 
   const mesas = data?.mesas ?? [];
   const filtered = mesas.filter((m) => {
@@ -64,6 +105,12 @@ export default function MesasClient({ slug }: { slug: string }) {
   };
 
   function handleMesaClick(m: MesaWithStatus) {
+    // Active call (pending or acknowledged) takes precedence — show the
+    // call modal so the waiter can attend before navigating anywhere.
+    if (m.active_call) {
+      setCallModalMesa(m);
+      return;
+    }
     if (m.status === "occupied" && m.comanda) {
       router.push(`/colaborador/comandas/${m.comanda.id}`);
       return;
@@ -178,6 +225,20 @@ export default function MesasClient({ slug }: { slug: string }) {
         />
       )}
 
+      {callModalMesa && callModalMesa.active_call && (
+        <TableCallModal
+          open={!!callModalMesa}
+          onClose={() => setCallModalMesa(null)}
+          mesaNumber={callModalMesa.number}
+          call={callModalMesa.active_call}
+          onResolved={() => {
+            setCallModalMesa(null);
+            // Realtime sub will refetch; trigger immediate refresh too.
+            void reload(true);
+          }}
+        />
+      )}
+
       <BottomNav active="mesas" pendingCount={(data?.pendingCallsCount ?? 0)} />
     </div>
   );
@@ -186,13 +247,20 @@ export default function MesasClient({ slug }: { slug: string }) {
 function MesaCard({ mesa, onClick }: { mesa: MesaWithStatus; onClick: () => void }) {
   const isOccupied = mesa.status === "occupied";
   const isReserved = mesa.status === "reserved";
-  const isCalling  = mesa.has_pending_call;
+  const call = mesa.active_call;
+  const isPendingCall = call?.status === "pending";
+  const isAcknowledgedCall = call?.status === "acknowledged";
 
-  const palette = isOccupied
-    ? { bg: "#fed7aa", border: "#f97316", color: "#9a3412" }
-    : isReserved
-      ? { bg: "#dbeafe", border: "#2563eb", color: "#1e40af" }
-      : { bg: "#dcfce7", border: "#16a34a", color: "#15803d" };
+  // Calls override the regular palette so they're impossible to miss.
+  const palette = isPendingCall
+    ? { bg: "#fee2e2", border: "#dc2626", color: "#991b1b" }
+    : isAcknowledgedCall
+      ? { bg: "#fff7ed", border: "#f97316", color: "#9a3412" }
+      : isOccupied
+        ? { bg: "#fed7aa", border: "#f97316", color: "#9a3412" }
+        : isReserved
+          ? { bg: "#dbeafe", border: "#2563eb", color: "#1e40af" }
+          : { bg: "#dcfce7", border: "#16a34a", color: "#15803d" };
 
   return (
     <button
@@ -206,35 +274,39 @@ function MesaCard({ mesa, onClick }: { mesa: MesaWithStatus; onClick: () => void
         display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
         minHeight: 110,
         transition: "transform 0.1s",
+        animation: isPendingCall ? "mesaPulse 1.2s ease-in-out infinite" : "none",
       }}
       onTouchStart={(e) => { e.currentTarget.style.transform = "scale(0.97)"; }}
       onTouchEnd={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
     >
-      {isCalling && (
+      <style>{`@keyframes mesaPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(220,38,38,0.6); } 50% { box-shadow: 0 0 0 8px rgba(220,38,38,0); } }`}</style>
+      {(isPendingCall || isAcknowledgedCall) && (
         <span style={{
           position: "absolute", top: -8, right: -8,
-          background: "#dc2626", color: "#fff",
-          fontSize: 11, fontWeight: 800,
+          background: isPendingCall ? "#dc2626" : "#f97316",
+          color: "#fff", fontSize: 11, fontWeight: 800,
           padding: "3px 8px", borderRadius: 999,
           display: "flex", alignItems: "center", gap: 4,
-          boxShadow: "0 2px 6px rgba(220,38,38,0.4)",
-          animation: "callPulse 1.4s ease-in-out infinite",
+          boxShadow: isPendingCall ? "0 2px 6px rgba(220,38,38,0.4)" : "0 2px 6px rgba(249,115,22,0.4)",
         }}>
-          🔔 Chamou
-          <style>{`@keyframes callPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.08); } }`}</style>
+          🔔 {isPendingCall ? "Chamou" : "Atendendo"}
         </span>
       )}
       <div style={{ fontSize: 32, fontWeight: 800, color: palette.color, lineHeight: 1 }}>
         {mesa.number}
       </div>
       <div style={{ fontSize: 10, fontWeight: 700, color: palette.color, marginTop: 4, textAlign: "center" }}>
-        {isOccupied
-          ? mesa.comanda
-            ? <>{mesa.comanda.customer_name ?? "Sem nome"}<br />{formatElapsed(mesa.comanda.opened_at)}</>
-            : "Ocupada"
-          : isReserved
-            ? "Reservada"
-            : "Livre"}
+        {isPendingCall
+          ? "Cliente chamou"
+          : isAcknowledgedCall
+            ? "Em atendimento"
+            : isOccupied
+              ? mesa.comanda
+                ? <>{mesa.comanda.customer_name ?? "Sem nome"}<br />{formatElapsed(mesa.comanda.opened_at)}</>
+                : "Ocupada"
+              : isReserved
+                ? "Reservada"
+                : "Livre"}
       </div>
     </button>
   );
