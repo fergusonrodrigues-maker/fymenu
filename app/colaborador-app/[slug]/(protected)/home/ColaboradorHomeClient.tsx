@@ -2,10 +2,11 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ListChecks, ChevronRight, Clock } from "lucide-react";
+import { ListChecks, ChevronRight, Clock, Timer } from "lucide-react";
 import { getRoleLabel } from "@/app/colaborador-app/roleUtils";
 import { listMyTasks } from "@/app/colaborador-app/tarefasActions";
 import { getEmployeeSchedule, type EmployeeSchedule } from "@/app/colaborador-app/actions";
+import { getCurrentPointStatus, type PointStateResult } from "../ponto/actions";
 import BottomNav from "../_components/BottomNav";
 
 const WORK_DAY_LABELS: Record<string, string> = {
@@ -31,6 +32,19 @@ function formatTime(t: string | null | undefined): string {
   return t.slice(0, 5);
 }
 
+function pointStatusLabel(state: PointStateResult | null): string {
+  if (!state) return "Carregando…";
+  const fmt = (iso: string | null) =>
+    iso ? new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "—";
+  switch (state.status) {
+    case "off":      return "Bater ponto";
+    case "working":  return `Trabalhando desde ${fmt(state.clockInAt)}`;
+    case "on_break": return "Em pausa";
+    case "on_lunch": return "Em almoço";
+    case "ended":    return `Encerrou às ${fmt(state.clockOutAt)}`;
+  }
+}
+
 interface Props {
   slug: string;
 }
@@ -41,6 +55,7 @@ export default function ColaboradorHomeClient({ slug }: Props) {
   const [roles, setRoles] = useState<string[]>([]);
   const [pendingCount, setPendingCount] = useState<number | null>(null);
   const [schedule, setSchedule] = useState<EmployeeSchedule | null>(null);
+  const [pointState, setPointState] = useState<PointStateResult | null>(null);
 
   useEffect(() => {
     try {
@@ -56,13 +71,15 @@ export default function ColaboradorHomeClient({ slug }: Props) {
       try {
         const token = sessionStorage.getItem("fy_emp_token") ?? "";
         if (!token) return;
-        const [tasks, sched] = await Promise.all([
+        const [tasks, sched, point] = await Promise.all([
           listMyTasks(token),
           getEmployeeSchedule(token),
+          getCurrentPointStatus(token).catch(() => null),
         ]);
         if (cancelled) return;
         setPendingCount(tasks.hoje.length + tasks.atrasadas.length);
         setSchedule(sched);
+        setPointState(point);
       } catch { /* silent */ }
     }
     load();
@@ -134,6 +151,41 @@ export default function ColaboradorHomeClient({ slug }: Props) {
             </div>
           </div>
           <ChevronRight size={20} color="#16a34a" style={{ flexShrink: 0 }} />
+        </button>
+
+        {/* Ponto card */}
+        <button
+          onClick={() => router.push(`/colaborador-app/${slug}/ponto`)}
+          style={{
+            width: "100%", textAlign: "left",
+            background: "#fff",
+            border: "1px solid #e5e7eb",
+            borderRadius: 16,
+            padding: "16px 18px",
+            marginBottom: 18,
+            cursor: "pointer",
+            fontFamily: "inherit",
+            display: "flex", alignItems: "center", gap: 14,
+            boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+          }}
+        >
+          <div style={{
+            width: 48, height: 48, borderRadius: 12,
+            background: "#111827", color: "#fff",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            flexShrink: 0,
+          }}>
+            <Timer size={24} strokeWidth={2.2} />
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>
+              Ponto
+            </div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "#111827", lineHeight: 1.3 }}>
+              {pointStatusLabel(pointState)}
+            </div>
+          </div>
+          <ChevronRight size={20} color="#9ca3af" style={{ flexShrink: 0 }} />
         </button>
 
         {/* Welcome card */}
