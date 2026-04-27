@@ -2,6 +2,7 @@
 
 import bcrypt from "bcryptjs";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { ensureTodayTasks } from "@/lib/tarefas/ensureTodayTasks";
 
 // ── authenticateEmployee ────────────────────────────────────────────────────
 // Returns session data on success; throws with a user-facing message on failure.
@@ -57,6 +58,9 @@ export async function authenticateEmployee(
 
   if (sessionErr) throw new Error("Erro ao criar sessão. Tente novamente.");
 
+  // Lazy-generate today's task instances + expire old ones (silent, idempotent).
+  await ensureTodayTasks(unit.id);
+
   return {
     token,
     employeeId: employee.id,
@@ -89,6 +93,10 @@ export async function validateSession(token: string): Promise<{
 
   const emp = (session as any).employees;
   if (!emp) return { valid: false };
+
+  // Lazy-generate today's task instances on each protected-route entry.
+  // In-memory + DB cache makes this near-free after the first call of the day.
+  await ensureTodayTasks(session.unit_id);
 
   return {
     valid: true,

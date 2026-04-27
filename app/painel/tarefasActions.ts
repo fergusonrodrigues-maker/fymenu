@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { logActivity } from "@/lib/audit/logActivity";
+import { ensureTodayTasks } from "@/lib/tarefas/ensureTodayTasks";
 import { revalidatePath } from "next/cache";
 
 async function getUser(supabase: any) {
@@ -339,6 +340,9 @@ export async function listTaskInstances(
   const supabase = await createClient();
   const user = await getUser(supabase);
   await assertMember(supabase, user.id, restaurantId);
+
+  // Lazy-generate today's task instances + expire old ones before listing.
+  await ensureTodayTasks(unitId);
 
   const past = new Date();
   past.setDate(past.getDate() - 7);
