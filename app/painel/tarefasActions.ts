@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { logActivity } from "@/lib/audit/logActivity";
 import { ensureTodayTasks } from "@/lib/tarefas/ensureTodayTasks";
 import { revalidatePath } from "next/cache";
@@ -421,21 +422,24 @@ export async function listTaskCompletions(
 
   // Batch-generate 1h signed URLs for every completion that has a photo. The
   // task-photos bucket is private; the raw photo_path stored in the row is NOT
-  // a usable URL — clients must consume signed_photo_url.
-  await Promise.all(
+  // a usable URL — clients must consume signed_photo_url. We use the admin
+  // client here because the RLS-scoped session client may not have read
+  // permission on the bucket.
+  const admin = createAdminClient();
+  const completionsWithUrls = await Promise.all(
     result.map(async (c) => {
-      if (c.photo_path) {
-        const { data: signed } = await supabase.storage
-          .from("task-photos")
-          .createSignedUrl(c.photo_path, 3600);
-        c.signed_photo_url = signed?.signedUrl ?? null;
-      } else {
-        c.signed_photo_url = null;
+      if (!c.photo_path) return { ...c, signed_photo_url: null };
+      const { data, error: signErr } = await admin.storage
+        .from("task-photos")
+        .createSignedUrl(c.photo_path, 3600);
+      if (signErr) {
+        console.error("listTaskCompletions: createSignedUrl failed:", c.photo_path, signErr);
       }
+      return { ...c, signed_photo_url: data?.signedUrl ?? null };
     }),
   );
 
-  return result;
+  return completionsWithUrls;
 }
 
 export async function getCompletionPhotoUrl(photoPath: string): Promise<string | null> {
