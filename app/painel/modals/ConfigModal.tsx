@@ -1,10 +1,12 @@
 "use client";
 
-import React, { useState, lazy, Suspense } from "react";
-import { UtensilsCrossed, Star, Building2, MessageCircle, LogOut } from "lucide-react";
+import React, { useState, lazy, Suspense, useEffect } from "react";
+import { UtensilsCrossed, Star, Building2, MessageCircle, LogOut, Users } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { Profile, Restaurant } from "../types";
 import PasswordReqs, { passwordValid, translatePasswordError } from "@/components/PasswordReqs";
+import { listMembers, inviteMember, revokeInvite, removeMember } from "../membersActions";
+import type { MemberData } from "../membersActions";
 
 const PaymentModal = lazy(() => import("./PaymentModal"));
 
@@ -50,8 +52,18 @@ const inputFocusHandlers = {
   },
 };
 
+function fmtDate(iso: string) {
+  const d = new Date(iso);
+  return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+}
+
+function daysUntil(iso: string) {
+  const ms = new Date(iso).getTime() - Date.now();
+  return Math.max(0, Math.ceil(ms / 86400000));
+}
+
 export default function ConfigModal({ profile, restaurant }: { profile: Profile; restaurant: Restaurant }) {
-  const [tab, setTab] = useState<"perfil" | "plano" | "seguranca">("perfil");
+  const [tab, setTab] = useState<"perfil" | "plano" | "socios" | "seguranca">("perfil");
 
   // Perfil
   const [firstName, setFirstName] = useState(profile?.first_name || "");
@@ -74,8 +86,41 @@ export default function ConfigModal({ profile, restaurant }: { profile: Profile;
     planKey: string; planName: string; accent: string; accentRgb: string;
   } | null>(null);
 
+  // Sócios
+  const [members, setMembers] = useState<MemberData[]>([]);
+  const [membersLoading, setMembersLoading] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviting, setInviting] = useState(false);
+  const [inviteError, setInviteError] = useState("");
+  const [inviteResult, setInviteResult] = useState<{ inviteUrl: string; email: string } | null>(null);
+  const [confirmRevoke, setConfirmRevoke] = useState<string | null>(null);
+  const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
+  const [acting, setActing] = useState<string | null>(null);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [toastType, setToastType] = useState<"success" | "error">("success");
+
   const currentPlan = restaurant?.plan || "menu";
   const currentPlanIdx = PLANS.findIndex(p => p.key === currentPlan);
+
+  useEffect(() => {
+    if (tab === "socios") loadMembers();
+  }, [tab]);
+
+  function showToast(msg: string, type: "success" | "error" = "success") {
+    setToastMsg(msg);
+    setToastType(type);
+    setTimeout(() => setToastMsg(null), 2500);
+  }
+
+  async function loadMembers() {
+    setMembersLoading(true);
+    const { members: m, currentUserId: uid } = await listMembers(restaurant.id);
+    setMembers(m);
+    setCurrentUserId(uid);
+    setMembersLoading(false);
+  }
 
   async function handleSaveProfile() {
     setSaving(true);
@@ -146,14 +191,60 @@ export default function ConfigModal({ profile, restaurant }: { profile: Profile;
     finally { setCanceling(false); }
   }
 
+  async function handleInvite() {
+    setInviteError("");
+    if (!inviteEmail.trim()) { setInviteError("Digite o email do sócio"); return; }
+    setInviting(true);
+    const result = await inviteMember(restaurant.id, inviteEmail);
+    if (result.error) {
+      setInviteError(result.error);
+      setInviting(false);
+      return;
+    }
+    setInviting(false);
+    setShowInviteModal(false);
+    setInviteResult({ inviteUrl: result.inviteUrl!, email: inviteEmail.trim().toLowerCase() });
+    setInviteEmail("");
+  }
+
+  async function handleCopyLink(url: string, memberId: string) {
+    try {
+      await navigator.clipboard.writeText(url);
+      setActing(memberId);
+      showToast("Link copiado!");
+      setTimeout(() => setActing(null), 1500);
+    } catch {
+      showToast("Erro ao copiar", "error");
+    }
+  }
+
+  async function handleRevoke(memberId: string) {
+    setActing(memberId);
+    const result = await revokeInvite(memberId, restaurant.id);
+    if (result.error) { showToast(result.error, "error"); }
+    else { showToast("Convite cancelado"); await loadMembers(); }
+    setConfirmRevoke(null);
+    setActing(null);
+  }
+
+  async function handleRemove(memberId: string) {
+    setActing(memberId);
+    const result = await removeMember(memberId, restaurant.id);
+    if (result.error) { showToast(result.error, "error"); }
+    else { showToast("Sócio removido"); await loadMembers(); }
+    setConfirmRemove(null);
+    setActing(null);
+  }
+
   const TABS = [
     { key: "perfil", label: "Perfil" },
     { key: "plano", label: "Plano" },
+    { key: "socios", label: "Sócios" },
     { key: "seguranca", label: "Segurança" },
   ] as const;
 
   return (
-    <div style={{ paddingTop: 8 }}>
+    <div style={{ paddingTop: 8, position: "relative" }}>
       {/* Payment modal overlay */}
       {payingForPlan && (
         <Suspense fallback={null}>
@@ -166,6 +257,134 @@ export default function ConfigModal({ profile, restaurant }: { profile: Profile;
             onSuccess={() => { setPayingForPlan(null); window.location.reload(); }}
           />
         </Suspense>
+      )}
+
+      {/* Invite modal overlay */}
+      {showInviteModal && (
+        <div style={{
+          position: "absolute", inset: 0, zIndex: 20,
+          background: "var(--dash-modal-bg, #111)",
+          borderRadius: 16, padding: 24,
+          display: "flex", flexDirection: "column", gap: 14,
+          overflowY: "auto",
+        }}>
+          <div style={{ fontSize: 16, fontWeight: 800, color: "var(--dash-text)" }}>Convidar novo sócio</div>
+          <div style={{ fontSize: 12, color: "var(--dash-text-muted)", lineHeight: 1.6, marginTop: -8 }}>
+            O sócio terá acesso total ao restaurante e a todas as unidades.
+          </div>
+
+          <div>
+            <label style={{ fontSize: 10, color: "var(--dash-text-muted)", display: "block", marginBottom: 4 }}>Email do sócio</label>
+            <input
+              type="email"
+              value={inviteEmail}
+              onChange={e => setInviteEmail(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && handleInvite()}
+              placeholder="socio@email.com"
+              style={inp}
+              {...inputFocusHandlers}
+            />
+          </div>
+
+          <div style={{
+            padding: "10px 14px", borderRadius: 10,
+            background: "rgba(251,191,36,0.08)",
+            border: "1px solid rgba(251,191,36,0.2)",
+            display: "flex", gap: 8, alignItems: "flex-start",
+          }}>
+            <span style={{ fontSize: 14, flexShrink: 0 }}>⚠️</span>
+            <span style={{ fontSize: 11, color: "var(--dash-warning, #fbbf24)", lineHeight: 1.5 }}>
+              O sócio precisa criar uma conta no FyMenu (ou já ter uma) usando este mesmo email.
+            </span>
+          </div>
+
+          {inviteError && (
+            <div style={{ padding: "8px 12px", borderRadius: 10, background: "var(--dash-danger-soft)", color: "var(--dash-danger)", fontSize: 12 }}>
+              {inviteError}
+            </div>
+          )}
+
+          <div style={{ display: "flex", gap: 8, marginTop: "auto" }}>
+            <button
+              onClick={() => { setShowInviteModal(false); setInviteEmail(""); setInviteError(""); }}
+              style={{
+                flex: 1, padding: 12, borderRadius: 12, border: "none", cursor: "pointer",
+                background: "var(--dash-card-hover)", color: "var(--dash-text-muted)",
+                fontSize: 13, fontFamily: "inherit",
+              }}
+            >Cancelar</button>
+            <button
+              onClick={handleInvite}
+              disabled={inviting}
+              style={{
+                flex: 2, padding: 12, borderRadius: 12, border: "none", cursor: "pointer",
+                background: "#16a34a", color: "#fff",
+                fontSize: 13, fontWeight: 700, fontFamily: "inherit",
+                opacity: inviting ? 0.6 : 1,
+              }}
+            >{inviting ? "Gerando..." : "Gerar convite"}</button>
+          </div>
+        </div>
+      )}
+
+      {/* Invite result overlay */}
+      {inviteResult && (
+        <div style={{
+          position: "absolute", inset: 0, zIndex: 20,
+          background: "var(--dash-modal-bg, #111)",
+          borderRadius: 16, padding: 24,
+          display: "flex", flexDirection: "column", gap: 16,
+          overflowY: "auto",
+        }}>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 32, marginBottom: 8 }}>🎉</div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: "var(--dash-text)" }}>Convite gerado!</div>
+            <div style={{ fontSize: 12, color: "var(--dash-text-muted)", marginTop: 4 }}>
+              Compartilhe este link com seu sócio:
+            </div>
+          </div>
+
+          <div style={{
+            display: "flex", gap: 8, alignItems: "center",
+            padding: "10px 14px", borderRadius: 12,
+            background: "var(--dash-card-hover)", border: "1px solid var(--dash-border)",
+          }}>
+            <span style={{ fontSize: 11, color: "var(--dash-text-muted)", flex: 1, wordBreak: "break-all", lineHeight: 1.4 }}>
+              {inviteResult.inviteUrl}
+            </span>
+            <button
+              onClick={() => handleCopyLink(inviteResult.inviteUrl, "result")}
+              style={{
+                flexShrink: 0, padding: "6px 12px", borderRadius: 8, border: "none", cursor: "pointer",
+                background: "#16a34a", color: "#fff", fontSize: 11, fontWeight: 700, fontFamily: "inherit",
+              }}
+            >Copiar</button>
+          </div>
+
+          <a
+            href={`https://wa.me/?text=${encodeURIComponent(`Olá! Você foi convidado para ser sócio do restaurante ${restaurant.name} no FyMenu. Acesse o link para aceitar: ${inviteResult.inviteUrl}`)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+              padding: 14, borderRadius: 14,
+              background: "rgba(37,211,102,0.12)", color: "#25d366",
+              fontSize: 14, fontWeight: 800, textDecoration: "none",
+              boxShadow: "0 1px 0 rgba(37,211,102,0.15) inset, 0 -1px 0 rgba(0,0,0,0.2) inset",
+            }}
+          >
+            <MessageCircle size={16} /> Compartilhar via WhatsApp
+          </a>
+
+          <button
+            onClick={async () => { setInviteResult(null); await loadMembers(); }}
+            style={{
+              width: "100%", padding: 12, borderRadius: 12, border: "1px solid var(--dash-border)",
+              background: "transparent", color: "var(--dash-text-muted)",
+              fontSize: 13, fontFamily: "inherit", cursor: "pointer",
+            }}
+          >Fechar</button>
+        </div>
       )}
 
       {/* Tabs */}
@@ -432,6 +651,202 @@ export default function ConfigModal({ profile, restaurant }: { profile: Profile;
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* ── TAB SÓCIOS ── */}
+      {tab === "socios" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          {/* Toast */}
+          {toastMsg && (
+            <div style={{
+              padding: "10px 14px", borderRadius: 10, fontSize: 12, fontWeight: 600,
+              background: toastType === "success" ? "var(--dash-accent-soft)" : "var(--dash-danger-soft)",
+              color: toastType === "success" ? "var(--dash-accent)" : "var(--dash-danger)",
+              transition: "opacity 0.3s",
+            }}>{toastMsg}</div>
+          )}
+
+          {/* Header */}
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "var(--dash-text)" }}>Sócios do restaurante</div>
+              <div style={{ fontSize: 11, color: "var(--dash-text-muted)", marginTop: 3, lineHeight: 1.5 }}>
+                Convide pessoas para gerenciar este restaurante junto com você
+              </div>
+            </div>
+            <button
+              onClick={() => { setShowInviteModal(true); setInviteError(""); setInviteEmail(""); }}
+              style={{
+                flexShrink: 0, padding: "8px 14px", borderRadius: 10, border: "none", cursor: "pointer",
+                background: "#16a34a", color: "#fff",
+                fontSize: 12, fontWeight: 700, fontFamily: "inherit",
+                display: "flex", alignItems: "center", gap: 6,
+              }}
+            >
+              <Users size={13} /> + Convidar
+            </button>
+          </div>
+
+          {/* Members list */}
+          {membersLoading ? (
+            <div style={{ textAlign: "center", padding: 24, color: "var(--dash-text-muted)", fontSize: 13 }}>
+              Carregando sócios...
+            </div>
+          ) : members.length === 0 ? (
+            <div style={{
+              padding: 24, borderRadius: 14, textAlign: "center",
+              background: "var(--dash-card)", border: "1px solid var(--dash-border)",
+            }}>
+              <Users size={28} style={{ color: "var(--dash-text-muted)", marginBottom: 8 }} />
+              <div style={{ fontSize: 13, color: "var(--dash-text-muted)" }}>Nenhum sócio cadastrado</div>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {members.map(member => {
+                const initial = (member.displayName?.[0] ?? "?").toUpperCase();
+                const isMe = member.user_id === currentUserId;
+                const isConfirmingRevoke = confirmRevoke === member.id;
+                const isConfirmingRemove = confirmRemove === member.id;
+                const isActing = acting === member.id;
+                const inviteUrl = member.invite_token
+                  ? `https://fymenu.com/aceitar-convite?token=${member.invite_token}`
+                  : "";
+
+                return (
+                  <div key={member.id} style={{
+                    background: "#fff",
+                    border: "1px solid var(--dash-border)",
+                    borderRadius: 14, padding: 14,
+                    display: "flex", flexDirection: "column", gap: 10,
+                  }}>
+                    {/* Main row */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      {/* Avatar */}
+                      <div style={{
+                        width: 40, height: 40, borderRadius: "50%", flexShrink: 0,
+                        background: "linear-gradient(135deg, #ec4899, #f97316)",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        color: "#fff", fontSize: 15, fontWeight: 800,
+                      }}>{initial}</div>
+
+                      {/* Info */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                          <span style={{ fontSize: 13, fontWeight: 600, color: "#1a1a1a", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 160 }}>
+                            {member.displayName}
+                          </span>
+                          {isMe && (
+                            <span style={{ fontSize: 9, padding: "2px 6px", borderRadius: 6, background: "rgba(0,176,122,0.1)", color: "#00b07a", fontWeight: 700 }}>
+                              Você
+                            </span>
+                          )}
+                          <span style={{
+                            fontSize: 9, padding: "2px 7px", borderRadius: 6, fontWeight: 700,
+                            background: member.role === "owner" ? "rgba(212,175,55,0.12)" : "rgba(139,92,246,0.1)",
+                            color: member.role === "owner" ? "#d4af37" : "#a78bfa",
+                          }}>
+                            {member.role === "owner" ? "Dono" : "Sócio"}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: 10, color: "#999", marginTop: 2 }}>
+                          {member.status === "active"
+                            ? `Ativo desde ${fmtDate(member.activated_at ?? member.created_at)}`
+                            : `Convite pendente · expira em ${daysUntil(member.invite_expires_at ?? "")} dias`}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Inline confirmation — revoke */}
+                    {isConfirmingRevoke && (
+                      <div style={{ padding: "10px 12px", borderRadius: 10, background: "var(--dash-danger-soft)" }}>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: "var(--dash-danger)", marginBottom: 8 }}>
+                          Cancelar este convite?
+                        </div>
+                        <div style={{ display: "flex", gap: 8 }}>
+                          <button onClick={() => setConfirmRevoke(null)} style={{
+                            flex: 1, padding: "6px 10px", borderRadius: 8, border: "none", cursor: "pointer",
+                            background: "var(--dash-card-hover)", color: "var(--dash-text-muted)",
+                            fontSize: 11, fontFamily: "inherit",
+                          }}>Não</button>
+                          <button onClick={() => handleRevoke(member.id)} disabled={isActing} style={{
+                            flex: 1, padding: "6px 10px", borderRadius: 8, border: "none", cursor: "pointer",
+                            background: "var(--dash-danger-soft)", color: "var(--dash-danger)",
+                            fontSize: 11, fontWeight: 700, fontFamily: "inherit",
+                            opacity: isActing ? 0.5 : 1,
+                          }}>{isActing ? "..." : "Cancelar convite"}</button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Inline confirmation — remove */}
+                    {isConfirmingRemove && (
+                      <div style={{ padding: "10px 12px", borderRadius: 10, background: "var(--dash-danger-soft)" }}>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: "var(--dash-danger)", marginBottom: 4 }}>
+                          Tem certeza?
+                        </div>
+                        <div style={{ fontSize: 11, color: "var(--dash-text-muted)", marginBottom: 8, lineHeight: 1.4 }}>
+                          {member.displayName} perderá acesso ao restaurante imediatamente.
+                        </div>
+                        <div style={{ display: "flex", gap: 8 }}>
+                          <button onClick={() => setConfirmRemove(null)} style={{
+                            flex: 1, padding: "6px 10px", borderRadius: 8, border: "none", cursor: "pointer",
+                            background: "var(--dash-card-hover)", color: "var(--dash-text-muted)",
+                            fontSize: 11, fontFamily: "inherit",
+                          }}>Cancelar</button>
+                          <button onClick={() => handleRemove(member.id)} disabled={isActing} style={{
+                            flex: 1, padding: "6px 10px", borderRadius: 8, border: "none", cursor: "pointer",
+                            background: "var(--dash-danger-soft)", color: "var(--dash-danger)",
+                            fontSize: 11, fontWeight: 700, fontFamily: "inherit",
+                            opacity: isActing ? 0.5 : 1,
+                          }}>{isActing ? "..." : "Remover"}</button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Action buttons */}
+                    {!isConfirmingRevoke && !isConfirmingRemove && (
+                      <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                        {member.status === "pending" && (
+                          <>
+                            <button
+                              onClick={() => handleCopyLink(inviteUrl, member.id)}
+                              style={{
+                                padding: "6px 12px", borderRadius: 8, border: "none", cursor: "pointer",
+                                background: "#16a34a", color: "#fff",
+                                fontSize: 11, fontWeight: 700, fontFamily: "inherit",
+                                opacity: isActing ? 0.5 : 1,
+                              }}
+                            >{isActing ? "Copiado!" : "Copiar link"}</button>
+                            <button
+                              onClick={() => setConfirmRevoke(member.id)}
+                              style={{
+                                padding: "6px 12px", borderRadius: 8, cursor: "pointer",
+                                background: "transparent", color: "var(--dash-danger)",
+                                border: "1px solid var(--dash-danger)",
+                                fontSize: 11, fontWeight: 700, fontFamily: "inherit",
+                              }}
+                            >Cancelar</button>
+                          </>
+                        )}
+                        {member.status === "active" && !isMe && (
+                          <button
+                            onClick={() => setConfirmRemove(member.id)}
+                            style={{
+                              padding: "6px 12px", borderRadius: 8, cursor: "pointer",
+                              background: "transparent", color: "var(--dash-danger)",
+                              border: "1px solid var(--dash-danger)",
+                              fontSize: 11, fontWeight: 700, fontFamily: "inherit",
+                            }}
+                          >Remover</button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
