@@ -2,9 +2,10 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { LogOut } from "lucide-react";
-import { revokeSession } from "@/app/colaborador-app/actions";
+import { ListChecks, ChevronRight } from "lucide-react";
 import { getRoleLabel } from "@/app/colaborador-app/roleUtils";
+import { listMyTasks } from "@/app/colaborador-app/tarefasActions";
+import BottomNav from "../_components/BottomNav";
 
 interface Props {
   slug: string;
@@ -14,7 +15,7 @@ export default function ColaboradorHomeClient({ slug }: Props) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [roles, setRoles] = useState<string[]>([]);
-  const [loggingOut, setLoggingOut] = useState(false);
+  const [pendingCount, setPendingCount] = useState<number | null>(null);
 
   useEffect(() => {
     try {
@@ -24,21 +25,19 @@ export default function ColaboradorHomeClient({ slug }: Props) {
     } catch { /* */ }
   }, []);
 
-  async function handleLogout() {
-    setLoggingOut(true);
-    try {
-      const token = sessionStorage.getItem("fy_emp_token") ?? "";
-      await revokeSession(token);
-    } catch { /* best-effort */ }
-    try {
-      sessionStorage.removeItem("fy_emp_token");
-      sessionStorage.removeItem("fy_emp_id");
-      sessionStorage.removeItem("fy_emp_unit");
-      sessionStorage.removeItem("fy_emp_roles");
-      sessionStorage.removeItem("fy_emp_name");
-    } catch { /* */ }
-    router.replace("/colaborador");
-  }
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const token = sessionStorage.getItem("fy_emp_token") ?? "";
+        if (!token) return;
+        const result = await listMyTasks(token);
+        if (!cancelled) setPendingCount(result.hoje.length + result.atrasadas.length);
+      } catch { /* silent */ }
+    }
+    load();
+    return () => { cancelled = true; };
+  }, []);
 
   const roleLabels = roles.map(getRoleLabel).join(", ") || "—";
 
@@ -47,6 +46,7 @@ export default function ColaboradorHomeClient({ slug }: Props) {
       minHeight: "100vh",
       background: "#fafafa",
       fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      paddingBottom: 80,
     }}>
       {/* Header */}
       <header style={{
@@ -63,33 +63,59 @@ export default function ColaboradorHomeClient({ slug }: Props) {
         <span style={{ fontSize: 15, fontWeight: 700, color: "#111827" }}>
           Portal do Colaborador
         </span>
-        <button
-          onClick={handleLogout}
-          disabled={loggingOut}
-          style={{
-            display: "flex", alignItems: "center", gap: 6,
-            padding: "8px 14px", borderRadius: 8,
-            border: "1.5px solid #e5e7eb", background: "#fff",
-            color: "#dc2626", fontSize: 13, fontWeight: 600,
-            cursor: loggingOut ? "not-allowed" : "pointer",
-          }}
-        >
-          <LogOut size={15} />
-          {loggingOut ? "Saindo…" : "Sair"}
-        </button>
       </header>
 
       {/* Content */}
-      <main style={{ maxWidth: 520, margin: "0 auto", padding: "32px 16px" }}>
+      <main style={{ maxWidth: 520, margin: "0 auto", padding: "20px 16px" }}>
+        {/* Minhas Tarefas card — destacado */}
+        <button
+          onClick={() => router.push(`/colaborador-app/${slug}/tarefas`)}
+          style={{
+            width: "100%", textAlign: "left",
+            background: "#f0fdf4",
+            border: "1px solid #bbf7d0",
+            borderRadius: 16,
+            padding: "16px 18px",
+            marginBottom: 18,
+            cursor: "pointer",
+            fontFamily: "inherit",
+            display: "flex", alignItems: "center", gap: 14,
+            boxShadow: "0 1px 3px rgba(22,163,74,0.08)",
+          }}
+        >
+          <div style={{
+            width: 48, height: 48, borderRadius: 12,
+            background: "#16a34a", color: "#fff",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            flexShrink: 0,
+          }}>
+            <ListChecks size={26} strokeWidth={2.2} />
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: "#16a34a", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>
+              Minhas tarefas
+            </div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "#111827", lineHeight: 1.3 }}>
+              {pendingCount === null
+                ? "Carregando…"
+                : pendingCount === 0
+                  ? "Tudo em dia! 🎉"
+                  : `Você tem ${pendingCount} tarefa${pendingCount !== 1 ? "s" : ""} pendente${pendingCount !== 1 ? "s" : ""} hoje`}
+            </div>
+          </div>
+          <ChevronRight size={20} color="#16a34a" style={{ flexShrink: 0 }} />
+        </button>
+
+        {/* Welcome card */}
         <div style={{
           background: "#fff",
           borderRadius: 16,
-          padding: "28px 24px",
+          padding: "24px 22px",
           boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04)",
-          marginBottom: 20,
+          marginBottom: 18,
         }}>
-          <div style={{ fontSize: 28, marginBottom: 12 }}>👋</div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: "#111827", margin: "0 0 6px" }}>
+          <div style={{ fontSize: 28, marginBottom: 10 }}>👋</div>
+          <h1 style={{ fontSize: 20, fontWeight: 700, color: "#111827", margin: "0 0 6px" }}>
             Bem-vindo{name ? `, ${name}` : ""}!
           </h1>
           <p style={{ fontSize: 14, color: "#6b7280", margin: 0 }}>
@@ -97,10 +123,11 @@ export default function ColaboradorHomeClient({ slug }: Props) {
           </p>
         </div>
 
+        {/* Roles card */}
         <div style={{
           background: "#fff",
           borderRadius: 16,
-          padding: "20px 24px",
+          padding: "20px 22px",
           boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04)",
         }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 12 }}>
@@ -124,14 +151,9 @@ export default function ColaboradorHomeClient({ slug }: Props) {
             )}
           </div>
         </div>
-
-        {/* Placeholder for future modules */}
-        <div style={{ marginTop: 20, padding: "16px 20px", borderRadius: 12, background: "#fefce8", border: "1px solid #fef08a" }}>
-          <p style={{ margin: 0, fontSize: 13, color: "#854d0e" }}>
-            Mais funcionalidades chegando em breve — pedidos, comandas e muito mais.
-          </p>
-        </div>
       </main>
+
+      <BottomNav active="home" pendingCount={pendingCount ?? 0} />
     </div>
   );
 }
