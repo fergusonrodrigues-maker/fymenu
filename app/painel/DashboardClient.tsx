@@ -10,7 +10,7 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import { hasPlanFeature, planLabel, maxUnits as planMaxUnits } from "@/lib/plan";
 import { useModalHistory } from "@/lib/hooks/useModalHistory";
 import { Icon } from "@/components/ui/Icon";
-import { Package, AlertCircle, Target, Star, CreditCard, Link2, Bell, Store, Lock, Timer, UtensilsCrossed, ChefHat, Tv, Wallet, ClipboardList, MapPin, Users, Printer, Link, MessageCircle, Headphones, Truck, Settings, BarChart3, Bike, FileText, UserCircle, X } from "lucide-react";
+import { Package, AlertCircle, Target, Star, CreditCard, Link2, Bell, Store, Lock, Timer, UtensilsCrossed, ChefHat, Tv, Wallet, ClipboardList, MapPin, Users, Printer, Link, MessageCircle, Headphones, Truck, Settings, BarChart3, Bike, FileText, UserCircle, X, Clock } from "lucide-react";
 
 const loadingFallback = <div style={{padding:40,display:"flex",justifyContent:"center"}}><LoadingSpinner size="sm" /></div>;
 
@@ -32,6 +32,7 @@ const WhatsappModal  = dynamic(() => import("./modals/WhatsappModal"),  { ssr: f
 const DeliveryModal  = dynamic(() => import("./modals/DeliveryModal"),  { ssr: false, loading: () => loadingFallback });
 const CriarUnidadeModal = dynamic(() => import("./modals/CriarUnidadeModal"), { ssr: false, loading: () => loadingFallback });
 const ImportarHistoricoModal = dynamic(() => import("./modals/ImportarHistoricoModal"), { ssr: false, loading: () => loadingFallback });
+const HistoricoModal = dynamic(() => import("./modals/HistoricoModal"), { ssr: false, loading: () => loadingFallback });
 const ChatWidget = dynamic(() => import("./components/ChatWidget"), { ssr: false });
 
 // ─── Modal backdrop ─────────────────────────────────────────────────────────
@@ -260,6 +261,7 @@ const GRID_LAYOUTS: Record<string, Array<{ id: string; cols: number; mobileCols:
     { id: "unidade",     cols: 1, mobileCols: 1 },
     { id: "tv",          cols: 1, mobileCols: 1 },
     { id: "config",      cols: 1, mobileCols: 1 },
+    { id: "historico",   cols: 1, mobileCols: 1 },
     { id: "suporte",     cols: 1, mobileCols: 1 },
     { id: "impressoras", cols: 2, mobileCols: 2 },
   ],
@@ -275,6 +277,7 @@ const GRID_LAYOUTS: Record<string, Array<{ id: string; cols: number; mobileCols:
     { id: "estoque",     cols: 1, mobileCols: 1 },
     { id: "crm",         cols: 1, mobileCols: 1 },
     { id: "tv",          cols: 1, mobileCols: 1 },
+    { id: "historico",   cols: 1, mobileCols: 1 },
     { id: "suporte",     cols: 1, mobileCols: 1 },
     { id: "config",      cols: 2, mobileCols: 2 },
     { id: "impressoras", cols: 2, mobileCols: 2 },
@@ -293,6 +296,7 @@ const GRID_LAYOUTS: Record<string, Array<{ id: string; cols: number; mobileCols:
     { id: "whatsapp",    cols: 2, mobileCols: 2 },
     { id: "delivery",    cols: 1, mobileCols: 1 },
     { id: "tv",          cols: 1, mobileCols: 1 },
+    { id: "historico",   cols: 1, mobileCols: 1 },
     { id: "suporte",     cols: 1, mobileCols: 1 },
     { id: "config",      cols: 1, mobileCols: 1 },
     { id: "impressoras", cols: 2, mobileCols: 2 },
@@ -418,7 +422,7 @@ export default function DashboardClient({
   reportData: ReportData;
 }) {
   const router = useRouter();
-  const [modal, setModal] = useState<"analytics" | "cardapio" | "pedidos" | "financeiro" | "unidade" | "plano" | "config" | "tv" | "modotv" | "estoque" | "operacoes" | "equipe" | "impressoras" | "links" | "crm" | "whatsapp" | "delivery" | "criar-unidade" | "importar" | null>(null);
+  const [modal, setModal] = useState<"analytics" | "cardapio" | "pedidos" | "financeiro" | "unidade" | "plano" | "config" | "tv" | "modotv" | "estoque" | "operacoes" | "equipe" | "impressoras" | "links" | "crm" | "whatsapp" | "delivery" | "criar-unidade" | "importar" | "historico" | null>(null);
   const [importInitialType, setImportInitialType] = useState<string | undefined>(undefined);
   const [chatOpen, setChatOpen] = useState(false);
   const open = (m: typeof modal) => setModal(m);
@@ -656,6 +660,7 @@ export default function DashboardClient({
     whatsapp:    { icon: <MessageCircle size={22} />,    label: "WhatsApp",        sub: "Mensagens e notificações", modalKey: "whatsapp" },
     delivery:    { icon: <Truck size={22} />,            label: "Delivery",        sub: "Taxas de entrega por distância", modalKey: "delivery" },
     suporte:     { icon: <Headphones size={22} />,       label: "Suporte",         sub: "Chat com nossa equipe", modalKey: "suporte" },
+    historico:   { icon: <Clock size={22} />,            label: "Histórico",        sub: "Auditoria de ações", modalKey: "historico" },
   }), [analytics, products.length, unit?.is_published, tvCount, restaurantState, trialDays, stockStats]);
 
   return (
@@ -1615,6 +1620,7 @@ export default function DashboardClient({
             impressoras: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>,
             links:       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>,
             suporte:     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>,
+            historico:   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
           };
 
           const IconBox = ({ id, pulse }: { id: string; pulse?: boolean }) => (
@@ -1931,6 +1937,9 @@ export default function DashboardClient({
       </Modal>
       <Modal open={modal === "delivery"} onClose={close} title="Delivery" size="lg">
         {unit && <DeliveryModal unitId={unit.id} />}
+      </Modal>
+      <Modal open={modal === "historico"} onClose={close} title="Histórico de atividades" size="lg">
+        <HistoricoModal restaurantId={restaurant.id} />
       </Modal>
       <Modal open={modal === "importar"} onClose={close} title="Importar Dados Históricos" size="lg">
         <ImportarHistoricoModal
