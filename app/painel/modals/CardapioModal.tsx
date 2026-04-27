@@ -48,6 +48,7 @@ function NewProductFormInline({ categoryId, section, customSections, anyProductE
   const [open, setOpen] = useState(false);
   const [priceType, setPriceType] = useState("fixed");
   const [isAlcoholic, setIsAlcoholic] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const { allows_video: showVideo, allows_alcoholic: showAlcoholic } = getSectionConfig(section, customSections);
 
@@ -75,8 +76,14 @@ function NewProductFormInline({ categoryId, section, customSections, anyProductE
   return (
     <form
       action={async (formData) => {
-        await createProduct(formData);
-        handleClose();
+        if (saving) return;
+        setSaving(true);
+        try {
+          await createProduct(formData);
+          handleClose();
+        } finally {
+          setSaving(false);
+        }
       }}
       style={{ display: "flex", flexDirection: "column", gap: 8, padding: 12, borderRadius: 12, border: "1px solid var(--dash-border)", background: "var(--dash-card)" }}
     >
@@ -112,7 +119,7 @@ function NewProductFormInline({ categoryId, section, customSections, anyProductE
       )}
       <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
         <button type="button" onClick={handleClose} style={{ padding: "8px 14px", borderRadius: 10, border: "none", background: "var(--dash-card)", color: "var(--dash-text-muted)", fontSize: 12, fontWeight: 600, cursor: "pointer", boxShadow: "var(--dash-shadow)" }}>Cancelar</button>
-        <button type="submit" style={{ padding: "8px 16px", borderRadius: 10, border: "none", background: "var(--dash-accent-soft)", color: "var(--dash-accent)", fontSize: 12, fontWeight: 700, cursor: "pointer", boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>Criar</button>
+        <button type="submit" disabled={saving} style={{ padding: "8px 16px", borderRadius: 10, border: "none", background: "var(--dash-accent-soft)", color: "var(--dash-accent)", fontSize: 12, fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.6 : 1, boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>{saving ? "Criando…" : "Criar"}</button>
       </div>
     </form>
   );

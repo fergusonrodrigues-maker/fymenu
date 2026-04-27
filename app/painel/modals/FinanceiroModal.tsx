@@ -186,6 +186,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
   const [dailyGoal, setDailyGoal] = useState(0);
   const [paymentMethodsMap, setPaymentMethodsMap] = useState<Record<string, number>>({});
   const [showImportFinance, setShowImportFinance] = useState(false);
+  const [savingExpense, setSavingExpense] = useState(false);
   const [importFinanceStep, setImportFinanceStep] = useState<"upload" | "processing" | "preview" | "done">("upload");
   const [importFinanceData, setImportFinanceData] = useState<any>(null);
   const [importingFinance, setImportingFinance] = useState(false);
@@ -316,19 +317,25 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
 
   async function handleAddExpense() {
     if (!expenseName || !expenseAmount || !unit?.id) return;
-    const result = await createExpense({
-      restaurantId: restaurant.id,
-      unitId: unit.id,
-      name: expenseName,
-      category: expenseCategory,
-      amount: Math.round(parseFloat(expenseAmount) * 100),
-      isRecurring: expenseRecurring,
-      date: expenseDate,
-    });
-    if (!result.error && result.data) {
-      setExpenses(prev => [result.data, ...prev]);
-      setExpenseName(""); setExpenseAmount(""); setExpenseCategory("geral");
-      setExpenseRecurring(false); setShowExpenseForm(false);
+    if (savingExpense) return;
+    setSavingExpense(true);
+    try {
+      const result = await createExpense({
+        restaurantId: restaurant.id,
+        unitId: unit.id,
+        name: expenseName,
+        category: expenseCategory,
+        amount: Math.round(parseFloat(expenseAmount) * 100),
+        isRecurring: expenseRecurring,
+        date: expenseDate,
+      });
+      if (!result.error && result.data) {
+        setExpenses(prev => [result.data, ...prev]);
+        setExpenseName(""); setExpenseAmount(""); setExpenseCategory("geral");
+        setExpenseRecurring(false); setShowExpenseForm(false);
+      }
+    } finally {
+      setSavingExpense(false);
     }
   }
 
@@ -1114,7 +1121,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
               </div>
               <div style={{ display: "flex", gap: 8 }}>
                 <button onClick={() => setShowExpenseForm(false)} style={{ flex: 1, padding: "10px", borderRadius: 12, background: "var(--dash-card-hover)", border: "none", color: "var(--dash-text-muted)", fontSize: 13, cursor: "pointer" }}>Cancelar</button>
-                <button onClick={handleAddExpense} style={{ flex: 1, padding: "10px", borderRadius: 12, background: "var(--dash-accent-soft)", border: "none", color: "var(--dash-accent)", fontSize: 13, fontWeight: 700, cursor: "pointer", boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>Salvar</button>
+                <button onClick={handleAddExpense} disabled={savingExpense} style={{ flex: 1, padding: "10px", borderRadius: 12, background: "var(--dash-accent-soft)", border: "none", color: "var(--dash-accent)", fontSize: 13, fontWeight: 700, cursor: savingExpense ? "not-allowed" : "pointer", opacity: savingExpense ? 0.6 : 1, boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>{savingExpense ? "Salvando…" : "Salvar"}</button>
               </div>
             </div>
           )}

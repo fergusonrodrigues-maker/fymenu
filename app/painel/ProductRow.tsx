@@ -279,6 +279,7 @@ export default function ProductRow({
   const thumbRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLInputElement>(null);
   const [isPending, startTransition] = useTransition();
+  const [deleting, setDeleting] = useState(false);
   const [nutValues, setNutValues] = useState({
     calories: String(product.nutrition?.calories ?? ""),
     protein: String(product.nutrition?.protein ?? ""),
@@ -650,10 +651,26 @@ export default function ProductRow({
                 <button type="submit" disabled={isPending || uploading !== null} style={{ flex: 1, padding: "10px 0", background: "#10b981", color: "#fff", border: "none", borderRadius: 8, fontWeight: 600, fontSize: 14, cursor: isPending ? "not-allowed" : "pointer", opacity: isPending ? 0.6 : 1 }}>
                   {isPending ? "Salvando…" : "Salvar"}
                 </button>
-                <form action={deleteProduct}>
-                  <input type="hidden" name="id" value={product.id} />
-                  <button type="submit" style={{ padding: "10px 16px", background: "rgba(239,68,68,0.15)", color: "#f87171", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, fontWeight: 600, fontSize: 14, cursor: "pointer" }}>Excluir</button>
-                </form>
+                <button
+                  type="button"
+                  disabled={deleting}
+                  onClick={async () => {
+                    if (!confirm("Tem certeza que deseja excluir este produto?")) return;
+                    if (deleting) return;
+                    setDeleting(true);
+                    try {
+                      const fd = new FormData();
+                      fd.set("id", product.id);
+                      await deleteProduct(fd);
+                      onClose();
+                    } finally {
+                      setDeleting(false);
+                    }
+                  }}
+                  style={{ padding: "10px 16px", background: "rgba(239,68,68,0.15)", color: "#f87171", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, fontWeight: 600, fontSize: 14, cursor: deleting ? "not-allowed" : "pointer", opacity: deleting ? 0.6 : 1 }}
+                >
+                  {deleting ? "Excluindo…" : "Excluir"}
+                </button>
               </div>
             </form>
             <div style={{ padding: "0 16px 16px" }}>
