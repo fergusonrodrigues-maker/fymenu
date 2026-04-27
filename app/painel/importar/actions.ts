@@ -6,8 +6,6 @@ import { parseMoneyToCents } from "./utils";
 import type { ImportTargetTable, ImportSourceMethod, ImportResult } from "./utils";
 import OpenAI from "openai";
 
-export type { ImportTargetTable, ImportSourceMethod, ImportResult };
-
 // ─── Date guard: rejects dates outside [now-3years, now] ──────────────────────
 const THREE_YEARS_MS = 3 * 365.25 * 24 * 60 * 60 * 1000;
 
