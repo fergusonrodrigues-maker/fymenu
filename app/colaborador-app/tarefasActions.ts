@@ -2,6 +2,7 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ensureTodayTasks } from "@/lib/tarefas/ensureTodayTasks";
+import { createNotification } from "@/lib/notifications/createNotification";
 
 // Painel uses Portuguese keys ("garcom", "cozinha"), employees table uses
 // English keys ("waiter", "chef"). When a task is assigned to a role from the
@@ -128,13 +129,13 @@ export async function completeTask(
   notes?: string,
   photoBase64?: string,
 ): Promise<{ success: true }> {
-  const { db, employeeId, employeeRole, unitId } = await authenticate(token);
+  const { db, employeeId, employeeName, employeeRole, unitId } = await authenticate(token);
   if (!taskInstanceId) throw new Error("Tarefa inválida");
 
   // Load task and verify it belongs to the employee (directly or via role).
   const { data: task } = await db
     .from("task_instances")
-    .select("id, unit_id, status, requires_photo, assignment_type, assigned_role, assigned_employee_id, notify_owner_on_complete")
+    .select("id, name, unit_id, restaurant_id, status, requires_photo, assignment_type, assigned_role, assigned_employee_id, notify_owner_on_complete")
     .eq("id", taskInstanceId)
     .maybeSingle();
 
@@ -173,21 +174,25 @@ export async function completeTask(
 
   const whatsappStatus = task.notify_owner_on_complete ? "pending" : "skipped";
 
-  const { error: complErr } = await db.from("task_completions").insert({
-    task_instance_id: taskInstanceId,
-    employee_id: employeeId,
-    notes: notes?.trim() || null,
-    photo_url: photoPath,
-    photo_path: photoPath,
-    whatsapp_notification_status: whatsappStatus,
-  });
+  const { data: completion, error: complErr } = await db
+    .from("task_completions")
+    .insert({
+      task_instance_id: taskInstanceId,
+      employee_id: employeeId,
+      notes: notes?.trim() || null,
+      photo_url: photoPath,
+      photo_path: photoPath,
+      whatsapp_notification_status: whatsappStatus,
+    })
+    .select("id")
+    .single();
 
-  if (complErr) {
+  if (complErr || !completion) {
     // Best-effort cleanup of uploaded photo if completion insert fails.
     if (photoPath) {
       try { await db.storage.from("task-photos").remove([photoPath]); } catch { /* */ }
     }
-    throw new Error(complErr.message);
+    throw new Error(complErr?.message ?? "Falha ao registrar conclusão");
   }
 
   const { error: updErr } = await db
@@ -196,6 +201,30 @@ export async function completeTask(
     .eq("id", taskInstanceId);
 
   if (updErr) throw new Error(updErr.message);
+
+  // Notify the owner (in-app log + WhatsApp). Fire-and-forget: createNotification
+  // never throws and the await is bounded by the Z-API HTTP timeout.
+  if (task.notify_owner_on_complete) {
+    const horaAgora = new Date().toLocaleTimeString("pt-BR", {
+      hour: "2-digit", minute: "2-digit",
+      timeZone: "America/Sao_Paulo",
+    });
+
+    await createNotification({
+      restaurantId: task.restaurant_id,
+      unitId: task.unit_id,
+      category: "task_completed",
+      title: `${employeeName} concluiu uma tarefa`,
+      body: `"${task.name}" às ${horaAgora}`,
+      linkUrl: "/painel?modal=tarefas&tab=historico",
+      sourceType: "task_completion",
+      sourceId: completion.id,
+      sendWhatsapp: true,
+      whatsappMessage:
+        `✅ ${employeeName} concluiu a tarefa "${task.name}" às ${horaAgora}.\n\n` +
+        `Ver detalhes no FyMenu: https://fymenu.com/painel`,
+    });
+  }
 
   return { success: true };
 }
