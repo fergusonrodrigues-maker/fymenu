@@ -330,6 +330,41 @@ export async function createComanda(
     }).eq("id", mesaId);
   }
 
+  // Auto-register customer in CRM when phone is provided. The constraint
+  // crm_customers_source_check requires `source` to be in the whitelist
+  // (which now includes 'comanda') and `source_method` is non-null.
+  if (phone.length >= 10) {
+    try {
+      const { data: existing } = await db
+        .from("crm_customers")
+        .select("id")
+        .eq("unit_id", unitId)
+        .eq("phone", phone)
+        .maybeSingle();
+
+      const nowIso = new Date().toISOString();
+      if (existing) {
+        await db
+          .from("crm_customers")
+          .update({ last_visit_at: nowIso, name })
+          .eq("id", existing.id);
+      } else {
+        await db.from("crm_customers").insert({
+          unit_id: unitId,
+          name,
+          phone,
+          source: "comanda",
+          source_method: "native",
+          first_order_at: nowIso,
+          last_visit_at: nowIso,
+        });
+      }
+    } catch (e) {
+      // Never block comanda creation on CRM bookkeeping.
+      console.error("createComanda: crm_customers upsert failed:", e);
+    }
+  }
+
   await db.from("comanda_audit_log").insert({
     comanda_id: comanda.id,
     unit_id: unitId,

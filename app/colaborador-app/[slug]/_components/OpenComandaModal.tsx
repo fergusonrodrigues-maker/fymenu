@@ -18,11 +18,17 @@ export type OpenComandaModalProps = {
   preselectedMesaNumber?: number;
 };
 
-function formatPhone(raw: string): string {
-  const v = raw.replace(/\D/g, "").slice(0, 11);
-  if (v.length > 6) return v.replace(/(\d{2})(\d{5})(\d{0,4})/, "($1) $2-$3");
-  if (v.length > 2) return v.replace(/(\d{2})(\d{0,5})/, "($1) $2");
-  return v;
+// Soft mask: state holds digits only; display is computed every render.
+// User can backspace freely — deleting any character (digit or delimiter)
+// always shrinks the value, and the format never re-introduces trailing
+// delimiters when there's nothing after them.
+function formatPhoneBR(digits: string): string {
+  const d = digits.replace(/\D/g, "").slice(0, 11);
+  if (d.length === 0) return "";
+  if (d.length <= 2) return `(${d}`;
+  if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
+  if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+  return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
 }
 
 export default function OpenComandaModal({
@@ -34,7 +40,7 @@ export default function OpenComandaModal({
   const [source, setSource] = useState<Source>(preselectedMesaId ? "mesa" : "mesa");
   const [mesaId, setMesaId] = useState<string>(preselectedMesaId ?? "");
   const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
+  const [phoneDigits, setPhoneDigits] = useState("");
   const [guestCount, setGuestCount] = useState("2");
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -47,7 +53,7 @@ export default function OpenComandaModal({
     if (!open) return;
     setSource(preselectedMesaId ? "mesa" : "mesa");
     setMesaId(preselectedMesaId ?? "");
-    setName(""); setPhone(""); setGuestCount("2"); setNotes("");
+    setName(""); setPhoneDigits(""); setGuestCount("2"); setNotes("");
     setErr(null);
 
     if (!preselectedMesaId) {
@@ -78,7 +84,6 @@ export default function OpenComandaModal({
       setErr("Selecione uma mesa.");
       return;
     }
-    const phoneDigits = phone.replace(/\D/g, "");
     if (phoneRequired && phoneDigits.length < 8) {
       setErr("Telefone obrigatório nesta unidade (mínimo 8 dígitos).");
       return;
@@ -91,7 +96,7 @@ export default function OpenComandaModal({
         source,
         mesaId: source === "mesa" ? mesaId : undefined,
         customerName: name,
-        customerPhone: phone,
+        customerPhone: phoneDigits,
         guestCount: source === "mesa" ? (parseInt(guestCount) || undefined) : undefined,
         notes,
       });
@@ -207,10 +212,11 @@ export default function OpenComandaModal({
             </label>
             <input
               type="tel"
-              value={phone}
-              onChange={(e) => setPhone(formatPhone(e.target.value))}
+              value={formatPhoneBR(phoneDigits)}
+              onChange={(e) => setPhoneDigits(e.target.value.replace(/\D/g, "").slice(0, 11))}
               placeholder="(62) 9XXXX-XXXX"
-              inputMode="tel"
+              inputMode="numeric"
+              autoComplete="tel"
               style={input}
             />
           </div>
