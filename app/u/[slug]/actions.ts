@@ -32,12 +32,15 @@ export async function createTableCall(
       unit_id: unitId,
       table_number: tableNumber,
       type: reason,
-      status: "pending",
+      source: "customer",
     })
     .select("id")
     .single();
 
-  if (error || !data) throw new Error("Erro ao registrar chamada. Tente novamente.");
+  if (error || !data) {
+    console.error("table_calls insert error:", error);
+    throw new Error(error?.message ?? "Erro ao registrar chamada. Tente novamente.");
+  }
 
   return { callId: data.id, success: true };
 }
