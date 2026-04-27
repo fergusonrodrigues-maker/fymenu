@@ -10,7 +10,7 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import { hasPlanFeature, planLabel, maxUnits as planMaxUnits } from "@/lib/plan";
 import { useModalHistory } from "@/lib/hooks/useModalHistory";
 import { Icon } from "@/components/ui/Icon";
-import { Package, AlertCircle, Target, Star, CreditCard, Link2, Bell, Store, Lock, Timer, UtensilsCrossed, ChefHat, Tv, Wallet, ClipboardList, MapPin, Users, Printer, Link, MessageCircle, Headphones, Truck, Settings, BarChart3, Bike, FileText, UserCircle, X, Clock } from "lucide-react";
+import { Package, AlertCircle, Target, Star, CreditCard, Link2, Bell, Store, Lock, Timer, UtensilsCrossed, ChefHat, Tv, Wallet, ClipboardList, MapPin, Users, Printer, Link, MessageCircle, Headphones, Truck, Settings, BarChart3, Bike, FileText, UserCircle, X, Clock, ListChecks } from "lucide-react";
 
 const loadingFallback = <div style={{padding:40,display:"flex",justifyContent:"center"}}><LoadingSpinner size="sm" /></div>;
 
@@ -33,6 +33,7 @@ const DeliveryModal  = dynamic(() => import("./modals/DeliveryModal"),  { ssr: f
 const CriarUnidadeModal = dynamic(() => import("./modals/CriarUnidadeModal"), { ssr: false, loading: () => loadingFallback });
 const ImportarHistoricoModal = dynamic(() => import("./modals/ImportarHistoricoModal"), { ssr: false, loading: () => loadingFallback });
 const HistoricoModal = dynamic(() => import("./modals/HistoricoModal"), { ssr: false, loading: () => loadingFallback });
+const TarefasModal = dynamic(() => import("./modals/TarefasModal"), { ssr: false, loading: () => loadingFallback });
 const ChatWidget = dynamic(() => import("./components/ChatWidget"), { ssr: false });
 
 // ─── Modal backdrop ─────────────────────────────────────────────────────────
@@ -262,6 +263,7 @@ const GRID_LAYOUTS: Record<string, Array<{ id: string; cols: number; mobileCols:
     { id: "tv",          cols: 1, mobileCols: 1 },
     { id: "config",      cols: 1, mobileCols: 1 },
     { id: "historico",   cols: 1, mobileCols: 1 },
+    { id: "tarefas",     cols: 1, mobileCols: 1 },
     { id: "suporte",     cols: 1, mobileCols: 1 },
     { id: "impressoras", cols: 2, mobileCols: 2 },
   ],
@@ -276,6 +278,7 @@ const GRID_LAYOUTS: Record<string, Array<{ id: string; cols: number; mobileCols:
     { id: "equipe",      cols: 1, mobileCols: 1 },
     { id: "estoque",     cols: 1, mobileCols: 1 },
     { id: "crm",         cols: 1, mobileCols: 1 },
+    { id: "tarefas",     cols: 1, mobileCols: 1 },
     { id: "tv",          cols: 1, mobileCols: 1 },
     { id: "historico",   cols: 1, mobileCols: 1 },
     { id: "suporte",     cols: 1, mobileCols: 1 },
@@ -293,6 +296,7 @@ const GRID_LAYOUTS: Record<string, Array<{ id: string; cols: number; mobileCols:
     { id: "equipe",      cols: 1, mobileCols: 1 },
     { id: "estoque",     cols: 1, mobileCols: 1 },
     { id: "crm",         cols: 1, mobileCols: 1 },
+    { id: "tarefas",     cols: 1, mobileCols: 1 },
     { id: "whatsapp",    cols: 2, mobileCols: 2 },
     { id: "delivery",    cols: 1, mobileCols: 1 },
     { id: "tv",          cols: 1, mobileCols: 1 },
@@ -306,8 +310,8 @@ const GRID_LAYOUTS: Record<string, Array<{ id: string; cols: number; mobileCols:
 // ─── Plan access gate ─────────────────────────────────────────────────────────
 const PLAN_ACCESS: Record<string, string[]> = {
   menu:     ["cardapio", "pedidos", "unidade", "configuracoes", "suporte"],
-  menupro:  ["cardapio", "pedidos", "unidade", "configuracoes", "suporte", "financeiro", "operacoes", "equipe", "modo_tv", "impressoras"],
-  business: ["cardapio", "pedidos", "unidade", "configuracoes", "suporte", "financeiro", "operacoes", "equipe", "modo_tv", "impressoras", "estoque", "crm", "whatsapp"],
+  menupro:  ["cardapio", "pedidos", "unidade", "configuracoes", "suporte", "financeiro", "operacoes", "equipe", "modo_tv", "impressoras", "tarefas"],
+  business: ["cardapio", "pedidos", "unidade", "configuracoes", "suporte", "financeiro", "operacoes", "equipe", "modo_tv", "impressoras", "estoque", "crm", "whatsapp", "tarefas"],
 };
 
 // Maps card id → module id for PLAN_ACCESS lookup (cards not listed are always accessible)
@@ -325,6 +329,7 @@ const CARD_TO_MODULE: Record<string, string> = {
   estoque:     "estoque",
   crm:         "crm",
   whatsapp:    "whatsapp",
+  tarefas:     "tarefas",
 };
 
 const MODULE_INFO: Record<string, { name: string; plan: string; desc: string }> = {
@@ -336,6 +341,7 @@ const MODULE_INFO: Record<string, { name: string; plan: string; desc: string }> 
   estoque:     { name: "Estoque",     plan: "Business", desc: "Controle completo de estoque com IA" },
   crm:         { name: "CRM",         plan: "Business", desc: "Gestão de clientes e contatos" },
   whatsapp:    { name: "WhatsApp",    plan: "Business", desc: "Mensagens automáticas e disparo em massa" },
+  tarefas:     { name: "Tarefas",     plan: "MenuPro",  desc: "Checklists e tarefas recorrentes para a equipe" },
 };
 
 // ─── Upgrade Gate Popup ───────────────────────────────────────────────────────
@@ -422,7 +428,7 @@ export default function DashboardClient({
   reportData: ReportData;
 }) {
   const router = useRouter();
-  const [modal, setModal] = useState<"analytics" | "cardapio" | "pedidos" | "financeiro" | "unidade" | "plano" | "config" | "tv" | "modotv" | "estoque" | "operacoes" | "equipe" | "impressoras" | "links" | "crm" | "whatsapp" | "delivery" | "criar-unidade" | "importar" | "historico" | null>(null);
+  const [modal, setModal] = useState<"analytics" | "cardapio" | "pedidos" | "financeiro" | "unidade" | "plano" | "config" | "tv" | "modotv" | "estoque" | "operacoes" | "equipe" | "impressoras" | "links" | "crm" | "whatsapp" | "delivery" | "criar-unidade" | "importar" | "historico" | "tarefas" | null>(null);
   const [importInitialType, setImportInitialType] = useState<string | undefined>(undefined);
   const [chatOpen, setChatOpen] = useState(false);
   const open = (m: typeof modal) => setModal(m);
@@ -436,6 +442,7 @@ export default function DashboardClient({
 
   const trialDays = Math.max(0, Math.ceil((new Date(restaurant.trial_ends_at).getTime() - Date.now()) / 86400000));
   const [restaurantState, setRestaurantState] = useState<Restaurant>(restaurant);
+  const [pendingTasksCount, setPendingTasksCount] = useState<number | null>(null);
 
   // Refresh plan from DB every 5 min so super-admin plan changes propagate
   useEffect(() => {
@@ -451,6 +458,17 @@ export default function DashboardClient({
     const interval = setInterval(refreshRestaurant, 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, [restaurant.id]);
+
+  // Fetch pending tasks count for dashboard card subtitle
+  useEffect(() => {
+    const plan = restaurantState.plan ?? "menu";
+    if (!unit?.id || (plan === "menu" && !restaurantState.free_access)) return;
+    const supabase = createClient();
+    const today = new Date().toISOString().split("T")[0];
+    supabase.from("task_instances").select("id", { count: "exact", head: true })
+      .eq("unit_id", unit.id).eq("due_date", today).in("status", ["pending", "overdue"])
+      .then(({ count }) => { if (count !== null) setPendingTasksCount(count); });
+  }, [unit?.id, restaurantState.plan, restaurantState.free_access]);
 
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
@@ -661,7 +679,8 @@ export default function DashboardClient({
     delivery:    { icon: <Truck size={22} />,            label: "Delivery",        sub: "Taxas de entrega por distância", modalKey: "delivery" },
     suporte:     { icon: <Headphones size={22} />,       label: "Suporte",         sub: "Chat com nossa equipe", modalKey: "suporte" },
     historico:   { icon: <Clock size={22} />,            label: "Histórico",        sub: "Auditoria de ações", modalKey: "historico" },
-  }), [analytics, products.length, unit?.is_published, tvCount, restaurantState, trialDays, stockStats]);
+    tarefas:     { icon: <ListChecks size={22} />,       label: "Tarefas",          sub: () => pendingTasksCount !== null ? `${pendingTasksCount} pendente${pendingTasksCount !== 1 ? "s" : ""} hoje` : "Checklists e tarefas", modalKey: "tarefas" },
+  }), [analytics, products.length, unit?.is_published, tvCount, restaurantState, trialDays, stockStats, pendingTasksCount]);
 
   return (
     <>
@@ -1583,6 +1602,7 @@ export default function DashboardClient({
             config:      "var(--dash-card-hover)",
             impressoras: "var(--dash-card-hover)",
             suporte:     "rgba(0,255,174,0.08)",
+            tarefas:     "var(--dash-accent-soft)",
           };
 
           const baseCard: React.CSSProperties = {
@@ -1621,6 +1641,7 @@ export default function DashboardClient({
             links:       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>,
             suporte:     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>,
             historico:   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+            tarefas:     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>,
           };
 
           const IconBox = ({ id, pulse }: { id: string; pulse?: boolean }) => (
@@ -1940,6 +1961,9 @@ export default function DashboardClient({
       </Modal>
       <Modal open={modal === "historico"} onClose={close} title="Histórico de atividades" size="lg">
         <HistoricoModal restaurantId={restaurant.id} />
+      </Modal>
+      <Modal open={modal === "tarefas"} onClose={close} title="Tarefas e Checklists" size="lg">
+        <TarefasModal unit={unit} restaurant={restaurantState} />
       </Modal>
       <Modal open={modal === "importar"} onClose={close} title="Importar Dados Históricos" size="lg">
         <ImportarHistoricoModal
