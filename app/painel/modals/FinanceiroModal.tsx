@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { createExpense, deleteExpense } from "@/app/painel/financeiro/actions";
 import { Unit, Restaurant, ReportData, ReportProduct, ReportPayments, DayData } from "../types";
 import AIButton from "@/components/AIButton";
 import AIWaveLoader from "@/components/AIWaveLoader";
@@ -315,24 +316,24 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
 
   async function handleAddExpense() {
     if (!expenseName || !expenseAmount || !unit?.id) return;
-    const { data, error } = await supabase.from("business_expenses").insert({
-      unit_id: unit.id,
+    const result = await createExpense({
+      restaurantId: restaurant.id,
+      unitId: unit.id,
       name: expenseName,
       category: expenseCategory,
       amount: Math.round(parseFloat(expenseAmount) * 100),
-      is_recurring: expenseRecurring,
-      recurrence: expenseRecurring ? "monthly" : "one_time",
+      isRecurring: expenseRecurring,
       date: expenseDate,
-    }).select().single();
-    if (!error && data) {
-      setExpenses(prev => [data, ...prev]);
+    });
+    if (!result.error && result.data) {
+      setExpenses(prev => [result.data, ...prev]);
       setExpenseName(""); setExpenseAmount(""); setExpenseCategory("geral");
       setExpenseRecurring(false); setShowExpenseForm(false);
     }
   }
 
   async function handleDeleteExpense(id: string) {
-    await supabase.from("business_expenses").delete().eq("id", id);
+    await deleteExpense(id, restaurant.id);
     setExpenses(prev => prev.filter(e => e.id !== id));
   }
 

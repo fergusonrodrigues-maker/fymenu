@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { invalidateMenuCache } from "@/lib/cache/invalidateMenuCache";
 import { uploadToR2, generateMediaKey, isR2Configured } from "@/lib/r2";
+import { logActivity } from "@/lib/audit/logActivity";
 
 function normalizeName(name: string) {
   return name.trim();
@@ -24,6 +25,13 @@ function parsePrice(input: string): number | null {
   const num = Number(normalized);
   if (!Number.isFinite(num)) return null;
   return num;
+}
+
+async function getUnitRestaurantId(supabase: Awaited<ReturnType<typeof createClient>>, unitId: string): Promise<string | null> {
+  try {
+    const { data } = await supabase.from("units").select("restaurant_id").eq("id", unitId).single();
+    return data?.restaurant_id ?? null;
+  } catch { return null; }
 }
 
 async function getUnitIdOrThrow(unitIdFromForm?: string) {
@@ -81,6 +89,18 @@ export async function updateUnit(formData: FormData): Promise<void> {
 
   if (!name) throw new Error("Nome da unidade é obrigatório.");
 
+  let oldUnit: Record<string, any> | null = null;
+  let restaurantId: string | null = null;
+  try {
+    const { data } = await supabase
+      .from("units")
+      .select("name, address, city, neighborhood, instagram, whatsapp, maps_url, is_published, restaurant_id")
+      .eq("id", unitId)
+      .single();
+    oldUnit = data;
+    restaurantId = data?.restaurant_id ?? null;
+  } catch {}
+
   const { error } = await supabase
     .from("units")
     .update({
@@ -96,6 +116,27 @@ export async function updateUnit(formData: FormData): Promise<void> {
     .eq("id", unitId);
 
   if (error) throw new Error(error.message);
+
+  if (restaurantId) {
+    const newValues: Record<string, any> = {
+      name, address: address || null, city: city || null,
+      neighborhood: neighborhood || null, instagram: instagram || null,
+      whatsapp: whatsapp || null, maps_url: mapsUrl || null, is_published: isPublished,
+    };
+    const changes: Record<string, any> = {};
+    if (oldUnit) {
+      for (const key of Object.keys(newValues)) {
+        if (JSON.stringify(oldUnit[key] ?? null) !== JSON.stringify(newValues[key])) {
+          changes[key] = { from: oldUnit[key] ?? null, to: newValues[key] };
+        }
+      }
+    }
+    await logActivity({
+      restaurantId, unitId, module: 'settings', action: 'update_unit_settings',
+      entityType: 'unit', entityId: unitId, entityName: name,
+      changes: Object.keys(changes).length > 0 ? changes : null,
+    });
+  }
 
   revalidatePath("/painel");
   revalidatePath("/u");
@@ -235,16 +276,24 @@ export async function createCategory(formData: FormData): Promise<void> {
   const sectionRaw = normalizeText(String(formData.get("section") ?? "pratos"));
   const section = (["pratos", "drinks", "bebidas"].includes(sectionRaw) ? sectionRaw : "pratos") as "pratos" | "drinks" | "bebidas";
 
-  const { error } = await supabase.from("categories").insert({
+  const { data: newCat, error } = await supabase.from("categories").insert({
     unit_id: unitId,
     name,
     order_index: nextOrder,
     category_type: categoryType || "food",
     is_alcoholic: isAlcoholic,
     section,
-  });
+  }).select("id").single();
 
   if (error) throw new Error(error.message);
+
+  const restaurantId = await getUnitRestaurantId(supabase, unitId);
+  if (restaurantId) {
+    await logActivity({
+      restaurantId, unitId, module: 'menu', action: 'create_category',
+      entityType: 'category', entityId: newCat?.id ?? null, entityName: name,
+    });
+  }
 
   revalidatePath("/painel");
   revalidatePath("/u");
@@ -282,6 +331,19 @@ export async function updateCategory(formData: FormData): Promise<void> {
   const { error } = await supabase.from("categories").update(updatePayload).eq("id", id);
   if (error) throw new Error(error.message);
 
+  try {
+    const { data: cat } = await supabase.from("categories").select("unit_id").eq("id", id).single();
+    if (cat?.unit_id) {
+      const restaurantId = await getUnitRestaurantId(supabase, cat.unit_id);
+      if (restaurantId) {
+        await logActivity({
+          restaurantId, unitId: cat.unit_id, module: 'menu', action: 'update_category',
+          entityType: 'category', entityId: id, entityName: name,
+        });
+      }
+    }
+  } catch {}
+
   revalidatePath("/painel");
   revalidatePath("/u");
 }
@@ -302,8 +364,24 @@ export async function deleteCategory(formData: FormData): Promise<void> {
   const id = String(formData.get("id") ?? "");
   if (!id) throw new Error("ID inválido.");
 
+  let catInfo: { name: string; unit_id: string; restaurant_id?: string } | null = null;
+  try {
+    const { data: cat } = await supabase.from("categories").select("name, unit_id").eq("id", id).single();
+    if (cat?.unit_id) {
+      const restaurantId = await getUnitRestaurantId(supabase, cat.unit_id);
+      catInfo = { name: cat.name, unit_id: cat.unit_id, restaurant_id: restaurantId ?? undefined };
+    }
+  } catch {}
+
   const { error } = await supabase.from("categories").delete().eq("id", id);
   if (error) throw new Error(error.message);
+
+  if (catInfo?.restaurant_id) {
+    await logActivity({
+      restaurantId: catInfo.restaurant_id, unitId: catInfo.unit_id, module: 'menu', action: 'delete_category',
+      entityType: 'category', entityId: id, entityName: catInfo.name,
+    });
+  }
 
   revalidatePath("/painel");
   revalidatePath("/u");
@@ -347,7 +425,7 @@ export async function createProduct(formData: FormData): Promise<void> {
 
   const nextOrder = typeof last?.order_index === "number" ? last.order_index + 1 : 0;
 
-  const { error } = await supabase.from("products").insert({
+  const { data: newProd, error } = await supabase.from("products").insert({
     category_id: categoryId,
     unit_id: category.unit_id,
     name,
@@ -357,13 +435,21 @@ export async function createProduct(formData: FormData): Promise<void> {
     thumbnail_url: thumbnailUrl || null,
     video_url: videoUrl || null,
     order_index: nextOrder,
-  });
+  }).select("id").single();
 
   if (error) throw new Error(error.message);
 
   try {
     await invalidateMenuCache(category.unit_id);
   } catch {}
+
+  const restaurantId = await getUnitRestaurantId(supabase, category.unit_id);
+  if (restaurantId) {
+    await logActivity({
+      restaurantId, unitId: category.unit_id, module: 'menu', action: 'create_product',
+      entityType: 'product', entityId: newProd?.id ?? null, entityName: name,
+    });
+  }
 
   revalidatePath("/painel");
   revalidatePath("/u");
@@ -392,6 +478,12 @@ export async function updateProduct(formData: FormData): Promise<void> {
   const upsellModeRaw = String(formData.get("upsell_mode") ?? "auto").trim();
   const availModeRaw = String(formData.get("avail_mode") ?? "both").trim();
 
+  let oldProd: { name: string; base_price: number; unit_id: string | null } | null = null;
+  try {
+    const { data } = await supabase.from("products").select("name, base_price, unit_id").eq("id", id).maybeSingle();
+    if (data) oldProd = data;
+  } catch {}
+
   const { error } = await supabase
     .from("products")
     .update({
@@ -412,18 +504,20 @@ export async function updateProduct(formData: FormData): Promise<void> {
   if (error) throw new Error(error.message);
 
   try {
-    const { data: prod } = await supabase
-      .from("products")
-      .select("category_id")
-      .eq("id", id)
-      .single();
-    if (prod?.category_id) {
-      const { data: cat } = await supabase
-        .from("categories")
-        .select("unit_id")
-        .eq("id", prod.category_id)
-        .single();
-      if (cat?.unit_id) await invalidateMenuCache(cat.unit_id);
+    const unitId = oldProd?.unit_id ?? null;
+    if (unitId) {
+      await invalidateMenuCache(unitId);
+      const restaurantId = await getUnitRestaurantId(supabase, unitId);
+      if (restaurantId) {
+        const changes: Record<string, any> = {};
+        if (oldProd && oldProd.name !== name) changes.name = { from: oldProd.name, to: name };
+        if (oldProd && oldProd.base_price !== base_price) changes.price = { from: oldProd.base_price, to: base_price };
+        await logActivity({
+          restaurantId, unitId, module: 'menu', action: 'update_product',
+          entityType: 'product', entityId: id, entityName: name,
+          changes: Object.keys(changes).length > 0 ? changes : null,
+        });
+      }
     }
   } catch {}
 
@@ -483,8 +577,24 @@ export async function deleteProduct(formData: FormData): Promise<void> {
   const id = String(formData.get("id") ?? "");
   if (!id) throw new Error("ID inválido.");
 
+  let prodInfo: { name: string; unit_id: string | null; restaurant_id?: string } | null = null;
+  try {
+    const { data: prod } = await supabase.from("products").select("name, unit_id").eq("id", id).single();
+    if (prod) {
+      const restaurantId = prod.unit_id ? await getUnitRestaurantId(supabase, prod.unit_id) : null;
+      prodInfo = { name: prod.name, unit_id: prod.unit_id, restaurant_id: restaurantId ?? undefined };
+    }
+  } catch {}
+
   const { error } = await supabase.from("products").delete().eq("id", id);
   if (error) throw new Error(error.message);
+
+  if (prodInfo?.restaurant_id) {
+    await logActivity({
+      restaurantId: prodInfo.restaurant_id, unitId: prodInfo.unit_id, module: 'menu', action: 'delete_product',
+      entityType: 'product', entityId: id, entityName: prodInfo.name,
+    });
+  }
 
   revalidatePath("/painel");
   revalidatePath("/u");

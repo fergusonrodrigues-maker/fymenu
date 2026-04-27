@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isRestaurantMember } from "@/lib/tenant/isRestaurantMember";
+import { logActivity } from "@/lib/audit/logActivity";
 
 export interface MemberData {
   id: string;
@@ -129,6 +130,12 @@ export async function inviteMember(
   }
 
   const inviteUrl = `https://fymenu.com/aceitar-convite?token=${token}`;
+
+  await logActivity({
+    restaurantId, module: 'members', action: 'invite_member',
+    entityType: 'member', entityName: email,
+  });
+
   return { token, inviteUrl };
 }
 
@@ -144,12 +151,23 @@ export async function revokeInvite(
   const ok = await isRestaurantMember(admin, user.id, restaurantId);
   if (!ok) return { error: "Sem permissão" };
 
+  let invitedEmail: string | null = null;
+  try {
+    const { data } = await admin.from("restaurant_members").select("invited_email").eq("id", memberId).single();
+    invitedEmail = data?.invited_email ?? null;
+  } catch {}
+
   await admin
     .from("restaurant_members")
     .update({ status: "removed", removed_at: new Date().toISOString(), removed_by: user.id })
     .eq("id", memberId)
     .eq("restaurant_id", restaurantId)
     .eq("status", "pending");
+
+  await logActivity({
+    restaurantId, module: 'members', action: 'revoke_invite',
+    entityType: 'member', entityId: memberId, entityName: invitedEmail,
+  });
 
   return { success: true };
 }
@@ -168,7 +186,7 @@ export async function removeMember(
 
   const { data: target } = await admin
     .from("restaurant_members")
-    .select("id, role, user_id")
+    .select("id, role, user_id, invited_email")
     .eq("id", memberId)
     .eq("restaurant_id", restaurantId)
     .single();
@@ -192,6 +210,11 @@ export async function removeMember(
     .update({ status: "removed", removed_at: new Date().toISOString(), removed_by: user.id })
     .eq("id", memberId)
     .eq("restaurant_id", restaurantId);
+
+  await logActivity({
+    restaurantId, module: 'members', action: 'remove_member',
+    entityType: 'member', entityId: memberId, entityName: (target as any).invited_email ?? null,
+  });
 
   return { success: true };
 }
