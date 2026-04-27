@@ -12,6 +12,12 @@ import CartBar from "./CartBar";
 import CartModal, { CartItem } from "./CartModal";
 import { OrderPayload } from "./orderBuilder";
 import ProductVideoCard from "./ProductVideoCard";
+import dynamic from "next/dynamic";
+
+const GarcomButton = dynamic(
+  () => import("@/app/u/[slug]/mesa/GarcomButton"),
+  { ssr: false }
+);
 
 interface MenuClientProps {
   unit: Unit;
@@ -543,7 +549,7 @@ export default function MenuClient({
         style={{
           paddingTop: "env(safe-area-inset-top, 0px)",
           paddingBottom: mode === "mesa"
-            ? "calc(56px + env(safe-area-inset-bottom, 0px))"
+            ? "calc(96px + env(safe-area-inset-bottom, 0px))"
             : glassBarMaximized
               ? "calc(360px + env(safe-area-inset-bottom, 0px))"
               : pillsSticky
@@ -1316,23 +1322,8 @@ export default function MenuClient({
         />
       )}
 
-      {/* Mesa footer — fixed bar, replaces cart bar */}
-      {mode === "mesa" && (
-        <div style={{
-          position: "fixed", bottom: 0, left: 0, right: 0,
-          padding: "14px 16px",
-          paddingBottom: "calc(14px + env(safe-area-inset-bottom, 0px))",
-          background: isDark ? "rgba(5,5,5,0.92)" : "rgba(255,255,255,0.95)",
-          backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
-          borderTop: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.07)",
-          textAlign: "center",
-          zIndex: 50,
-        }}>
-          <p style={{ margin: 0, fontSize: 13, color: isDark ? "rgba(255,255,255,0.45)" : "#555" }}>
-            Para fazer seu pedido, <strong style={{ color: isDark ? "rgba(255,255,255,0.7)" : "#222" }}>chame um garçom</strong>
-          </p>
-        </div>
-      )}
+      {/* Mesa — floating "Chamar garçom" button (replaces cart bar) */}
+      {mode === "mesa" && <GarcomButton unitId={unit.id} />}
 
     </>
   );
