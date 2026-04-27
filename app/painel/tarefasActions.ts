@@ -100,6 +100,7 @@ export type CompletionRow = {
   notes: string | null;
   photo_url: string | null;
   photo_path: string | null;
+  signed_photo_url: string | null;
   completed_at: string;
   task_instances: { id: string; name: string; unit_id: string } | null;
   employees: { id: string; name: string } | null;
@@ -417,6 +418,22 @@ export async function listTaskCompletions(
       (c.task_instances?.name ?? "").toLowerCase().includes(needle),
     );
   }
+
+  // Batch-generate 1h signed URLs for every completion that has a photo. The
+  // task-photos bucket is private; the raw photo_path stored in the row is NOT
+  // a usable URL — clients must consume signed_photo_url.
+  await Promise.all(
+    result.map(async (c) => {
+      if (c.photo_path) {
+        const { data: signed } = await supabase.storage
+          .from("task-photos")
+          .createSignedUrl(c.photo_path, 3600);
+        c.signed_photo_url = signed?.signedUrl ?? null;
+      } else {
+        c.signed_photo_url = null;
+      }
+    }),
+  );
 
   return result;
 }

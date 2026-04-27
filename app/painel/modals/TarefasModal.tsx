@@ -4,7 +4,7 @@ import type { Unit, Restaurant } from "../types";
 import {
   createTaskTemplate, updateTaskTemplate, deleteTaskTemplate, toggleTaskTemplate,
   createManualTaskInstance, updateTaskInstance, deleteTaskInstance,
-  listTaskInstances, listTaskTemplates, listTaskCompletions, getCompletionPhotoUrl,
+  listTaskInstances, listTaskTemplates, listTaskCompletions,
   type TaskTemplateInput, type ManualTaskInput,
   type TaskTemplateRow, type TaskInstanceRow, type CompletionRow,
 } from "../tarefasActions";
@@ -93,7 +93,6 @@ export default function TarefasModal({ unit, restaurant }: { unit: Unit | null; 
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [histLoading, setHistLoading] = useState(false);
-  const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
 
   // Detail view
   const [detailTask, setDetailTask] = useState<TaskInstanceRow | null>(null);
@@ -177,15 +176,8 @@ export default function TarefasModal({ unit, restaurant }: { unit: Unit | null; 
     });
   }, [unit?.id]);
 
-  // Fetch signed URLs for completion photos
-  useEffect(() => {
-    const rows = completions.filter((c) => c.photo_path && !photoUrls[c.id]);
-    if (rows.length === 0) return;
-    rows.forEach(async (c) => {
-      const url = await getCompletionPhotoUrl(c.photo_path!);
-      if (url) setPhotoUrls((prev) => ({ ...prev, [c.id]: url }));
-    });
-  }, [completions]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Photos are batch-signed server-side in listTaskCompletions; clients use
+  // c.signed_photo_url directly.
 
   // ── Form helpers ─────────────────────────────────────────────────────────────
 
@@ -857,13 +849,13 @@ export default function TarefasModal({ unit, restaurant }: { unit: Unit | null; 
                       <div style={{ fontSize: 12, color: "var(--dash-text-muted)", fontStyle: "italic" }}>"{c.notes}"</div>
                     )}
                   </div>
-                  {(c.photo_path || c.photo_url) && (
+                  {c.photo_path && (
                     <div
-                      onClick={() => { const url = photoUrls[c.id] ?? c.photo_url; if (url) window.open(url, "_blank"); }}
-                      style={{ cursor: "pointer", flexShrink: 0 }}
+                      onClick={() => { if (c.signed_photo_url) window.open(c.signed_photo_url, "_blank"); }}
+                      style={{ cursor: c.signed_photo_url ? "pointer" : "default", flexShrink: 0 }}
                     >
-                      {photoUrls[c.id] ? (
-                        <img src={photoUrls[c.id]} alt="Foto" style={{ width: 56, height: 56, borderRadius: 8, objectFit: "cover" }} />
+                      {c.signed_photo_url ? (
+                        <img src={c.signed_photo_url} alt="Foto" style={{ width: 56, height: 56, borderRadius: 8, objectFit: "cover" }} />
                       ) : (
                         <div style={{ width: 56, height: 56, borderRadius: 8, background: "var(--dash-border)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>📷</div>
                       )}
