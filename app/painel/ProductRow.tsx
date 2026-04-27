@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useTransition, useEffect } from "react";
-import { ClipboardList, DollarSign, List, Camera, Video, AlertTriangle, Sparkles, RefreshCw, Pencil, Bike, UtensilsCrossed, Ban, Lock } from "lucide-react";
+import { ClipboardList, DollarSign, List, Camera, Video, AlertTriangle, Sparkles, RefreshCw, Pencil, Bike, UtensilsCrossed, Ban, Lock, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { updateProduct, deleteProduct, updateProductStock, updateProductNutrition, updateProductVariations } from "./actions";
 import FyLoader from "@/components/FyLoader";
@@ -280,6 +280,7 @@ export default function ProductRow({
   const videoRef = useRef<HTMLInputElement>(null);
   const [isPending, startTransition] = useTransition();
   const [deleting, setDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [nutValues, setNutValues] = useState({
     calories: String(product.nutrition?.calories ?? ""),
     protein: String(product.nutrition?.protein ?? ""),
@@ -303,6 +304,28 @@ export default function ProductRow({
         setVariationsLoaded(true);
       });
   }, [expanded, priceType, variationsLoaded, product.id]);
+
+  async function handleDelete(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('[delete] Triggered for product:', product.id);
+    if (deleting) return;
+    setDeleting(true);
+    try {
+      const formData = new FormData();
+      formData.append('id', product.id);
+      console.log('[delete] Calling deleteProduct...');
+      await deleteProduct(formData);
+      console.log('[delete] Success');
+      onClose();
+    } catch (err) {
+      console.error('[delete] Failed:', err);
+      alert('Erro ao excluir: ' + (err as Error).message);
+    } finally {
+      setDeleting(false);
+      setConfirmDelete(false);
+    }
+  }
 
   async function handleFileUpload(file: File, type: "thumb" | "video"): Promise<string | null> {
     setUploading(type);
@@ -651,26 +674,39 @@ export default function ProductRow({
                 <button type="submit" disabled={isPending || uploading !== null} style={{ flex: 1, padding: "10px 0", background: "#10b981", color: "#fff", border: "none", borderRadius: 8, fontWeight: 600, fontSize: 14, cursor: isPending ? "not-allowed" : "pointer", opacity: isPending ? 0.6 : 1 }}>
                   {isPending ? "Salvando…" : "Salvar"}
                 </button>
-                <button
-                  type="button"
-                  disabled={deleting}
-                  onClick={async () => {
-                    if (!confirm("Tem certeza que deseja excluir este produto?")) return;
-                    if (deleting) return;
-                    setDeleting(true);
-                    try {
-                      const fd = new FormData();
-                      fd.set("id", product.id);
-                      await deleteProduct(fd);
-                      onClose();
-                    } finally {
-                      setDeleting(false);
-                    }
-                  }}
-                  style={{ padding: "10px 16px", background: "rgba(239,68,68,0.15)", color: "#f87171", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, fontWeight: 600, fontSize: 14, cursor: deleting ? "not-allowed" : "pointer", opacity: deleting ? 0.6 : 1 }}
-                >
-                  {deleting ? "Excluindo…" : "Excluir"}
-                </button>
+                {confirmDelete ? (
+                  <>
+                    <button
+                      type="button"
+                      disabled={deleting}
+                      onClick={handleDelete}
+                      style={{ padding: "10px 16px", background: deleting ? "rgba(239,68,68,0.4)" : "#dc2626", color: "#fff", border: "none", borderRadius: 8, fontWeight: 600, fontSize: 13, cursor: deleting ? "not-allowed" : "pointer", opacity: deleting ? 0.7 : 1, whiteSpace: "nowrap" }}
+                    >
+                      {deleting ? "Excluindo…" : "Sim, excluir"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmDelete(false); }}
+                      style={{ padding: "10px 12px", background: "var(--dash-card-hover)", color: "var(--dash-text-muted)", border: "none", borderRadius: 8, fontWeight: 600, fontSize: 13, cursor: "pointer" }}
+                    >
+                      Cancelar
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={deleting}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setConfirmDelete(true);
+                      setTimeout(() => setConfirmDelete(false), 5000);
+                    }}
+                    style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 16px", background: "rgba(239,68,68,0.15)", color: "#f87171", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, fontWeight: 600, fontSize: 14, cursor: "pointer" }}
+                  >
+                    <Trash2 size={14} /> Excluir
+                  </button>
+                )}
               </div>
             </form>
             <div style={{ padding: "0 16px 16px" }}>
