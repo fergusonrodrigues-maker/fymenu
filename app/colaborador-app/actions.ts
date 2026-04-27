@@ -5,20 +5,26 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { ensureTodayTasks } from "@/lib/tarefas/ensureTodayTasks";
 
 // ── authenticateEmployee ────────────────────────────────────────────────────
-// Returns session data on success; throws with a user-facing message on failure.
+// Returns a discriminated union — never throws on user-facing failures so the
+// client gets a usable error message instead of a Server Components exception.
+
+export type AuthResult =
+  | {
+      ok: true;
+      token: string;
+      employeeId: string;
+      name: string;
+      roles: string[];
+      unitId: string;
+      unitName: string;
+    }
+  | { ok: false; error: string };
 
 export async function authenticateEmployee(
   slug: string,
   username: string,
-  password: string
-): Promise<{
-  token: string;
-  employeeId: string;
-  name: string;
-  roles: string[];
-  unitId: string;
-  unitName: string;
-}> {
+  password: string,
+): Promise<AuthResult> {
   const db = createAdminClient();
 
   // 1) Resolve unit by slug
@@ -28,7 +34,7 @@ export async function authenticateEmployee(
     .eq("slug", slug)
     .maybeSingle();
 
-  if (unitErr || !unit) throw new Error("Unidade não encontrada");
+  if (unitErr || !unit) return { ok: false, error: "Unidade não encontrada" };
 
   // 2) Find active employee by unit + username
   const { data: employee, error: empErr } = await db
@@ -39,13 +45,15 @@ export async function authenticateEmployee(
     .eq("is_active", true)
     .maybeSingle();
 
-  if (empErr || !employee) throw new Error("Usuário ou senha incorretos");
+  if (empErr || !employee) return { ok: false, error: "Usuário ou senha incorretos" };
 
   // 3) Verify password (bcrypt)
-  if (!employee.password_hash) throw new Error("Acesso não configurado. Fale com o gerente.");
+  if (!employee.password_hash) {
+    return { ok: false, error: "Acesso não configurado. Fale com o gerente." };
+  }
 
   const valid = await bcrypt.compare(password, employee.password_hash);
-  if (!valid) throw new Error("Usuário ou senha incorretos");
+  if (!valid) return { ok: false, error: "Usuário ou senha incorretos" };
 
   // 4) Create session token
   const token = crypto.randomUUID();
@@ -56,12 +64,13 @@ export async function authenticateEmployee(
     token,
   });
 
-  if (sessionErr) throw new Error("Erro ao criar sessão. Tente novamente.");
+  if (sessionErr) return { ok: false, error: "Erro ao criar sessão. Tente novamente." };
 
   // Lazy-generate today's task instances + expire old ones (silent, idempotent).
   await ensureTodayTasks(unit.id);
 
   return {
+    ok: true,
     token,
     employeeId: employee.id,
     name: employee.name,

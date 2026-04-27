@@ -33,19 +33,29 @@ export default function ColaboradorLoginClient({ slug, unitName, logoUrl }: Prop
     setError(null);
     setLoading(true);
 
+    let result;
     try {
-      const result = await authenticateEmployee(slug, username, password);
+      result = await authenticateEmployee(slug, username, password);
+    } catch {
+      setError("Erro de conexão. Tente novamente.");
+      setLoading(false);
+      return;
+    }
+
+    if (!result.ok) {
+      setError(result.error);
+      setLoading(false);
+      return;
+    }
+
+    try {
       sessionStorage.setItem("fy_emp_token", result.token);
       sessionStorage.setItem("fy_emp_id", result.employeeId);
       sessionStorage.setItem("fy_emp_unit", result.unitId);
       sessionStorage.setItem("fy_emp_roles", JSON.stringify(result.roles));
       sessionStorage.setItem("fy_emp_name", result.name);
-      router.push("/colaborador/home");
-    } catch (err: any) {
-      setError(err.message ?? "Erro ao fazer login");
-    } finally {
-      setLoading(false);
-    }
+    } catch { /* ignore — sessionStorage may be unavailable */ }
+    router.push("/colaborador/home");
   }
 
   const inputStyle: React.CSSProperties = {

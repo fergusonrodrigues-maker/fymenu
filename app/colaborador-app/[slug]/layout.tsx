@@ -1,15 +1,32 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, usePathname } from "next/navigation";
 import { validateSession } from "@/app/colaborador-app/actions";
 
-export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
+// Wraps every route under /colaborador-app/[slug]/*. Enforces session on the
+// nested routes (home, tarefas, ponto, …) and lets the slug-root login page
+// render unprotected.
+export default function SlugLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const params = useParams<{ slug: string }>();
-  const [ready, setReady] = useState(false);
+  const pathname = usePathname() ?? "";
+
+  // Login lives at the slug root: /colaborador-app/{slug} (with or without trailing slash).
+  // Anything deeper is protected.
+  const isLoginRoute =
+    pathname === `/colaborador-app/${params.slug}` ||
+    pathname === `/colaborador-app/${params.slug}/`;
+
+  const [ready, setReady] = useState<boolean>(isLoginRoute);
 
   useEffect(() => {
+    if (isLoginRoute) {
+      setReady(true);
+      return;
+    }
+
+    let cancelled = false;
     async function check() {
       let token: string | null = null;
       try { token = sessionStorage.getItem("fy_emp_token"); } catch { /* */ }
@@ -20,6 +37,8 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
       }
 
       const result = await validateSession(token);
+      if (cancelled) return;
+
       if (!result.valid) {
         try {
           sessionStorage.removeItem("fy_emp_token");
@@ -35,8 +54,8 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
       setReady(true);
     }
     check();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    return () => { cancelled = true; };
+  }, [isLoginRoute, router]);
 
   if (!ready) {
     return (
