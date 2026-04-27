@@ -287,3 +287,200 @@ export async function sendCartToKitchen(
 
   return { ok: true, itemsAdded: items.length };
 }
+
+// ─── Cancel item / edit / cancel comanda ─────────────────────────────────────
+
+export async function cancelComandaItem(
+  token: string,
+  itemId: string,
+  reason: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  let auth;
+  try { auth = await authenticate(token); } catch (e: any) {
+    return { ok: false, error: e?.message ?? "Sessão inválida" };
+  }
+  const { db, employeeId, employeeName, employeeRole, unitId } = auth;
+  if (!WAITER_ROLES.has(employeeRole ?? "")) {
+    return { ok: false, error: "Acesso restrito a garçons e gerentes." };
+  }
+  const trimmedReason = (reason ?? "").trim();
+  if (trimmedReason.length < 10) {
+    return { ok: false, error: "Informe um motivo (mínimo 10 caracteres)." };
+  }
+
+  const { data: item } = await db
+    .from("comanda_items")
+    .select("id, comanda_id, product_name, status, added_by, comandas:comanda_id(id, unit_id)")
+    .eq("id", itemId)
+    .maybeSingle();
+  if (!item) return { ok: false, error: "Item não encontrado." };
+
+  const comanda: any = (item as any).comandas;
+  if (!comanda || comanda.unit_id !== unitId) {
+    return { ok: false, error: "Item não pertence a sua unidade." };
+  }
+  if (item.status === "cancelled") return { ok: false, error: "Item já foi cancelado." };
+
+  // Permission: waiter can cancel only items they added; manager can cancel any.
+  if (employeeRole === "waiter" && item.added_by && item.added_by !== employeeId) {
+    return { ok: false, error: "Só o gerente pode cancelar itens lançados por outro garçom." };
+  }
+
+  const { error: updErr } = await db
+    .from("comanda_items")
+    .update({ status: "cancelled", updated_at: new Date().toISOString() })
+    .eq("id", itemId);
+  if (updErr) return { ok: false, error: updErr.message };
+
+  await recomputeComandaTotal(db, item.comanda_id);
+
+  await db.from("comanda_audit_log").insert({
+    comanda_id: item.comanda_id,
+    unit_id: unitId,
+    action: "item_cancelled",
+    item_id: itemId,
+    item_name: item.product_name,
+    reason: trimmedReason,
+    performed_by: employeeId,
+    performed_by_role: employeeRole ?? "waiter",
+    performed_by_name: employeeName,
+  });
+
+  return { ok: true };
+}
+
+export type UpdateComandaInfoInput = {
+  customerName?: string;
+  customerPhone?: string;
+  guestCount?: number | null;
+  notes?: string;
+};
+
+export async function updateComandaInfo(
+  token: string,
+  comandaId: string,
+  input: UpdateComandaInfoInput,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  let auth;
+  try { auth = await authenticate(token); } catch (e: any) {
+    return { ok: false, error: e?.message ?? "Sessão inválida" };
+  }
+  const { db, employeeId, employeeName, employeeRole, unitId } = auth;
+  if (!WAITER_ROLES.has(employeeRole ?? "")) {
+    return { ok: false, error: "Acesso restrito a garçons e gerentes." };
+  }
+
+  const { data: comanda } = await db
+    .from("comandas")
+    .select("id, unit_id, status, customer_name, customer_phone, guest_count, notes")
+    .eq("id", comandaId)
+    .maybeSingle();
+  if (!comanda || comanda.unit_id !== unitId) return { ok: false, error: "Comanda não encontrada." };
+  if (comanda.status !== "open") return { ok: false, error: "Comanda já fechada ou cancelada." };
+
+  const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  const changes: Record<string, { from: any; to: any }> = {};
+
+  if (input.customerName !== undefined) {
+    const name = input.customerName.trim();
+    if (name.length < 2) return { ok: false, error: "Nome do cliente: mínimo 2 caracteres." };
+    if (name !== (comanda.customer_name ?? "")) {
+      update.customer_name = name;
+      changes.customer_name = { from: comanda.customer_name, to: name };
+    }
+  }
+  if (input.customerPhone !== undefined) {
+    const phone = input.customerPhone.replace(/\D/g, "") || null;
+    if (phone !== (comanda.customer_phone ?? null)) {
+      update.customer_phone = phone;
+      changes.customer_phone = { from: comanda.customer_phone, to: phone };
+    }
+  }
+  if (input.guestCount !== undefined) {
+    const gc = input.guestCount === null ? null : Math.max(1, Math.min(20, input.guestCount));
+    if (gc !== (comanda.guest_count ?? null)) {
+      update.guest_count = gc;
+      changes.guest_count = { from: comanda.guest_count, to: gc };
+    }
+  }
+  if (input.notes !== undefined) {
+    const notes = input.notes.trim() || null;
+    if (notes !== (comanda.notes ?? null)) {
+      update.notes = notes;
+      changes.notes = { from: comanda.notes, to: notes };
+    }
+  }
+
+  if (Object.keys(changes).length === 0) return { ok: true };
+
+  const { error } = await db.from("comandas").update(update).eq("id", comandaId);
+  if (error) return { ok: false, error: error.message };
+
+  await db.from("comanda_audit_log").insert({
+    comanda_id: comandaId,
+    unit_id: unitId,
+    action: "comanda_updated",
+    new_value: JSON.stringify(changes),
+    performed_by: employeeId,
+    performed_by_role: employeeRole ?? "waiter",
+    performed_by_name: employeeName,
+  });
+
+  return { ok: true };
+}
+
+export async function cancelComanda(
+  token: string,
+  comandaId: string,
+  reason: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  let auth;
+  try { auth = await authenticate(token); } catch (e: any) {
+    return { ok: false, error: e?.message ?? "Sessão inválida" };
+  }
+  const { db, employeeId, employeeName, employeeRole, unitId } = auth;
+  if (!WAITER_ROLES.has(employeeRole ?? "")) {
+    return { ok: false, error: "Acesso restrito a garçons e gerentes." };
+  }
+  const trimmedReason = (reason ?? "").trim();
+  if (trimmedReason.length < 10) {
+    return { ok: false, error: "Informe um motivo (mínimo 10 caracteres)." };
+  }
+
+  const { data: comanda } = await db
+    .from("comandas")
+    .select("id, unit_id, status, mesa_id")
+    .eq("id", comandaId)
+    .maybeSingle();
+  if (!comanda || comanda.unit_id !== unitId) return { ok: false, error: "Comanda não encontrada." };
+  if (comanda.status !== "open") return { ok: false, error: "Comanda já fechada ou cancelada." };
+
+  const nowIso = new Date().toISOString();
+  const { error: cancelErr } = await db
+    .from("comandas")
+    .update({ status: "cancelled", updated_at: nowIso })
+    .eq("id", comandaId);
+  if (cancelErr) return { ok: false, error: cancelErr.message };
+
+  // Free the mesa if linked.
+  if (comanda.mesa_id) {
+    await db.from("mesas").update({
+      status: "available",
+      current_comanda_id: null,
+      current_waiter_id: null,
+      updated_at: nowIso,
+    }).eq("id", comanda.mesa_id);
+  }
+
+  await db.from("comanda_audit_log").insert({
+    comanda_id: comandaId,
+    unit_id: unitId,
+    action: "comanda_cancelled",
+    reason: trimmedReason,
+    performed_by: employeeId,
+    performed_by_role: employeeRole ?? "waiter",
+    performed_by_name: employeeName,
+  });
+
+  return { ok: true };
+}

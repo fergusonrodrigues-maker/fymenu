@@ -3,11 +3,12 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
-  ArrowLeft, Plus, X, UtensilsCrossed, Receipt, Send, MoreVertical, Check,
+  ArrowLeft, Plus, X, UtensilsCrossed, Receipt, Send, MoreVertical, Check, Pencil, Trash2,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import {
   getComandaDetail, sendCartToKitchen,
+  cancelComandaItem, updateComandaInfo, cancelComanda,
   type ComandaFullDetail, type ComandaItemRow, type CartItemInput,
 } from "./actions";
 import BottomNav from "../../_components/BottomNav";
@@ -42,6 +43,10 @@ export default function ComandaDetailClient({
   const [showSendConfirm, setShowSendConfirm] = useState(false);
   const [sending, setSending] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [openMenu, setOpenMenu] = useState(false);
+  const [cancelItemId, setCancelItemId] = useState<string | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showCancelComanda, setShowCancelComanda] = useState(false);
 
   const flashToast = useCallback((msg: string) => {
     setToast(msg);
@@ -171,6 +176,46 @@ export default function ComandaDetailClient({
             </div>
           )}
         </div>
+        {data && data.status === "open" && (
+          <div style={{ position: "relative" }}>
+            <button
+              onClick={() => setOpenMenu((v) => !v)}
+              aria-label="Mais opções"
+              style={{
+                width: 36, height: 36, borderRadius: 10, border: "1px solid #e5e7eb",
+                background: "#fff", display: "flex", alignItems: "center", justifyContent: "center",
+                cursor: "pointer",
+              }}
+            >
+              <MoreVertical size={18} color="#374151" />
+            </button>
+            {openMenu && (
+              <>
+                <div onClick={() => setOpenMenu(false)} style={{ position: "fixed", inset: 0, zIndex: 35 }} />
+                <div style={{
+                  position: "absolute", top: 42, right: 0,
+                  width: 220, background: "#fff",
+                  border: "1px solid #e5e7eb", borderRadius: 12,
+                  boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+                  overflow: "hidden", zIndex: 36,
+                }}>
+                  <button
+                    onClick={() => { setOpenMenu(false); setShowEditModal(true); }}
+                    style={menuItemStyle}
+                  >
+                    <Pencil size={14} /> Editar dados
+                  </button>
+                  <button
+                    onClick={() => { setOpenMenu(false); setShowCancelComanda(true); }}
+                    style={{ ...menuItemStyle, color: "#b91c1c", borderTop: "1px solid #f3f4f6" }}
+                  >
+                    <Trash2 size={14} /> Cancelar comanda
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </header>
 
       <main style={{ maxWidth: 560, margin: "0 auto", padding: "16px" }}>
@@ -222,7 +267,13 @@ export default function ComandaDetailClient({
                   Nenhum item ainda. Toque em <strong>+ Adicionar item</strong> para começar.
                 </div>
               ) : (
-                sentItems.map((it) => <SentItemRow key={it.id} item={it} />)
+                sentItems.map((it) => (
+                  <SentItemRow
+                    key={it.id}
+                    item={it}
+                    onCancel={() => setCancelItemId(it.id)}
+                  />
+                ))
               )}
             </section>
 
@@ -351,6 +402,47 @@ export default function ComandaDetailClient({
         />
       )}
 
+      {cancelItemId && (
+        <CancelItemModal
+          itemId={cancelItemId}
+          itemName={sentItems.find((i) => i.id === cancelItemId)?.product_name ?? ""}
+          onClose={() => setCancelItemId(null)}
+          onSuccess={async () => {
+            setCancelItemId(null);
+            flashToast("Item cancelado");
+            await reload(true);
+          }}
+          onError={(msg) => setErr(msg)}
+        />
+      )}
+
+      {showEditModal && data && (
+        <EditComandaModal
+          comanda={data}
+          onClose={() => setShowEditModal(false)}
+          onSuccess={async () => {
+            setShowEditModal(false);
+            flashToast("Dados atualizados");
+            await reload(true);
+          }}
+          onError={(msg) => setErr(msg)}
+        />
+      )}
+
+      {showCancelComanda && data && (
+        <CancelComandaModal
+          comandaId={data.id}
+          shortCode={data.short_code}
+          onClose={() => setShowCancelComanda(false)}
+          onSuccess={() => {
+            flashToast("Comanda cancelada");
+            setShowCancelComanda(false);
+            setTimeout(() => router.push("/colaborador/comandas"), 800);
+          }}
+          onError={(msg) => setErr(msg)}
+        />
+      )}
+
       <BottomNav active="comandas" />
     </div>
   );
@@ -361,8 +453,10 @@ const sectionTitle: React.CSSProperties = {
   textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8,
 };
 
-function SentItemRow({ item }: { item: ComandaItemRow }) {
+function SentItemRow({ item, onCancel }: { item: ComandaItemRow; onCancel: () => void }) {
   const status = STATUS_LABEL[item.status] ?? STATUS_LABEL.pending;
+  // Allow cancel up to 'preparing'. Once delivered there's no point.
+  const canCancel = item.status !== "delivered" && item.status !== "cancelled";
   return (
     <div style={{
       background: "#fff", border: "1px solid #e5e7eb",
@@ -395,13 +489,25 @@ function SentItemRow({ item }: { item: ComandaItemRow }) {
           </span>
         </div>
       </div>
-      <div style={{ textAlign: "right", flexShrink: 0 }}>
+      <div style={{ textAlign: "right", flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
         <div style={{ fontSize: 13, fontWeight: 800, color: "#16a34a" }}>
           {fmtBRL(item.unit_price * item.quantity)}
         </div>
-        <div style={{ fontSize: 10, color: "#9ca3af", marginTop: 2 }}>
+        <div style={{ fontSize: 10, color: "#9ca3af" }}>
           {fmtBRL(item.unit_price)} cada
         </div>
+        {canCancel && (
+          <button
+            onClick={onCancel}
+            aria-label="Cancelar item"
+            style={{
+              marginTop: 2, padding: "3px 8px", borderRadius: 6,
+              border: "1px solid #fecaca", background: "#fef2f2",
+              color: "#b91c1c", fontSize: 10, fontWeight: 700, fontFamily: "inherit",
+              cursor: "pointer",
+            }}
+          >Cancelar</button>
+        )}
       </div>
     </div>
   );
@@ -469,6 +575,311 @@ const smallQtyBtn: React.CSSProperties = {
   display: "flex", alignItems: "center", justifyContent: "center",
   cursor: "pointer", fontFamily: "inherit",
 };
+
+const menuItemStyle: React.CSSProperties = {
+  width: "100%", display: "flex", alignItems: "center", gap: 8,
+  padding: "12px 14px", border: "none", background: "#fff",
+  fontSize: 13, fontWeight: 600, color: "#374151", fontFamily: "inherit",
+  cursor: "pointer", textAlign: "left",
+};
+
+// ─── Cancel item / Edit / Cancel comanda modals ──────────────────────────────
+
+function ModalShell({
+  title, children, onClose, submitting,
+}: {
+  title: string; children: React.ReactNode; onClose: () => void; submitting?: boolean;
+}) {
+  return (
+    <div
+      onClick={(e) => { if (e.target === e.currentTarget && !submitting) onClose(); }}
+      style={{
+        position: "fixed", inset: 0, zIndex: 110,
+        background: "rgba(0,0,0,0.55)",
+        display: "flex", alignItems: "flex-end", justifyContent: "center",
+      }}
+    >
+      <div style={{
+        background: "#fff", width: "100%", maxWidth: 520,
+        borderRadius: "20px 20px 0 0",
+        animation: "slideUpC 0.22s ease",
+        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        maxHeight: "92vh", overflowY: "auto",
+      }}>
+        <style>{`@keyframes slideUpC { from { transform: translateY(100%); } to { transform: translateY(0); } }`}</style>
+        <div style={{ padding: "10px 0 4px", display: "flex", justifyContent: "center" }}>
+          <div style={{ width: 40, height: 4, borderRadius: 2, background: "#d1d5db" }} />
+        </div>
+        <div style={{ padding: "8px 22px 22px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <div style={{ fontSize: 17, fontWeight: 800, color: "#111827" }}>{title}</div>
+            <button onClick={onClose} disabled={submitting} aria-label="Fechar" style={{
+              width: 32, height: 32, borderRadius: 8, border: "1px solid #e5e7eb", background: "#fff",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              cursor: submitting ? "not-allowed" : "pointer",
+            }}><X size={16} color="#6b7280" /></button>
+          </div>
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ReasonInput({
+  value, onChange, placeholder, disabled,
+}: {
+  value: string; onChange: (v: string) => void; placeholder: string; disabled?: boolean;
+}) {
+  return (
+    <>
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value.slice(0, 300))}
+        placeholder={placeholder}
+        rows={3}
+        disabled={disabled}
+        style={{
+          width: "100%", padding: "10px 12px", borderRadius: 10,
+          border: "1px solid #e5e7eb", background: "#fff",
+          fontSize: 14, fontFamily: "inherit", outline: "none",
+          resize: "none", boxSizing: "border-box",
+        }}
+      />
+      <div style={{ textAlign: "right", fontSize: 11, color: "#9ca3af", marginTop: 3 }}>
+        {value.length}/300 (mín. 10)
+      </div>
+    </>
+  );
+}
+
+function CancelItemModal({
+  itemId, itemName, onClose, onSuccess, onError,
+}: {
+  itemId: string; itemName: string;
+  onClose: () => void; onSuccess: () => void; onError: (msg: string) => void;
+}) {
+  const [reason, setReason] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [localErr, setLocalErr] = useState<string | null>(null);
+
+  async function handleConfirm() {
+    setLocalErr(null);
+    setSubmitting(true);
+    try {
+      const token = sessionStorage.getItem("fy_emp_token") ?? "";
+      const result = await cancelComandaItem(token, itemId, reason);
+      if (!result.ok) { setLocalErr(result.error); setSubmitting(false); return; }
+      onSuccess();
+    } catch (e: any) {
+      setLocalErr(e?.message ?? "Erro");
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <ModalShell title="Cancelar item" onClose={onClose} submitting={submitting}>
+      <div style={{ fontSize: 13, color: "#374151", marginBottom: 10 }}>
+        Cancelar <strong>{itemName}</strong>? O item será mantido no histórico para auditoria.
+      </div>
+      <div style={{ marginBottom: 12 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", marginBottom: 6 }}>
+          Motivo *
+        </div>
+        <ReasonInput
+          value={reason} onChange={setReason} disabled={submitting}
+          placeholder='Ex: "Cliente desistiu", "Erro do garçom", "Sem estoque"'
+        />
+      </div>
+      {localErr && (
+        <div role="alert" style={{
+          padding: "10px 14px", borderRadius: 8, marginBottom: 12,
+          background: "#fee2e2", border: "1px solid #fca5a5",
+          color: "#991b1b", fontSize: 13, fontWeight: 600,
+        }}>⚠ {localErr}</div>
+      )}
+      <div style={{ display: "flex", gap: 10 }}>
+        <button onClick={onClose} disabled={submitting}
+          style={{ flex: 1, padding: 13, borderRadius: 12, border: "1px solid #e5e7eb", background: "#fff", color: "#374151", fontSize: 14, fontWeight: 700, fontFamily: "inherit", cursor: submitting ? "not-allowed" : "pointer" }}
+        >Voltar</button>
+        <button onClick={handleConfirm} disabled={submitting || reason.trim().length < 10}
+          style={{
+            flex: 2, padding: 13, borderRadius: 12, border: "none",
+            background: submitting || reason.trim().length < 10 ? "#9ca3af" : "#dc2626",
+            color: "#fff", fontSize: 14, fontWeight: 800, fontFamily: "inherit",
+            cursor: submitting || reason.trim().length < 10 ? "not-allowed" : "pointer",
+          }}
+        >{submitting ? "Cancelando…" : "Confirmar cancelamento"}</button>
+      </div>
+    </ModalShell>
+  );
+}
+
+function EditComandaModal({
+  comanda, onClose, onSuccess, onError,
+}: {
+  comanda: ComandaFullDetail;
+  onClose: () => void;
+  onSuccess: () => void;
+  onError: (msg: string) => void;
+}) {
+  const [name, setName] = useState(comanda.customer_name ?? "");
+  const [phoneDigits, setPhoneDigits] = useState((comanda.customer_phone ?? "").replace(/\D/g, ""));
+  const [guestCount, setGuestCount] = useState(String(comanda.guest_count ?? ""));
+  const [notes, setNotes] = useState(comanda.notes ?? "");
+  const [submitting, setSubmitting] = useState(false);
+  const [localErr, setLocalErr] = useState<string | null>(null);
+
+  function fmtPhone(d: string): string {
+    if (d.length === 0) return "";
+    if (d.length <= 2) return `(${d}`;
+    if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
+    if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+    return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+  }
+
+  async function handleSave() {
+    setLocalErr(null);
+    if (name.trim().length < 2) { setLocalErr("Nome do cliente: mínimo 2 caracteres."); return; }
+    setSubmitting(true);
+    try {
+      const token = sessionStorage.getItem("fy_emp_token") ?? "";
+      const result = await updateComandaInfo(token, comanda.id, {
+        customerName: name,
+        customerPhone: phoneDigits,
+        guestCount: guestCount ? parseInt(guestCount) : null,
+        notes,
+      });
+      if (!result.ok) { setLocalErr(result.error); setSubmitting(false); return; }
+      onSuccess();
+    } catch (e: any) {
+      setLocalErr(e?.message ?? "Erro");
+      setSubmitting(false);
+    }
+  }
+
+  const fieldLabel: React.CSSProperties = { fontSize: 11, fontWeight: 700, color: "#6b7280", marginBottom: 6, display: "block" };
+  const inp: React.CSSProperties = {
+    width: "100%", padding: "10px 12px", borderRadius: 10,
+    border: "1px solid #e5e7eb", background: "#fff",
+    fontSize: 14, fontFamily: "inherit", outline: "none",
+    boxSizing: "border-box",
+  };
+
+  return (
+    <ModalShell title="Editar dados da comanda" onClose={onClose} submitting={submitting}>
+      <div style={{ marginBottom: 12 }}>
+        <label style={fieldLabel}>Nome do cliente *</label>
+        <input style={inp} value={name} onChange={(e) => setName(e.target.value)} />
+      </div>
+      <div style={{ marginBottom: 12 }}>
+        <label style={fieldLabel}>Telefone</label>
+        <input
+          style={inp} type="tel" inputMode="numeric"
+          value={fmtPhone(phoneDigits)}
+          onChange={(e) => setPhoneDigits(e.target.value.replace(/\D/g, "").slice(0, 11))}
+          placeholder="(62) 9XXXX-XXXX"
+        />
+      </div>
+      {comanda.mesa_number != null && (
+        <div style={{ marginBottom: 12 }}>
+          <label style={fieldLabel}>Quantidade de pessoas</label>
+          <input style={inp} type="number" min={1} max={20} value={guestCount} onChange={(e) => setGuestCount(e.target.value)} />
+        </div>
+      )}
+      <div style={{ marginBottom: 14 }}>
+        <label style={fieldLabel}>Observações</label>
+        <textarea
+          style={{ ...inp, resize: "none" }} rows={2}
+          value={notes}
+          onChange={(e) => setNotes(e.target.value.slice(0, 300))}
+        />
+      </div>
+      {localErr && (
+        <div role="alert" style={{
+          padding: "10px 14px", borderRadius: 8, marginBottom: 12,
+          background: "#fee2e2", border: "1px solid #fca5a5",
+          color: "#991b1b", fontSize: 13, fontWeight: 600,
+        }}>⚠ {localErr}</div>
+      )}
+      <div style={{ display: "flex", gap: 10 }}>
+        <button onClick={onClose} disabled={submitting}
+          style={{ flex: 1, padding: 13, borderRadius: 12, border: "1px solid #e5e7eb", background: "#fff", color: "#374151", fontSize: 14, fontWeight: 700, fontFamily: "inherit", cursor: submitting ? "not-allowed" : "pointer" }}
+        >Cancelar</button>
+        <button onClick={handleSave} disabled={submitting}
+          style={{
+            flex: 2, padding: 13, borderRadius: 12, border: "none",
+            background: submitting ? "#9ca3af" : "#16a34a",
+            color: "#fff", fontSize: 14, fontWeight: 800, fontFamily: "inherit",
+            cursor: submitting ? "not-allowed" : "pointer",
+          }}
+        >{submitting ? "Salvando…" : "Salvar"}</button>
+      </div>
+    </ModalShell>
+  );
+}
+
+function CancelComandaModal({
+  comandaId, shortCode, onClose, onSuccess, onError,
+}: {
+  comandaId: string; shortCode: string | null;
+  onClose: () => void; onSuccess: () => void; onError: (msg: string) => void;
+}) {
+  const [reason, setReason] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [localErr, setLocalErr] = useState<string | null>(null);
+
+  async function handleConfirm() {
+    setLocalErr(null);
+    setSubmitting(true);
+    try {
+      const token = sessionStorage.getItem("fy_emp_token") ?? "";
+      const result = await cancelComanda(token, comandaId, reason);
+      if (!result.ok) { setLocalErr(result.error); setSubmitting(false); return; }
+      onSuccess();
+    } catch (e: any) {
+      setLocalErr(e?.message ?? "Erro");
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <ModalShell title={`Cancelar comanda${shortCode ? ` #${shortCode}` : ""}`} onClose={onClose} submitting={submitting}>
+      <div style={{ fontSize: 13, color: "#374151", marginBottom: 10, lineHeight: 1.5 }}>
+        Esta ação cancela a comanda inteira e libera a mesa (se houver). Itens já lançados ficam no histórico.
+      </div>
+      <div style={{ marginBottom: 12 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", marginBottom: 6 }}>
+          Motivo *
+        </div>
+        <ReasonInput
+          value={reason} onChange={setReason} disabled={submitting}
+          placeholder='Ex: "Cliente desistiu antes de pedir", "Aberta por engano"'
+        />
+      </div>
+      {localErr && (
+        <div role="alert" style={{
+          padding: "10px 14px", borderRadius: 8, marginBottom: 12,
+          background: "#fee2e2", border: "1px solid #fca5a5",
+          color: "#991b1b", fontSize: 13, fontWeight: 600,
+        }}>⚠ {localErr}</div>
+      )}
+      <div style={{ display: "flex", gap: 10 }}>
+        <button onClick={onClose} disabled={submitting}
+          style={{ flex: 1, padding: 13, borderRadius: 12, border: "1px solid #e5e7eb", background: "#fff", color: "#374151", fontSize: 14, fontWeight: 700, fontFamily: "inherit", cursor: submitting ? "not-allowed" : "pointer" }}
+        >Voltar</button>
+        <button onClick={handleConfirm} disabled={submitting || reason.trim().length < 10}
+          style={{
+            flex: 2, padding: 13, borderRadius: 12, border: "none",
+            background: submitting || reason.trim().length < 10 ? "#9ca3af" : "#dc2626",
+            color: "#fff", fontSize: 14, fontWeight: 800, fontFamily: "inherit",
+            cursor: submitting || reason.trim().length < 10 ? "not-allowed" : "pointer",
+          }}
+        >{submitting ? "Cancelando…" : "Confirmar cancelamento"}</button>
+      </div>
+    </ModalShell>
+  );
+}
 
 function SendConfirmModal({
   items, total, submitting, onCancel, onConfirm,
