@@ -23,48 +23,32 @@ export async function getInviteDetails(token: string): Promise<InviteDetails> {
     return { success: false, error: "invalid_token", message: "Convite não encontrado" };
   }
 
-  const admin = createAdminClient();
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("get_invite_by_token", { p_token: token });
 
-  const { data: member } = await admin
-    .from("restaurant_members")
-    .select("id, status, invited_email, invite_expires_at, invited_by, restaurant_id, restaurants(name)")
-    .eq("invite_token", token)
-    .maybeSingle();
-
-  if (!member) {
+  if (error || !data || (data as any[]).length === 0) {
     return { success: false, error: "invalid_token", message: "Convite não encontrado" };
   }
 
-  if (member.status === "active") {
+  const row = (data as any[])[0];
+
+  if (row.status === "active") {
     return { success: false, error: "already_accepted", message: "Este convite já foi aceito" };
   }
-  if (member.status === "removed") {
+  if (row.status === "removed") {
     return { success: false, error: "cancelled", message: "Este convite foi cancelado" };
   }
-  if (member.invite_expires_at && new Date(member.invite_expires_at) < new Date()) {
+  if (row.invite_expires_at && new Date(row.invite_expires_at) < new Date()) {
     return { success: false, error: "expired", message: "Este convite expirou" };
-  }
-
-  let invitedByName = "Um administrador";
-  if (member.invited_by) {
-    const { data: inviter } = await admin
-      .from("profiles")
-      .select("first_name, last_name")
-      .eq("id", member.invited_by)
-      .maybeSingle();
-    if (inviter) {
-      const name = [inviter.first_name, inviter.last_name].filter(Boolean).join(" ");
-      if (name) invitedByName = name;
-    }
   }
 
   return {
     success: true,
-    restaurantName: (member.restaurants as any)?.name ?? "restaurante",
-    restaurantId: member.restaurant_id,
-    invitedEmail: member.invited_email,
-    invitedByName,
-    memberId: member.id,
+    restaurantName: row.restaurant_name ?? "restaurante",
+    restaurantId: row.restaurant_id,
+    invitedEmail: row.invited_email,
+    invitedByName: row.invited_by_email ?? "Um administrador",
+    memberId: row.id,
   };
 }
 
@@ -75,53 +59,39 @@ export async function acceptInvite(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Você precisa estar logado para aceitar o convite" };
 
-  const admin = createAdminClient();
+  const { data, error } = await supabase.rpc("accept_invite_by_token", { p_token: token });
 
-  const { data: member } = await admin
-    .from("restaurant_members")
-    .select("id, status, invited_email, invite_expires_at, restaurant_id, restaurants(name)")
-    .eq("invite_token", token)
-    .maybeSingle();
+  if (error) return { error: error.message };
+  if (!data) return { error: "Erro ao aceitar convite" };
 
-  if (!member) return { error: "Convite não encontrado" };
-  if (member.status !== "pending") return { error: "Este convite não está mais disponível" };
-  if (member.invite_expires_at && new Date(member.invite_expires_at) < new Date()) {
-    return { error: "Este convite expirou" };
-  }
-  if (member.invited_email.toLowerCase() !== (user.email ?? "").toLowerCase()) {
-    return { error: "Este convite foi enviado para outro email" };
-  }
+  const result = data as any;
+  if (result.error) return { error: result.message ?? result.error };
 
-  // WHERE user_id IS NULL prevents double-acceptance in concurrent requests
-  const { data: updated, error: updateErr } = await admin
-    .from("restaurant_members")
-    .update({
-      status: "active",
-      user_id: user.id,
-      activated_at: new Date().toISOString(),
-    })
-    .eq("id", member.id)
-    .is("user_id", null)
-    .select("id")
-    .maybeSingle();
-
-  if (updateErr || !updated) {
-    return { error: "Este convite já foi aceito em outra sessão" };
+  // Fetch restaurant name for the success UI (RPC returns restaurant_id, not name)
+  let restaurantName = "";
+  if (result.restaurant_id) {
+    const admin = createAdminClient();
+    const { data: r } = await admin
+      .from("restaurants")
+      .select("name")
+      .eq("id", result.restaurant_id)
+      .single();
+    restaurantName = r?.name ?? "";
   }
 
-  return { success: true, restaurantName: (member.restaurants as any)?.name ?? "restaurante" };
+  return { success: true, restaurantName };
 }
 
 export async function declineInvite(
   token: string
 ): Promise<{ error?: string; success?: boolean }> {
-  const admin = createAdminClient();
-  const { error } = await admin
-    .from("restaurant_members")
-    .update({ status: "removed", removed_at: new Date().toISOString() })
-    .eq("invite_token", token)
-    .eq("status", "pending");
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("decline_invite_by_token", { p_token: token });
 
   if (error) return { error: error.message };
+
+  const result = data as any;
+  if (result?.error) return { error: result.message ?? result.error };
+
   return { success: true };
 }
