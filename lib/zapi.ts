@@ -8,11 +8,20 @@ function instanceUrl(instanceId: string, token: string) {
   return `${ZAPI_BASE}/instances/${instanceId}/token/${token}`;
 }
 
+// Mask `/instances/{id}/token/{token}` so logs don't leak credentials.
+function redactZapiUrl(url: string): string {
+  return url
+    .replace(/\/instances\/[^/]+/, "/instances/***")
+    .replace(/\/token\/[^/]+/, "/token/***");
+}
+
 async function zapiRequest<T = unknown>(
   url: string,
   options: RequestInit = {},
   clientToken?: string
 ): Promise<{ success: boolean; data?: T; error?: string }> {
+  const reqId = Math.random().toString(36).slice(2, 8);
+  const method = options.method ?? "GET";
   try {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
@@ -20,25 +29,29 @@ async function zapiRequest<T = unknown>(
     };
     if (clientToken) headers["Client-Token"] = clientToken;
 
-    const res = await fetch(url, { ...options, headers });
+    console.log(`[zapi:${reqId}] → ${method} ${redactZapiUrl(url)}`);
 
-    let data: unknown;
-    try {
-      data = await res.json();
-    } catch {
-      data = null;
-    }
+    const res = await fetch(url, { ...options, headers });
+    const rawBody = await res.text();
+    let parsed: unknown = null;
+    try { parsed = rawBody ? JSON.parse(rawBody) : null; } catch { /* keep rawBody */ }
+
+    console.log(`[zapi:${reqId}] ← ${res.status} ${res.ok ? "OK" : "FAIL"}${res.ok ? "" : ` body=${rawBody.slice(0, 300)}`}`);
 
     if (!res.ok) {
-      const msg = (data as Record<string, unknown> | null)?.message;
-      return { success: false, error: typeof msg === "string" ? msg : `HTTP ${res.status}` };
+      const obj = parsed as Record<string, unknown> | null;
+      const detail =
+        (typeof obj?.message === "string" && obj.message) ||
+        (typeof obj?.error === "string" && obj.error) ||
+        rawBody.slice(0, 300) ||
+        `HTTP ${res.status}`;
+      return { success: false, error: `HTTP ${res.status}: ${detail}` };
     }
-    return { success: true, data: data as T };
+    return { success: true, data: parsed as T };
   } catch (err: unknown) {
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : "Erro desconhecido",
-    };
+    const msg = err instanceof Error ? err.message : "Erro desconhecido";
+    console.error(`[zapi:${reqId}] threw: ${msg}`);
+    return { success: false, error: msg };
   }
 }
 

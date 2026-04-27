@@ -63,14 +63,24 @@ export async function createNotification(input: CreateNotificationInput): Promis
 
     // ── WhatsApp dispatch ────────────────────────────────────────────────────
 
-    const setStatus = async (status: string, sentAt?: string | null) => {
-      const update: Record<string, unknown> = { whatsapp_status: status };
-      if (sentAt !== undefined) update.whatsapp_sent_at = sentAt;
-      await supabase.from("notifications").update(update).eq("id", notif.id);
+    const setStatus = async (
+      status: "sent" | "failed" | "skipped",
+      errorMessage: string | null = null,
+    ) => {
+      const update: Record<string, unknown> = {
+        whatsapp_status: status,
+        whatsapp_error: errorMessage ? errorMessage.slice(0, 500) : null,
+      };
+      if (status === "sent") update.whatsapp_sent_at = new Date().toISOString();
+      const { error: updErr } = await supabase
+        .from("notifications")
+        .update(update)
+        .eq("id", notif.id);
+      if (updErr) console.error("createNotification: status update failed:", updErr);
     };
 
     if (!input.unitId) {
-      await setStatus("skipped");
+      await setStatus("skipped", "Notificação sem unit_id");
       return;
     }
 
@@ -80,8 +90,12 @@ export async function createNotification(input: CreateNotificationInput): Promis
       .eq("unit_id", input.unitId)
       .maybeSingle();
 
-    if (!instance || instance.status !== "connected") {
-      await setStatus("skipped");
+    if (!instance) {
+      await setStatus("skipped", "Nenhuma instância WhatsApp configurada para a unidade");
+      return;
+    }
+    if (instance.status !== "connected") {
+      await setStatus("skipped", `WhatsApp não conectado (status='${instance.status}')`);
       return;
     }
 
@@ -96,13 +110,19 @@ export async function createNotification(input: CreateNotificationInput): Promis
     }
     const phone = normalizeBrazilPhone(rawPhone);
     if (!phone) {
-      await setStatus("skipped");
+      await setStatus("skipped", "Telefone do destinatário não configurado (restaurants.owner_phone vazio)");
       return;
     }
 
     const message =
       input.whatsappMessage ??
       [input.title, input.body].filter(Boolean).join("\n");
+
+    console.log("[notif] zapi send:", {
+      notificationId: notif.id,
+      phoneMasked: phone.replace(/(\d{4})\d+(\d{4})/, "$1***$2"),
+      messageLength: message.length,
+    });
 
     const result = await sendText(
       instance.zapi_instance_id,
@@ -113,10 +133,11 @@ export async function createNotification(input: CreateNotificationInput): Promis
     );
 
     if (result.success) {
-      await setStatus("sent", new Date().toISOString());
+      await setStatus("sent");
     } else {
-      console.error("createNotification: zapi send failed:", result.error);
-      await setStatus("failed", null);
+      const errMsg = result.error ?? "Falha desconhecida no envio Z-API";
+      console.error("createNotification: zapi send failed:", errMsg);
+      await setStatus("failed", errMsg);
     }
   } catch (err) {
     console.error("createNotification failed:", err);
