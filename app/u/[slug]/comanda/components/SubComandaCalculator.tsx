@@ -31,6 +31,8 @@ export function SubComandaCalculator({
   } = useSubComanda(orderIntentId);
 
   const [newSplitName, setNewSplitName] = useState("");
+  const [newSplitPhone, setNewSplitPhone] = useState("");
+  const [splitFormError, setSplitFormError] = useState<string | null>(null);
   const [selectedSplitId, setSelectedSplitId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -38,10 +40,15 @@ export function SubComandaCalculator({
   }, [orderIntentId, fetchSplits]);
 
   const handleCreateSplit = async () => {
-    if (!newSplitName.trim()) return;
-    const split = await createSplit(newSplitName);
+    setSplitFormError(null);
+    if (newSplitName.trim().length < 2) {
+      setSplitFormError("Informe o nome de quem vai pagar (mín. 2 caracteres).");
+      return;
+    }
+    const split = await createSplit(newSplitName, newSplitPhone || undefined);
     if (split) {
       setNewSplitName("");
+      setNewSplitPhone("");
       setSelectedSplitId(split.id);
     }
   };
@@ -70,21 +77,35 @@ export function SubComandaCalculator({
       <h3 className="font-semibold">Calculadora de Sub-Comandas</h3>
 
       {/* Criar nova split */}
-      <div className="flex gap-2">
-        <input
-          type="text"
-          placeholder="Nome da sub-comanda (ex: Cliente 1)"
-          value={newSplitName}
-          onChange={(e) => setNewSplitName(e.target.value)}
-          className="flex-1 p-2 border rounded text-sm"
-        />
-        <button
-          onClick={handleCreateSplit}
-          disabled={!newSplitName.trim()}
-          className="px-3 py-2 bg-blue-500 text-white rounded text-sm disabled:opacity-50"
-        >
-          <Plus size={16} />
-        </button>
+      <div className="space-y-2">
+        <div className="flex gap-2">
+          <input
+            type="text"
+            placeholder="Nome de quem vai pagar *"
+            value={newSplitName}
+            onChange={(e) => { setNewSplitName(e.target.value); if (splitFormError) setSplitFormError(null); }}
+            className="flex-1 p-2 border rounded text-sm"
+          />
+          <input
+            type="tel"
+            placeholder="Telefone (opcional)"
+            value={newSplitPhone}
+            onChange={(e) => setNewSplitPhone(e.target.value)}
+            className="flex-1 p-2 border rounded text-sm"
+            inputMode="tel"
+          />
+          <button
+            onClick={handleCreateSplit}
+            disabled={newSplitName.trim().length < 2}
+            className="px-3 py-2 bg-blue-500 text-white rounded text-sm disabled:opacity-50"
+            aria-label="Criar split"
+          >
+            <Plus size={16} />
+          </button>
+        </div>
+        {splitFormError && (
+          <p className="text-xs text-red-600">⚠ {splitFormError}</p>
+        )}
       </div>
 
       {/* Lista de splits */}
@@ -99,14 +120,20 @@ export function SubComandaCalculator({
             }`}
             onClick={() => setSelectedSplitId(split.id)}
           >
-            <div className="flex justify-between items-center mb-2">
-              <span className="font-semibold text-sm">{split.name}</span>
+            <div className="flex justify-between items-start mb-2">
+              <div className="flex flex-col min-w-0 pr-2">
+                <span className="font-semibold text-sm truncate">{split.customer_name ?? split.name}</span>
+                {split.customer_phone && (
+                  <span className="text-xs text-gray-500">📞 {split.customer_phone}</span>
+                )}
+              </div>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   deleteSplit(split.id);
                 }}
-                className="text-red-500 hover:text-red-700"
+                className="text-red-500 hover:text-red-700 flex-shrink-0"
+                aria-label="Remover split"
               >
                 <Trash2 size={14} />
               </button>

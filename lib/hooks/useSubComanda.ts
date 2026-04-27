@@ -5,6 +5,8 @@ export interface SubComanda {
   id: string;
   order_intent_id: string;
   name: string;
+  customer_name?: string | null;
+  customer_phone?: string | null;
   subtotal: number;
   discount: number;
   total: number;
@@ -64,8 +66,17 @@ export function useSubComanda(orderIntentId?: string) {
   );
 
   const createSplit = useCallback(
-    async (name: string) => {
+    async (
+      customerName: string,
+      customerPhone?: string,
+    ) => {
       if (!orderIntentId) return null;
+      const trimmedName = customerName.trim();
+      if (trimmedName.length < 2) {
+        setError("Informe o nome de quem vai pagar este split (mín. 2 caracteres).");
+        return null;
+      }
+      const normalizedPhone = (customerPhone ?? "").replace(/\D/g, "") || null;
 
       try {
         const { data, error: err } = await supabase
@@ -73,7 +84,10 @@ export function useSubComanda(orderIntentId?: string) {
           .insert([
             {
               order_intent_id: orderIntentId,
-              name,
+              // Keep `name` populated so legacy renderers that read it still work.
+              name: trimmedName,
+              customer_name: trimmedName,
+              customer_phone: normalizedPhone,
               subtotal: 0,
               discount: 0,
               total: 0,
@@ -85,6 +99,7 @@ export function useSubComanda(orderIntentId?: string) {
         if (err) throw err;
         setSplits((prev) => [...prev, data]);
         setSplitItems((prev) => new Map(prev).set(data.id, []));
+        setError(null);
         return data;
       } catch (e) {
         const msg = e instanceof Error ? e.message : "Unknown error";

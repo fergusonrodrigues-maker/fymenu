@@ -98,9 +98,11 @@ function within24h(iso: string) {
 export default function RestaurantOperationsModal({
   unitId,
   comandaClosePermission: initialPermission,
+  comandaRequirePhone: initialRequirePhone = false,
 }: {
   unitId: string;
   comandaClosePermission: "garcom_e_caixa" | "somente_caixa";
+  comandaRequirePhone?: boolean;
 }) {
   const supabase = createClient();
   const [tab, setTab] = useState<Tab>("mesas");
@@ -109,6 +111,7 @@ export default function RestaurantOperationsModal({
   const [comandaPermission, setComandaPermission] = useState<"garcom_e_caixa" | "somente_caixa">(
     initialPermission
   );
+  const [requirePhone, setRequirePhone] = useState<boolean>(initialRequirePhone);
 
   // ── Mesas state ──────────────────────────────────────────────────────────────
   const [mesas, setMesas] = useState<Mesa[]>([]);
@@ -224,6 +227,11 @@ export default function RestaurantOperationsModal({
     await supabase.from("units").update({ comanda_close_permission: value }).eq("id", unitId);
   }
 
+  async function updateRequirePhone(value: boolean) {
+    setRequirePhone(value);
+    await supabase.from("units").update({ comanda_require_phone: value }).eq("id", unitId);
+  }
+
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: "mesas",    label: "Mesas",     icon: <Armchair size={13} /> },
     { id: "cozinha",  label: "Cozinha",   icon: <ChefHat size={13} /> },
@@ -297,6 +305,8 @@ export default function RestaurantOperationsModal({
           onUpdateWaiter={updateWaiterStatus}
           comandaPermission={comandaPermission}
           onUpdatePermission={updateComandaPermission}
+          requirePhone={requirePhone}
+          onUpdateRequirePhone={updateRequirePhone}
         />
       )}
       {tab === "andamento" && (
@@ -391,11 +401,15 @@ function GarcomTab({
   onUpdateWaiter,
   comandaPermission,
   onUpdatePermission,
+  requirePhone,
+  onUpdateRequirePhone,
 }: {
   orders: Order[];
   onUpdateWaiter: (id: string, status: string) => void;
   comandaPermission: "garcom_e_caixa" | "somente_caixa";
   onUpdatePermission: (value: "garcom_e_caixa" | "somente_caixa") => void;
+  requirePhone: boolean;
+  onUpdateRequirePhone: (value: boolean) => void;
 }) {
   const [viewAs, setViewAs] = useState<"owner" | string>("owner");
   const active = orders.filter((o) => o.waiter_status !== "delivered");
@@ -466,6 +480,45 @@ function GarcomTab({
           {comandaPermission === "somente_caixa"
             ? "Garçom só lança pedidos. Fechamento e pagamento são feitos no caixa."
             : "Garçom pode fechar a comanda e receber pagamento direto na mesa."
+          }
+        </p>
+      </div>
+
+      {/* Exigir telefone do cliente */}
+      <div style={{ marginTop: 4 }}>
+        <label style={{ color: "var(--dash-text-muted)", fontSize: 12, fontWeight: 600, display: "block", marginBottom: 8 }}>
+          Exigir telefone do cliente ao abrir comanda?
+        </label>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button
+            onClick={() => onUpdateRequirePhone(true)}
+            style={{
+              flex: 1, padding: "12px", borderRadius: 12, border: "1px solid",
+              borderColor: requirePhone ? "#00ffae" : "var(--dash-border)",
+              background: requirePhone ? "rgba(0,255,174,0.08)" : "transparent",
+              color: requirePhone ? "#00ffae" : "var(--dash-text-muted)",
+              cursor: "pointer", fontSize: 13, fontWeight: 600, fontFamily: "inherit",
+            }}
+          >
+            Sim, exigir
+          </button>
+          <button
+            onClick={() => onUpdateRequirePhone(false)}
+            style={{
+              flex: 1, padding: "12px", borderRadius: 12, border: "1px solid",
+              borderColor: !requirePhone ? "#00ffae" : "var(--dash-border)",
+              background: !requirePhone ? "rgba(0,255,174,0.08)" : "transparent",
+              color: !requirePhone ? "#00ffae" : "var(--dash-text-muted)",
+              cursor: "pointer", fontSize: 13, fontWeight: 600, fontFamily: "inherit",
+            }}
+          >
+            Não, opcional
+          </button>
+        </div>
+        <p style={{ color: "var(--dash-text-muted)", fontSize: 11, marginTop: 6, marginBottom: 0 }}>
+          {requirePhone
+            ? "Garçom/caixa precisa registrar o telefone junto com o nome do cliente."
+            : "Apenas o nome do cliente é obrigatório ao abrir uma comanda."
           }
         </p>
       </div>

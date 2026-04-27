@@ -1681,7 +1681,7 @@ export default function DashboardClient({
         <EstoqueModal unit={unit} restaurant={restaurantState} onOpenImport={openImport} />
       </Modal>
       <Modal open={modal === "operacoes"} onClose={close} title="Operações" size="lg">
-        {unit && <RestaurantOperationsModal unitId={unit.id} comandaClosePermission={unit.comanda_close_permission ?? "somente_caixa"} />}
+        {unit && <RestaurantOperationsModal unitId={unit.id} comandaClosePermission={unit.comanda_close_permission ?? "somente_caixa"} comandaRequirePhone={unit.comanda_require_phone ?? false} />}
       </Modal>
       <Modal open={modal === "impressoras"} onClose={close} title="Impressoras" size="lg">
         {unit && <PrinterModal unitId={unit.id} categories={categories} />}

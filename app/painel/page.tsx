@@ -85,7 +85,7 @@ export default async function DashboardPage({ searchParams }: { searchParams?: P
   // Load the requested unit (if it belongs to this restaurant), else fall back to first
   let unitQuery = supabase
     .from("units")
-    .select("id, name, slug, custom_domain, address, city, neighborhood, whatsapp, instagram, logo_url, cover_url, description, maps_url, delivery_link, is_published, comanda_close_permission")
+    .select("id, name, slug, custom_domain, address, city, neighborhood, whatsapp, instagram, logo_url, cover_url, description, maps_url, delivery_link, is_published, comanda_close_permission, comanda_require_phone")
     .eq("restaurant_id", restaurant.id);
 
   if (requestedUnitId) {
@@ -97,7 +97,7 @@ export default async function DashboardPage({ searchParams }: { searchParams?: P
   // If the requested unit didn't match (wrong id), fall back to first unit
   const unit = unitData ?? (await supabase
     .from("units")
-    .select("id, name, slug, custom_domain, address, city, neighborhood, whatsapp, instagram, logo_url, cover_url, description, maps_url, delivery_link, is_published, comanda_close_permission")
+    .select("id, name, slug, custom_domain, address, city, neighborhood, whatsapp, instagram, logo_url, cover_url, description, maps_url, delivery_link, is_published, comanda_close_permission, comanda_require_phone")
     .eq("restaurant_id", restaurant.id)
     .limit(1)
     .maybeSingle()
