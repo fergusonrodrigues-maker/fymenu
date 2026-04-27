@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isRestaurantMember } from "@/lib/tenant/isRestaurantMember";
 
 async function resolveOwnership(
   admin: ReturnType<typeof createAdminClient>,
@@ -9,11 +10,12 @@ async function resolveOwnership(
 ) {
   const { data } = await admin
     .from("crm_customers")
-    .select("id, unit_id, units(restaurants(owner_id))")
+    .select("id, unit_id, units(restaurant_id)")
     .eq("id", customerId)
     .single();
   if (!data) return null;
-  if ((data as any).units?.restaurants?.owner_id !== userId) return null;
+  const restaurantId = (data as any).units?.restaurant_id;
+  if (!restaurantId || !await isRestaurantMember(admin, userId, restaurantId)) return null;
   return data;
 }
 

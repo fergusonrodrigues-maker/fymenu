@@ -1,19 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isRestaurantMember } from "@/lib/tenant/isRestaurantMember";
 
 function cleanPhone(raw: string): string {
   return raw.replace(/\D/g, "");
 }
 
 async function resolveUnit(admin: ReturnType<typeof createAdminClient>, unitId: string, userId: string) {
-  const { data } = await admin
+  const { data: unit } = await admin
     .from("units")
-    .select("id, restaurants(owner_id)")
+    .select("id, restaurant_id")
     .eq("id", unitId)
     .single();
-  if (!data || (data as any).restaurants?.owner_id !== userId) return null;
-  return data;
+  if (!unit) return null;
+  const ok = await isRestaurantMember(admin, userId, (unit as any).restaurant_id);
+  return ok ? unit : null;
 }
 
 export async function POST(req: NextRequest) {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { validateSuporteToken, hasPermission } from "@/lib/suporte-auth";
+import { isUnitMember } from "@/lib/tenant/isRestaurantMember";
 
 async function resolveZoneAuth(req: NextRequest, zoneId: string): Promise<boolean> {
   const admin = createAdminClient();
@@ -21,13 +22,7 @@ async function resolveZoneAuth(req: NextRequest, zoneId: string): Promise<boolea
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return false;
-
-  const { data: unit } = await admin
-    .from("units")
-    .select("id, restaurants(owner_id)")
-    .eq("id", zone.unit_id)
-    .single();
-  return !!(unit && (unit as any).restaurants?.owner_id === user.id);
+  return isUnitMember(admin, user.id, zone.unit_id);
 }
 
 // PATCH /api/delivery/zones/[id]

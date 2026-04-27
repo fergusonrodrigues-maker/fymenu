@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isUnitMember } from "@/lib/tenant/isRestaurantMember";
 
 export async function PATCH(req: NextRequest) {
   try {
@@ -15,13 +16,7 @@ export async function PATCH(req: NextRequest) {
     } = await req.json();
     const admin = createAdminClient();
 
-    const { data: unit } = await admin
-      .from("units")
-      .select("id, restaurants(owner_id)")
-      .eq("id", unitId)
-      .single();
-
-    if (!unit || (unit as any).restaurants?.owner_id !== user.id) {
+    if (!await isUnitMember(admin, user.id, unitId)) {
       return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
     }
 

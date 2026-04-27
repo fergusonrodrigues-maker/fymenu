@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendText } from "@/lib/zapi";
+import { isUnitMember } from "@/lib/tenant/isRestaurantMember";
 
 const BULK_LIMIT = 200;
 const DELAY_MS = 3000;
@@ -27,13 +28,7 @@ export async function POST(req: NextRequest) {
 
     const admin = createAdminClient();
 
-    const { data: unit } = await admin
-      .from("units")
-      .select("id, restaurants(owner_id)")
-      .eq("id", unitId)
-      .single();
-
-    if (!unit || (unit as any).restaurants?.owner_id !== user.id) {
+    if (!await isUnitMember(admin, user.id, unitId)) {
       return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
     }
 

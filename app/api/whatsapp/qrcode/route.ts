@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getQrCode } from "@/lib/zapi";
+import { isUnitMember } from "@/lib/tenant/isRestaurantMember";
 
 export async function GET(req: NextRequest) {
   try {
@@ -15,16 +16,8 @@ export async function GET(req: NextRequest) {
     const admin = createAdminClient();
     const isAdmin = !!(process.env.ADMIN_EMAIL && user.email === process.env.ADMIN_EMAIL);
 
-    if (!isAdmin) {
-      const { data: unit } = await admin
-        .from("units")
-        .select("id, restaurants(owner_id)")
-        .eq("id", unitId)
-        .single();
-
-      if (!unit || (unit as any).restaurants?.owner_id !== user.id) {
-        return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
-      }
+    if (!isAdmin && !await isUnitMember(admin, user.id, unitId)) {
+      return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
     }
 
     const { data: instance } = await admin

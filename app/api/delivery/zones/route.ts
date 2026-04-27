@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { validateSuporteToken, hasPermission } from "@/lib/suporte-auth";
+import { isUnitMember } from "@/lib/tenant/isRestaurantMember";
 
 async function resolveAuth(req: NextRequest, unitId: string): Promise<boolean> {
   // Try suporte token first
@@ -10,17 +11,11 @@ async function resolveAuth(req: NextRequest, unitId: string): Promise<boolean> {
     const staff = await validateSuporteToken(req);
     return !!(staff && hasPermission(staff, "gerenciar_planos"));
   }
-  // Fall back to owner auth
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return false;
   const admin = createAdminClient();
-  const { data: unit } = await admin
-    .from("units")
-    .select("id, restaurants(owner_id)")
-    .eq("id", unitId)
-    .single();
-  return !!(unit && (unit as any).restaurants?.owner_id === user.id);
+  return isUnitMember(admin, user.id, unitId);
 }
 
 // GET /api/delivery/zones?unit_id=X

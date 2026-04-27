@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { validateSuporteToken, hasPermission } from "@/lib/suporte-auth";
+import { isUnitMember } from "@/lib/tenant/isRestaurantMember";
 
 async function resolveAuth(req: NextRequest, unitId: string): Promise<boolean> {
   const suporteToken = req.headers.get("x-suporte-token");
@@ -13,12 +14,7 @@ async function resolveAuth(req: NextRequest, unitId: string): Promise<boolean> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return false;
   const admin = createAdminClient();
-  const { data: unit } = await admin
-    .from("units")
-    .select("id, restaurants(owner_id)")
-    .eq("id", unitId)
-    .single();
-  return !!(unit && (unit as any).restaurants?.owner_id === user.id);
+  return isUnitMember(admin, user.id, unitId);
 }
 
 // GET /api/delivery/settings?unit_id=X  (public delivery config for cart)

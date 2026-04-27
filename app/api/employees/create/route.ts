@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { isRestaurantMember } from "@/lib/tenant/isRestaurantMember";
 import bcrypt from "bcryptjs";
 
 export async function POST(req: NextRequest) {
@@ -45,14 +47,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unidade não encontrada" }, { status: 404 });
     }
 
-    const { data: restaurant } = await supabase
-      .from("restaurants")
-      .select("id")
-      .eq("id", unit.restaurant_id)
-      .eq("owner_id", user.id)
-      .single();
-
-    if (!restaurant) {
+    const admin = createAdminClient();
+    const isMember = await isRestaurantMember(admin, user.id, unit.restaurant_id);
+    if (!isMember) {
       return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
     }
 

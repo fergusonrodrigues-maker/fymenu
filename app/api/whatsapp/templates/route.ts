@@ -1,15 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isUnitMember } from "@/lib/tenant/isRestaurantMember";
 
 async function verifyOwner(userId: string, unitId: string) {
   const admin = createAdminClient();
-  const { data } = await admin
-    .from("units")
-    .select("id, restaurants(owner_id)")
-    .eq("id", unitId)
-    .single();
-  return data && (data as any).restaurants?.owner_id === userId ? admin : null;
+  const ok = await isUnitMember(admin, userId, unitId);
+  return ok ? admin : null;
 }
 
 export async function GET(req: NextRequest) {

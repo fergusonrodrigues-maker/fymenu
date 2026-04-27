@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isRestaurantMember } from "@/lib/tenant/isRestaurantMember";
 
 interface ImportRow {
   name: string;
@@ -34,10 +35,10 @@ export async function POST(req: NextRequest) {
 
     const { data: unit } = await admin
       .from("units")
-      .select("id, restaurants(owner_id)")
+      .select("id, restaurant_id")
       .eq("id", unitId)
       .single();
-    if (!unit || (unit as any).restaurants?.owner_id !== user.id) {
+    if (!unit || !await isRestaurantMember(admin, user.id, (unit as any).restaurant_id)) {
       return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
     }
 
