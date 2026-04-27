@@ -147,8 +147,18 @@ export async function middleware(request: NextRequest) {
   }
 
   if (isAuthRoute && user && pathname !== "/auth/reset-password") {
-    const isPending = new URL(request.url).searchParams.get("pending");
+    const urlParams = new URL(request.url).searchParams;
+    const isPending = urlParams.get("pending");
     if (isPending) return NextResponse.next();
+    const redirect = urlParams.get("redirect");
+    if (redirect) {
+      try {
+        const target = new URL(redirect, request.url);
+        if (target.origin === new URL(request.url).origin) {
+          return NextResponse.redirect(target);
+        }
+      } catch {}
+    }
     return NextResponse.redirect(new URL("/painel", request.url));
   }
 

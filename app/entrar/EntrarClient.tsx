@@ -25,6 +25,7 @@ export default function EntrarClient() {
   const urlErr = searchParams.get("err") ? decodeURIComponent(searchParams.get("err")!) : "";
   const urlOk = searchParams.get("ok") ? decodeURIComponent(searchParams.get("ok")!) : "";
   const urlPending = searchParams.get("pending") || "";
+  const redirectAfter = searchParams.get("redirect") || "";
 
   // Shared fields
   const [email, setEmail] = useState("");
@@ -45,7 +46,10 @@ export default function EntrarClient() {
     setModo(m);
     setError(null);
     setSuccess(null);
-    router.replace(`/entrar?modo=${m}`, { scroll: false });
+    const q = redirectAfter
+      ? `?modo=${m}&redirect=${encodeURIComponent(redirectAfter)}`
+      : `?modo=${m}`;
+    router.replace(`/entrar${q}`, { scroll: false });
   }
 
   async function validateAndApplyCoupon() {
@@ -113,7 +117,7 @@ export default function EntrarClient() {
         setError(msg);
         return;
       }
-      router.push("/painel");
+      router.push(redirectAfter || "/painel");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Erro ao entrar.");
     } finally {
@@ -220,7 +224,7 @@ export default function EntrarClient() {
         }
       }
 
-      router.push("/painel");
+      router.push(redirectAfter || "/painel");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Erro ao criar conta.");
     } finally {
