@@ -31,9 +31,9 @@ export default function BottomNav({ active, pendingCount }: { active: Tab; pendi
   }
 
   function go(tab: Tab) {
-    if (tab === "home")    router.push(`/colaborador-app/${slug}/home`);
-    if (tab === "tarefas") router.push(`/colaborador-app/${slug}/tarefas`);
-    if (tab === "perfil")  router.push(`/colaborador-app/${slug}/home`);
+    if (tab === "home")    router.push("/colaborador/home");
+    if (tab === "tarefas") router.push("/colaborador/tarefas");
+    if (tab === "perfil")  router.push("/colaborador/home");
   }
 
   const itemStyle = (isActive: boolean): React.CSSProperties => ({

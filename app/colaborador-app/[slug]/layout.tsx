@@ -12,9 +12,12 @@ export default function SlugLayout({ children }: { children: React.ReactNode }) 
   const params = useParams<{ slug: string }>();
   const pathname = usePathname() ?? "";
 
-  // Login lives at the slug root: /colaborador-app/{slug} (with or without trailing slash).
-  // Anything deeper is protected.
+  // Login lives at the slug root. usePathname may return either the public
+  // path (/colaborador) or the rewritten internal path (/colaborador-app/{slug})
+  // depending on how Next resolves middleware rewrites — match both.
   const isLoginRoute =
+    pathname === "/colaborador" ||
+    pathname === "/colaborador/" ||
     pathname === `/colaborador-app/${params.slug}` ||
     pathname === `/colaborador-app/${params.slug}/`;
 

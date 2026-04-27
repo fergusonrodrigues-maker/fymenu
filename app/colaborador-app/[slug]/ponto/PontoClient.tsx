@@ -105,7 +105,7 @@ export default function PontoClient({ slug }: { slug: string }) {
         position: "sticky", top: 0, zIndex: 40,
       }}>
         <button
-          onClick={() => router.push(`/colaborador-app/${slug}/home`)}
+          onClick={() => router.push("/colaborador/home")}
           style={{
             width: 36, height: 36, borderRadius: 10,
             border: "1px solid #e5e7eb", background: "#fff",

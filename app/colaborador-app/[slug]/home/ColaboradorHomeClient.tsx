@@ -116,7 +116,7 @@ export default function ColaboradorHomeClient({ slug }: Props) {
       <main style={{ maxWidth: 520, margin: "0 auto", padding: "20px 16px" }}>
         {/* Minhas Tarefas card — destacado */}
         <button
-          onClick={() => router.push(`/colaborador-app/${slug}/tarefas`)}
+          onClick={() => router.push("/colaborador/tarefas")}
           style={{
             width: "100%", textAlign: "left",
             background: "#f0fdf4",
@@ -155,7 +155,7 @@ export default function ColaboradorHomeClient({ slug }: Props) {
 
         {/* Ponto card */}
         <button
-          onClick={() => router.push(`/colaborador-app/${slug}/ponto`)}
+          onClick={() => router.push("/colaborador/ponto")}
           style={{
             width: "100%", textAlign: "left",
             background: "#fff",
