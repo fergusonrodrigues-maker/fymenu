@@ -2,10 +2,34 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ListChecks, ChevronRight } from "lucide-react";
+import { ListChecks, ChevronRight, Clock } from "lucide-react";
 import { getRoleLabel } from "@/app/colaborador-app/roleUtils";
 import { listMyTasks } from "@/app/colaborador-app/tarefasActions";
+import { getEmployeeSchedule, type EmployeeSchedule } from "@/app/colaborador-app/actions";
 import BottomNav from "../_components/BottomNav";
+
+const WORK_DAY_LABELS: Record<string, string> = {
+  mon: "Seg", monday:    "Seg", "1": "Seg",
+  tue: "Ter", tuesday:   "Ter", "2": "Ter",
+  wed: "Qua", wednesday: "Qua", "3": "Qua",
+  thu: "Qui", thursday:  "Qui", "4": "Qui",
+  fri: "Sex", friday:    "Sex", "5": "Sex",
+  sat: "Sáb", saturday:  "Sáb", "6": "Sáb",
+  sun: "Dom", sunday:    "Dom", "0": "Dom", "7": "Dom",
+};
+
+function formatWorkDays(days: string[] | null | undefined): string {
+  if (!days || days.length === 0) return "—";
+  if (days.length === 7) return "Todos os dias";
+  return days
+    .map((d) => WORK_DAY_LABELS[String(d).toLowerCase()] ?? String(d))
+    .join(", ");
+}
+
+function formatTime(t: string | null | undefined): string {
+  if (!t) return "—";
+  return t.slice(0, 5);
+}
 
 interface Props {
   slug: string;
@@ -16,6 +40,7 @@ export default function ColaboradorHomeClient({ slug }: Props) {
   const [name, setName] = useState("");
   const [roles, setRoles] = useState<string[]>([]);
   const [pendingCount, setPendingCount] = useState<number | null>(null);
+  const [schedule, setSchedule] = useState<EmployeeSchedule | null>(null);
 
   useEffect(() => {
     try {
@@ -31,8 +56,13 @@ export default function ColaboradorHomeClient({ slug }: Props) {
       try {
         const token = sessionStorage.getItem("fy_emp_token") ?? "";
         if (!token) return;
-        const result = await listMyTasks(token);
-        if (!cancelled) setPendingCount(result.hoje.length + result.atrasadas.length);
+        const [tasks, sched] = await Promise.all([
+          listMyTasks(token),
+          getEmployeeSchedule(token),
+        ]);
+        if (cancelled) return;
+        setPendingCount(tasks.hoje.length + tasks.atrasadas.length);
+        setSchedule(sched);
       } catch { /* silent */ }
     }
     load();
@@ -123,6 +153,35 @@ export default function ColaboradorHomeClient({ slug }: Props) {
           </p>
         </div>
 
+        {/* Meu Horário card */}
+        <div style={{
+          background: "#fff",
+          borderRadius: 16,
+          padding: "20px 22px",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04)",
+          marginBottom: 18,
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+            <Clock size={16} color="#6b7280" />
+            <span style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              Meu Horário
+            </span>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+            <ScheduleCell label="Entrada" value={formatTime(schedule?.shift_start)} />
+            <ScheduleCell label="Saída"   value={formatTime(schedule?.shift_end)} />
+            <ScheduleCell
+              label="Almoço"
+              value={
+                schedule?.lunch_start || schedule?.lunch_end
+                  ? `${formatTime(schedule?.lunch_start)} – ${formatTime(schedule?.lunch_end)}`
+                  : "—"
+              }
+            />
+            <ScheduleCell label="Dias" value={formatWorkDays(schedule?.work_days)} />
+          </div>
+        </div>
+
         {/* Roles card */}
         <div style={{
           background: "#fff",
@@ -154,6 +213,15 @@ export default function ColaboradorHomeClient({ slug }: Props) {
       </main>
 
       <BottomNav active="home" pendingCount={pendingCount ?? 0} />
+    </div>
+  );
+}
+
+function ScheduleCell({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div style={{ fontSize: 11, fontWeight: 600, color: "#9ca3af", marginBottom: 3 }}>{label}</div>
+      <div style={{ fontSize: 15, fontWeight: 700, color: "#111827", lineHeight: 1.3 }}>{value}</div>
     </div>
   );
 }

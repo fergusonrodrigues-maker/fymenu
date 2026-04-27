@@ -109,6 +109,46 @@ export async function validateSession(token: string): Promise<{
   };
 }
 
+// ── getEmployeeSchedule ─────────────────────────────────────────────────────
+
+export type EmployeeSchedule = {
+  shift_start: string | null;
+  shift_end: string | null;
+  lunch_start: string | null;
+  lunch_end: string | null;
+  work_days: string[] | null;
+};
+
+export async function getEmployeeSchedule(token: string): Promise<EmployeeSchedule | null> {
+  if (!token) return null;
+  const db = createAdminClient();
+
+  const { data: session } = await db
+    .from("employee_sessions")
+    .select("employee_id, expires_at, revoked_at")
+    .eq("token", token)
+    .maybeSingle();
+
+  if (!session || session.revoked_at) return null;
+  if (new Date(session.expires_at) < new Date()) return null;
+
+  const { data: emp } = await db
+    .from("employees")
+    .select("shift_start, shift_end, lunch_start, lunch_end, work_days")
+    .eq("id", session.employee_id)
+    .maybeSingle();
+
+  if (!emp) return null;
+
+  return {
+    shift_start: emp.shift_start ?? null,
+    shift_end:   emp.shift_end   ?? null,
+    lunch_start: emp.lunch_start ?? null,
+    lunch_end:   emp.lunch_end   ?? null,
+    work_days:   (emp.work_days as string[] | null) ?? null,
+  };
+}
+
 // ── revokeSession ───────────────────────────────────────────────────────────
 
 export async function revokeSession(token: string): Promise<void> {

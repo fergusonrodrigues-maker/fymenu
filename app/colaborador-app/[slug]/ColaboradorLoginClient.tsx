@@ -105,7 +105,7 @@ export default function ColaboradorLoginClient({ slug, unitName, logoUrl }: Prop
               type="text"
               placeholder="seu.usuario"
               value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              onChange={(e) => { setUsername(e.target.value); if (error) setError(null); }}
               autoComplete="username"
               required
               disabled={loading}
@@ -123,7 +123,7 @@ export default function ColaboradorLoginClient({ slug, unitName, logoUrl }: Prop
                 type={showPassword ? "text" : "password"}
                 placeholder="••••••••"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => { setPassword(e.target.value); if (error) setError(null); }}
                 autoComplete="current-password"
                 required
                 disabled={loading}
@@ -146,12 +146,14 @@ export default function ColaboradorLoginClient({ slug, unitName, logoUrl }: Prop
 
           {/* Error */}
           {error && (
-            <div style={{
-              padding: "11px 14px", borderRadius: 10,
-              background: "#fef2f2", border: "1px solid #fecaca",
-              color: "#dc2626", fontSize: 13, lineHeight: 1.4,
+            <div role="alert" style={{
+              padding: "10px 14px", borderRadius: 8,
+              background: "#fee2e2", border: "1px solid #fca5a5",
+              color: "#991b1b", fontSize: 13, fontWeight: 600, lineHeight: 1.4,
+              display: "flex", alignItems: "flex-start", gap: 8,
             }}>
-              {error}
+              <span aria-hidden="true" style={{ flexShrink: 0 }}>⚠</span>
+              <span>{error}</span>
             </div>
           )}
 

@@ -27,6 +27,16 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const hostname = request.headers.get("host") ?? "";
 
+  // ── Legacy /funcionario → /colaborador (301) ──────────────────────────
+  // Old portal is being decommissioned. Redirect any /funcionario* URL to
+  // the new /colaborador root (which is the login). Preserves host/subdomain.
+  if (pathname === "/funcionario" || pathname.startsWith("/funcionario/")) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/colaborador";
+    url.search = "";
+    return NextResponse.redirect(url, 301);
+  }
+
   // ── Subdomínio → rewrite para /delivery/[slug] ────────────────────────
   // pizzaria.fymenu.com → /delivery/pizzaria
   // pizzaria.fymenu.com/menu → /menu/pizzaria
