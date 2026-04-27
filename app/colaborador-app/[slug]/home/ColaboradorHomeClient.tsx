@@ -2,12 +2,15 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ListChecks, ChevronRight, Clock, Timer } from "lucide-react";
+import { ListChecks, ChevronRight, Clock, Timer, UtensilsCrossed, Receipt, Bell } from "lucide-react";
 import { getRoleLabel } from "@/app/colaborador-app/roleUtils";
 import { listMyTasks } from "@/app/colaborador-app/tarefasActions";
 import { getEmployeeSchedule, type EmployeeSchedule } from "@/app/colaborador-app/actions";
 import { getCurrentPointStatus, type PointStateResult } from "../ponto/actions";
+import { getAtendimentoCounts, type AtendimentoCounts } from "@/app/colaborador-app/atendimentoActions";
 import BottomNav from "../_components/BottomNav";
+
+const WAITER_ROLES = new Set(["waiter", "manager"]);
 
 const WORK_DAY_LABELS: Record<string, string> = {
   mon: "Seg", monday:    "Seg", "1": "Seg",
@@ -56,6 +59,9 @@ export default function ColaboradorHomeClient({ slug }: Props) {
   const [pendingCount, setPendingCount] = useState<number | null>(null);
   const [schedule, setSchedule] = useState<EmployeeSchedule | null>(null);
   const [pointState, setPointState] = useState<PointStateResult | null>(null);
+  const [atendimento, setAtendimento] = useState<AtendimentoCounts | null>(null);
+
+  const isWaiter = roles.some((r) => WAITER_ROLES.has(r));
 
   useEffect(() => {
     try {
@@ -71,15 +77,17 @@ export default function ColaboradorHomeClient({ slug }: Props) {
       try {
         const token = sessionStorage.getItem("fy_emp_token") ?? "";
         if (!token) return;
-        const [tasks, sched, point] = await Promise.all([
+        const [tasks, sched, point, atend] = await Promise.all([
           listMyTasks(token),
           getEmployeeSchedule(token),
           getCurrentPointStatus(token).catch(() => null),
+          getAtendimentoCounts(token).catch(() => null),
         ]);
         if (cancelled) return;
         setPendingCount(tasks.hoje.length + tasks.atrasadas.length);
         setSchedule(sched);
         setPointState(point);
+        setAtendimento(atend);
       } catch { /* silent */ }
     }
     load();
@@ -152,6 +160,78 @@ export default function ColaboradorHomeClient({ slug }: Props) {
           </div>
           <ChevronRight size={20} color="#16a34a" style={{ flexShrink: 0 }} />
         </button>
+
+        {/* Atendimento cards (waiter/manager only) */}
+        {isWaiter && (
+          <>
+            {/* Mesas */}
+            <button
+              onClick={() => router.push("/colaborador/mesas")}
+              style={atendimentoCardStyle}
+            >
+              <div style={{
+                width: 48, height: 48, borderRadius: 12,
+                background: "#f97316", color: "#fff",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                flexShrink: 0, position: "relative",
+              }}>
+                <UtensilsCrossed size={24} strokeWidth={2.2} />
+                {atendimento && atendimento.callsPending > 0 && (
+                  <span style={{
+                    position: "absolute", top: -4, right: -4,
+                    width: 18, height: 18, borderRadius: "50%",
+                    background: "#dc2626", color: "#fff",
+                    fontSize: 10, fontWeight: 800,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    boxShadow: "0 1px 3px rgba(220,38,38,0.4)",
+                  }}>{atendimento.callsPending}</span>
+                )}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: "#9a3412", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>
+                  Mesas do Salão
+                </div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: "#111827", lineHeight: 1.3 }}>
+                  {atendimento === null
+                    ? "Carregando…"
+                    : `${atendimento.mesasOccupied} ocupada${atendimento.mesasOccupied !== 1 ? "s" : ""}`}
+                </div>
+                {atendimento && atendimento.callsPending > 0 && (
+                  <div style={{ fontSize: 11, color: "#dc2626", fontWeight: 700, marginTop: 2, display: "flex", alignItems: "center", gap: 4 }}>
+                    <Bell size={11} /> {atendimento.callsPending} chamada{atendimento.callsPending !== 1 ? "s" : ""} pendente{atendimento.callsPending !== 1 ? "s" : ""}
+                  </div>
+                )}
+              </div>
+              <ChevronRight size={20} color="#9ca3af" style={{ flexShrink: 0 }} />
+            </button>
+
+            {/* Comandas */}
+            <button
+              onClick={() => router.push("/colaborador/comandas")}
+              style={atendimentoCardStyle}
+            >
+              <div style={{
+                width: 48, height: 48, borderRadius: 12,
+                background: "#16a34a", color: "#fff",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                flexShrink: 0,
+              }}>
+                <Receipt size={24} strokeWidth={2.2} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: "#15803d", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>
+                  Comandas Abertas
+                </div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: "#111827", lineHeight: 1.3 }}>
+                  {atendimento === null
+                    ? "Carregando…"
+                    : `${atendimento.comandasOpen} em aberto`}
+                </div>
+              </div>
+              <ChevronRight size={20} color="#9ca3af" style={{ flexShrink: 0 }} />
+            </button>
+          </>
+        )}
 
         {/* Ponto card */}
         <button
@@ -268,6 +348,19 @@ export default function ColaboradorHomeClient({ slug }: Props) {
     </div>
   );
 }
+
+const atendimentoCardStyle: React.CSSProperties = {
+  width: "100%", textAlign: "left",
+  background: "#fff",
+  border: "1px solid #e5e7eb",
+  borderRadius: 16,
+  padding: "16px 18px",
+  marginBottom: 18,
+  cursor: "pointer",
+  fontFamily: "inherit",
+  display: "flex", alignItems: "center", gap: 14,
+  boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+};
 
 function ScheduleCell({ label, value }: { label: string; value: string }) {
   return (
