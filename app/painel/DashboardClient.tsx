@@ -35,6 +35,7 @@ const ImportarHistoricoModal = dynamic(() => import("./modals/ImportarHistoricoM
 const HistoricoModal = dynamic(() => import("./modals/HistoricoModal"), { ssr: false, loading: () => loadingFallback });
 const TarefasModal = dynamic(() => import("./modals/TarefasModal"), { ssr: false, loading: () => loadingFallback });
 const ChatWidget = dynamic(() => import("./components/ChatWidget"), { ssr: false });
+const NotificationBell = dynamic(() => import("./components/NotificationBell"), { ssr: false });
 
 // ─── Modal backdrop ─────────────────────────────────────────────────────────
 function Modal({ open, onClose, children, title, size = "md" }: {
@@ -1410,7 +1411,9 @@ export default function DashboardClient({
               fontSize: 16, cursor: "pointer", color: "var(--dash-text-muted)",
               boxShadow: "var(--dash-shadow)",
             }}><Link2 size={16} /></button>
-            {/* Notificações */}
+            {/* Notification bell — persistent log (DB) */}
+            <NotificationBell restaurantId={restaurant.id} />
+            {/* Alertas (computed runtime alerts: estoque, validade, meta, reviews) */}
             <div style={{ position: "relative" }} data-notifications>
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
