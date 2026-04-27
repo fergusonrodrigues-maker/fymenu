@@ -7,6 +7,8 @@ import type { Profile, Restaurant } from "../types";
 import PasswordReqs, { passwordValid, translatePasswordError } from "@/components/PasswordReqs";
 import { listMembers, inviteMember, revokeInvite, removeMember } from "../membersActions";
 import type { MemberData } from "../membersActions";
+import { getLastEditForEntities, LastEditInfo } from "@/app/painel/historicoActions";
+import LastEditBadge from "@/components/audit/LastEditBadge";
 
 const PaymentModal = lazy(() => import("./PaymentModal"));
 
@@ -100,6 +102,7 @@ export default function ConfigModal({ profile, restaurant }: { profile: Profile;
   const [acting, setActing] = useState<string | null>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [toastType, setToastType] = useState<"success" | "error">("success");
+  const [memberLastEdits, setMemberLastEdits] = useState<Record<string, LastEditInfo>>({});
 
   const currentPlan = restaurant?.plan || "menu";
   const currentPlanIdx = PLANS.findIndex(p => p.key === currentPlan);
@@ -120,6 +123,8 @@ export default function ConfigModal({ profile, restaurant }: { profile: Profile;
     setMembers(m);
     setCurrentUserId(uid);
     setMembersLoading(false);
+    const ids = m.filter(mem => mem.id).map(mem => mem.id);
+    if (ids.length) getLastEditForEntities(restaurant.id, "member", ids).then(setMemberLastEdits);
   }
 
   async function handleSaveProfile() {
@@ -754,6 +759,9 @@ export default function ConfigModal({ profile, restaurant }: { profile: Profile;
                             ? `Ativo desde ${fmtDate(member.activated_at ?? member.created_at)}`
                             : `Convite pendente · expira em ${daysUntil(member.invite_expires_at ?? "")} dias`}
                         </div>
+                        {memberLastEdits[member.id] && (
+                          <LastEditBadge lastEdit={memberLastEdits[member.id]} restaurantId={restaurant.id} entityType="member" entityId={member.id} entityName={member.displayName} variant="inline" />
+                        )}
                       </div>
                     </div>
 

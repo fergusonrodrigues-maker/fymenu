@@ -4,6 +4,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { createExpense, deleteExpense } from "@/app/painel/financeiro/actions";
 import { Unit, Restaurant, ReportData, ReportProduct, ReportPayments, DayData } from "../types";
+import { getLastEditForEntities, LastEditInfo } from "@/app/painel/historicoActions";
+import LastEditBadge from "@/components/audit/LastEditBadge";
 import AIButton from "@/components/AIButton";
 import AIWaveLoader from "@/components/AIWaveLoader";
 import {
@@ -187,6 +189,12 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
   const [paymentMethodsMap, setPaymentMethodsMap] = useState<Record<string, number>>({});
   const [showImportFinance, setShowImportFinance] = useState(false);
   const [savingExpense, setSavingExpense] = useState(false);
+  const [expLastEdits, setExpLastEdits] = useState<Record<string, LastEditInfo>>({});
+
+  useEffect(() => {
+    if (!restaurant?.id || expenses.length === 0) return;
+    getLastEditForEntities(restaurant.id, "expense", expenses.map(e => e.id)).then(setExpLastEdits);
+  }, [expenses, restaurant?.id]);
   const [importFinanceStep, setImportFinanceStep] = useState<"upload" | "processing" | "preview" | "done">("upload");
   const [importFinanceData, setImportFinanceData] = useState<any>(null);
   const [importingFinance, setImportingFinance] = useState(false);
@@ -1143,6 +1151,9 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
                     <div style={{ color: "var(--dash-text-muted)", fontSize: 11 }}>
                       <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>{exp.is_recurring ? <><RefreshCw size={10} />Recorrente</> : <><Tag size={10} />Avulso</>}</span> · {new Date(exp.date).toLocaleDateString("pt-BR")}
                     </div>
+                    {restaurant?.id && expLastEdits[exp.id] && (
+                      <LastEditBadge lastEdit={expLastEdits[exp.id]} restaurantId={restaurant.id} entityType="expense" entityId={exp.id} entityName={exp.name} variant="inline" />
+                    )}
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <span style={{ color: "var(--dash-danger)", fontSize: 14, fontWeight: 700 }}>{formatBRL(exp.amount)}</span>

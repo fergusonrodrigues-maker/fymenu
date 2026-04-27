@@ -7,6 +7,8 @@ import { createCategory, updateCategory, deleteCategory, createProduct } from ".
 import { createClient as createSupabaseClient } from "@/lib/supabase/client";
 import ProductRow from "../ProductRow";
 import { Unit, Category, Product, Restaurant } from "../types";
+import { getLastEditForEntities, LastEditInfo } from "@/app/painel/historicoActions";
+import LastEditBadge from "@/components/audit/LastEditBadge";
 import AIButton from "@/components/AIButton";
 import AIWaveLoader from "@/components/AIWaveLoader";
 import {
@@ -140,6 +142,16 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
   const [expandedProductId, setExpandedProductId] = useState<string | null>(null);
   const [showAllProducts, setShowAllProducts] = useState<Record<string, boolean>>({});
   const [catActiveState, setCatActiveState] = useState<Record<string, boolean>>({});
+  const [prodLastEdits, setProdLastEdits] = useState<Record<string, LastEditInfo>>({});
+  const [catLastEdits, setCatLastEdits] = useState<Record<string, LastEditInfo>>({});
+
+  useEffect(() => {
+    if (!restaurant?.id) return;
+    const productIds = products.map(p => p.id).filter(Boolean);
+    const categoryIds = categories.map(c => c.id).filter(Boolean);
+    if (productIds.length) getLastEditForEntities(restaurant.id, "product", productIds).then(setProdLastEdits);
+    if (categoryIds.length) getLastEditForEntities(restaurant.id, "category", categoryIds).then(setCatLastEdits);
+  }, [products, categories, restaurant?.id]);
 
   function isCatActive(cat: any) {
     if (catActiveState[cat.id] !== undefined) return catActiveState[cat.id];
@@ -1483,7 +1495,12 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                   title="Segurar e arrastar para reordenar"
                 >⠿</span>
                 <span style={{ color: "var(--dash-text-muted)", fontSize: 10, flexShrink: 0 }}>▼</span>
-                <span style={{ flex: 1, color: "var(--dash-text)", fontSize: 14, fontWeight: 700 }}>{cat.name}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ color: "var(--dash-text)", fontSize: 14, fontWeight: 700 }}>{cat.name}</div>
+                  {restaurant?.id && catLastEdits[cat.id] && (
+                    <LastEditBadge lastEdit={catLastEdits[cat.id]} restaurantId={restaurant.id} entityType="category" entityId={cat.id} entityName={cat.name} variant="inline" />
+                  )}
+                </div>
                 {cat.schedule_enabled && (
                   <span style={{ fontSize: 9, padding: "2px 6px", borderRadius: 4, background: "var(--dash-warning-soft)", color: "var(--dash-warning)", whiteSpace: "nowrap", flexShrink: 0 }}>
                     <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}><Clock size={9} />{cat.start_time?.slice(0,5)}-{cat.end_time?.slice(0,5)}</span>
@@ -1687,6 +1704,8 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                           customSections={customSections}
                           unitId={unit?.id}
                           hasRecipeFeature={hasRecipeFeature}
+                          restaurantId={restaurant?.id}
+                          lastEdit={prodLastEdits[p.id] ?? null}
                         />
                       ))}
                       {catProducts.length > 4 && !showAllProducts[cat.id] && (

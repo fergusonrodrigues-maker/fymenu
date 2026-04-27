@@ -8,6 +8,8 @@ import FyLoader from "@/components/FyLoader";
 import { useGenerateProductDescription } from "@/lib/hooks/useGenerateProductDescription";
 import { uploadMedia } from "@/lib/upload";
 import AIButton from "@/components/AIButton";
+import LastEditBadge from "@/components/audit/LastEditBadge";
+import type { LastEditInfo } from "@/app/painel/historicoActions";
 
 type Product = {
   id: string;
@@ -238,6 +240,8 @@ export default function ProductRow({
   customSections,
   unitId,
   hasRecipeFeature,
+  restaurantId,
+  lastEdit,
 }: {
   product: Product;
   expanded: boolean;
@@ -247,6 +251,8 @@ export default function ProductRow({
   customSections?: Array<{ id: string; name: string; allows_video: boolean; allows_alcoholic_toggle: boolean }>;
   unitId?: string;
   hasRecipeFeature?: boolean;
+  restaurantId?: string;
+  lastEdit?: LastEditInfo | null;
 }) {
   const [activeTab, setActiveTab] = useState<"info" | "estoque" | "nutricao">("info");
   const [thumbnailUrl, setThumbnailUrl] = useState(product.thumbnail_url ?? "");
@@ -349,6 +355,9 @@ export default function ProductRow({
             {product.price_type === "variable" ? "Preço variável" : product.base_price ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(product.base_price / 100) : "Sem preço"}
             <StockBadge product={product} />
           </div>
+          {lastEdit && restaurantId && (
+            <LastEditBadge lastEdit={lastEdit} restaurantId={restaurantId} entityType="product" entityId={product.id} entityName={product.name} variant="inline" />
+          )}
         </div>
         <label className="switch-toggle" onClick={(e) => e.stopPropagation()}>
           <input
