@@ -56,12 +56,7 @@ export async function listActivities(input: {
   if (input.actorUserId) query = query.eq("actor_user_id", input.actorUserId);
   if (input.module) query = query.eq("module", input.module);
   if (input.dateFrom) query = query.gte("created_at", input.dateFrom);
-  if (input.dateTo) {
-    // end of day
-    const end = new Date(input.dateTo);
-    end.setDate(end.getDate() + 1);
-    query = query.lt("created_at", end.toISOString().split("T")[0]);
-  }
+  if (input.dateTo) query = query.lte("created_at", input.dateTo);
   if (input.search) query = query.ilike("entity_name", `%${input.search}%`);
 
   const { data, error } = await query;

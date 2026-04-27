@@ -229,21 +229,20 @@ const DEFAULT_FILTERS: Filters = {
   search: "",
 };
 
-function periodToDates(period: Filters["period"]): { from: string; to: string } {
+function getDateRangeFromPreset(preset: Filters["period"]): { from: string; to: string } {
+  if (preset === "custom") return { from: "", to: "" };
   const now = new Date();
-  const pad = (n: number) => String(n).padStart(2, "0");
-  const fmt = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-  const today = fmt(now);
-  if (period === "today") return { from: today, to: today };
-  if (period === "7d") {
-    const d = new Date(now); d.setDate(d.getDate() - 7);
-    return { from: fmt(d), to: today };
+  const y = now.getFullYear(), mo = now.getMonth(), d = now.getDate();
+  // end of today in local time → converts to UTC correctly via toISOString()
+  const endOfToday = new Date(y, mo, d, 23, 59, 59, 999);
+  let startDate: Date;
+  switch (preset) {
+    case "today": startDate = new Date(y, mo, d, 0, 0, 0, 0); break;
+    case "7d":    startDate = new Date(y, mo, d - 6, 0, 0, 0, 0); break;
+    case "30d":   startDate = new Date(y, mo, d - 29, 0, 0, 0, 0); break;
+    default:      startDate = new Date(y, mo, d, 0, 0, 0, 0);
   }
-  if (period === "30d") {
-    const d = new Date(now); d.setDate(d.getDate() - 30);
-    return { from: fmt(d), to: today };
-  }
-  return { from: "", to: "" };
+  return { from: startDate.toISOString(), to: endOfToday.toISOString() };
 }
 
 // ─── Main Modal ───────────────────────────────────────────────────────────────
@@ -268,7 +267,15 @@ export default function HistoricoModal({ restaurantId }: HistoricoModalProps) {
   }, [restaurantId]);
 
   const fetchActivities = useCallback(async (f: Filters, p: number, append: boolean) => {
-    const dates = f.period !== "custom" ? periodToDates(f.period) : { from: f.dateFrom, to: f.dateTo };
+    let dates: { from: string; to: string };
+    if (f.period !== "custom") {
+      dates = getDateRangeFromPreset(f.period);
+    } else {
+      dates = {
+        from: f.dateFrom ? new Date(`${f.dateFrom}T00:00:00`).toISOString() : "",
+        to:   f.dateTo   ? new Date(`${f.dateTo}T23:59:59.999`).toISOString() : "",
+      };
+    }
     const setter = append ? setLoadingMore : setLoading;
     setter(true);
     try {
