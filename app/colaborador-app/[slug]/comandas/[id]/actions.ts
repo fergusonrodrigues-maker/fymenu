@@ -612,39 +612,41 @@ export async function closeComanda(
 
   const nowIso = new Date().toISOString();
 
-  // Insert splits
-  const splitRows = input.splits.map((s) => ({
-    comanda_id: comandaId,
-    customer_name: s.customerName.trim(),
-    customer_phone: (s.customerPhone ?? "").replace(/\D/g, "") || null,
-    amount: s.amount,
-    payment_method: s.paymentMethod,
-    cash_change_for: s.paymentMethod === "cash" && s.cashChangeFor && s.cashChangeFor > s.amount
-      ? s.cashChangeFor
-      : null,
-    paid_at: nowIso,
-    paid_by: employeeId,
-    paid_by_name: employeeName,
-    paid_by_role: employeeRole ?? "waiter",
-  }));
+  // Insert splits — schema (after recent migration): order_intent_id is now
+  // optional; comanda_id is the canonical link for in-house comandas. `name`
+  // is still NOT NULL (legacy from delivery-side splits) so we mirror it from
+  // customer_name. `subtotal`/`total` are legacy companions that we mirror
+  // from `amount` so totals roll up correctly in any consumer that still
+  // reads the old shape. `change_amount` holds the troco (cash payments).
+  const splitRows = input.splits.map((s) => {
+    const amount = s.amount;
+    const cleanName = s.customerName.trim();
+    const phoneClean = (s.customerPhone ?? "").replace(/\D/g, "") || null;
+    const changeAmount =
+      s.paymentMethod === "cash" && s.cashChangeFor && s.cashChangeFor > amount
+        ? s.cashChangeFor - amount
+        : null;
+    return {
+      comanda_id: comandaId,
+      order_intent_id: null,
+      name: cleanName,           // legacy NOT NULL
+      customer_name: cleanName,
+      customer_phone: phoneClean,
+      amount,
+      subtotal: amount,          // legacy mirror
+      total: amount,             // legacy mirror
+      discount: 0,               // legacy mirror
+      payment_method: s.paymentMethod,
+      paid_at: nowIso,
+      change_amount: changeAmount,
+      created_by: employeeId,
+    };
+  });
 
   const { error: splitsErr } = await db.from("comanda_splits").insert(splitRows);
   if (splitsErr) {
-    // Some columns may not exist (cash_change_for, paid_by_*) on older
-    // schemas. Retry with a minimal payload before giving up.
-    const minimalRows = input.splits.map((s) => ({
-      comanda_id: comandaId,
-      customer_name: s.customerName.trim(),
-      customer_phone: (s.customerPhone ?? "").replace(/\D/g, "") || null,
-      amount: s.amount,
-      payment_method: s.paymentMethod,
-      paid_at: nowIso,
-    }));
-    const retry = await db.from("comanda_splits").insert(minimalRows);
-    if (retry.error) {
-      console.error("closeComanda: splits insert failed:", splitsErr, retry.error);
-      return { ok: false, error: retry.error.message ?? splitsErr.message };
-    }
+    console.error("closeComanda: splits insert failed:", splitsErr);
+    return { ok: false, error: splitsErr.message };
   }
 
   // Close the comanda
