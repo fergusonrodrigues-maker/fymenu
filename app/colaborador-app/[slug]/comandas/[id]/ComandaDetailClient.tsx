@@ -10,9 +10,11 @@ import {
   getComandaDetail, sendCartToKitchen,
   cancelComandaItem, updateComandaInfo, cancelComanda,
   type ComandaFullDetail, type ComandaItemRow, type CartItemInput,
+  type CloseSplit, type PaymentMethod,
 } from "./actions";
 import BottomNav from "../../_components/BottomNav";
 import ProductPickerModal from "./ProductPickerModal";
+import CloseComandaModal from "./CloseComandaModal";
 
 function fmtBRL(cents: number): string {
   return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -47,6 +49,8 @@ export default function ComandaDetailClient({
   const [cancelItemId, setCancelItemId] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showCancelComanda, setShowCancelComanda] = useState(false);
+  const [showCloseModal, setShowCloseModal] = useState(false);
+  const [receipt, setReceipt] = useState<{ splits: CloseSplit[]; total: number } | null>(null);
 
   const flashToast = useCallback((msg: string) => {
     setToast(msg);
@@ -351,19 +355,35 @@ export default function ComandaDetailClient({
             </button>
           </>
         ) : (
-          <button
-            onClick={() => setShowPicker(true)}
-            style={{
-              width: "100%", padding: 13, borderRadius: 12, border: "none",
-              background: "#16a34a", color: "#fff",
-              fontSize: 15, fontWeight: 800, fontFamily: "inherit",
-              cursor: "pointer",
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-              boxShadow: "0 2px 6px rgba(22,163,74,0.25)",
-            }}
-          >
-            <Plus size={16} strokeWidth={3} /> Adicionar item
-          </button>
+          <>
+            <button
+              onClick={() => setShowPicker(true)}
+              style={{
+                width: "100%", padding: 13, borderRadius: 12, border: "none",
+                background: "#16a34a", color: "#fff",
+                fontSize: 15, fontWeight: 800, fontFamily: "inherit",
+                cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                boxShadow: "0 2px 6px rgba(22,163,74,0.25)",
+              }}
+            >
+              <Plus size={16} strokeWidth={3} /> Adicionar item
+            </button>
+            {data && data.status === "open" && data.total > 0 && (
+              <button
+                onClick={() => setShowCloseModal(true)}
+                style={{
+                  width: "100%", padding: 11, borderRadius: 12,
+                  border: "1px solid #2563eb", background: "#eff6ff",
+                  color: "#1d4ed8", fontSize: 13, fontWeight: 700, fontFamily: "inherit",
+                  cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                }}
+              >
+                Fechar comanda · {fmtBRL(data.total)}
+              </button>
+            )}
+          </>
         )}
       </footer>
 
@@ -440,6 +460,33 @@ export default function ComandaDetailClient({
             setTimeout(() => router.push("/colaborador/comandas"), 800);
           }}
           onError={(msg) => setErr(msg)}
+        />
+      )}
+
+      {showCloseModal && data && (
+        <CloseComandaModal
+          open={showCloseModal}
+          comandaId={data.id}
+          shortCode={data.short_code}
+          customerName={data.customer_name}
+          total={data.total}
+          onClose={() => setShowCloseModal(false)}
+          onClosed={(_count, splits) => {
+            setShowCloseModal(false);
+            setReceipt({ splits, total: data.total });
+          }}
+        />
+      )}
+
+      {receipt && (
+        <ReceiptModal
+          shortCode={data?.short_code ?? null}
+          splits={receipt.splits}
+          total={receipt.total}
+          onClose={() => {
+            setReceipt(null);
+            router.push("/colaborador/comandas");
+          }}
         />
       )}
 
@@ -961,5 +1008,94 @@ function SendConfirmModal({
         </div>
       </div>
     </div>
+  );
+}
+
+// ─── Receipt modal (post-close summary) ──────────────────────────────────────
+
+const PAYMENT_LABEL: Record<PaymentMethod, string> = {
+  cash:    "Dinheiro",
+  credit:  "Cartão de crédito",
+  debit:   "Cartão de débito",
+  pix:     "PIX",
+  voucher: "Voucher refeição",
+};
+
+function ReceiptModal({
+  shortCode, splits, total, onClose,
+}: {
+  shortCode: string | null;
+  splits: CloseSplit[];
+  total: number;
+  onClose: () => void;
+}) {
+  return (
+    <ModalShell title="Comanda fechada" onClose={onClose}>
+      <div style={{ textAlign: "center", marginBottom: 18 }}>
+        <div style={{ fontSize: 48, lineHeight: 1, marginBottom: 8 }}>✅</div>
+        <div style={{ fontSize: 13, color: "#15803d", fontWeight: 700 }}>
+          Pagamento{splits.length !== 1 ? "s" : ""} registrado{splits.length !== 1 ? "s" : ""} com sucesso
+        </div>
+      </div>
+
+      <div style={{
+        background: "#f9fafb", border: "1px solid #e5e7eb",
+        borderRadius: 12, padding: 14, marginBottom: 14,
+      }}>
+        <div style={{ fontSize: 11, fontWeight: 800, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>
+          Comanda{shortCode ? ` #${shortCode}` : ""} — Recibo
+        </div>
+        {splits.map((s, idx) => (
+          <div key={idx} style={{
+            display: "flex", justifyContent: "space-between", alignItems: "flex-start",
+            padding: "8px 0", gap: 8,
+            borderTop: idx === 0 ? "none" : "1px dashed #e5e7eb",
+          }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#111827" }}>{s.customerName}</div>
+              <div style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>
+                {PAYMENT_LABEL[s.paymentMethod]}
+                {s.paymentMethod === "cash" && s.cashChangeFor
+                  ? ` · troco para ${(s.cashChangeFor / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`
+                  : ""}
+              </div>
+            </div>
+            <span style={{ fontSize: 14, fontWeight: 800, color: "#16a34a", whiteSpace: "nowrap" }}>
+              {(s.amount / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+            </span>
+          </div>
+        ))}
+        <div style={{
+          display: "flex", justifyContent: "space-between",
+          paddingTop: 10, marginTop: 6, borderTop: "1px solid #e5e7eb",
+          fontSize: 14, fontWeight: 900, color: "#111827",
+        }}>
+          <span>Total</span>
+          <span>{(total / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span>
+        </div>
+      </div>
+
+      <div style={{ display: "flex", gap: 10 }}>
+        <button
+          disabled
+          title="Impressão será habilitada em breve"
+          style={{
+            flex: 1, padding: 13, borderRadius: 12,
+            border: "1px dashed #d1d5db", background: "#fafafa",
+            color: "#9ca3af", fontSize: 13, fontWeight: 700, fontFamily: "inherit",
+            cursor: "not-allowed",
+          }}
+        >🖨️ Imprimir (em breve)</button>
+        <button
+          onClick={onClose}
+          style={{
+            flex: 1, padding: 13, borderRadius: 12, border: "none",
+            background: "#16a34a", color: "#fff",
+            fontSize: 14, fontWeight: 800, fontFamily: "inherit",
+            cursor: "pointer", boxShadow: "0 2px 6px rgba(22,163,74,0.25)",
+          }}
+        >OK</button>
+      </div>
+    </ModalShell>
   );
 }

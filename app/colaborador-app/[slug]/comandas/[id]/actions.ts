@@ -530,3 +530,163 @@ export async function cancelComanda(
 
   return { ok: true };
 }
+
+// ─── Close comanda with splits ───────────────────────────────────────────────
+
+export type PaymentMethod = "cash" | "credit" | "debit" | "pix" | "voucher";
+
+export type CloseSplit = {
+  customerName: string;
+  customerPhone?: string;
+  amount: number; // cents
+  paymentMethod: PaymentMethod;
+  cashChangeFor?: number; // cents, optional, only meaningful for "cash"
+};
+
+export type CloseComandaInput = {
+  mode: "single" | "equal" | "manual";
+  splits: CloseSplit[];
+};
+
+export type CloseComandaResult =
+  | { ok: true; splitsCreated: number; total: number }
+  | { ok: false; error: string };
+
+const VALID_PAYMENT_METHODS: PaymentMethod[] = ["cash", "credit", "debit", "pix", "voucher"];
+
+export async function closeComanda(
+  token: string,
+  comandaId: string,
+  input: CloseComandaInput,
+): Promise<CloseComandaResult> {
+  let auth;
+  try { auth = await authenticate(token); } catch (e: any) {
+    return { ok: false, error: e?.message ?? "Sessão inválida" };
+  }
+  const { db, employeeId, employeeName, employeeRole, unitId } = auth;
+  if (!WAITER_ROLES.has(employeeRole ?? "")) {
+    return { ok: false, error: "Acesso restrito a garçons e gerentes." };
+  }
+
+  // Reload + recompute the comanda's total before validating, in case any
+  // items were added/cancelled between the modal load and confirmation.
+  const expectedTotal = await recomputeComandaTotal(db, comandaId);
+
+  const { data: comanda } = await db
+    .from("comandas")
+    .select("id, unit_id, status, mesa_id, total, customer_name")
+    .eq("id", comandaId)
+    .maybeSingle();
+  if (!comanda || comanda.unit_id !== unitId) return { ok: false, error: "Comanda não encontrada." };
+  if (comanda.status !== "open") return { ok: false, error: "Comanda já foi fechada ou cancelada." };
+  if (expectedTotal <= 0) return { ok: false, error: "Comanda sem itens — adicione pelo menos um antes de fechar." };
+
+  // Validate splits payload
+  if (!Array.isArray(input.splits) || input.splits.length === 0) {
+    return { ok: false, error: "Pelo menos um pagamento é obrigatório." };
+  }
+  if (!["single", "equal", "manual"].includes(input.mode)) {
+    return { ok: false, error: "Modo de divisão inválido." };
+  }
+
+  for (const s of input.splits) {
+    if (!s.customerName || s.customerName.trim().length < 2) {
+      return { ok: false, error: "Cada pagador precisa de um nome (mín. 2 caracteres)." };
+    }
+    if (!Number.isFinite(s.amount) || s.amount <= 0) {
+      return { ok: false, error: "Cada pagamento precisa de um valor maior que zero." };
+    }
+    if (!VALID_PAYMENT_METHODS.includes(s.paymentMethod)) {
+      return { ok: false, error: "Forma de pagamento inválida." };
+    }
+  }
+
+  const sumOfSplits = input.splits.reduce((s, x) => s + x.amount, 0);
+  // Allow ±1 cent of rounding tolerance for equal-split scenarios.
+  if (Math.abs(sumOfSplits - expectedTotal) > 1) {
+    return {
+      ok: false,
+      error: `A soma dos pagamentos (${sumOfSplits / 100}) precisa bater com o total da comanda (${expectedTotal / 100}).`,
+    };
+  }
+
+  const nowIso = new Date().toISOString();
+
+  // Insert splits
+  const splitRows = input.splits.map((s) => ({
+    comanda_id: comandaId,
+    customer_name: s.customerName.trim(),
+    customer_phone: (s.customerPhone ?? "").replace(/\D/g, "") || null,
+    amount: s.amount,
+    payment_method: s.paymentMethod,
+    cash_change_for: s.paymentMethod === "cash" && s.cashChangeFor && s.cashChangeFor > s.amount
+      ? s.cashChangeFor
+      : null,
+    paid_at: nowIso,
+    paid_by: employeeId,
+    paid_by_name: employeeName,
+    paid_by_role: employeeRole ?? "waiter",
+  }));
+
+  const { error: splitsErr } = await db.from("comanda_splits").insert(splitRows);
+  if (splitsErr) {
+    // Some columns may not exist (cash_change_for, paid_by_*) on older
+    // schemas. Retry with a minimal payload before giving up.
+    const minimalRows = input.splits.map((s) => ({
+      comanda_id: comandaId,
+      customer_name: s.customerName.trim(),
+      customer_phone: (s.customerPhone ?? "").replace(/\D/g, "") || null,
+      amount: s.amount,
+      payment_method: s.paymentMethod,
+      paid_at: nowIso,
+    }));
+    const retry = await db.from("comanda_splits").insert(minimalRows);
+    if (retry.error) {
+      console.error("closeComanda: splits insert failed:", splitsErr, retry.error);
+      return { ok: false, error: retry.error.message ?? splitsErr.message };
+    }
+  }
+
+  // Close the comanda
+  const { error: closeErr } = await db.from("comandas").update({
+    status: "closed",
+    closed_at: nowIso,
+    closed_by: employeeId,
+    closed_by_name: employeeName,
+    closed_by_role: employeeRole ?? "waiter",
+    updated_at: nowIso,
+  }).eq("id", comandaId);
+  if (closeErr) {
+    console.error("closeComanda: comanda update failed:", closeErr);
+    return { ok: false, error: closeErr.message };
+  }
+
+  // Free the mesa if linked
+  if (comanda.mesa_id) {
+    await db.from("mesas").update({
+      status: "available",
+      current_comanda_id: null,
+      current_waiter_id: null,
+      updated_at: nowIso,
+    }).eq("id", comanda.mesa_id);
+  }
+
+  // Audit
+  await db.from("comanda_audit_log").insert({
+    comanda_id: comandaId,
+    unit_id: unitId,
+    action: "comanda_closed",
+    new_value: JSON.stringify({
+      mode: input.mode,
+      splits_count: input.splits.length,
+      total: expectedTotal,
+      payment_methods: input.splits.map((s) => s.paymentMethod),
+    }),
+    performed_by: employeeId,
+    performed_by_role: employeeRole ?? "waiter",
+    performed_by_name: employeeName,
+  });
+
+  return { ok: true, splitsCreated: input.splits.length, total: expectedTotal };
+}
+
