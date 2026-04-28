@@ -109,6 +109,22 @@ export async function getComandaDetail(token: string, comandaId: string): Promis
   if (!comandaRes.data || comandaRes.data.unit_id !== unitId) return null;
   const c = comandaRes.data;
 
+  // Self-heal: if a comanda's stored subtotal doesn't match the current line
+  // total (e.g. row predates the recompute logic), fix it once on first view.
+  // Only writes when there's drift, so cost is bounded.
+  let subtotalNum = Number(c.subtotal ?? 0);
+  let totalNum = Number(c.total ?? 0);
+  if (c.status === "open" && (itemsRes.data?.length ?? 0) > 0) {
+    const expected = (itemsRes.data ?? []).reduce(
+      (s: number, i: any) => s + Number(i.unit_price ?? 0) * Number(i.quantity ?? 1) + Number(i.addons_total ?? 0),
+      0,
+    );
+    if (expected !== subtotalNum || expected !== totalNum) {
+      subtotalNum = await recomputeComandaTotal(db, c.id);
+      totalNum = subtotalNum;
+    }
+  }
+
   return {
     id: c.id,
     short_code: c.short_code,
@@ -120,8 +136,8 @@ export async function getComandaDetail(token: string, comandaId: string): Promis
     guest_count: c.guest_count,
     notes: c.notes,
     status: c.status,
-    total: Number(c.total ?? 0),
-    subtotal: Number(c.subtotal ?? 0),
+    total: totalNum,
+    subtotal: subtotalNum,
     created_at: c.created_at,
     opened_by_name: c.opened_by_name,
     items: (itemsRes.data ?? []).map((i: any) => ({
@@ -197,21 +213,51 @@ export async function listProductsForCart(token: string): Promise<{
 
 // ─── Mutations ───────────────────────────────────────────────────────────────
 
-async function recomputeComandaTotal(db: any, comandaId: string) {
-  const { data: items } = await db.from("comanda_items")
-    .select("quantity, unit_price")
+/**
+ * Sums every non-cancelled item line + addons and writes the result back to
+ * `comandas.subtotal` and `comandas.total`. Returns the computed subtotal so
+ * callers can self-heal stale rows without re-reading.
+ *
+ * Defensive: tries `addons_total` first; if the column doesn't exist (or any
+ * other read error), falls back to qty × unit_price.
+ */
+async function recomputeComandaTotal(db: any, comandaId: string): Promise<number> {
+  let items: Array<{ quantity: number; unit_price: number; addons_total?: number }> | null = null;
+
+  const withAddons = await db.from("comanda_items")
+    .select("quantity, unit_price, addons_total")
     .eq("comanda_id", comandaId)
     .neq("status", "cancelled");
 
-  const subtotal = (items ?? []).reduce(
-    (s: number, i: any) => s + (Number(i.unit_price) * Number(i.quantity)),
-    0,
-  );
-  await db.from("comandas").update({
+  if (withAddons.error) {
+    const fallback = await db.from("comanda_items")
+      .select("quantity, unit_price")
+      .eq("comanda_id", comandaId)
+      .neq("status", "cancelled");
+    if (fallback.error) {
+      console.error("recomputeComandaTotal: select failed:", fallback.error);
+      return 0;
+    }
+    items = (fallback.data as any) ?? [];
+  } else {
+    items = (withAddons.data as any) ?? [];
+  }
+
+  let subtotal = 0;
+  for (const i of items ?? []) {
+    const line = Number(i.unit_price ?? 0) * Number(i.quantity ?? 1);
+    const addons = Number((i as any).addons_total ?? 0);
+    subtotal += line + addons;
+  }
+
+  const { error: updErr } = await db.from("comandas").update({
     subtotal,
     total: subtotal,
     updated_at: new Date().toISOString(),
   }).eq("id", comandaId);
+  if (updErr) console.error("recomputeComandaTotal: update failed:", updErr);
+
+  return subtotal;
 }
 
 export async function sendCartToKitchen(
