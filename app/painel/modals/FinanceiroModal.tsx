@@ -187,6 +187,13 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
   const [employeeCount, setEmployeeCount] = useState(0);
   const [dailyGoal, setDailyGoal] = useState(0);
   const [paymentMethodsMap, setPaymentMethodsMap] = useState<Record<string, number>>({});
+  // Salão/Delivery breakdown sourced from `payments` (covers closed comandas
+  // that don't have a corresponding order_intents row).
+  const [salaoPaymentsTotal, setSalaoPaymentsTotal] = useState(0);
+  const [deliveryPaymentsTotal, setDeliveryPaymentsTotal] = useState(0);
+  const [salaoPaymentsCount, setSalaoPaymentsCount] = useState(0);
+  const [deliveryPaymentsCount, setDeliveryPaymentsCount] = useState(0);
+  const [origemFilter, setOrigemFilter] = useState<"all" | "salao" | "delivery">("all");
   const [showImportFinance, setShowImportFinance] = useState(false);
   const [savingExpense, setSavingExpense] = useState(false);
   const [expLastEdits, setExpLastEdits] = useState<Record<string, LastEditInfo>>({});
@@ -263,12 +270,41 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
       });
   }
 
+  // Load Salão (comanda_id) + Delivery (order_id) totals from the `payments`
+  // table. This is independent from `order_intents` and covers closed
+  // comandas whose payments don't roll up via order_intents.
+  async function loadPaymentsBreakdown() {
+    if (!unit?.id) return;
+    const { data: payments } = await supabase
+      .from("payments")
+      .select("amount, status, occurred_at, comanda_id, order_id")
+      .eq("unit_id", unit.id)
+      .eq("status", "confirmed")
+      .gte("occurred_at", getPeriodStart(period))
+      .lte("occurred_at", getPeriodEnd());
+
+    let salao = 0, delivery = 0, salaoCount = 0, deliveryCount = 0;
+    for (const p of payments ?? []) {
+      const amt = Number(p.amount ?? 0);
+      if (p.comanda_id) { salao += amt; salaoCount++; }
+      else if (p.order_id) { delivery += amt; deliveryCount++; }
+    }
+    setSalaoPaymentsTotal(salao);
+    setDeliveryPaymentsTotal(delivery);
+    setSalaoPaymentsCount(salaoCount);
+    setDeliveryPaymentsCount(deliveryCount);
+  }
+
   function loadData() {
     loadResumoData();
+    loadPaymentsBreakdown();
   }
 
   useEffect(() => {
-    if (period !== "custom") loadResumoData();
+    if (period !== "custom") {
+      loadResumoData();
+      loadPaymentsBreakdown();
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [period]);
 
@@ -281,6 +317,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
 
     // Load resumo data
     loadResumoData();
+    loadPaymentsBreakdown();
 
     // Load employees
     supabase
@@ -698,6 +735,60 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
             <div style={{ fontSize: 28, fontWeight: 800, color: "var(--dash-accent)", marginTop: 4 }}>{formatBRL(totalRevenue)}</div>
             <div style={{ fontSize: 11, color: "var(--dash-text-muted)", marginTop: 4 }}>{totalOrders} pedidos</div>
           </div>
+
+          {/* ── Pagamentos por origem (Salão x Delivery via tabela payments) ── */}
+          {(salaoPaymentsTotal > 0 || deliveryPaymentsTotal > 0) && (
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: "var(--dash-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  Origem do faturamento
+                </span>
+                <div style={{ display: "flex", gap: 4, padding: 3, background: "var(--dash-card)", borderRadius: 8, border: "1px solid var(--dash-card-border)" }}>
+                  {(["all", "salao", "delivery"] as const).map((opt) => (
+                    <button
+                      key={opt}
+                      onClick={() => setOrigemFilter(opt)}
+                      style={{
+                        padding: "4px 10px", borderRadius: 6, border: "none",
+                        background: origemFilter === opt ? "var(--dash-accent-soft)" : "transparent",
+                        color: origemFilter === opt ? "var(--dash-accent)" : "var(--dash-text-muted)",
+                        fontSize: 10, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+                      }}
+                    >
+                      {opt === "all" ? "Todos" : opt === "salao" ? "Salão" : "Delivery"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+                {(origemFilter === "all" || origemFilter === "salao") && (
+                  <div style={{ padding: 12, borderRadius: 12, background: "var(--dash-card)", textAlign: "center", boxShadow: "var(--dash-shadow)", border: "1px solid var(--dash-card-border)" }}>
+                    <div style={{ marginBottom: 4 }}>🍽️</div>
+                    <div style={{ fontSize: 16, fontWeight: 800, color: "var(--dash-text)" }}>{formatBRL(salaoPaymentsTotal)}</div>
+                    <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>Salão</div>
+                    <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>{salaoPaymentsCount} pagamento{salaoPaymentsCount !== 1 ? "s" : ""}</div>
+                  </div>
+                )}
+                {(origemFilter === "all" || origemFilter === "delivery") && (
+                  <div style={{ padding: 12, borderRadius: 12, background: "var(--dash-card)", textAlign: "center", boxShadow: "var(--dash-shadow)", border: "1px solid var(--dash-card-border)" }}>
+                    <div style={{ marginBottom: 4 }}>🛵</div>
+                    <div style={{ fontSize: 16, fontWeight: 800, color: "var(--dash-text)" }}>{formatBRL(deliveryPaymentsTotal)}</div>
+                    <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>Delivery</div>
+                    <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>{deliveryPaymentsCount} pagamento{deliveryPaymentsCount !== 1 ? "s" : ""}</div>
+                  </div>
+                )}
+                {origemFilter === "all" && (
+                  <div style={{ padding: 12, borderRadius: 12, background: "var(--dash-accent-soft)", textAlign: "center", boxShadow: "var(--dash-shadow)" }}>
+                    <div style={{ marginBottom: 4 }}>📊</div>
+                    <div style={{ fontSize: 16, fontWeight: 800, color: "var(--dash-accent)" }}>{formatBRL(salaoPaymentsTotal + deliveryPaymentsTotal)}</div>
+                    <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>Total Geral</div>
+                    <div style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>{salaoPaymentsCount + deliveryPaymentsCount} pagamento{(salaoPaymentsCount + deliveryPaymentsCount) !== 1 ? "s" : ""}</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Breakdown por fonte */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 20 }}>
