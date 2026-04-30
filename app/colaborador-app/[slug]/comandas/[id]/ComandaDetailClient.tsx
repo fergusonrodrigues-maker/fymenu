@@ -9,12 +9,15 @@ import { createClient } from "@/lib/supabase/client";
 import {
   getComandaDetail, sendCartToKitchen,
   cancelComandaItem, updateComandaInfo, cancelComanda,
+  buildPartialCheckPrintJob, buildFinalReceiptPrintJob,
   type ComandaFullDetail, type ComandaItemRow, type CartItemInput,
   type CloseSplit, type PaymentMethod,
 } from "./actions";
 import BottomNav from "../../_components/BottomNav";
 import ProductPickerModal from "./ProductPickerModal";
 import CloseComandaModal from "./CloseComandaModal";
+import ReceiptPrinter, { type PrintJobLite } from "@/components/print/ReceiptPrinter";
+import { Printer } from "lucide-react";
 
 function fmtBRL(cents: number): string {
   return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -51,6 +54,7 @@ export default function ComandaDetailClient({
   const [showCancelComanda, setShowCancelComanda] = useState(false);
   const [showCloseModal, setShowCloseModal] = useState(false);
   const [receipt, setReceipt] = useState<{ splits: CloseSplit[]; total: number } | null>(null);
+  const [printJobs, setPrintJobs] = useState<PrintJobLite[] | null>(null);
 
   const flashToast = useCallback((msg: string) => {
     setToast(msg);
@@ -140,6 +144,12 @@ export default function ComandaDetailClient({
       setCart([]);
       setShowSendConfirm(false);
       flashToast(`${count} ${count === 1 ? "item enviado" : "itens enviados"} pra cozinha!`);
+      // Trigger kitchen prints for matching printers (best-effort)
+      if (result.printJobs && result.printJobs.length > 0) {
+        setPrintJobs(result.printJobs.map((j) => ({
+          printerId: j.printerId, printerName: j.printerName, html: j.html,
+        })));
+      }
       await reload(true);
     } catch (e: any) {
       setErr(e?.message ?? "Erro ao enviar itens");
@@ -208,6 +218,27 @@ export default function ComandaDetailClient({
                     style={menuItemStyle}
                   >
                     <Pencil size={14} /> Editar dados
+                  </button>
+                  <button
+                    onClick={async () => {
+                      setOpenMenu(false);
+                      try {
+                        const token = sessionStorage.getItem("fy_emp_token") ?? "";
+                        const result = await buildPartialCheckPrintJob(token, comandaId);
+                        if (!result.ok) { setErr(result.error); return; }
+                        if (!result.job) {
+                          setErr("Nenhuma impressora configurada. Cadastre uma no painel.");
+                          return;
+                        }
+                        setPrintJobs([{ printerId: result.job.printerId, printerName: result.job.printerName, html: result.job.html }]);
+                        flashToast("Imprimindo conta parcial…");
+                      } catch (e: any) {
+                        setErr(e?.message ?? "Erro ao imprimir");
+                      }
+                    }}
+                    style={{ ...menuItemStyle, borderTop: "1px solid #f3f4f6" }}
+                  >
+                    <Printer size={14} /> Imprimir conta parcial
                   </button>
                   <button
                     onClick={() => { setOpenMenu(false); setShowCancelComanda(true); }}
@@ -483,12 +514,29 @@ export default function ComandaDetailClient({
           shortCode={data?.short_code ?? null}
           splits={receipt.splits}
           total={receipt.total}
+          comandaId={comandaId}
+          onPrint={async () => {
+            try {
+              const token = sessionStorage.getItem("fy_emp_token") ?? "";
+              const result = await buildFinalReceiptPrintJob(token, comandaId);
+              if (!result.ok) { setErr(result.error); return; }
+              if (!result.job) {
+                setErr("Nenhuma impressora configurada. Cadastre uma no painel.");
+                return;
+              }
+              setPrintJobs([{ printerId: result.job.printerId, printerName: result.job.printerName, html: result.job.html }]);
+            } catch (e: any) {
+              setErr(e?.message ?? "Erro ao imprimir recibo");
+            }
+          }}
           onClose={() => {
             setReceipt(null);
             router.push("/colaborador/comandas");
           }}
         />
       )}
+
+      <ReceiptPrinter jobs={printJobs} onComplete={() => setPrintJobs(null)} />
 
       <BottomNav active="comandas" />
     </div>
@@ -1022,13 +1070,21 @@ const PAYMENT_LABEL: Record<PaymentMethod, string> = {
 };
 
 function ReceiptModal({
-  shortCode, splits, total, onClose,
+  shortCode, splits, total, comandaId, onPrint, onClose,
 }: {
   shortCode: string | null;
   splits: CloseSplit[];
   total: number;
+  comandaId: string;
+  onPrint: () => Promise<void> | void;
   onClose: () => void;
 }) {
+  const [printing, setPrinting] = useState(false);
+  async function handlePrint() {
+    setPrinting(true);
+    try { await onPrint(); }
+    finally { setTimeout(() => setPrinting(false), 1500); }
+  }
   return (
     <ModalShell title="Comanda fechada" onClose={onClose}>
       <div style={{ textAlign: "center", marginBottom: 18 }}>
@@ -1077,15 +1133,18 @@ function ReceiptModal({
 
       <div style={{ display: "flex", gap: 10 }}>
         <button
-          disabled
-          title="Impressão será habilitada em breve"
+          onClick={handlePrint}
+          disabled={printing}
           style={{
             flex: 1, padding: 13, borderRadius: 12,
-            border: "1px dashed #d1d5db", background: "#fafafa",
-            color: "#9ca3af", fontSize: 13, fontWeight: 700, fontFamily: "inherit",
-            cursor: "not-allowed",
+            border: "1px solid #16a34a", background: "#f0fdf4",
+            color: "#15803d", fontSize: 13, fontWeight: 700, fontFamily: "inherit",
+            cursor: printing ? "not-allowed" : "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
           }}
-        >🖨️ Imprimir (em breve)</button>
+        >
+          <Printer size={14} /> {printing ? "Imprimindo…" : "Imprimir recibo"}
+        </button>
         <button
           onClick={onClose}
           style={{
@@ -1094,7 +1153,7 @@ function ReceiptModal({
             fontSize: 14, fontWeight: 800, fontFamily: "inherit",
             cursor: "pointer", boxShadow: "0 2px 6px rgba(22,163,74,0.25)",
           }}
-        >OK</button>
+        >Fechar</button>
       </div>
     </ModalShell>
   );

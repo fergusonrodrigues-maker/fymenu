@@ -1,6 +1,10 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  buildKitchenPrintJobs, buildPartialCheckJob, buildFinalReceiptJob,
+  type PrintJob,
+} from "@/lib/print/generateReceipt";
 
 const WAITER_ROLES = new Set(["waiter", "manager"]);
 
@@ -264,7 +268,7 @@ export async function sendCartToKitchen(
   token: string,
   comandaId: string,
   items: CartItemInput[],
-): Promise<{ ok: true; itemsAdded: number } | { ok: false; error: string }> {
+): Promise<{ ok: true; itemsAdded: number; printJobs: PrintJob[] } | { ok: false; error: string }> {
   let auth;
   try { auth = await authenticate(token); } catch (e: any) {
     return { ok: false, error: e?.message ?? "Sessão inválida" };
@@ -307,8 +311,12 @@ export async function sendCartToKitchen(
     added_by_role: employeeRole ?? "waiter",
   }));
 
-  const { error: insErr } = await db.from("comanda_items").insert(rows);
+  const { data: inserted, error: insErr } = await db
+    .from("comanda_items")
+    .insert(rows)
+    .select("id");
   if (insErr) return { ok: false, error: insErr.message };
+  const insertedIds: string[] = (inserted ?? []).map((r: any) => r.id);
 
   await recomputeComandaTotal(db, comandaId);
 
@@ -331,7 +339,76 @@ export async function sendCartToKitchen(
     performed_by_name: employeeName,
   });
 
-  return { ok: true, itemsAdded: items.length };
+  // Build kitchen print jobs (best-effort — failures don't block the success
+  // response, since the items are already in the DB).
+  let printJobs: PrintJob[] = [];
+  try {
+    printJobs = await buildKitchenPrintJobs({ unitId, comandaId, itemIds: insertedIds });
+  } catch (e) {
+    console.error("sendCartToKitchen: print job build failed:", e);
+  }
+
+  return { ok: true, itemsAdded: items.length, printJobs };
+}
+
+// ─── Print job builders for the client (partial + final receipts) ────────────
+
+export async function buildPartialCheckPrintJob(
+  token: string,
+  comandaId: string,
+): Promise<{ ok: true; job: PrintJob | null } | { ok: false; error: string }> {
+  let auth;
+  try { auth = await authenticate(token); } catch (e: any) {
+    return { ok: false, error: e?.message ?? "Sessão inválida" };
+  }
+  if (!WAITER_ROLES.has(auth.employeeRole ?? "")) {
+    return { ok: false, error: "Acesso restrito a garçons e gerentes." };
+  }
+
+  const { data: comanda } = await auth.db
+    .from("comandas")
+    .select("id, unit_id")
+    .eq("id", comandaId)
+    .maybeSingle();
+  if (!comanda || comanda.unit_id !== auth.unitId) {
+    return { ok: false, error: "Comanda não encontrada." };
+  }
+
+  try {
+    const job = await buildPartialCheckJob({ unitId: auth.unitId, comandaId });
+    return { ok: true, job };
+  } catch (e: any) {
+    return { ok: false, error: e?.message ?? "Falha ao gerar conta parcial." };
+  }
+}
+
+export async function buildFinalReceiptPrintJob(
+  token: string,
+  comandaId: string,
+): Promise<{ ok: true; job: PrintJob | null } | { ok: false; error: string }> {
+  let auth;
+  try { auth = await authenticate(token); } catch (e: any) {
+    return { ok: false, error: e?.message ?? "Sessão inválida" };
+  }
+  if (!WAITER_ROLES.has(auth.employeeRole ?? "")) {
+    return { ok: false, error: "Acesso restrito a garçons e gerentes." };
+  }
+
+  const { data: comanda } = await auth.db
+    .from("comandas")
+    .select("id, unit_id")
+    .eq("id", comandaId)
+    .maybeSingle();
+  if (!comanda || comanda.unit_id !== auth.unitId) {
+    return { ok: false, error: "Comanda não encontrada." };
+  }
+
+  try {
+    const job = await buildFinalReceiptJob({ unitId: auth.unitId, comandaId });
+    return { ok: true, job };
+  } catch (e: any) {
+    return { ok: false, error: e?.message ?? "Falha ao gerar recibo." };
+  }
 }
 
 // ─── Cancel item / edit / cancel comanda ─────────────────────────────────────
