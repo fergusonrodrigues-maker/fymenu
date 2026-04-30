@@ -1,9 +1,15 @@
 "use server";
 
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createCustomerCall } from "@/lib/tableCalls/createCustomerCall";
 
 const VALID_REASONS = ["order", "question", "close_bill"] as const;
 type Reason = (typeof VALID_REASONS)[number];
+
+const REASON_TO_TYPE: Record<Reason, "waiter" | "bill" | "manager"> = {
+  order: "waiter",
+  question: "waiter",
+  close_bill: "bill",
+};
 
 export async function createTableCall(
   unitId: string,
@@ -16,31 +22,15 @@ export async function createTableCall(
   if (!VALID_REASONS.includes(reason as Reason))
     throw new Error("Motivo inválido");
 
-  const db = createAdminClient();
+  const result = await createCustomerCall({
+    unit_id: unitId,
+    table_number: tableNumber,
+    type: REASON_TO_TYPE[reason as Reason],
+  });
 
-  const { data: unit } = await db
-    .from("units")
-    .select("id")
-    .eq("id", unitId)
-    .maybeSingle();
-
-  if (!unit) throw new Error("Unidade não encontrada");
-
-  const { data, error } = await db
-    .from("table_calls")
-    .insert({
-      unit_id: unitId,
-      table_number: tableNumber,
-      type: reason,
-      source: "customer",
-    })
-    .select("id")
-    .single();
-
-  if (error || !data) {
-    console.error("table_calls insert error:", error);
-    throw new Error(error?.message ?? "Erro ao registrar chamada. Tente novamente.");
+  if (!result.ok || !result.call_id) {
+    throw new Error(result.message || "Não foi possível chamar agora.");
   }
 
-  return { callId: data.id, success: true };
+  return { callId: result.call_id, success: true };
 }

@@ -12,7 +12,7 @@ import {
 import BottomNav from "../_components/BottomNav";
 import OpenComandaModal from "../_components/OpenComandaModal";
 import TableCallModal from "../_components/TableCallModal";
-import { playAlertSound } from "../_components/alertSound";
+import { playAlertSound, wakeAlertSound } from "../_components/alertSound";
 
 type Tab = "todas" | "ocupadas" | "livres" | "reservadas";
 
@@ -67,6 +67,18 @@ export default function MesasClient({ slug }: { slug: string }) {
   // Resolve unit_id once for the realtime channel filter.
   useEffect(() => {
     try { setUnitId(sessionStorage.getItem("fy_emp_unit")); } catch { /* */ }
+  }, []);
+
+  // Prime audio on first user gesture so the bell can ring on subsequent
+  // realtime events without hitting mobile autoplay restrictions.
+  useEffect(() => {
+    const wake = () => { wakeAlertSound(); };
+    document.addEventListener("click", wake, { once: true });
+    document.addEventListener("touchstart", wake, { once: true });
+    return () => {
+      document.removeEventListener("click", wake);
+      document.removeEventListener("touchstart", wake);
+    };
   }, []);
 
   // Realtime: refetch on any change to mesas, comandas, or table_calls for this unit.

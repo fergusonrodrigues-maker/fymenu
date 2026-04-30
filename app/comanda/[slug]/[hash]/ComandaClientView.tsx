@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { UtensilsCrossed, Star, Sparkles, Hand, Briefcase } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { createCustomerCall } from "@/lib/tableCalls/createCustomerCall";
 
 type ComandaRecord = {
   id: string;
@@ -100,16 +101,16 @@ export default function ComandaClientView({ comanda: initialComanda, initialItem
   async function handleCallWaiter() {
     setCallingWaiter(true);
 
-    const { error } = await supabase.from("table_calls").insert({
+    const result = await createCustomerCall({
       unit_id: unitId,
       comanda_id: comanda.id,
-      table_number: comanda.table_number,
+      table_number: comanda.table_number ?? 0,
       type: "waiter",
-      status: "pending",
     });
 
-    if (error) {
-      console.error("Erro ao chamar garçom:", error);
+    if (!result.ok) {
+      console.error("Erro ao chamar garçom:", result.message);
+      alert(result.message || "Não foi possível chamar agora.");
       setCallingWaiter(false);
       return;
     }
@@ -121,16 +122,16 @@ export default function ComandaClientView({ comanda: initialComanda, initialItem
   async function handleCallManager() {
     setCallingManager(true);
 
-    const { error } = await supabase.from("table_calls").insert({
+    const result = await createCustomerCall({
       unit_id: unitId,
       comanda_id: comanda.id,
-      table_number: comanda.table_number,
+      table_number: comanda.table_number ?? 0,
       type: "manager",
-      status: "pending",
     });
 
-    if (error) {
-      console.error("Erro ao chamar gerente:", error);
+    if (!result.ok) {
+      console.error("Erro ao chamar gerente:", result.message);
+      alert(result.message || "Não foi possível chamar agora.");
       setCallingManager(false);
       return;
     }

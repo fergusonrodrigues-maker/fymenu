@@ -10,7 +10,7 @@ import { getEmployeeSchedule, type EmployeeSchedule } from "@/app/colaborador-ap
 import { getCurrentPointStatus, type PointStateResult } from "../ponto/actions";
 import { getAtendimentoCounts, type AtendimentoCounts } from "@/app/colaborador-app/atendimentoActions";
 import BottomNav from "../_components/BottomNav";
-import { playAlertSound } from "../_components/alertSound";
+import { playAlertSound, wakeAlertSound } from "../_components/alertSound";
 
 const WAITER_ROLES = new Set(["waiter", "manager"]);
 
@@ -71,6 +71,18 @@ export default function ColaboradorHomeClient({ slug }: Props) {
       const raw = sessionStorage.getItem("fy_emp_roles");
       setRoles(raw ? JSON.parse(raw) : []);
     } catch { /* */ }
+  }, []);
+
+  // Prime audio on first user gesture so subsequent alerts can play without
+  // hitting mobile autoplay restrictions.
+  useEffect(() => {
+    const wake = () => { wakeAlertSound(); };
+    document.addEventListener("click", wake, { once: true });
+    document.addEventListener("touchstart", wake, { once: true });
+    return () => {
+      document.removeEventListener("click", wake);
+      document.removeEventListener("touchstart", wake);
+    };
   }, []);
 
   const prevPendingCallsRef = useRef<number | null>(null);

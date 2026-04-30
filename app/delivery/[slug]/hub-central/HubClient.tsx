@@ -158,7 +158,7 @@ export default function HubClient({ unitId, unitName, restaurantName, slug, init
                 <div style={{ color: "#a855f7", fontSize: 13, fontWeight: 800, display: "flex", alignItems: "center", gap: 6 }}><ShieldAlert size={13} /> Mesa {call.table_number} — GERENTE!</div>
                 <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 10, marginTop: 2 }}>{new Date(call.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</div>
               </div>
-              <button onClick={async () => { await supabase.from("table_calls").update({ status: "resolved", acknowledged_by: "Gerente", acknowledged_at: new Date().toISOString(), resolved_at: new Date().toISOString() }).eq("id", call.id); }} style={{ padding: "6px 14px", borderRadius: 8, border: "none", cursor: "pointer", background: "rgba(168,85,247,0.12)", color: "#a855f7", fontSize: 11, fontWeight: 700 }}>✓ Atender</button>
+              <button onClick={async () => { await supabase.from("table_calls").update({ status: "resolved", acknowledged_by: "Gerente", acknowledged_at: new Date().toISOString(), resolved_at: new Date().toISOString(), resolved_by: "Gerente" }).eq("id", call.id); }} style={{ padding: "6px 14px", borderRadius: 8, border: "none", cursor: "pointer", background: "rgba(168,85,247,0.12)", color: "#a855f7", fontSize: 11, fontWeight: 700 }}>✓ Atender</button>
             </div>
           ))}
           {pendingCalls.filter(c => c.type === "waiter").map(call => (
@@ -167,7 +167,7 @@ export default function HubClient({ unitId, unitName, restaurantName, slug, init
                 <div style={{ color: "#fbbf24", fontSize: 13, fontWeight: 800, display: "flex", alignItems: "center", gap: 6 }}><BellRing size={13} /> Mesa {call.table_number} chamando!</div>
                 <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 10, marginTop: 2 }}>{new Date(call.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</div>
               </div>
-              <button onClick={async () => { await supabase.from("table_calls").update({ status: "resolved", acknowledged_by: unitName, acknowledged_at: new Date().toISOString(), resolved_at: new Date().toISOString() }).eq("id", call.id); }} style={{ padding: "6px 14px", borderRadius: 8, border: "none", cursor: "pointer", background: "rgba(0,255,174,0.1)", color: "#00ffae", fontSize: 11, fontWeight: 700 }}>✓ Atender</button>
+              <button onClick={async () => { await supabase.from("table_calls").update({ status: "resolved", acknowledged_by: unitName, acknowledged_at: new Date().toISOString(), resolved_at: new Date().toISOString(), resolved_by: unitName }).eq("id", call.id); }} style={{ padding: "6px 14px", borderRadius: 8, border: "none", cursor: "pointer", background: "rgba(0,255,174,0.1)", color: "#00ffae", fontSize: 11, fontWeight: 700 }}>✓ Atender</button>
             </div>
           ))}
         </div>

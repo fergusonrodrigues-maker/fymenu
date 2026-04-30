@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { UtensilsCrossed, CheckCircle2, CreditCard, Bell, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { createCustomerCall } from "@/lib/tableCalls/createCustomerCall";
 
 type ComandaItem = {
   id: string;
@@ -147,17 +148,18 @@ export default function ComandaClient({
   // ── Call waiter ───────────────────────────────────────────────────────────────
   async function handleCallWaiter() {
     setCalling(true);
-    const { error } = await supabase.from("table_calls").insert({
+    const result = await createCustomerCall({
       unit_id: comanda.unit_id,
       comanda_id: comanda.id,
-      table_number: comanda.table_number ?? comanda.mesa_number,
+      table_number: comanda.table_number ?? comanda.mesa_number ?? 0,
       type: "waiter",
-      status: "pending",
     });
     setCalling(false);
-    if (!error) {
+    if (result.ok) {
       setCallSent(true);
       setTimeout(() => setCallSent(false), 30000);
+    } else {
+      alert(result.message || "Não foi possível chamar agora.");
     }
   }
 
