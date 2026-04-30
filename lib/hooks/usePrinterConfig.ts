@@ -6,8 +6,25 @@ export interface PrinterConfig {
   unit_id: string;
   name: string;
   num_copies: number;
+  type?: string | null;            // 'browser' | 'bluetooth' | 'usb'
+  purpose?: string | null;         // 'kitchen' | 'cashier' | 'generic'
+  paper_width?: number | null;     // 80 | 58 (mm)
+  print_logo?: boolean | null;
+  footer_message?: string | null;
+  is_active?: boolean | null;
   created_at: string;
 }
+
+export type PrinterCreateInput = {
+  name: string;
+  numCopies?: number;
+  type?: string;
+  purpose?: string;
+  paperWidth?: number;
+  printLogo?: boolean;
+  footerMessage?: string;
+  isActive?: boolean;
+};
 
 export function usePrinterConfig(unitId?: string) {
   const [printers, setPrinters] = useState<PrinterConfig[]>([]);
@@ -39,11 +56,18 @@ export function usePrinterConfig(unitId?: string) {
   );
 
   const createPrinter = useCallback(
-    async (name: string, numCopies: number = 1) => {
+    async (
+      nameOrInput: string | PrinterCreateInput,
+      numCopies: number = 1,
+    ) => {
       if (!unitId) {
         setError("unitId is required");
         return null;
       }
+
+      const input: PrinterCreateInput = typeof nameOrInput === "string"
+        ? { name: nameOrInput, numCopies }
+        : nameOrInput;
 
       try {
         const { data, error: err } = await supabase
@@ -51,8 +75,14 @@ export function usePrinterConfig(unitId?: string) {
           .insert([
             {
               unit_id: unitId,
-              name,
-              num_copies: numCopies,
+              name: input.name,
+              num_copies: input.numCopies ?? 1,
+              type: input.type ?? "browser",
+              purpose: input.purpose ?? "kitchen",
+              paper_width: input.paperWidth ?? 80,
+              print_logo: input.printLogo ?? true,
+              footer_message: input.footerMessage ?? null,
+              is_active: input.isActive ?? true,
             },
           ])
           .select()

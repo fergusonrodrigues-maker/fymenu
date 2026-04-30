@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import { AlertTriangle, Printer } from "lucide-react";
-import { usePrinterConfig } from "@/lib/hooks/usePrinterConfig";
+import { usePrinterConfig, type PrinterConfig } from "@/lib/hooks/usePrinterConfig";
 import { createClient } from "@/lib/supabase/client";
 
 interface PrinterModalProps {
@@ -50,6 +50,10 @@ export default function PrinterModal({ unitId, categories }: PrinterModalProps) 
 
   // ── Impressoras state ──
   const [newName, setNewName] = useState("");
+  const [newPurpose, setNewPurpose] = useState<"kitchen" | "cashier" | "generic">("kitchen");
+  const [newPaperWidth, setNewPaperWidth] = useState<80 | 58>(80);
+  const [newPrintLogo, setNewPrintLogo] = useState(true);
+  const [newFooterMessage, setNewFooterMessage] = useState("");
   const [creating, setCreating] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [catMap, setCatMap] = useState<Map<string, any[]>>(new Map());
@@ -115,10 +119,31 @@ export default function PrinterModal({ unitId, categories }: PrinterModalProps) 
   const handleCreate = async () => {
     if (!newName.trim()) return;
     setCreating(true);
-    const result = await createPrinter(newName.trim());
-    if (result) setNewName("");
+    const result = await createPrinter({
+      name: newName.trim(),
+      purpose: newPurpose,
+      paperWidth: newPaperWidth,
+      printLogo: newPrintLogo,
+      footerMessage: newFooterMessage.trim() || undefined,
+      type: "browser",
+      isActive: true,
+    });
+    if (result) {
+      setNewName("");
+      setNewFooterMessage("");
+      // keep purpose/width/logo for next entry — most users add multiple
+      // printers of the same kind in a row
+    }
     setCreating(false);
   };
+
+  async function handleToggleActive(p: PrinterConfig) {
+    await supabase
+      .from("printer_configs")
+      .update({ is_active: !p.is_active })
+      .eq("id", p.id);
+    fetchPrinters(unitId);
+  }
 
   const handleRemoveCat = async (mappingId: string, printerId: string) => {
     await removeCategoryFromPrinter(mappingId);
@@ -258,21 +283,99 @@ export default function PrinterModal({ unitId, categories }: PrinterModalProps) 
             </div>
           )}
 
-          <div style={{ display: "flex", gap: 8 }}>
-            <input
-              style={s.input}
-              placeholder="Nome da impressora (ex: Cozinha, Bar)"
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleCreate()}
-            />
-            <button
-              onClick={handleCreate}
-              disabled={!newName.trim() || creating}
-              style={{ ...s.addBtn, opacity: !newName.trim() || creating ? 0.5 : 1 }}
-            >
-              {creating ? "..." : "+ Adicionar"}
-            </button>
+          {/* Add printer — name + advanced fields */}
+          <div style={{
+            background: "var(--dash-card)", border: "1px solid var(--dash-card-border)",
+            borderRadius: 12, padding: 12, marginBottom: 8,
+          }}>
+            <div style={{ display: "flex", gap: 8, marginBottom: newName.trim() ? 12 : 0 }}>
+              <input
+                style={s.input}
+                placeholder="Nome da impressora (ex: Cozinha, Bar)"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+              />
+              <button
+                onClick={handleCreate}
+                disabled={!newName.trim() || creating}
+                style={{ ...s.addBtn, opacity: !newName.trim() || creating ? 0.5 : 1 }}
+              >
+                {creating ? "..." : "+ Adicionar"}
+              </button>
+            </div>
+
+            {/* Advanced fields appear only after the user types a name —
+                keeps the empty state clean while still requiring purpose. */}
+            {newName.trim() && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                <div>
+                  <div style={s.label}>Finalidade</div>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    {([
+                      { v: "kitchen", emoji: "🍳", label: "Cozinha" },
+                      { v: "cashier", emoji: "💰", label: "Caixa" },
+                      { v: "generic", emoji: "📋", label: "Geral" },
+                    ] as const).map((opt) => (
+                      <button
+                        key={opt.v}
+                        onClick={() => setNewPurpose(opt.v as any)}
+                        style={{
+                          flex: 1, padding: "9px", borderRadius: 10,
+                          border: newPurpose === opt.v ? "1px solid var(--dash-accent)" : "1px solid var(--dash-border)",
+                          background: newPurpose === opt.v ? "var(--dash-accent-soft)" : "var(--dash-card-hover)",
+                          color: newPurpose === opt.v ? "var(--dash-accent)" : "var(--dash-text-muted)",
+                          fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+                        }}
+                      >{opt.emoji} {opt.label}</button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <div style={s.label}>Largura do papel</div>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    {([80, 58] as const).map((w) => (
+                      <button
+                        key={w}
+                        onClick={() => setNewPaperWidth(w)}
+                        style={{
+                          flex: 1, padding: "8px", borderRadius: 10,
+                          border: newPaperWidth === w ? "1px solid var(--dash-accent)" : "1px solid var(--dash-border)",
+                          background: newPaperWidth === w ? "var(--dash-accent-soft)" : "var(--dash-card-hover)",
+                          color: newPaperWidth === w ? "var(--dash-accent)" : "var(--dash-text-muted)",
+                          fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+                        }}
+                      >{w}mm</button>
+                    ))}
+                  </div>
+                </div>
+
+                <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 12, color: "var(--dash-text)" }}>
+                  <input
+                    type="checkbox"
+                    checked={newPrintLogo}
+                    onChange={(e) => setNewPrintLogo(e.target.checked)}
+                    style={{ accentColor: "var(--dash-accent)" }}
+                  />
+                  Imprimir logo do restaurante no cabeçalho
+                </label>
+
+                <div>
+                  <div style={s.label}>Mensagem rodapé (opcional)</div>
+                  <input
+                    style={s.input}
+                    placeholder="Ex: Obrigado pela visita!"
+                    value={newFooterMessage}
+                    onChange={(e) => setNewFooterMessage(e.target.value.slice(0, 100))}
+                  />
+                </div>
+
+                <div style={{ fontSize: 11, color: "var(--dash-text-muted)", lineHeight: 1.4 }}>
+                  Tipo: <strong style={{ color: "var(--dash-text)" }}>Navegador (window.print)</strong>. Bluetooth e USB em breve.
+                </div>
+              </div>
+            )}
           </div>
 
           {unassignedCats.length > 0 && printers.length > 0 && (
@@ -299,8 +402,25 @@ export default function PrinterModal({ unitId, categories }: PrinterModalProps) 
                 <div key={printer.id} style={s.card}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 700, fontSize: 15, color: "var(--dash-text)" }}>
+                      <div style={{ fontWeight: 700, fontSize: 15, color: "var(--dash-text)", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                         <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Printer size={15} /> {printer.name}</span>
+                        {printer.purpose && (
+                          <span style={{
+                            fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 6,
+                            background: "var(--dash-accent-soft)", color: "var(--dash-accent)",
+                            textTransform: "uppercase", letterSpacing: "0.04em",
+                          }}>
+                            {printer.purpose === "kitchen" ? "🍳 Cozinha"
+                              : printer.purpose === "cashier" ? "💰 Caixa"
+                              : "📋 Geral"}
+                          </span>
+                        )}
+                        {printer.paper_width && (
+                          <span style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>{printer.paper_width}mm</span>
+                        )}
+                        {printer.is_active === false && (
+                          <span style={{ ...s.warn, fontSize: 10, padding: "2px 8px" }}>Inativa</span>
+                        )}
                       </div>
                       <div style={{ marginTop: 6, display: "flex", flexWrap: "wrap", gap: 4 }}>
                         {isExpanded && cats.length > 0
@@ -327,6 +447,19 @@ export default function PrinterModal({ unitId, categories }: PrinterModalProps) 
                       </div>
                     </div>
                     <div style={{ display: "flex", gap: 6, flexShrink: 0, marginLeft: 10 }}>
+                      <button
+                        style={{
+                          padding: "5px 10px", borderRadius: 8,
+                          border: "1px solid var(--dash-card-border)",
+                          background: printer.is_active === false ? "var(--dash-warning-soft)" : "transparent",
+                          color: printer.is_active === false ? "var(--dash-warning)" : "var(--dash-text-muted)",
+                          fontSize: 12, cursor: "pointer", fontFamily: "inherit",
+                        }}
+                        onClick={() => handleToggleActive(printer)}
+                        title={printer.is_active === false ? "Ativar impressora" : "Desativar impressora"}
+                      >
+                        {printer.is_active === false ? "Ativar" : "Pausar"}
+                      </button>
                       <button
                         style={{ padding: "5px 10px", borderRadius: 8, border: "1px solid var(--dash-card-border)", background: "transparent", color: "var(--dash-text-muted)", fontSize: 12, cursor: "pointer" }}
                         onClick={() => handleExpand(printer.id)}
