@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   buildKitchenPrintJobs, buildPartialCheckJob, buildFinalReceiptJob,
@@ -348,6 +349,12 @@ export async function sendCartToKitchen(
   } catch (e) {
     console.error("sendCartToKitchen: print job build failed:", e);
   }
+
+  // Defensive: invalidate Next.js Data Cache for any route that might be
+  // serving the comanda total. The client also calls reload() right after,
+  // but this covers stale renders if the user navigates back via history.
+  revalidatePath("/colaborador-app/[slug]/comandas/[id]", "page");
+  revalidatePath("/colaborador-app/[slug]/comandas", "page");
 
   return { ok: true, itemsAdded: items.length, printJobs };
 }

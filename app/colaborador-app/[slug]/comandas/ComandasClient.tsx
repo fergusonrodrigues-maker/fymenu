@@ -9,12 +9,9 @@ import {
 } from "@/app/colaborador-app/atendimentoActions";
 import BottomNav from "../_components/BottomNav";
 import OpenComandaModal from "../_components/OpenComandaModal";
+import { formatCents } from "@/lib/money";
 
 type Tab = "todas" | "mesa" | "balcao";
-
-function formatBRL(v: number): string {
-  return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
 
 function formatElapsed(iso: string): string {
   const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
@@ -204,7 +201,7 @@ export default function ComandasClient({ slug }: { slug: string }) {
                 </div>
                 <div style={{ textAlign: "right", flexShrink: 0 }}>
                   <div style={{ fontSize: 16, fontWeight: 800, color: "#16a34a", lineHeight: 1 }}>
-                    {formatBRL(c.total)}
+                    {formatCents(c.total)}
                   </div>
                   <div style={{ fontSize: 11, color: "#6b7280", marginTop: 4 }}>
                     {c.itemCount} {c.itemCount === 1 ? "item" : "itens"}
