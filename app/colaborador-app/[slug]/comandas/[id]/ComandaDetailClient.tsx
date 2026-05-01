@@ -18,10 +18,7 @@ import ProductPickerModal from "./ProductPickerModal";
 import CloseComandaModal from "./CloseComandaModal";
 import ReceiptPrinter, { type PrintJobLite } from "@/components/print/ReceiptPrinter";
 import { Printer } from "lucide-react";
-
-function fmtBRL(cents: number): string {
-  return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
+import { formatCents as fmtBRL } from "@/lib/money";
 
 function fmtTime(iso: string): string {
   return new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
@@ -1112,12 +1109,12 @@ function ReceiptModal({
               <div style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>
                 {PAYMENT_LABEL[s.paymentMethod]}
                 {s.paymentMethod === "cash" && s.cashChangeFor
-                  ? ` · troco para ${(s.cashChangeFor / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`
+                  ? ` · troco para ${fmtBRL(s.cashChangeFor)}`
                   : ""}
               </div>
             </div>
             <span style={{ fontSize: 14, fontWeight: 800, color: "#16a34a", whiteSpace: "nowrap" }}>
-              {(s.amount / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+              {fmtBRL(s.amount)}
             </span>
           </div>
         ))}
@@ -1127,7 +1124,7 @@ function ReceiptModal({
           fontSize: 14, fontWeight: 900, color: "#111827",
         }}>
           <span>Total</span>
-          <span>{(total / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span>
+          <span>{fmtBRL(total)}</span>
         </div>
       </div>
 

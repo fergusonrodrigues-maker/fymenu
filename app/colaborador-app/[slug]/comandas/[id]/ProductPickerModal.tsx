@@ -8,10 +8,7 @@ import {
   type ProductForCart,
   type CartItemInput,
 } from "./actions";
-
-function fmtBRL(cents: number): string {
-  return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
+import { formatCents as fmtBRL } from "@/lib/money";
 
 export type ProductPickerModalProps = {
   open: boolean;

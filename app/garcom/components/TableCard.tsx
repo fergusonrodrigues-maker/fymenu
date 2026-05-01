@@ -1,5 +1,6 @@
 import React from "react";
 import { ChefHat, CheckCircle2, Truck, CreditCard } from "lucide-react";
+import { formatCents } from "@/lib/money";
 
 type Order = {
   id: string;
@@ -53,7 +54,7 @@ export default function TableCard({ tableKey, orders, canCloseComanda, onStatusC
       <div className="flex items-center justify-between">
         <span className="text-2xl font-bold text-white">{tableLabel}</span>
         <span className="text-green-400 font-semibold text-sm">
-          R$ {(totalCents / 100).toFixed(2)}
+          {formatCents(totalCents)}
         </span>
       </div>
 

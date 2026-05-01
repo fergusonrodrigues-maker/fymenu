@@ -10,6 +10,7 @@ import EditOrderModal from "./components/EditOrderModal";
 import PDVModal from "./components/PDVModal";
 import { logComandaAction } from "@/app/hooks/useComandaAudit";
 import { UtensilsCrossed, Bell, Smartphone, Receipt, LayoutGrid, Download, Clipboard, Pencil, X, CheckCircle2 } from "lucide-react";
+import { formatCents } from "@/lib/money";
 
 export type WaiterOrder = {
   id: string;
@@ -974,7 +975,7 @@ function QueueCard({ order, onEdit, onConfirm, onCancel }: { order: WaiterOrder;
                 {item.qty}× {item.code_name ?? `Item ${i + 1}`}
                 {item.notes && <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 11, marginLeft: 4 }}>({item.notes})</span>}
               </span>
-              <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 11 }}>R$ {((item.qty * item.unit_price) / 100).toFixed(2)}</span>
+              <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 11 }}>{formatCents(item.qty * item.unit_price)}</span>
             </div>
             {item.addons && item.addons.length > 0 && (
               <ul style={{ marginLeft: 16, listStyle: "none", padding: 0 }}>
@@ -993,7 +994,7 @@ function QueueCard({ order, onEdit, onConfirm, onCancel }: { order: WaiterOrder;
 
       <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderTop: "1px solid rgba(255,255,255,0.04)", marginBottom: 10 }}>
         <span style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }}>Total</span>
-        <span style={{ fontSize: 15, fontWeight: 800, color: "#00ffae" }}>R$ {(order.total / 100).toFixed(2).replace(".", ",")}</span>
+        <span style={{ fontSize: 15, fontWeight: 800, color: "#00ffae" }}>{formatCents(order.total)}</span>
       </div>
 
       <div style={{ display: "flex", gap: 6 }}>
@@ -1027,7 +1028,7 @@ function ComandaCard({ comanda, onClick }: { comanda: OpenComanda; onClick: () =
         <span>{ageLabel} atrás</span>
         {comanda.opened_by_name && <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>por {comanda.opened_by_name}</span>}
         {comanda.total != null && comanda.total > 0 && (
-          <span style={{ marginLeft: "auto", color: "#00ffae", fontWeight: 700 }}>R$ {(comanda.total / 100).toFixed(2).replace(".", ",")}</span>
+          <span style={{ marginLeft: "auto", color: "#00ffae", fontWeight: 700 }}>{formatCents(comanda.total)}</span>
         )}
       </div>
     </button>

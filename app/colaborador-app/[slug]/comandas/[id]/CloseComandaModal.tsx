@@ -6,18 +6,7 @@ import {
   closeComanda,
   type CloseSplit, type PaymentMethod, type CloseComandaInput,
 } from "./actions";
-
-function fmtBRL(cents: number): string {
-  return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
-
-function parseBRLToCents(input: string): number {
-  // Accept "1.234,56" / "1234,56" / "1234.56" / "1234"
-  const cleaned = input.replace(/[^0-9.,]/g, "").replace(/\./g, "").replace(",", ".");
-  const num = parseFloat(cleaned);
-  if (!Number.isFinite(num) || num < 0) return 0;
-  return Math.round(num * 100);
-}
+import { formatCents as fmtBRL, parseToCents as parseBRLToCents } from "@/lib/money";
 
 const PAYMENT_METHODS: { value: PaymentMethod; label: string; icon: React.ReactNode }[] = [
   { value: "cash",    label: "Dinheiro",         icon: <Banknote size={16} /> },
@@ -506,7 +495,7 @@ function AddSplitDialog({
               type="text" inputMode="decimal"
               value={amountInput}
               onChange={(e) => setAmountInput(e.target.value)}
-              placeholder={`Ex: ${(remaining / 100).toFixed(2).replace(".", ",")}`}
+              placeholder={`Ex: ${fmtBRL(remaining)}`}
             />
           </div>
           <div style={{ marginBottom: 14 }}>

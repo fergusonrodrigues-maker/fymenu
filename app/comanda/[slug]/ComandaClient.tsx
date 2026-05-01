@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { UtensilsCrossed, CheckCircle2, CreditCard, Bell, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { createCustomerCall } from "@/lib/tableCalls/createCustomerCall";
+import { formatCents } from "@/lib/money";
 
 type ComandaItem = {
   id: string;
@@ -505,10 +506,7 @@ export default function ComandaClient({
                       textAlign: "right",
                     }}
                   >
-                    R${" "}
-                    {((item.unit_price * item.quantity) / 100)
-                      .toFixed(2)
-                      .replace(".", ",")}
+                    {formatCents(item.unit_price * item.quantity)}
                   </span>
                 </div>
               </div>
@@ -532,7 +530,7 @@ export default function ComandaClient({
               Total
             </span>
             <span style={{ fontSize: 28, fontWeight: 900, color: "#00ffae" }}>
-              R$ {(total / 100).toFixed(2).replace(".", ",")}
+              {formatCents(total)}
             </span>
           </div>
         )}
@@ -586,7 +584,7 @@ export default function ComandaClient({
                   marginTop: 4,
                 }}
               >
-                R$ {(total / 100).toFixed(2).replace(".", ",")}
+                {formatCents(total)}
               </div>
             </div>
           </div>

@@ -4,6 +4,7 @@ import React from "react";
 import { useState } from "react";
 import { X, CreditCard, CheckCircle2 } from "lucide-react";
 import type { WaiterOrder } from "../WaiterClient";
+import { formatCents } from "@/lib/money";
 
 interface Props {
   order: WaiterOrder;
@@ -59,13 +60,13 @@ export default function PDVModal({ order, onClose, onPaid }: Props) {
             {order.items?.map((item, i) => (
               <div key={i} className="flex justify-between text-sm mb-1">
                 <span className="text-slate-300">{item.qty}× {item.code_name ?? `Item ${i + 1}`}</span>
-                <span className="text-slate-400">R$ {((item.qty * item.unit_price) / 100).toFixed(2)}</span>
+                <span className="text-slate-400">{formatCents(item.qty * item.unit_price)}</span>
               </div>
             ))}
             <div className="flex justify-between mt-3 pt-3 border-t border-slate-700">
               <span className="text-white font-bold">Total</span>
               <span className="text-green-400 font-bold text-lg">
-                R$ {(order.total / 100).toFixed(2)}
+                {formatCents(order.total)}
               </span>
             </div>
           </div>

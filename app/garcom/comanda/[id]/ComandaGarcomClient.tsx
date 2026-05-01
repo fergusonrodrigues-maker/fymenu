@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { QRCodeSVG } from "qrcode.react";
 import { logComandaAction } from "@/app/hooks/useComandaAudit";
 import { X, CheckCircle2, ChefHat, Clock, Flame, UtensilsCrossed, Smartphone, Clipboard, Printer, Send } from "lucide-react";
+import { formatCents } from "@/lib/money";
 
 type ComandaRecord = {
   id: string;
@@ -353,7 +354,7 @@ export default function ComandaGarcomClient({
                     {/* Price + remove */}
                     <div className="flex flex-col items-end gap-1.5 shrink-0">
                       <span className="text-green-400 font-bold text-sm">
-                        R$ {((item.quantity * item.unit_price) / 100).toFixed(2).replace(".", ",")}
+                        {formatCents(item.quantity * item.unit_price)}
                       </span>
                       {isEditable && (
                         <button
@@ -383,7 +384,7 @@ export default function ComandaGarcomClient({
               )}
             </span>
             <span className="text-green-400 font-bold text-xl">
-              R$ {(total / 100).toFixed(2).replace(".", ",")}
+              {formatCents(total)}
             </span>
           </div>
 
@@ -619,7 +620,7 @@ function AddItemModal({
                       {p.price_type === "variable"
                         ? "Variável"
                         : p.base_price != null
-                        ? `R$ ${(p.base_price / 100).toFixed(2).replace(".", ",")}`
+                        ? formatCents(p.base_price)
                         : "—"}
                     </span>
                   </div>
@@ -680,7 +681,7 @@ function AddItemModal({
                 <p className="text-slate-400 text-xs">
                   Subtotal:{" "}
                   <span className="text-green-400 font-semibold">
-                    R$ {((qty * selectedProduct.base_price) / 100).toFixed(2).replace(".", ",")}
+                    {formatCents(qty * selectedProduct.base_price)}
                   </span>
                 </p>
               )}
@@ -806,7 +807,7 @@ function CloseModal({
         <p className="text-slate-400 text-sm mb-4">
           Total:{" "}
           <span className="text-green-400 font-bold text-base">
-            R$ {(total / 100).toFixed(2).replace(".", ",")}
+            {formatCents(total)}
           </span>
         </p>
         <div className="flex flex-col gap-2 mb-5">

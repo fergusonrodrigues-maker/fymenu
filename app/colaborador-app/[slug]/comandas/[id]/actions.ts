@@ -5,6 +5,7 @@ import {
   buildKitchenPrintJobs, buildPartialCheckJob, buildFinalReceiptJob,
   type PrintJob,
 } from "@/lib/print/generateReceipt";
+import { formatCents } from "@/lib/money";
 
 const WAITER_ROLES = new Set(["waiter", "manager"]);
 
@@ -683,7 +684,7 @@ export async function closeComanda(
   if (Math.abs(sumOfSplits - expectedTotal) > 1) {
     return {
       ok: false,
-      error: `A soma dos pagamentos (${sumOfSplits / 100}) precisa bater com o total da comanda (${expectedTotal / 100}).`,
+      error: `A soma dos pagamentos (${formatCents(sumOfSplits)}) precisa bater com o total da comanda (${formatCents(expectedTotal)}).`,
     };
   }
 

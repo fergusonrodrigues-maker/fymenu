@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { UtensilsCrossed, Star, Sparkles, Hand, Briefcase } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { createCustomerCall } from "@/lib/tableCalls/createCustomerCall";
+import { formatCents } from "@/lib/money";
 
 type ComandaRecord = {
   id: string;
@@ -287,7 +288,7 @@ export default function ComandaClientView({ comanda: initialComanda, initialItem
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <span style={{ color: "#00ffae", fontWeight: 700, fontSize: 14 }}>
-                      R$ {((item.quantity * item.unit_price) / 100).toFixed(2).replace(".", ",")}
+                      {formatCents(item.quantity * item.unit_price)}
                     </span>
                     <span style={{
                       padding: "3px 8px", borderRadius: 6, fontSize: 10, fontWeight: 700,
@@ -514,7 +515,7 @@ export default function ComandaClientView({ comanda: initialComanda, initialItem
               {activeItems.length} ite{activeItems.length !== 1 ? "ns" : "m"}
             </div>
             <div style={{ fontSize: 22, fontWeight: 900, color: "#00ffae" }}>
-              R$ {(total / 100).toFixed(2).replace(".", ",")}
+              {formatCents(total)}
             </div>
           </div>
           <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>

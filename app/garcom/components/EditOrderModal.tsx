@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Pencil, X } from "lucide-react";
 import type { WaiterOrder } from "../WaiterClient";
 import { logComandaAction } from "@/app/hooks/useComandaAudit";
+import { formatCents } from "@/lib/money";
 
 interface Props {
   order: WaiterOrder;
@@ -133,7 +134,7 @@ export default function EditOrderModal({ order, unitId, operatorName, onClose, o
                   className="flex-1 bg-slate-700 rounded-lg px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none mr-3"
                 />
                 <span className="text-green-400 text-sm font-bold">
-                  R$ {((item.qty * item.unit_price) / 100).toFixed(2)}
+                  {formatCents(item.qty * item.unit_price)}
                 </span>
               </div>
             </div>
@@ -154,7 +155,7 @@ export default function EditOrderModal({ order, unitId, operatorName, onClose, o
 
           <div className="flex justify-between items-center mb-5 px-1">
             <span className="text-slate-400 text-sm">Total</span>
-            <span className="text-green-400 font-bold text-lg">R$ {(total / 100).toFixed(2)}</span>
+            <span className="text-green-400 font-bold text-lg">{formatCents(total)}</span>
           </div>
 
           <div className="flex gap-3">
