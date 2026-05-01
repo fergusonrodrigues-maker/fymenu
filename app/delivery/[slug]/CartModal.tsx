@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { X, CheckCircle2 } from "lucide-react";
+import { formatCents } from "@/lib/money";
 
 export interface CartItem {
   product_id: string;
@@ -27,10 +28,6 @@ interface CartModalProps {
   onUpdateQty: (productId: string, qty: number) => void;
   /** If true, show the delivery fee calculation section */
   deliveryEnabled?: boolean;
-}
-
-function moneyBR(value: number) {
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 }
 
 export default function CartModal({
@@ -194,13 +191,13 @@ export default function CartModal({
                     <div className="flex-1 min-w-0">
                       <p className="text-white text-sm font-medium truncate">{item.name}</p>
                       <p className="text-zinc-400 text-xs">
-                        {moneyBR(item.unit_price)} / un
+                        {formatCents(item.unit_price)} / un
                       </p>
                       {item.addons && item.addons.length > 0 && (
                         <div className="mt-1 flex flex-col gap-0.5">
                           {item.addons.map((a) => (
                             <p key={a.id} className="text-zinc-500 text-xs">
-                              + {a.name} · {moneyBR(a.price)}
+                              + {a.name} · {formatCents(a.price)}
                             </p>
                           ))}
                         </div>
@@ -227,7 +224,7 @@ export default function CartModal({
                     </div>
 
                     <span className="text-white font-bold text-sm ml-4 w-16 text-right">
-                      {moneyBR(item.qty * item.unit_price)}
+                      {formatCents(item.qty * item.unit_price)}
                     </span>
                   </div>
                 ))}
@@ -268,7 +265,7 @@ export default function CartModal({
                       )}
                       <p className={`text-sm font-bold ${deliveryFee.available ? "text-green-400" : "text-red-400"}`}>
                         {deliveryFee.available
-                          ? `Taxa: ${moneyBR(deliveryFee.fee / 100)}`
+                          ? `Taxa: ${formatCents(deliveryFee.fee)}`
                           : deliveryFee.message}
                       </p>
                       {!deliveryFee.available && (
@@ -291,20 +288,20 @@ export default function CartModal({
               {deliveryEnabled && deliveryFee?.available && (
                 <div className="flex justify-between items-center px-1 mt-3">
                   <span className="text-zinc-500 text-xs">Subtotal</span>
-                  <span className="text-zinc-400 text-sm">{moneyBR(itemsTotal / 100)}</span>
+                  <span className="text-zinc-400 text-sm">{formatCents(itemsTotal)}</span>
                 </div>
               )}
               {deliveryEnabled && deliveryFee?.available && (
                 <div className="flex justify-between items-center px-1 mt-1">
                   <span className="text-zinc-500 text-xs">Taxa de entrega</span>
-                  <span className="text-zinc-400 text-sm">{moneyBR(deliveryFee.fee / 100)}</span>
+                  <span className="text-zinc-400 text-sm">{formatCents(deliveryFee.fee)}</span>
                 </div>
               )}
 
               {/* Total */}
               <div className="flex justify-between items-center px-1 mt-4 mb-5">
                 <span className="text-zinc-400 text-sm">Total</span>
-                <span className="text-white font-bold text-xl">{moneyBR(total / 100)}</span>
+                <span className="text-white font-bold text-xl">{formatCents(total)}</span>
               </div>
 
               {/* Mesa */}

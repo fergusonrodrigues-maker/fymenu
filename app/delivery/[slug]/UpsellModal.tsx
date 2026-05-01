@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 import { X, MessageCircle, Plus } from "lucide-react";
-import { OrderPayload, UpsellItem, buildOrderPayload, buildWhatsAppMessage, formatPrice } from "./orderBuilder";
+import { OrderPayload, UpsellItem, buildOrderPayload, buildWhatsAppMessage } from "./orderBuilder";
 import { useTrack } from "./useTrack";
+import { formatCents } from "@/lib/money";
 
 export interface UpsellSuggestion {
   id: string;
@@ -270,7 +271,7 @@ export default function UpsellModal({
     if (typeof window !== "undefined" && (window as any).fbq) {
       const totalValue = finalPayload.total;
       (window as any).fbq("track", "Purchase", {
-        value: totalValue > 500 ? totalValue / 100 : totalValue,
+        value: totalValue / 100,
         currency: "BRL",
         content_type: "product",
         num_items: 1 + (finalPayload.upsells?.length ?? 0),
@@ -329,7 +330,7 @@ export default function UpsellModal({
                 )}
               </div>
               <span className="text-white text-sm font-bold whitespace-nowrap">
-                {formatPrice(
+                {formatCents(
                   Number(payload.variation?.price ?? payload.product.base_price ?? 0)
                 )}
               </span>
@@ -364,11 +365,11 @@ export default function UpsellModal({
                         <div className="flex items-center gap-2">
                           {combo.original_price > 0 && (
                             <span className="text-zinc-600 text-xs line-through">
-                              {formatPrice(combo.original_price)}
+                              {formatCents(combo.original_price)}
                             </span>
                           )}
                           <span className="text-emerald-400 text-sm font-bold">
-                            {formatPrice(combo.combo_price)}
+                            {formatCents(combo.combo_price)}
                           </span>
                         </div>
                       </div>
@@ -427,7 +428,7 @@ export default function UpsellModal({
                         <span>{s.name}</span>
                       </div>
                       <span className={isSelected ? "text-black" : "text-zinc-300"}>
-                        +{formatPrice(s.price)}
+                        +{formatCents(s.price)}
                       </span>
                     </button>
                   );
@@ -465,7 +466,7 @@ export default function UpsellModal({
                         <p className="text-white/50 text-xs">✓ Adicionado</p>
                       ) : (
                         <p className="text-emerald-400 text-sm font-bold">
-                          + {formatPrice(s.price)}
+                          + {formatCents(s.price)}
                         </p>
                       )}
                     </button>
@@ -502,7 +503,7 @@ export default function UpsellModal({
                     </button>
                     <span className="text-white text-sm truncate">{u.name}</span>
                   </div>
-                  <span className="text-zinc-300 text-sm ml-3">{formatPrice(u.price)}</span>
+                  <span className="text-zinc-300 text-sm ml-3">{formatCents(u.price)}</span>
                 </div>
               ))}
             </div>
@@ -557,7 +558,7 @@ export default function UpsellModal({
             border-t border-zinc-800/50">
             <span className="text-zinc-400 text-sm font-medium pt-3">Total estimado</span>
             <span className="text-white font-bold text-xl pt-3">
-              {formatPrice(finalPayload.total)}
+              {formatCents(finalPayload.total)}
             </span>
           </div>
 

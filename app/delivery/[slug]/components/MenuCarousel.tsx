@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { formatCents } from "@/lib/money";
 
 interface MenuCarouselProps {
   categories: Array<{
@@ -131,9 +132,7 @@ export function MenuCarousel({
                         <p className="text-gray-400 text-xs line-clamp-2 mt-0.5">{product.description}</p>
                       )}
                       <p className="text-orange-400 font-bold text-sm mt-1">
-                        {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
-                          product.base_price / 100
-                        )}
+                        {formatCents(product.base_price)}
                       </p>
                     </div>
                   </div>

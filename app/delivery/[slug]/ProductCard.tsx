@@ -3,6 +3,7 @@
 import React from "react";
 import { UtensilsCrossed } from "lucide-react";
 import { Product } from "./menuTypes";
+import { formatCents } from "@/lib/money";
 
 interface ProductCardProps {
   product: Product;
@@ -16,7 +17,7 @@ export default function ProductCard({ product, onOrder }: ProductCardProps) {
 
   const displayPrice =
     product.price_type === "fixed" && product.base_price
-      ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(product.base_price / 100)
+      ? formatCents(product.base_price)
       : null;
 
   return (

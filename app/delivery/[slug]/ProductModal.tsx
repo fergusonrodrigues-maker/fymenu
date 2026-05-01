@@ -7,6 +7,7 @@ import { OrderPayload, UpsellItem } from "./orderBuilder";
 import { useSwipeGesture } from "./useSwipeGesture";
 import { useProductAddons } from "@/lib/hooks/useProductAddons";
 import { useTrack } from "./useTrack";
+import { formatCents } from "@/lib/money";
 
 interface ProductModalProps {
   product: Product | null;
@@ -18,10 +19,6 @@ interface ProductModalProps {
   unitId?: string;
 }
 
-function moneyBR(value: number | null | undefined) {
-  if (value == null || Number.isNaN(Number(value))) return "";
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(value));
-}
 
 export default function ProductModal({
   product,
@@ -151,10 +148,12 @@ export default function ProductModal({
 
   const isFixed = currentProduct.price_type === "fixed";
   const hasVariations = currentVariations.length > 0;
-  const fixedPrice = currentProduct.base_price != null ? currentProduct.base_price / 100 : null;
+  // All prices are integer cents from this point on. UI uses formatCents()
+  // for display; sums (price + addons) are integer arithmetic.
+  const fixedPrice = currentProduct.base_price ?? null;
   const activePrice: number | null = isFixed
     ? fixedPrice
-    : selectedVariation != null ? selectedVariation.price / 100 : null;
+    : selectedVariation != null ? selectedVariation.price : null;
   const canOrder = (isFixed || selectedVariation !== null) && (!currentProduct.is_age_restricted || ageConfirmed);
 
   // NUNCA usar: thumb_path | image_path | video_path
@@ -170,7 +169,7 @@ export default function ProductModal({
       (window as any).fbq("track", "AddToCart", {
         content_name: currentProduct.name,
         content_type: "product",
-        value: (currentProduct.base_price || 0) > 500 ? (currentProduct.base_price! / 100) : currentProduct.base_price,
+        value: (currentProduct.base_price ?? 0) / 100,
         currency: "BRL",
       });
     }
@@ -182,9 +181,9 @@ export default function ProductModal({
     });
   }
 
-  const displayPrice = activePrice != null ? moneyBR(activePrice + addonsTotal) : null;
+  const displayPrice = activePrice != null ? formatCents(activePrice + addonsTotal) : null;
   const productBasePrice =
-    !hasVariations && fixedPrice != null ? moneyBR(fixedPrice) : null;
+    !hasVariations && fixedPrice != null ? formatCents(fixedPrice) : null;
 
   return (
     <div
@@ -460,7 +459,7 @@ export default function ProductModal({
                           {variation.name}
                         </span>
                         <span style={{ fontSize: 15, fontWeight: 800, color: isSelected ? "#FF6B00" : "#fff" }}>
-                          {moneyBR(variation.price / 100)}
+                          {formatCents(variation.price)}
                         </span>
                       </button>
                     );
@@ -504,7 +503,7 @@ export default function ProductModal({
                         {addon.name}
                       </span>
                       <span style={{ fontSize: 11, color: "#FF6B00", fontWeight: 600, flexShrink: 0 }}>
-                        +{moneyBR(addon.price)}
+                        +{formatCents(addon.price)}
                       </span>
                     </label>
                   );

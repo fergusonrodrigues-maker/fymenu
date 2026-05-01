@@ -1,13 +1,12 @@
 "use client";
 
+import { formatCents } from "@/lib/money";
+
 interface CartBarProps {
   itemCount: number;
+  /** Cart total in integer cents. */
   total: number;
   onOpen: () => void;
-}
-
-function moneyBR(value: number) {
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 }
 
 export default function CartBar({ itemCount, total, onOpen }: CartBarProps) {
@@ -62,7 +61,7 @@ export default function CartBar({ itemCount, total, onOpen }: CartBarProps) {
         </span>
         <span>Ver Pedido</span>
         <span style={{ fontSize: 14, color: "rgba(255,255,255,0.9)" }}>
-          {moneyBR(total)}
+          {formatCents(total)}
         </span>
       </button>
     </div>

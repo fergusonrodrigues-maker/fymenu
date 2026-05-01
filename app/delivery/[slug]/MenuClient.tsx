@@ -13,6 +13,7 @@ import CartModal, { CartItem } from "./CartModal";
 import { OrderPayload } from "./orderBuilder";
 import ProductVideoCard from "./ProductVideoCard";
 import dynamic from "next/dynamic";
+import { formatCents } from "@/lib/money";
 
 const GarcomButton = dynamic(
   () => import("@/app/u/[slug]/mesa/GarcomButton"),
@@ -472,17 +473,18 @@ export default function MenuClient({
     trackPixel("ViewContent", {
       content_name: product.name,
       content_type: "product",
-      value: (product.base_price || 0) > 500 ? (product.base_price! / 100) : product.base_price,
+      value: (product.base_price ?? 0) / 100,
       currency: "BRL",
     });
   }
 
+  /** Returns the cheapest price (in integer cents) to show on the listing card. */
   function productDisplayPrice(p: Product): { price: number | null; isFrom: boolean } {
     const vars = variations[p.id];
     if (p.price_type === "variable" && vars?.length) {
-      return { price: Math.min(...vars.map((v) => v.price / 100)), isFrom: true };
+      return { price: Math.min(...vars.map((v) => v.price)), isFrom: true };
     }
-    return { price: p.base_price != null ? p.base_price / 100 : null, isFrom: false };
+    return { price: p.base_price ?? null, isFrom: false };
   }
 
   function handleProductOrder(payload: OrderPayload) {
@@ -859,7 +861,7 @@ export default function MenuClient({
                       const { price, isFrom } = productDisplayPrice(p);
                       return price != null ? (
                         <div style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", marginTop: 4 }}>
-                          {isFrom ? "A partir de " : ""}R$ {price.toFixed(2).replace(".", ",")}
+                          {isFrom ? "A partir de " : ""}{formatCents(price)}
                         </div>
                       ) : null;
                     })()}
@@ -1047,7 +1049,7 @@ export default function MenuClient({
                               return price != null ? (
                                 <span style={{ color: "#00ffae", fontSize: 16, fontWeight: 800 }}>
                                   {isFrom && <span style={{ fontSize: 10, fontWeight: 600, display: "block", opacity: 0.8 }}>a partir de</span>}
-                                  R$ {price.toFixed(2).replace(".", ",")}
+                                  {formatCents(price)}
                                 </span>
                               ) : null;
                             })()}
@@ -1222,7 +1224,7 @@ export default function MenuClient({
                                 return price != null ? (
                                   <span style={{ color: "#00ffae", fontSize: isLastAndOdd ? 14 : 12, fontWeight: 900 }}>
                                     {isFrom && <span style={{ fontSize: 9, fontWeight: 600, display: "block", opacity: 0.75 }}>a partir de</span>}
-                                    R$ {price.toFixed(2).replace(".", ",")}
+                                    {formatCents(price)}
                                   </span>
                                 ) : null;
                               })()}

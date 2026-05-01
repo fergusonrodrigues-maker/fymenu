@@ -6,6 +6,7 @@ import { ShoppingCart, MapPin, MessageCircle, Camera, Smartphone, ShoppingBag, B
 import type { Unit, Product } from "./menuTypes";
 import type { CartItem } from "./CartModal";
 import { buildCartWhatsAppMessage } from "./orderBuilder";
+import { formatCents } from "@/lib/money";
 
 function normalizeWhatsapp(raw: string): string | null {
   const digits = (raw ?? "").replace(/\D/g, "");
@@ -161,7 +162,7 @@ export default function BottomGlassBar({
       (window as any).fbq("track", "InitiateCheckout", {
         content_ids: cart.map((i) => i.product_id.split("__")[0]),
         num_items: cart.reduce((s, i) => s + i.qty, 0),
-        value: cartTotal > 500 ? cartTotal / 100 : cartTotal,
+        value: cartTotal / 100,
         currency: "BRL",
       });
     }
@@ -318,7 +319,7 @@ export default function BottomGlassBar({
       (window as any).fbq("track", "Lead", {
         content_name: "WhatsApp Order",
         content_ids: cart.map((i) => i.product_id.split("__")[0]),
-        value: cartTotal > 500 ? cartTotal / 100 : cartTotal,
+        value: cartTotal / 100,
         currency: "BRL",
       });
     }
@@ -784,7 +785,7 @@ export default function BottomGlassBar({
                             {item.name}
                           </div>
                           <div style={{ fontSize: 11, color: isDark ? "#00ffae" : "#00a06a", fontWeight: 600, marginTop: 1 }}>
-                            R${(item.unit_price * item.qty).toFixed(2).replace(".", ",")}
+                            {formatCents(item.unit_price * item.qty)}
                           </div>
                         </div>
                         {/* Qty controls */}
@@ -807,7 +808,7 @@ export default function BottomGlassBar({
                         </div>
                         {/* Price */}
                         <span style={{ fontSize: 12, fontWeight: 800, minWidth: 52, textAlign: "right", flexShrink: 0, color: textPrimary }}>
-                          R${(item.unit_price * item.qty).toFixed(2).replace(".", ",")}
+                          {formatCents(item.unit_price * item.qty)}
                         </span>
                         {/* Remove */}
                         <button onClick={e => { e.stopPropagation(); onUpdateQty?.(item.product_id, 0); }} style={{
@@ -834,11 +835,11 @@ export default function BottomGlassBar({
                           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                             {combo.original_price > combo.combo_price && (
                               <span style={{ fontSize: 10, textDecoration: "line-through", color: textSecondary }}>
-                                R${combo.original_price.toFixed(2).replace(".", ",")}
+                                {formatCents(combo.original_price)}
                               </span>
                             )}
                             <span style={{ fontSize: 13, fontWeight: 900, color: isDark ? "#00ffae" : "#00a06a" }}>
-                              R${combo.combo_price.toFixed(2).replace(".", ",")}
+                              {formatCents(combo.combo_price)}
                             </span>
                           </div>
                         </div>
@@ -875,7 +876,7 @@ export default function BottomGlassBar({
                                 <div style={{ fontSize: 11, fontWeight: 700, color: textPrimary, marginBottom: 2 }}>{s.name}</div>
                                 {s.reason && <div style={{ fontSize: 9, color: textSecondary, marginBottom: 4, lineHeight: 1.3 }}>{s.reason}</div>}
                                 <div style={{ fontSize: 12, fontWeight: 900, color: isAdded ? "#00ffae" : (isDark ? "#00ffae" : "#00a06a") }}>
-                                  {isAdded ? "Adicionado ✓" : `+ R$${(s.price / 100)?.toFixed(2).replace(".", ",")}`}
+                                  {isAdded ? "Adicionado ✓" : `+ ${formatCents(s.price)}`}
                                 </div>
                               </div>
                             );
@@ -915,7 +916,7 @@ export default function BottomGlassBar({
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 10, color: textSecondary }}>Total</div>
                       <div style={{ fontSize: 22, fontWeight: 900, color: isDark ? "#00ffae" : "#00a06a" }}>
-                        R${cartTotal.toFixed(2).replace(".", ",")}
+                        {formatCents(cartTotal)}
                       </div>
                     </div>
                     <div style={{ display: "flex", gap: 8 }}>

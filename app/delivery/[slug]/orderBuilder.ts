@@ -1,4 +1,5 @@
 import { Product, ProductVariation } from "./menuTypes";
+import { formatCents } from "@/lib/money";
 
 export interface UpsellItem {
   id: string;
@@ -50,14 +51,12 @@ export function buildWhatsAppMessage(
     lines.push("");
     lines.push("Adicionais:");
     payload.upsells.forEach((u) => {
-      lines.push(`   + ${u.name} — R$${Number(u.price).toFixed(2).replace(".", ",")}`);
+      lines.push(`   + ${u.name} — ${formatCents(u.price)}`);
     });
   }
 
   lines.push("");
-  lines.push(
-    `Total estimado: R$${Number(payload.total).toFixed(2).replace(".", ",")}`
-  );
+  lines.push(`Total estimado: ${formatCents(payload.total)}`);
 
   if (customerName?.trim()) {
     lines.push("");
@@ -79,8 +78,13 @@ export function buildExternalLink(
   return orderLink;
 }
 
+/**
+ * @deprecated since the cents migration. Prefer `formatCents` from
+ * `@/lib/money` directly. Kept as a thin alias to avoid mass-renaming
+ * call sites mid-migration. Input is integer cents.
+ */
 export function formatPrice(value: number): string {
-  return `R$${Number(value).toFixed(2).replace(".", ",")}`;
+  return formatCents(value);
 }
 
 // Multi-item cart WhatsApp message
@@ -101,12 +105,12 @@ export function buildCartWhatsAppMessage(
   lines.push("");
 
   items.forEach((item) => {
-    lines.push(`*${item.name}*  x${item.qty}  —  R$${(item.unit_price * item.qty).toFixed(2).replace(".", ",")}`);
+    lines.push(`*${item.name}*  x${item.qty}  —  ${formatCents(item.unit_price * item.qty)}`);
   });
 
   const total = items.reduce((s, i) => s + i.qty * i.unit_price, 0);
   lines.push("");
-  lines.push(`Total estimado: R$${total.toFixed(2).replace(".", ",")}`);
+  lines.push(`Total estimado: ${formatCents(total)}`);
 
   if (customerName?.trim()) {
     lines.push("");
