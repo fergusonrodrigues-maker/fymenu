@@ -125,7 +125,7 @@ export default function PrinterModal({ unitId, categories }: PrinterModalProps) 
       paperWidth: newPaperWidth,
       printLogo: newPrintLogo,
       footerMessage: newFooterMessage.trim() || undefined,
-      type: "browser",
+      type: "thermal_browser",
       isActive: true,
     });
     if (result) {
