@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { PLAN_PRICES_ASAAS } from "@/lib/plans";
 
 export class AsaasError extends Error {
   rawText: string;
@@ -23,11 +24,9 @@ const ASAAS_BASE =
 
 const ASAAS_KEY = process.env.ASAAS_API_KEY!;
 
-export const PLAN_PRICES: Record<string, Record<string, number>> = {
-  menu:     { MONTHLY: 19990, QUARTERLY: 53970, SEMIANNUALLY: 95940 },
-  menupro:  { MONTHLY: 39990, QUARTERLY: 107970, SEMIANNUALLY: 191940 },
-  business: { MONTHLY: 159900, QUARTERLY: 419700, SEMIANNUALLY: 719400 },
-};
+// Total amount billed at once for each plan/cycle, in cents.
+// Re-exported from lib/plans.ts to keep a single source of truth.
+export const PLAN_PRICES: Record<string, Record<string, number>> = PLAN_PRICES_ASAAS;
 
 export const PLAN_LABELS: Record<string, string> = {
   menu: "Menu",

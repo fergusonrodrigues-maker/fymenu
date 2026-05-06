@@ -5,6 +5,8 @@ import { UtensilsCrossed, Star, Building2, MessageCircle, LogOut, Users } from "
 import { createClient } from "@/lib/supabase/client";
 import type { Profile, Restaurant } from "../types";
 import PasswordReqs, { passwordValid, translatePasswordError } from "@/components/PasswordReqs";
+import { PLANS as PLAN_DEFS } from "@/lib/plans";
+import { formatCents } from "@/lib/money";
 import { listMembers, inviteMember, revokeInvite, removeMember } from "../membersActions";
 import type { MemberData } from "../membersActions";
 import { getLastEditForEntities, LastEditInfo } from "@/app/painel/historicoActions";
@@ -18,22 +20,25 @@ const FYMENU_SUPPORT_WHATSAPP = "https://wa.me/5562982301642?text=Olá! Preciso 
 
 const PLANS = [
   {
-    key: "menu", name: "Menu", icon: <UtensilsCrossed size={26} />, units: "1 unidade",
-    price: "199,90", badge: null, highlight: false,
+    key: "menu", name: PLAN_DEFS.menu.name, icon: <UtensilsCrossed size={26} />,
+    units: `Até ${PLAN_DEFS.menu.maxUnits} unidades`,
+    priceCents: PLAN_DEFS.menu.prices.monthly, badge: null, highlight: false,
     accent: "#a78bfa", accentRgb: "139,92,246",
-    features: ["Cardápio de vídeo 9:16", "Pedidos via WhatsApp", "Link público + QR Code", "Modo TV", "Analytics básico"],
+    features: ["Cardápio de vídeo 9:16", "Categorias com horário", "Modo TV autoplay", "Analytics com IA + sugestões", "Relatório em PDF"],
   },
   {
-    key: "menupro", name: "MenuPro", icon: <Star size={26} />, units: "Até 3 unidades",
-    price: "399,90", badge: "MAIS VENDIDO", highlight: true,
+    key: "menupro", name: PLAN_DEFS.menupro.name, icon: <Star size={26} />,
+    units: `Até ${PLAN_DEFS.menupro.maxUnits} unidades`,
+    priceCents: PLAN_DEFS.menupro.prices.monthly, badge: "MAIS POPULAR", highlight: true,
     accent: "#00ffae", accentRgb: "0,255,174",
-    features: ["Tudo do Menu +", "Comanda Digital", "Cozinha + Garçom em tempo real", "CRM de clientes", "Analytics avançado com IA", "Relatórios em PDF", "Estoque básico"],
+    features: ["Tudo do Menu +", "Pedidos via WhatsApp + iFood", "Link delivery + mesa", "Comanda digital", "Cozinha + Garçom em tempo real", "CRM básico", "Estoque básico", "Financeiro delivery + mesa"],
   },
   {
-    key: "business", name: "Business", icon: <Building2 size={26} />, units: "Até 4 unidades",
-    price: "1.599", badge: "7 DIAS GRÁTIS", highlight: false,
+    key: "business", name: PLAN_DEFS.business.name, icon: <Building2 size={26} />,
+    units: `${PLAN_DEFS.business.maxUnits} unidades fixo`,
+    priceCents: PLAN_DEFS.business.prices.monthly, badge: "7 DIAS GRÁTIS", highlight: false,
     accent: "#d4af37", accentRgb: "212,175,55",
-    features: ["Tudo do MenuPro +", "Gestão completa de equipe + ponto", "Estoque completo com IA", "CRM com disparo de mensagens", "Financeiro com custos e margens", "Relatórios financeiros com IA", "Hub do gerente"],
+    features: ["Tudo do MenuPro +", "Equipe completa + ponto + salários", "Estoque com ficha técnica + IA", "CRM com disparo de mensagens", "Financeiro com custos + balanço + IA", "Chatbot IA no WhatsApp", "Portal do gerente"],
   },
 ];
 
@@ -586,7 +591,7 @@ export default function ConfigModal({ profile, restaurant }: { profile: Profile;
                   {/* Price */}
                   <div style={{ textAlign: "center", marginBottom: 16 }}>
                     <span style={{ fontSize: 32, fontWeight: 900, color: isGold ? "var(--dash-text)" : accent }}>
-                      R${plan.price}
+                      {formatCents(plan.priceCents)}
                     </span>
                     <span style={{ fontSize: 12, color: "var(--dash-text-muted)" }}>/mês</span>
                   </div>

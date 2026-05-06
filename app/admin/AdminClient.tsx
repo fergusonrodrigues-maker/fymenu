@@ -3,6 +3,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PasswordReqs, { passwordValid, translatePasswordError } from "@/components/PasswordReqs";
+import { PLANS as PLAN_DEFS } from "@/lib/plans";
 import { X, Users, TrendingUp, BarChart3, DollarSign, Target, Handshake, Tag, Camera, Clock, Building2, Gem, CheckCircle2, CreditCard, TrendingDown, Receipt, Package, Store, Calendar, Phone, RefreshCw, Eye, EyeOff, MessageCircle, Pencil, Shield, Trash2 } from "lucide-react";
 
 type Stats = {
@@ -144,9 +145,9 @@ const TABS = ["Visão Geral", "Usuários", "FyMenu Financeiro", "Restaurantes Fi
 type Tab = (typeof TABS)[number];
 
 const PLAN_PRICES: Record<string, number> = {
-  menu: 19990,
-  menupro: 39990,
-  business: 159900,
+  menu:     PLAN_DEFS.menu.prices.monthly,
+  menupro:  PLAN_DEFS.menupro.prices.monthly,
+  business: PLAN_DEFS.business.prices.monthly,
 };
 
 const AVAILABLE_FEATURES = [
@@ -1273,7 +1274,7 @@ export default function AdminClient({
 
         {/* FYMENU FINANCEIRO */}
         {tab === "FyMenu Financeiro" && (() => {
-          const BILLING_PRICES: Record<string, number> = { menu: 19990, menupro: 39990, business: 159900 };
+          const BILLING_PRICES: Record<string, number> = PLAN_PRICES;
 
           const payingClients = financeData.plans.filter((p) => p.status === "active" && !p.free_access);
           const mrr = payingClients.reduce((sum, p) => sum + (BILLING_PRICES[p.plan] ?? 0), 0);

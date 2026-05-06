@@ -11,7 +11,7 @@
 /**
  * Format cents as a localized BRL string with the "R$" prefix.
  *   4990   → "R$ 49,90"
- *   159990 → "R$ 1.599,90"
+ *   125000 → "R$ 1.250,00"
  */
 export function formatCents(cents: number | string | null | undefined): string {
   const n = Number(cents ?? 0);

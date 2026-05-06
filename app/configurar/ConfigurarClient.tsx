@@ -1,12 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import { PLANS as PLAN_DEFS, type BillingCycle, type PlanCode } from "@/lib/plans";
+import { formatCents } from "@/lib/money";
 
-function formatPlanPrice(price: number): string {
-  if (price >= 1000) {
-    return `R$${price.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`;
-  }
-  return `R$${price.toFixed(2).replace(".", ",")}`;
+const cycleToCanonical: Record<"monthly" | "quarterly" | "semiannual", BillingCycle> = {
+  monthly: "monthly",
+  quarterly: "quarterly",
+  semiannual: "semestral",
+};
+
+function planPriceCents(planKey: PlanCode, cycle: "monthly" | "quarterly" | "semiannual"): number {
+  return PLAN_DEFS[planKey].prices[cycleToCanonical[cycle]];
 }
 
 interface ConfigurarClientProps {
@@ -25,57 +30,53 @@ export default function ConfigurarClient({
 
   const plans = [
     {
-      key: "menu",
-      name: "Menu",
-      description: "Cardápio digital profissional",
-      prices: { monthly: 199.90, quarterly: 179.90, semiannual: 159.90 },
+      key: "menu" as PlanCode,
+      name: PLAN_DEFS.menu.name,
+      description: "Vitrine premium + Analytics IA",
       color: "#00ffae",
       features: [
-        "1 unidade",
+        `Até ${PLAN_DEFS.menu.maxUnits} unidades`,
         "Cardápio de vídeo 9:16",
-        "Pedidos via WhatsApp",
-        "Analytics básico",
-        "Modo TV",
-        "Link personalizado",
+        "Categorias com horário",
+        "Modo TV autoplay",
+        "Analytics com IA",
+        "Relatório em PDF",
       ],
-      trial: false,
+      trial: PLAN_DEFS.menu.hasTrial,
       cta: "Acessar grátis",
     },
     {
-      key: "menupro",
-      name: "MenuPro",
-      description: "Gestão completa do restaurante",
-      prices: { monthly: 399.90, quarterly: 359.90, semiannual: 319.90 },
+      key: "menupro" as PlanCode,
+      name: PLAN_DEFS.menupro.name,
+      description: "Operação Restaurante completa",
       color: "#00d9ff",
       popular: true,
       features: [
-        "Até 3 unidades",
-        "Comanda Digital",
-        "Cozinha + Garçom Realtime",
-        "CRM de clientes",
-        "Analytics com IA",
+        `Até ${PLAN_DEFS.menupro.maxUnits} unidades`,
+        "Pedidos via WhatsApp + iFood",
+        "Comanda digital + Cozinha realtime",
+        "CRM básico",
         "Estoque básico",
-        "Relatórios em PDF",
+        "Financeiro delivery + mesa",
       ],
-      trial: false,
-      cta: "Assinar MenuPro",
+      trial: PLAN_DEFS.menupro.hasTrial,
+      cta: "Testar 7 dias grátis",
     },
     {
-      key: "business",
-      name: "Business",
-      description: "Operação profissional completa",
-      prices: { monthly: 1599, quarterly: 1399, semiannual: 1199 },
+      key: "business" as PlanCode,
+      name: PLAN_DEFS.business.name,
+      description: "Gestão Completa",
       color: "#a855f7",
       features: [
-        "Até 4 unidades",
-        "Equipe completa + ponto",
-        "Estoque com IA",
-        "CRM + disparos",
-        "Financeiro com custos",
-        "Relatórios com IA",
-        "Hub do gerente",
+        `${PLAN_DEFS.business.maxUnits} unidades fixo`,
+        "Equipe completa + ponto + salários",
+        "Estoque com ficha técnica + IA",
+        "CRM com disparo",
+        "Financeiro com custos + balanço + IA",
+        "Chatbot IA WhatsApp",
+        "Portal do gerente",
       ],
-      trial: true,
+      trial: PLAN_DEFS.business.hasTrial,
       cta: "Testar 7 dias grátis",
     },
   ];
@@ -267,7 +268,7 @@ export default function ConfigurarClient({
         }}
       >
         {plans.map((plan) => {
-          const price = plan.prices[selectedCycle];
+          const priceCents = planPriceCents(plan.key, selectedCycle);
           return (
             <div
               key={plan.key}
@@ -345,7 +346,7 @@ export default function ConfigurarClient({
                 <span
                   style={{ fontSize: 36, fontWeight: 900, color: "#fff" }}
                 >
-                  {formatPlanPrice(price)}
+                  {formatCents(priceCents)}
                 </span>
                 <span
                   style={{ fontSize: 13, color: "rgba(255,255,255,0.3)" }}

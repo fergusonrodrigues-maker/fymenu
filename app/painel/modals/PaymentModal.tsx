@@ -2,29 +2,50 @@
 import { useState, useEffect, useRef } from "react";
 import { X, QrCode, CreditCard, Clock, CheckCircle2 } from "lucide-react";
 import { createPortal } from "react-dom";
+import {
+  PLANS as PLAN_DEFS,
+  CYCLE_LABEL,
+  CYCLE_MONTHS,
+  getCycleSavingsPercent,
+  type BillingCycle,
+  type PlanCode,
+} from "@/lib/plans";
+import { formatCentsBare } from "@/lib/money";
 
 type CycleKey = "monthly" | "quarterly" | "semiannual";
 type Step = "cycle" | "method" | "pix" | "card";
 
-const CYCLE_INFO: Record<string, Record<CycleKey, {
-  label: string; perMonth: string; total: string; totalCents: number; savings: string | null;
-}>> = {
-  menu: {
-    monthly:    { label: "Mensal",     perMonth: "199,90", total: "199,90",   totalCents: 19990,  savings: null },
-    quarterly:  { label: "Trimestral", perMonth: "179,90", total: "539,70",   totalCents: 53970,  savings: "10%" },
-    semiannual: { label: "Semestral",  perMonth: "159,90", total: "959,40",   totalCents: 95940,  savings: "20%" },
-  },
-  menupro: {
-    monthly:    { label: "Mensal",     perMonth: "399,90", total: "399,90",   totalCents: 39990,  savings: null },
-    quarterly:  { label: "Trimestral", perMonth: "359,90", total: "1.079,70", totalCents: 107970, savings: "10%" },
-    semiannual: { label: "Semestral",  perMonth: "319,90", total: "1.919,40", totalCents: 191940, savings: "20%" },
-  },
-  business: {
-    monthly:    { label: "Mensal",     perMonth: "1.599", total: "1.599",   totalCents: 159900, savings: null },
-    quarterly:  { label: "Trimestral", perMonth: "1.399", total: "4.197",   totalCents: 419700, savings: "13%" },
-    semiannual: { label: "Semestral",  perMonth: "1.199", total: "7.194",   totalCents: 719400, savings: "25%" },
-  },
+const cycleToCanonical: Record<CycleKey, BillingCycle> = {
+  monthly: "monthly",
+  quarterly: "quarterly",
+  semiannual: "semestral",
 };
+
+interface CycleInfo {
+  label: string;
+  perMonth: string;   // formatted "129,00"
+  total: string;      // formatted "387,00"
+  totalCents: number;
+  savings: string | null; // "13%" or null
+}
+
+function buildCycleInfo(planKey: PlanCode): Record<CycleKey, CycleInfo> {
+  const out = {} as Record<CycleKey, CycleInfo>;
+  (Object.keys(cycleToCanonical) as CycleKey[]).forEach((c) => {
+    const canonical = cycleToCanonical[c];
+    const perMonthCents = PLAN_DEFS[planKey].prices[canonical];
+    const totalCents = perMonthCents * CYCLE_MONTHS[canonical];
+    const pct = getCycleSavingsPercent(planKey, canonical);
+    out[c] = {
+      label: CYCLE_LABEL[canonical],
+      perMonth: formatCentsBare(perMonthCents),
+      total: formatCentsBare(totalCents),
+      totalCents,
+      savings: pct > 0 ? `${pct}%` : null,
+    };
+  });
+  return out;
+}
 
 interface Props {
   planKey: string;
@@ -57,7 +78,8 @@ const inp: React.CSSProperties = {
 };
 
 export default function PaymentModal({ planKey, planName, accent, accentRgb, onClose, onSuccess }: Props) {
-  const cycleMap = CYCLE_INFO[planKey] || CYCLE_INFO.menu;
+  const planCode = (PLAN_DEFS[planKey as PlanCode] ? planKey : "menu") as PlanCode;
+  const cycleMap = buildCycleInfo(planCode);
   const [step, setStep] = useState<Step>("cycle");
   const [cycle, setCycle] = useState<CycleKey>("monthly");
 

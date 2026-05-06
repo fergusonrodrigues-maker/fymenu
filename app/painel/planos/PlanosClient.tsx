@@ -2,12 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { PLAN_PRICES_ASAAS, PLANS as PLAN_DEFS } from "@/lib/plans";
+import { formatCents } from "@/lib/money";
 
-const PLAN_PRICES: Record<string, Record<string, number>> = {
-  menu:     { MONTHLY: 19990, QUARTERLY: 53970, SEMIANNUALLY: 95940 },
-  menupro:  { MONTHLY: 39990, QUARTERLY: 107970, SEMIANNUALLY: 191940 },
-  business: { MONTHLY: 159900, QUARTERLY: 419700, SEMIANNUALLY: 719400 },
-};
+const PLAN_PRICES: Record<string, Record<string, number>> = PLAN_PRICES_ASAAS;
 
 const CYCLES = [
   { key: "MONTHLY", label: "Mensal" },
@@ -23,29 +21,27 @@ const SAVINGS: Record<string, string> = {
 const PLANS = [
   {
     key: "menu",
-    label: "Menu",
-    description: "1 unidade · Cardápio digital com link público",
-    features: ["Cardápio de vídeo 9:16", "Pedidos via WhatsApp", "Link público + QR Code", "Modo TV", "Analytics básico"],
+    label: PLAN_DEFS.menu.name,
+    description: `Até ${PLAN_DEFS.menu.maxUnits} unidades · Vitrine premium + Analytics IA`,
+    features: ["Cardápio de vídeo 9:16", "Categorias com horário", "Modo TV autoplay", "Analytics com IA + sugestões", "Relatório em PDF", "Link público + QR Code"],
   },
   {
     key: "menupro",
-    label: "MenuPro",
-    description: "Até 3 unidades · Ferramentas profissionais",
-    features: ["Tudo do Menu +", "Comanda Digital", "Cozinha + Garçom em tempo real", "CRM de clientes", "Analytics avançado com IA", "Relatórios em PDF", "Equipe (garçom + avaliações)", "Estoque básico"],
+    label: PLAN_DEFS.menupro.name,
+    description: `Até ${PLAN_DEFS.menupro.maxUnits} unidades · Operação Restaurante completa`,
+    features: ["Tudo do Menu +", "Pedidos via WhatsApp + iFood", "Link delivery + mesa", "Comanda digital completa", "Cozinha + Garçom em tempo real", "CRM básico", "Estoque básico", "Financeiro delivery + mesa"],
     highlight: true,
   },
   {
     key: "business",
-    label: "Business",
-    description: "Até 4 unidades · Solução completa",
-    features: ["Tudo do MenuPro +", "Gestão completa de equipe + ponto", "Estoque completo com IA", "CRM com disparo de mensagens", "Financeiro com custos e margens", "Relatórios financeiros com IA", "Hub do gerente"],
+    label: PLAN_DEFS.business.name,
+    description: `${PLAN_DEFS.business.maxUnits} unidades fixo · Gestão completa`,
+    features: ["Tudo do MenuPro +", "Equipe completa + ponto + salários", "Estoque com ficha técnica + IA", "CRM com disparo de mensagens", "Financeiro com custos + balanço + IA", "Chatbot IA no WhatsApp", "Portal do gerente"],
     trial: true,
   },
 ];
 
-function fmt(cents: number) {
-  return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
+const fmt = formatCents;
 
 type Props = {
   currentPlan: string;

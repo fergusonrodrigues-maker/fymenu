@@ -220,29 +220,30 @@ function PricingCard({
 }
 
 // ── Pricing Plans Data ────────────────────────────────────────────────────────
+// Preços vigentes a partir de 06/05/2026 (centralizado em lib/plans.ts).
 const PLANS = {
   menu: {
-    name: "Menu", icon: "🍽️", units: "1 unidade",
-    prices: { MONTHLY: "199,90", QUARTERLY: "179,90", SEMIANNUALLY: "159,90" },
-    totals: { MONTHLY: "199,90", QUARTERLY: "539,70", SEMIANNUALLY: "959,40" },
-    savings: { QUARTERLY: "10%", SEMIANNUALLY: "20%" } as Record<string, string>,
-    features: ["Cardápio de vídeo 9:16", "Pedidos via WhatsApp", "Link público + QR Code", "Modo TV", "Analytics básico"],
+    name: "Menu", icon: "🍽️", units: "Até 2 unidades",
+    prices: { MONTHLY: "149", QUARTERLY: "129", SEMIANNUALLY: "99" },
+    totals: { MONTHLY: "149", QUARTERLY: "387", SEMIANNUALLY: "594" },
+    savings: { QUARTERLY: "13%", SEMIANNUALLY: "34%" } as Record<string, string>,
+    features: ["Cardápio de vídeo 9:16", "Categorias com horário", "Modo TV autoplay", "Analytics com IA + sugestões", "Relatório em PDF", "Link público + QR Code"],
     cta: "Começar agora", highlight: false,
   },
   menupro: {
-    name: "MenuPro", icon: "⭐", units: "Até 3 unidades", badge: "MAIS VENDIDO",
-    prices: { MONTHLY: "399,90", QUARTERLY: "359,90", SEMIANNUALLY: "319,90" },
-    totals: { MONTHLY: "399,90", QUARTERLY: "1.079,70", SEMIANNUALLY: "1.919,40" },
+    name: "MenuPro", icon: "⭐", units: "Até 3 unidades", badge: "MAIS POPULAR",
+    prices: { MONTHLY: "499", QUARTERLY: "449", SEMIANNUALLY: "399" },
+    totals: { MONTHLY: "499", QUARTERLY: "1.347", SEMIANNUALLY: "2.394" },
     savings: { QUARTERLY: "10%", SEMIANNUALLY: "20%" } as Record<string, string>,
-    features: ["Tudo do Menu +", "Comanda Digital", "Cozinha + Garçom em tempo real", "CRM de clientes", "Analytics avançado com IA", "Relatórios em PDF", "Equipe (garçom + avaliações)", "Estoque básico"],
-    cta: "Começar agora", highlight: true,
+    features: ["Tudo do Menu +", "Pedidos via WhatsApp + iFood", "Link de delivery + mesa", "Comanda digital completa", "Cozinha + Garçom em tempo real", "CRM básico de clientes", "Estoque básico", "Financeiro delivery + mesa", "IA na descrição de produtos"],
+    cta: "Testar grátis 7 dias", highlight: true,
   },
   business: {
-    name: "Business", icon: "🏢", units: "Até 4 unidades", badge: "7 dias grátis",
-    prices: { MONTHLY: "1.599", QUARTERLY: "1.399", SEMIANNUALLY: "1.199" },
-    totals: { MONTHLY: "1.599", QUARTERLY: "4.197", SEMIANNUALLY: "7.194" },
-    savings: { QUARTERLY: "13%", SEMIANNUALLY: "25%" } as Record<string, string>,
-    features: ["Tudo do MenuPro +", "Gestão completa de equipe + ponto", "Estoque completo com IA", "CRM com disparo de mensagens", "Financeiro com custos e margens", "Relatórios financeiros com IA", "Hub do gerente"],
+    name: "Business", icon: "🏢", units: "5 unidades fixo", badge: "7 DIAS GRÁTIS",
+    prices: { MONTHLY: "1.250", QUARTERLY: "1.129", SEMIANNUALLY: "999" },
+    totals: { MONTHLY: "1.250", QUARTERLY: "3.387", SEMIANNUALLY: "5.994" },
+    savings: { QUARTERLY: "10%", SEMIANNUALLY: "20%" } as Record<string, string>,
+    features: ["Tudo do MenuPro +", "Equipe completa + ponto + salários", "Estoque com ficha técnica + markup + IA", "CRM com disparo de mensagens", "Financeiro com custos + balanço + meta + IA", "Chatbot IA no WhatsApp", "Portal do gerente", "Botão chamar gerente em mesa"],
     cta: "Testar grátis 7 dias", highlight: false,
   },
 } as const;

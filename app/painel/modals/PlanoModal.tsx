@@ -4,82 +4,85 @@ import React, { useState, useEffect, useCallback } from "react";
 import { UtensilsCrossed, Star, Building2, Sparkles, AlertTriangle, Tag } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Restaurant } from "../types";
+import { PLANS as PLAN_DEFS, type BillingCycle, type PlanCode } from "@/lib/plans";
+import { formatCents } from "@/lib/money";
 
 type Cycle = "monthly" | "quarterly" | "semiannual";
 
-function formatPlanPrice(price: number): string {
-  if (price >= 1000) {
-    return `R$\u00a0${price.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`;
-  }
-  return `R$\u00a0${price.toFixed(2).replace(".", ",")}`;
+const cycleToCanonical: Record<Cycle, BillingCycle> = {
+  monthly: "monthly",
+  quarterly: "quarterly",
+  semiannual: "semestral",
+};
+
+function planPriceCents(planKey: PlanCode, cycle: Cycle): number {
+  return PLAN_DEFS[planKey].prices[cycleToCanonical[cycle]];
 }
 
 const PLANS = [
   {
-    key: "menu",
-    name: "Menu",
+    key: "menu" as PlanCode,
+    name: PLAN_DEFS.menu.name,
     icon: <UtensilsCrossed size={32} />,
-    tagline: "1 unidade",
-    prices: { monthly: 199.90, quarterly: 179.90, semiannual: 159.90 },
+    tagline: `Até ${PLAN_DEFS.menu.maxUnits} unidades`,
     accent: "#a78bfa",
     accentRgb: "167,139,250",
     borderColor: "rgba(139,92,246,0.25)",
     features: [
       "Cardápio de vídeo 9:16",
       "Categorias com horário",
-      "Pedidos via WhatsApp",
-      "Analytics básico",
       "Modo TV autoplay",
-      "Link personalizado",
+      "Analytics com IA + sugestões",
+      "Relatório em PDF",
+      "Link público + QR Code",
     ],
-    trial: false,
+    trial: PLAN_DEFS.menu.hasTrial,
     ctaNoplan: "Começar agora",
     ctaUpgrade: "Mudar pra Menu",
   },
   {
-    key: "menupro",
-    name: "MenuPro",
+    key: "menupro" as PlanCode,
+    name: PLAN_DEFS.menupro.name,
     icon: <Star size={32} />,
-    tagline: "Até 3 unidades",
-    badge: "MAIS VENDIDO",
-    prices: { monthly: 399.90, quarterly: 359.90, semiannual: 319.90 },
+    tagline: `Até ${PLAN_DEFS.menupro.maxUnits} unidades`,
+    badge: "MAIS POPULAR",
     accent: "#00ffae",
     accentRgb: "0,255,174",
     borderColor: "rgba(0,255,174,0.25)",
     popular: true,
     features: [
       "Tudo do Menu +",
-      "Comanda Digital",
+      "Pedidos via WhatsApp + iFood",
+      "Link delivery + mesa",
+      "Comanda digital completa",
       "Cozinha + Garçom em tempo real",
-      "CRM de clientes",
-      "Analytics avançado com IA",
+      "CRM básico de clientes",
       "Estoque básico",
-      "Relatórios em PDF",
+      "Financeiro delivery + mesa",
     ],
-    trial: false,
-    ctaNoplan: "Assinar MenuPro",
+    trial: PLAN_DEFS.menupro.hasTrial,
+    ctaNoplan: "Testar 7 dias grátis",
     ctaUpgrade: "Upgrade → MenuPro",
   },
   {
-    key: "business",
-    name: "Business",
+    key: "business" as PlanCode,
+    name: PLAN_DEFS.business.name,
     icon: <Building2 size={32} />,
-    tagline: "Até 4 unidades",
+    tagline: `${PLAN_DEFS.business.maxUnits} unidades fixo`,
     badge: "7 DIAS GRÁTIS",
-    prices: { monthly: 1599, quarterly: 1399, semiannual: 1199 },
     accent: "#d4af37",
     accentRgb: "212,175,55",
     borderColor: "rgba(212,175,55,0.35)",
     features: [
       "Tudo do MenuPro +",
-      "Gestão completa de equipe + ponto",
-      "Estoque completo com IA",
+      "Equipe completa + ponto + salários",
+      "Estoque com ficha técnica + IA",
       "CRM com disparo de mensagens",
-      "Financeiro com custos e margens",
-      "Relatórios financeiros com IA",
-      "Hub do gerente",
+      "Financeiro com custos + balanço + IA",
+      "Chatbot IA no WhatsApp",
+      "Portal do gerente",
     ],
-    trial: true,
+    trial: PLAN_DEFS.business.hasTrial,
     ctaNoplan: "Testar 7 dias grátis",
     ctaUpgrade: "Upgrade → Business",
   },
@@ -397,7 +400,7 @@ export default function PlanoModal({
         alignItems: "stretch",
       }}>
         {PLANS.map((plan) => {
-          const price = plan.prices[planCycle];
+          const priceCents = planPriceCents(plan.key, planCycle);
           const isCurrent =
             currentPlan === plan.key &&
             (restaurant?.status === "active" ||
@@ -514,7 +517,7 @@ export default function PlanoModal({
                 <div style={{ textAlign: "center", marginBottom: 20 }}>
                   <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 2 }}>
                     <span style={{ fontSize: 38, fontWeight: 900, color: "var(--dash-text)", lineHeight: 1 }}>
-                      {formatPlanPrice(price)}
+                      {formatCents(priceCents)}
                     </span>
                     <span style={{ fontSize: 13, color: "var(--dash-text-muted)", fontWeight: 400 }}>/mês</span>
                   </div>

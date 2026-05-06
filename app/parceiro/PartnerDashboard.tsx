@@ -4,11 +4,12 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Handshake, CheckCircle2, MessageCircle } from "lucide-react";
 import FyLoader from "@/components/FyLoader";
+import { PLANS as PLAN_DEFS } from "@/lib/plans";
 
 const PLAN_PRICES: Record<string, number> = {
-  menu: 19990,
-  menupro: 39990,
-  business: 159900,
+  menu:     PLAN_DEFS.menu.prices.monthly,
+  menupro:  PLAN_DEFS.menupro.prices.monthly,
+  business: PLAN_DEFS.business.prices.monthly,
 };
 
 function fmtBRL(cents: number) {

@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { OnboardingData } from "./OnboardingClient";
+import { PLANS as PLAN_DEFS } from "@/lib/plans";
+import { formatCents } from "@/lib/money";
 
 export default function StepMenu({
   data,
@@ -72,22 +74,22 @@ export default function StepMenu({
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
           <PlanCard
-            name="Menu"
-            price="R$ 199,90/mês"
-            features={["1 unidade", "WhatsApp", "Modo TV"]}
+            name={PLAN_DEFS.menu.name}
+            price={`${formatCents(PLAN_DEFS.menu.prices.monthly)}/mês`}
+            features={[`Até ${PLAN_DEFS.menu.maxUnits} unidades`, "Modo TV", "Analytics IA"]}
             accent="#00ffae"
           />
           <PlanCard
-            name="MenuPro"
-            price="R$ 399,90/mês"
-            features={["Até 3 unidades", "Comanda Digital", "CRM"]}
+            name={PLAN_DEFS.menupro.name}
+            price={`${formatCents(PLAN_DEFS.menupro.prices.monthly)}/mês`}
+            features={[`Até ${PLAN_DEFS.menupro.maxUnits} unidades`, "Comanda Digital", "WhatsApp + iFood"]}
             highlight
             accent="#00d9ff"
           />
           <PlanCard
-            name="Business"
-            price="R$ 1.599/mês"
-            features={["Até 4 unidades", "Equipe completa", "Estoque + IA"]}
+            name={PLAN_DEFS.business.name}
+            price={`${formatCents(PLAN_DEFS.business.prices.monthly)}/mês`}
+            features={[`${PLAN_DEFS.business.maxUnits} unidades fixo`, "Equipe completa", "Estoque + IA"]}
             accent="#fbbf24"
           />
         </div>

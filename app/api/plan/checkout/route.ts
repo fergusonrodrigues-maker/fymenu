@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
+import { getTotalCents, type BillingCycle, type PlanCode } from "@/lib/plans";
 
 export async function POST(req: NextRequest) {
   try {
@@ -94,14 +95,9 @@ export async function POST(req: NextRequest) {
     }
 
     // Produção com ASAAS_API_KEY configurada
-    // Preços em centavos por plano e ciclo
-    const PRICES: Record<string, Record<string, number>> = {
-      menu: { monthly: 19990, quarterly: 53970, semiannual: 95940 },
-      menupro: { monthly: 39990, quarterly: 107970, semiannual: 191940 },
-      business: { monthly: 159900, quarterly: 419700, semiannual: 719400 },
-    };
-
-    const amount = PRICES[plan]?.[cycle];
+    // Preço total da cobrança em centavos (per-month × meses do ciclo).
+    const cycleKey = (cycle === "semiannual" ? "semestral" : cycle) as BillingCycle;
+    const amount = getTotalCents(plan as PlanCode, cycleKey);
     if (!amount) {
       return NextResponse.json(
         { error: "Combinação de plano/ciclo inválida" },

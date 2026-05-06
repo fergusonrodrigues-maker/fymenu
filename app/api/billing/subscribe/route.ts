@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { asaasRequest, AsaasError } from "@/lib/asaas";
+import { getTotalCents, PLANS, type BillingCycle, type PlanCode } from "@/lib/plans";
 
 // ── [DEBUG] log Asaas config on module load ──────────────────────────────────
 const _asaasBase = process.env.ASAAS_SANDBOX === "true"
@@ -10,14 +11,16 @@ const _asaasBase = process.env.ASAAS_SANDBOX === "true"
 const _keyPrefix = process.env.ASAAS_API_KEY?.substring(0, 10) ?? "MISSING";
 console.log(`[billing/subscribe] ASAAS_BASE=${_asaasBase} ASAAS_KEY_PREFIX=${_keyPrefix} SANDBOX=${process.env.ASAAS_SANDBOX}`);
 
-const PRICES: Record<string, Record<string, number>> = {
-  menu:     { monthly: 19990,  quarterly: 53970,  semiannual: 95940 },
-  menupro:  { monthly: 39990,  quarterly: 107970, semiannual: 191940 },
-  business: { monthly: 159900, quarterly: 419700, semiannual: 719400 },
-};
-
-const PLAN_LABELS:  Record<string, string> = { menu: "Menu", menupro: "MenuPro", business: "Business" };
+const PLAN_LABELS:  Record<string, string> = { menu: PLANS.menu.name, menupro: PLANS.menupro.name, business: PLANS.business.name };
 const CYCLE_LABELS: Record<string, string> = { monthly: "Mensal", quarterly: "Trimestral", semiannual: "Semestral" };
+
+// Resolve total cents for a given plan + (legacy) cycle key.
+function resolveAmount(planId: string, cycle: string): number | null {
+  const cycleKey = (cycle === "semiannual" ? "semestral" : cycle) as BillingCycle;
+  if (!PLANS[planId as PlanCode]) return null;
+  const cents = getTotalCents(planId as PlanCode, cycleKey);
+  return cents > 0 ? cents : null;
+}
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
@@ -26,7 +29,7 @@ export async function POST(req: NextRequest) {
 
   const { planId, cycle, paymentMethod, creditCard, creditCardHolderInfo } = await req.json();
 
-  const amount = PRICES[planId]?.[cycle];
+  const amount = resolveAmount(planId, cycle);
   if (!amount) return NextResponse.json({ error: "Plano ou ciclo inválido" }, { status: 400 });
   if (!["PIX", "CREDIT_CARD"].includes(paymentMethod)) {
     return NextResponse.json({ error: "Método de pagamento inválido" }, { status: 400 });

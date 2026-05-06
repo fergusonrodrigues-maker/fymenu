@@ -18,7 +18,7 @@ export const PLAN_FEATURES: Record<PlanName, {
   whatsapp: boolean;
 }> = {
   menu: {
-    maxUnits: 1,
+    maxUnits: 2,
     comanda: false,
     analytics_ai: false,
     financeiro_custos: false,
@@ -48,7 +48,7 @@ export const PLAN_FEATURES: Record<PlanName, {
     whatsapp: false,
   },
   business: {
-    maxUnits: 4,
+    maxUnits: 5,
     comanda: true,
     analytics_ai: true,
     financeiro_custos: true,
@@ -91,5 +91,5 @@ export function planLabel(plan: string | undefined | null): string {
 
 /** Maximum number of units allowed for the plan */
 export function maxUnits(plan: string | undefined | null): number {
-  return PLAN_FEATURES[normalizePlanName(plan)]?.maxUnits ?? 1;
+  return PLAN_FEATURES[normalizePlanName(plan)]?.maxUnits ?? 2;
 }
