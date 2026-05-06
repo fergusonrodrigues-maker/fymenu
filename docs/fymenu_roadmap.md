@@ -278,18 +278,36 @@ Senha de todos: **`teste123`**
 
 ## 📋 PLANOS E PREÇOS OFICIAIS
 
-| Plano | Mensal | Trim | Sem | Unidades |
-|---|---|---|---|---|
-| Menu | R$ 199,90 | R$ 179,90 | R$ 159,90 | 1 |
-| MenuPro | R$ 399,90 | R$ 359,90 | R$ 319,90 | 3 |
-| Business | R$ 1.599 | R$ 1.399 | R$ 1.199 | 4 |
+> Preços vigentes a partir de 06/05/2026.
 
-**Cupom indicação:** 10% comissão recorrente para indicador (cliente NÃO recebe desconto)
+| Plano | Mensal | Trimestral | Semestral | Unidades | Trial | Margem |
+|---|---|---|---|---|---|---|
+| Menu | R$ 149 | R$ 129/mês (R$ 387, -13%) | R$ 99/mês (R$ 594, -34%) | 2 | ❌ | 80% |
+| **MenuPro** ⭐ | **R$ 499** | **R$ 449/mês (R$ 1.347, -10%)** | **R$ 399/mês (R$ 2.394, -20%)** | **3** | **7 dias** | **72%** |
+| Business | R$ 1.250 | R$ 1.129/mês (R$ 3.387, -10%) | R$ 999/mês (R$ 5.994, -20%) | 5 (fixo) | 7 dias | 68% |
 
-**Features Business-only:**
-- Chatbot IA (WhatsApp com respostas automáticas — inseparável)
+### Menu — Vitrine + Analytics IA (sem pedidos)
+**Inclui:** cardápio vídeo (9:16) + categorias com horário + variações + Modo TV, analytics completo (cliques, views, top produtos, Product Attention Time), analytics com IA + sugestões, relatório PDF, configurações básicas (perfil, plano, senha, suporte).
 
-**MenuPro + Business:**
+**NÃO inclui:** pedidos WhatsApp, comanda digital, financeiro, equipe, estoque, CRM, operações, portal funcionário, link delivery/mesa, IA descrição de produto.
+
+### MenuPro — Operação Restaurante ⭐ (carro-chefe / "Mais Popular")
+Tudo do Menu +: IA descrição de produtos, pedidos WhatsApp + tracking pixel + iFood (cliques), link de delivery + link de mesa, comanda digital completa (garçom, mesa, QR, avaliação), CRM básico (sem disparo), estoque básico (quantidade), garçom no portal funcionário, financeiro delivery + mesas, operações (cozinha + garçom).
+
+### Business — Gestão Completa
+Tudo do MenuPro +: financeiro com custos + balanço + meta + IA pró-labore, equipe completa + ponto + salários + horas, estoque com ficha técnica + markup + IA upload + validade, CRM com disparo de mensagens, chatbot IA WhatsApp (inseparável), portal gerente, botão chamar gerente em mesa X/Y.
+
+**Business — sem unidades extras pagas:** plano fixo em 5 unidades. Para clientes que precisarem de mais, implementar sistema customizado caso a caso (não há SKU de "unidade adicional").
+
+### Cupom de indicação
+10% comissão recorrente para o indicador. Cliente NÃO recebe desconto.
+
+### Hierarquia de ancoragem (estratégia comercial)
+- Ordem visual na landing: Menu → **MenuPro (DESTAQUE "Mais Popular")** → Business
+- Gap intencional: Menu/MenuPro = 3,3x | MenuPro/Business = 2,5x
+- Goal: empurrar cliente do Menu pro MenuPro (carro-chefe); Business serve como âncora alta pra justificar MenuPro.
+
+**MenuPro + Business — features de delivery (preservadas):**
 - Cálculo automático taxa de entrega
 - Recepção de localização do cliente
 - Rastreamento de entregador (distribuição entre planos pendente)
