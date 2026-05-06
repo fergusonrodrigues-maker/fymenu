@@ -11,6 +11,8 @@ import { getLastEditForEntities, LastEditInfo } from "@/app/painel/historicoActi
 import LastEditBadge from "@/components/audit/LastEditBadge";
 import AIButton from "@/components/AIButton";
 import AIWaveLoader from "@/components/AIWaveLoader";
+import { MoneyInput } from "@/components/ui/MoneyInput";
+import { formatCents } from "@/lib/money";
 import {
   Info, FileText, X, CheckCircle2, Clipboard, Package, Sparkles,
   AlertCircle, Clock,
@@ -49,6 +51,7 @@ const inpBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HT
 function NewProductFormInline({ categoryId, section, customSections, anyProductExpanded, onOpen }: { categoryId: string; section: string; customSections: CustomSection[]; anyProductExpanded: boolean; onOpen: () => void }) {
   const [open, setOpen] = useState(false);
   const [priceType, setPriceType] = useState("fixed");
+  const [basePriceCents, setBasePriceCents] = useState(0);
   const [isAlcoholic, setIsAlcoholic] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -61,12 +64,14 @@ function NewProductFormInline({ categoryId, section, customSections, anyProductE
   function handleOpen() {
     onOpen();
     setPriceType("fixed");
+    setBasePriceCents(0);
     setOpen(true);
   }
 
   function handleClose() {
     setOpen(false);
     setPriceType("fixed");
+    setBasePriceCents(0);
     setIsAlcoholic(false);
   }
 
@@ -81,6 +86,7 @@ function NewProductFormInline({ categoryId, section, customSections, anyProductE
         if (saving) return;
         setSaving(true);
         try {
+          formData.set("base_price", String(priceType === "fixed" ? basePriceCents : 0));
           await createProduct(formData);
           handleClose();
         } finally {
@@ -98,7 +104,12 @@ function NewProductFormInline({ categoryId, section, customSections, anyProductE
           <option value="variable">Preço variável</option>
         </select>
         {priceType === "fixed" && (
-          <input name="base_price" placeholder="Preço (ex: 29,90)" inputMode="decimal" style={{ ...inp, flex: 1 }} />
+          <MoneyInput
+            value={basePriceCents}
+            onChange={setBasePriceCents}
+            wrapperStyle={{ flex: 1 }}
+            style={inp}
+          />
         )}
       </div>
       {priceType === "variable" && (
@@ -206,7 +217,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
   const [comboName, setComboName] = useState("");
   const [comboDesc, setComboDesc] = useState("");
   const [comboItems, setComboItems] = useState<{ product_id: string; variation_id: string | null; quantity: number }[]>([]);
-  const [comboPrice, setComboPrice] = useState("");
+  const [comboPrice, setComboPrice] = useState(0);
   const [comboOriginalPrice, setComboOriginalPrice] = useState(0);
   const [comboSuggestionProducts, setComboSuggestionProducts] = useState<string[]>([]);
   const [comboProductSearch, setComboProductSearch] = useState("");
@@ -651,14 +662,14 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
   }
 
   function resetComboForm() {
-    setComboName(""); setComboDesc(""); setComboItems([]); setComboPrice("");
+    setComboName(""); setComboDesc(""); setComboItems([]); setComboPrice(0);
     setComboOriginalPrice(0); setComboSuggestionProducts([]); setComboProductSearch("");
   }
 
   function openEditCombo(combo: any) {
     setComboName(combo.name);
     setComboDesc(combo.description ?? "");
-    setComboPrice(combo.combo_price?.toString() ?? "");
+    setComboPrice(combo.combo_price ?? 0);
     setComboOriginalPrice(combo.original_price ?? 0);
     setComboItems((combo.items ?? []).map((ci: any) => ({
       product_id: ci.product_id,
@@ -682,7 +693,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
       unit_id: unit.id,
       name: comboName.trim(),
       description: comboDesc.trim() || null,
-      combo_price: parseFloat(comboPrice) || 0,
+      combo_price: comboPrice,
       original_price: comboOriginalPrice,
       is_active: true,
     };
@@ -1064,11 +1075,11 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     {combo.original_price > 0 && combo.original_price > combo.combo_price && (
                       <span style={{ fontSize: 12, color: "var(--dash-text-muted)", textDecoration: "line-through" }}>
-                        R$ {Number(combo.original_price).toFixed(2).replace(".", ",")}
+                        {formatCents(combo.original_price)}
                       </span>
                     )}
                     <span style={{ fontSize: 16, fontWeight: 900, color: "var(--dash-accent)" }}>
-                      R$ {Number(combo.combo_price).toFixed(2).replace(".", ",")}
+                      {formatCents(combo.combo_price)}
                     </span>
                     {combo.original_price > 0 && combo.original_price > combo.combo_price && (
                       <span style={{ padding: "2px 6px", borderRadius: 4, background: "var(--dash-accent-soft)", color: "var(--dash-accent)", fontSize: 9, fontWeight: 800 }}>
@@ -1188,7 +1199,7 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                             <optgroup key={category.id} label={category.name}>
                               {catProds.map(p => (
                                 <option key={p.id} value={p.id}>
-                                  {p.name}{p.base_price != null ? ` — R$${p.base_price.toFixed(2)}` : ""}
+                                  {p.name}{p.base_price != null ? ` — ${formatCents(p.base_price)}` : ""}
                                 </option>
                               ))}
                             </optgroup>
@@ -1249,27 +1260,27 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                     <div>
                       <div style={{ fontSize: 10, color: "var(--dash-text-muted)", marginBottom: 4 }}>Soma dos itens</div>
                       <div style={{ fontSize: 18, fontWeight: 700, color: "var(--dash-text-muted)", textDecoration: "line-through" }}>
-                        R$ {comboOriginalPrice.toFixed(2).replace(".", ",")}
+                        {formatCents(comboOriginalPrice)}
                       </div>
                     </div>
                     <div>
                       <div style={{ fontSize: 10, color: "var(--dash-text-muted)", marginBottom: 4 }}>Preço do combo</div>
-                      <div style={{ position: "relative" }}>
-                        <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--dash-text-muted)", fontSize: 13 }}>R$</span>
-                        <input type="number" step="0.01" min="0" value={comboPrice} onChange={e => setComboPrice(e.target.value)}
-                          style={{
-                            width: "100%", padding: "10px 12px 10px 36px", borderRadius: 12,
-                            background: "var(--dash-input-bg)", border: "1px solid var(--dash-input-border)",
-                            color: "var(--dash-accent)", fontSize: 18, fontWeight: 900, outline: "none", boxSizing: "border-box",
-                          }} />
-                      </div>
-                      {comboOriginalPrice > 0 && parseFloat(comboPrice) > 0 && parseFloat(comboPrice) < comboOriginalPrice && (
+                      <MoneyInput
+                        value={comboPrice}
+                        onChange={setComboPrice}
+                        style={{
+                          width: "100%", padding: "10px 12px 10px 36px", borderRadius: 12,
+                          background: "var(--dash-input-bg)", border: "1px solid var(--dash-input-border)",
+                          color: "var(--dash-accent)", fontSize: 18, fontWeight: 900, outline: "none", boxSizing: "border-box",
+                        }}
+                      />
+                      {comboOriginalPrice > 0 && comboPrice > 0 && comboPrice < comboOriginalPrice && (
                         <div style={{
                           marginTop: 4, padding: "2px 8px", borderRadius: 6, display: "inline-block",
                           background: "var(--dash-accent-soft)", color: "var(--dash-accent)",
                           fontSize: 10, fontWeight: 800,
                         }}>
-                          -{Math.round((1 - parseFloat(comboPrice) / comboOriginalPrice) * 100)}% desconto
+                          -{Math.round((1 - comboPrice / comboOriginalPrice) * 100)}% desconto
                         </div>
                       )}
                     </div>

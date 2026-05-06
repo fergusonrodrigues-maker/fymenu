@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { useProductAddons } from "@/lib/hooks/useProductAddons";
 import { Trash2, Edit2, Plus } from "lucide-react";
 import FyLoader from "@/components/FyLoader";
+import { MoneyInput } from "@/components/ui/MoneyInput";
+import { formatCents } from "@/lib/money";
 
 interface AddonManagerProps {
   productId: string;
@@ -16,31 +18,28 @@ export function AddonManager({ productId, unitId, productName }: AddonManagerPro
     useProductAddons({ productId, unitId });
   const [isCreating, setIsCreating] = useState(false);
   const [newAddonName, setNewAddonName] = useState("");
-  const [newAddonPrice, setNewAddonPrice] = useState("");
+  const [newAddonPrice, setNewAddonPrice] = useState(0);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
-  const [editPrice, setEditPrice] = useState("");
+  const [editPrice, setEditPrice] = useState(0);
 
   useEffect(() => {
     fetchAddons(productId);
   }, [productId, fetchAddons]);
 
   const handleCreate = async () => {
-    if (!newAddonName || !newAddonPrice) return;
-    const price = parseFloat(newAddonPrice.replace(",", "."));
-    if (isNaN(price)) return;
-    const result = await createAddon(newAddonName, Math.round(price * 100));
+    if (!newAddonName || newAddonPrice <= 0) return;
+    const result = await createAddon(newAddonName, newAddonPrice);
     if (result) {
       setNewAddonName("");
-      setNewAddonPrice("");
+      setNewAddonPrice(0);
       setIsCreating(false);
     }
   };
 
   const handleUpdate = async (addonId: string) => {
-    const price = parseFloat(editPrice.replace(",", "."));
-    if (isNaN(price)) return;
-    await updateAddon(addonId, { name: editName, price: Math.round(price * 100) });
+    if (editPrice <= 0) return;
+    await updateAddon(addonId, { name: editName, price: editPrice });
     setEditingId(null);
   };
 
@@ -73,19 +72,16 @@ export function AddonManager({ productId, unitId, productName }: AddonManagerPro
             onChange={(e) => setNewAddonName(e.target.value)}
             style={inputStyle}
           />
-          <input
-            type="text"
-            inputMode="decimal"
-            placeholder="Preço (ex: 2,50)"
+          <MoneyInput
             value={newAddonPrice}
-            onChange={(e) => setNewAddonPrice(e.target.value)}
+            onChange={setNewAddonPrice}
             style={inputStyle}
           />
           <div style={{ display: "flex", gap: 8 }}>
             <button
               onClick={handleCreate}
-              disabled={!newAddonName || !newAddonPrice}
-              style={{ flex: 1, padding: "8px 0", background: "#10b981", color: "#fff", border: "none", borderRadius: 8, fontWeight: 600, fontSize: 13, cursor: "pointer", opacity: !newAddonName || !newAddonPrice ? 0.5 : 1 }}
+              disabled={!newAddonName || newAddonPrice <= 0}
+              style={{ flex: 1, padding: "8px 0", background: "#10b981", color: "#fff", border: "none", borderRadius: 8, fontWeight: 600, fontSize: 13, cursor: "pointer", opacity: !newAddonName || newAddonPrice <= 0 ? 0.5 : 1 }}
             >
               Salvar
             </button>
@@ -126,12 +122,11 @@ export function AddonManager({ productId, unitId, productName }: AddonManagerPro
                     onChange={(e) => setEditName(e.target.value)}
                     style={{ ...inputStyle, flex: 1 }}
                   />
-                  <input
-                    type="text"
-                    inputMode="decimal"
+                  <MoneyInput
                     value={editPrice}
-                    onChange={(e) => setEditPrice(e.target.value)}
-                    style={{ ...inputStyle, width: 80 }}
+                    onChange={setEditPrice}
+                    wrapperStyle={{ width: 110 }}
+                    style={inputStyle}
                   />
                   <button onClick={() => handleUpdate(addon.id)} style={saveBtnStyle}>Salvar</button>
                   <button onClick={() => setEditingId(null)} style={cancelBtnStyle}>Cancelar</button>
@@ -141,7 +136,7 @@ export function AddonManager({ productId, unitId, productName }: AddonManagerPro
                   <div>
                     <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "var(--dash-text)" }}>{addon.name}</p>
                     <p style={{ margin: 0, fontSize: 12, color: "var(--dash-text-muted)" }}>
-                      {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(addon.price / 100)}
+                      {formatCents(addon.price)}
                     </p>
                   </div>
                   <div style={{ display: "flex", gap: 6 }}>
@@ -149,7 +144,7 @@ export function AddonManager({ productId, unitId, productName }: AddonManagerPro
                       onClick={() => {
                         setEditingId(addon.id);
                         setEditName(addon.name);
-                        setEditPrice((addon.price / 100).toFixed(2).replace(".", ","));
+                        setEditPrice(addon.price);
                       }}
                       style={iconBtnStyle}
                     >

@@ -10,6 +10,8 @@ import { uploadMedia } from "@/lib/upload";
 import AIButton from "@/components/AIButton";
 import LastEditBadge from "@/components/audit/LastEditBadge";
 import type { LastEditInfo } from "@/app/painel/historicoActions";
+import { MoneyInput } from "@/components/ui/MoneyInput";
+import { formatCents } from "@/lib/money";
 
 type Product = {
   id: string;
@@ -224,13 +226,6 @@ function RecipeSection({ productId, unitId, basePrice }: { productId: string; un
   );
 }
 
-function toCurrencyDisplay(cents: number): string {
-  if (!cents) return "";
-  const s = String(cents).padStart(3, "0");
-  const int = s.slice(0, -2).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-  return `${int},${s.slice(-2)}`;
-}
-
 export default function ProductRow({
   product,
   expanded,
@@ -258,9 +253,7 @@ export default function ProductRow({
   const [thumbnailUrl, setThumbnailUrl] = useState(product.thumbnail_url ?? "");
   const [videoUrl, setVideoUrl] = useState(product.video_url ?? "");
   const [priceType, setPriceType] = useState(product.price_type ?? "fixed");
-  const [basePriceStr, setBasePriceStr] = useState<string>(
-    product.base_price ? toCurrencyDisplay(product.base_price) : ""
-  );
+  const [basePriceCents, setBasePriceCents] = useState<number>(product.base_price ?? 0);
   const [variations, setVariations] = useState<{ id?: string; name: string; price: number }[]>([]);
   const [variationsLoaded, setVariationsLoaded] = useState(false);
   const [description, setDescription] = useState(product.description ?? "");
@@ -352,7 +345,7 @@ export default function ProductRow({
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontWeight: 600, fontSize: 14, color: "var(--dash-text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{product.name}</div>
           <div style={{ fontSize: 12, color: "var(--dash-text-muted)", marginTop: 2, display: "flex", alignItems: "center", gap: 6 }}>
-            {product.price_type === "variable" ? "Preço variável" : product.base_price ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(product.base_price / 100) : "Sem preço"}
+            {product.price_type === "variable" ? "Preço variável" : product.base_price ? formatCents(product.base_price) : "Sem preço"}
             <StockBadge product={product} />
           </div>
           {lastEdit && restaurantId && (
@@ -411,6 +404,7 @@ export default function ProductRow({
                 formData.set("thumbnail_url", thumbnailUrl);
                 formData.set("video_url", videoUrl);
                 formData.set("is_alcoholic", isAlcoholic ? "on" : "off");
+                formData.set("base_price", String(priceType === "fixed" ? basePriceCents : 0));
                 // Always sync variations: passes [] when fixed to delete stale variation rows
                 await updateProductVariations(product.id, priceType === "variable" ? variations.map(({ id, name, price }) => ({ id, name, price })) : []);
                 startTransition(() => updateProduct(formData));
@@ -486,23 +480,11 @@ export default function ProductRow({
 
               {/* Preço único */}
               {priceType === "fixed" && (
-                <div style={{ position: "relative" }}>
-                  <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--dash-text-muted)", fontSize: 13, fontWeight: 700 }}>R$</span>
-                  <input
-                    name="base_price"
-                    type="text"
-                    inputMode="numeric"
-                    value={basePriceStr}
-                    placeholder="0,00"
-                    style={{ ...inputStyle, paddingLeft: 36 }}
-                    onFocus={(e) => e.target.select()}
-                    onChange={(e) => {
-                      const digits = e.target.value.replace(/\D/g, "");
-                      const cents = parseInt(digits || "0", 10);
-                      setBasePriceStr(toCurrencyDisplay(cents));
-                    }}
-                  />
-                </div>
+                <MoneyInput
+                  value={basePriceCents}
+                  onChange={setBasePriceCents}
+                  style={inputStyle}
+                />
               )}
 
               {/* Variações */}
@@ -536,22 +518,13 @@ export default function ProductRow({
                       />
 
                       {/* Preço */}
-                      <div style={{ display: "flex", alignItems: "center", gap: 2, flexShrink: 0 }}>
-                        <span style={{ fontSize: 10, color: "var(--dash-text-muted)" }}>R$</span>
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          placeholder="0,00"
-                          value={toCurrencyDisplay(v.price)}
-                          onFocus={(e) => e.target.select()}
-                          onChange={(e) => {
-                            const digits = e.target.value.replace(/\D/g, "");
-                            const cents = parseInt(digits || "0", 10);
-                            setVariations(variations.map((x, j) => j === i ? { ...x, price: cents } : x));
-                          }}
-                          style={{ ...inputStyle, width: 70, fontSize: 13, fontWeight: 700, padding: "5px 8px", textAlign: "right", color: "var(--dash-accent)" }}
-                        />
-                      </div>
+                      <MoneyInput
+                        value={v.price}
+                        onChange={(cents) => setVariations(variations.map((x, j) => j === i ? { ...x, price: cents } : x))}
+                        wrapperStyle={{ flexShrink: 0 }}
+                        style={{ ...inputStyle, width: 110, fontSize: 13, fontWeight: 700, padding: "5px 8px 5px 32px", textAlign: "right", color: "var(--dash-accent)" }}
+                      />
+
 
                       {/* Remover */}
                       <button

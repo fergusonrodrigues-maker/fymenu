@@ -404,7 +404,7 @@ export async function createProduct(formData: FormData): Promise<void> {
   if (!categoryId) throw new Error("category_id é obrigatório.");
   if (!name) throw new Error("Nome do produto é obrigatório.");
 
-  const base_price = Math.round((parsePrice(basePriceInput) ?? 0) * 100);
+  const base_price = parseInt(basePriceInput, 10) || 0;
 
   // Obter unit_id a partir da categoria
   const { data: category, error: catErr } = await supabase
@@ -473,7 +473,7 @@ export async function updateProduct(formData: FormData): Promise<void> {
   if (!id) throw new Error("ID inválido.");
   if (!name) throw new Error("Nome do produto é obrigatório.");
 
-  const base_price = Math.round((parsePrice(basePriceInput) ?? 0) * 100);
+  const base_price = parseInt(basePriceInput, 10) || 0;
 
   const upsellModeRaw = String(formData.get("upsell_mode") ?? "auto").trim();
   const availModeRaw = String(formData.get("avail_mode") ?? "both").trim();
