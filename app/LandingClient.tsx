@@ -1,6 +1,12 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import {
+  Smartphone, Tv, Layers, Sparkles,
+  MessageCircle, QrCode, Printer, BellRing,
+  TrendingUp, DollarSign, Package, Users,
+  Bot, BrainCircuit, Send,
+} from "lucide-react";
 import VideoShowcase from "@/components/VideoShowcase";
 
 // ── Loader Component ──────────────────────────────────────────────────────────
@@ -172,6 +178,46 @@ function FeatureCard({
       </div>
       <h3 className="feature-title">{title}</h3>
       <p className="feature-desc">{desc}</p>
+    </div>
+  );
+}
+
+// ── Services Group (4 grouped feature cards) ─────────────────────────────────
+function ServicesGroup({
+  title,
+  cards,
+  theme,
+}: {
+  title: string;
+  theme: "dark" | "light";
+  cards: { icon: React.ReactNode; title: string; desc: string }[];
+}) {
+  return (
+    <div style={{ maxWidth: 1100, margin: "0 auto 56px" }}>
+      <h3
+        style={{
+          fontSize: 22,
+          fontWeight: 800,
+          letterSpacing: "-0.3px",
+          margin: "0 0 24px",
+          textAlign: "center",
+          color: theme === "dark" ? "rgba(255,255,255,0.92)" : "rgba(0,0,0,0.85)",
+        }}
+      >
+        {title}
+      </h3>
+      <div className="services-grid">
+        {cards.map((c, i) => (
+          <FeatureCard
+            key={c.title}
+            theme={theme}
+            title={c.title}
+            desc={c.desc}
+            delay={i * 80}
+            icon={c.icon}
+          />
+        ))}
+      </div>
     </div>
   );
 }
@@ -1338,6 +1384,16 @@ export default function LandingPage() {
         .text-shine-dark  { color: rgba(255,255,255,0.6); }
         .text-shine-light { color: rgba(0,0,0,0.55); }
 
+        /* ── Services grid (4 cards desktop, 2 mobile) ── */
+        .services-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 20px;
+        }
+        @media (max-width: 900px) {
+          .services-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
         /* ── Responsive ── */
         @media (max-width: 768px) {
           .fy-nav { gap: 16px; padding: 10px 20px; }
@@ -1608,47 +1664,52 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div
-            className="features-grid"
-            style={{
-              maxWidth: 1000,
-              margin: "0 auto",
-              display: "grid",
-              gridTemplateColumns: "repeat(3, 1fr)",
-              gap: 24,
-            }}
-          >
-            <FeatureCard delay={0} theme={theme} title="Cardápio 9:16" desc="Design mobile-first com vídeo e swipe. UX estilo reels para engajar clientes." icon={
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/>
-              </svg>
-            } />
-            <FeatureCard delay={100} theme={theme} title="Analytics em tempo real" desc="12 eventos de tracking, tempo de atenção por produto e taxa de conversão." icon={
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/>
-              </svg>
-            } />
-            <FeatureCard delay={200} theme={theme} title="IA integrada" desc="Geração automática de descrições, sugestões de upsell e análise do cardápio." icon={
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-              </svg>
-            } />
-            <FeatureCard delay={300} theme={theme} title="Modo TV" desc="Autoplay vertical ou horizontal. Ideal para telas no restaurante." icon={
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="2" y="7" width="20" height="15" rx="2" ry="2"/><polyline points="17 2 12 7 7 2"/>
-              </svg>
-            } />
-            <FeatureCard delay={400} theme={theme} title="Pedidos WhatsApp" desc="Pedido estruturado direto pelo WhatsApp com variações e upsell." icon={
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-              </svg>
-            } />
-            <FeatureCard delay={500} theme={theme} title="Hub de operações" desc="Cozinha, garçom e comanda digital em tempo real com Supabase Realtime." icon={
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
-              </svg>
-            } />
-          </div>
+          {/* Group 1 — Cardápio que vende sozinho */}
+          <ServicesGroup
+            title="Cardápio que vende sozinho"
+            theme={theme}
+            cards={[
+              { icon: <Smartphone size={28} strokeWidth={1.7} />, title: "Cardápio em vídeo, estilo reels", desc: "Swipe natural, vídeo 9:16. Cliente vê o prato como se já tivesse na mesa." },
+              { icon: <Tv size={28} strokeWidth={1.7} />,         title: "Modo TV automático",              desc: "Coloque seu cardápio rodando em telas. Atrai cliente que está passando." },
+              { icon: <Layers size={28} strokeWidth={1.7} />,     title: "Variações, combos e adicionais", desc: "Pizza meio a meio, hambúrguer com extras, combo personalizado. Tudo configurável." },
+              { icon: <Sparkles size={28} strokeWidth={1.7} />,   title: "IA escreve descrições por você", desc: "Cole a foto, pegue um texto profissional. Sem precisar contratar redator." },
+            ]}
+          />
+
+          {/* Group 2 — Atendimento sem erro */}
+          <ServicesGroup
+            title="Atendimento sem erro"
+            theme={theme}
+            cards={[
+              { icon: <MessageCircle size={28} strokeWidth={1.7} />, title: "Pedido WhatsApp organizado",        desc: "Sem app, sem cadastro. Pedido chega estruturado, com endereço e pagamento." },
+              { icon: <QrCode size={28} strokeWidth={1.7} />,        title: "Comanda digital com QR Code",       desc: "Cliente escaneia, abre cardápio, faz pedido. Garçom só leva." },
+              { icon: <Printer size={28} strokeWidth={1.7} />,       title: "Cozinha imprime na hora",           desc: "Garçom toca, ticket sai na cozinha, no bar e no caixa. Sem grito, sem confusão." },
+              { icon: <BellRing size={28} strokeWidth={1.7} />,      title: "Cliente chama garçom pelo celular", desc: "Acabou o 'psiu'. Cliente toca um botão, garçom recebe alerta na hora." },
+            ]}
+          />
+
+          {/* Group 3 — Gestão que dá lucro */}
+          <ServicesGroup
+            title="Gestão que dá lucro"
+            theme={theme}
+            cards={[
+              { icon: <TrendingUp size={28} strokeWidth={1.7} />, title: "Saiba o que vende e o que encalha",    desc: "Top produtos, horários de pico, tempo de atenção por item. Tudo em tempo real." },
+              { icon: <DollarSign size={28} strokeWidth={1.7} />, title: "Financeiro com custo, lucro e meta",   desc: "Veja sua margem real por prato, fechamento diário, meta do mês. Adeus planilha." },
+              { icon: <Package size={28} strokeWidth={1.7} />,    title: "Estoque com ficha técnica e validade", desc: "Saiba o custo de cada prato, o que está vencendo, o que precisa repor." },
+              { icon: <Users size={28} strokeWidth={1.7} />,      title: "Equipe com ponto e folha",             desc: "Funcionário bate ponto pelo celular, você vê salário e horas extras automático." },
+            ]}
+          />
+
+          {/* Group 4 — Inteligência artificial trabalhando */}
+          <ServicesGroup
+            title="Inteligência artificial trabalhando"
+            theme={theme}
+            cards={[
+              { icon: <Bot size={28} strokeWidth={1.7} />,          title: "Chatbot WhatsApp que vende 24h",                desc: "Responde dúvidas, manda cardápio, anota pedido. Mesmo quando você dorme." },
+              { icon: <BrainCircuit size={28} strokeWidth={1.7} />, title: "IA analisa seu cardápio e sugere melhorias",    desc: "'Esse prato vende pouco, troque a foto.' 'Esse combo aumenta o ticket em 30%.'" },
+              { icon: <Send size={28} strokeWidth={1.7} />,         title: "CRM que dispara mensagem certa pra cliente certo", desc: "Cliente sumiu há 30 dias? Manda promoção. Aniversariante? Manda voucher." },
+            ]}
+          />
         </section>
 
         {/* ── PRICING ── */}
