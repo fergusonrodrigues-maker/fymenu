@@ -8,6 +8,8 @@ import { getLastEditForEntities, LastEditInfo } from "@/app/painel/historicoActi
 import LastEditBadge from "@/components/audit/LastEditBadge";
 import AIButton from "@/components/AIButton";
 import AIWaveLoader from "@/components/AIWaveLoader";
+import { MoneyInput } from "@/components/ui/MoneyInput";
+import { formatCents } from "@/lib/money";
 import {
   Download, X, CheckCircle2, MessageCircle, UtensilsCrossed, Lock, Bike,
   Package, DollarSign, Target, CreditCard, Star, TrendingUp, Calendar,
@@ -16,9 +18,7 @@ import {
 
 const supabase = createClient();
 
-function formatBRL(cents: number) {
-  return `R$ ${(cents / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
-}
+const formatBRL = formatCents;
 
 function pctOf(part: number, total: number) {
   if (!total) return 0;
@@ -170,7 +170,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
   const [expenses, setExpenses] = useState<any[]>([]);
   const [showExpenseForm, setShowExpenseForm] = useState(false);
   const [expenseName, setExpenseName] = useState("");
-  const [expenseAmount, setExpenseAmount] = useState("");
+  const [expenseAmount, setExpenseAmount] = useState(0);
   const [expenseCategory, setExpenseCategory] = useState("geral");
   const [expenseRecurring, setExpenseRecurring] = useState(false);
   const [expenseDate, setExpenseDate] = useState(new Date().toISOString().split("T")[0]);
@@ -361,7 +361,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
   }, {});
 
   async function handleAddExpense() {
-    if (!expenseName || !expenseAmount || !unit?.id) return;
+    if (!expenseName || expenseAmount <= 0 || !unit?.id) return;
     if (savingExpense) return;
     setSavingExpense(true);
     try {
@@ -370,13 +370,13 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
         unitId: unit.id,
         name: expenseName,
         category: expenseCategory,
-        amount: Math.round(parseFloat(expenseAmount) * 100),
+        amount: expenseAmount,
         isRecurring: expenseRecurring,
         date: expenseDate,
       });
       if (!result.error && result.data) {
         setExpenses(prev => [result.data, ...prev]);
-        setExpenseName(""); setExpenseAmount(""); setExpenseCategory("geral");
+        setExpenseName(""); setExpenseAmount(0); setExpenseCategory("geral");
         setExpenseRecurring(false); setShowExpenseForm(false);
       }
     } finally {
@@ -1196,8 +1196,12 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
               <input type="text" placeholder="Nome do custo (ex: Aluguel)" value={expenseName} onChange={e => setExpenseName(e.target.value)}
                 style={{ padding: "10px 14px", borderRadius: 10, background: "var(--dash-card-hover)", border: "1px solid var(--dash-border)", color: "var(--dash-text)", fontSize: 13, fontWeight: 500, outline: "none", transition: "border-color 0.2s" }} />
               <div style={{ display: "flex", gap: 8 }}>
-                <input type="number" placeholder="Valor (R$)" value={expenseAmount} onChange={e => setExpenseAmount(e.target.value)}
-                  style={{ flex: 1, padding: "10px 14px", borderRadius: 10, background: "var(--dash-card-hover)", border: "1px solid var(--dash-border)", color: "var(--dash-text)", fontSize: 13, outline: "none" }} />
+                <MoneyInput
+                  value={expenseAmount}
+                  onChange={setExpenseAmount}
+                  wrapperStyle={{ flex: 1 }}
+                  style={{ width: "100%", padding: "10px 14px", borderRadius: 10, background: "var(--dash-card-hover)", border: "1px solid var(--dash-border)", color: "var(--dash-text)", fontSize: 13, outline: "none", boxSizing: "border-box" }}
+                />
                 <select value={expenseCategory} onChange={e => setExpenseCategory(e.target.value)}
                   style={{ padding: "10px 14px", borderRadius: 10, backgroundColor: "var(--dash-card-hover)", border: "1px solid var(--dash-border)", color: "var(--dash-text)", fontSize: 13, outline: "none" }}>
                   <option value="aluguel">Aluguel</option>

@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { MapPin, AlertCircle, Trash2, CheckCircle2, XCircle, Ruler, DollarSign } from "lucide-react";
+import { MoneyInput } from "@/components/ui/MoneyInput";
+import { formatCents } from "@/lib/money";
 
 const GN = "#22c55e";  // green accent
 
@@ -9,7 +11,7 @@ interface Zone {
   id?: string;
   min_km: string;
   max_km: string;
-  fee: string; // display as reais (R$ 0,00)
+  fee: number; // cents
   is_active?: boolean;
   _dirty?: boolean;
   _new?: boolean;
@@ -20,14 +22,7 @@ interface Settings {
   delivery_latitude: string;
   delivery_longitude: string;
   delivery_max_km: string;
-  delivery_min_order: string;
-}
-
-function fmtFee(cents: number): string {
-  return (cents / 100).toFixed(2).replace(".", ",");
-}
-function parseFee(str: string): number {
-  return Math.round(parseFloat(str.replace(",", ".")) * 100) || 0;
+  delivery_min_order: number; // cents
 }
 
 const inp: React.CSSProperties = {
@@ -60,7 +55,7 @@ export default function DeliveryModal({
     delivery_latitude: "",
     delivery_longitude: "",
     delivery_max_km: "10",
-    delivery_min_order: "0",
+    delivery_min_order: 0,
   });
 
   // ── Zones ───────────────────────────────────────────────────────────────────
@@ -92,7 +87,7 @@ export default function DeliveryModal({
           delivery_latitude: s.delivery_latitude != null ? String(s.delivery_latitude) : "",
           delivery_longitude: s.delivery_longitude != null ? String(s.delivery_longitude) : "",
           delivery_max_km:   s.delivery_max_km != null ? String(s.delivery_max_km) : "10",
-          delivery_min_order: s.delivery_min_order != null ? fmtFee(s.delivery_min_order) : "0,00",
+          delivery_min_order: s.delivery_min_order ?? 0,
         });
       }
       if (zRes.ok) {
@@ -102,7 +97,7 @@ export default function DeliveryModal({
             id: row.id,
             min_km: String(row.min_km),
             max_km: String(row.max_km),
-            fee: fmtFee(row.fee),
+            fee: row.fee ?? 0,
             is_active: row.is_active,
           }))
         );
@@ -128,7 +123,7 @@ export default function DeliveryModal({
         delivery_latitude:  settings.delivery_latitude !== "" ? Number(settings.delivery_latitude) : null,
         delivery_longitude: settings.delivery_longitude !== "" ? Number(settings.delivery_longitude) : null,
         delivery_max_km:    Number(settings.delivery_max_km) || 10,
-        delivery_min_order: parseFee(settings.delivery_min_order),
+        delivery_min_order: settings.delivery_min_order,
       }),
     });
     setSaving(false);
@@ -159,11 +154,11 @@ export default function DeliveryModal({
     const nextMin = last ? last.max_km : "0";
     setZones((p) => [
       ...p,
-      { min_km: nextMin, max_km: "", fee: "0,00", is_active: true, _new: true, _dirty: true },
+      { min_km: nextMin, max_km: "", fee: 0, is_active: true, _new: true, _dirty: true },
     ]);
   }
 
-  function updateZone(idx: number, field: keyof Zone, value: string) {
+  function updateZone(idx: number, field: keyof Zone, value: string | number) {
     setZones((p) => p.map((z, i) => i === idx ? { ...z, [field]: value, _dirty: true } : z));
   }
 
@@ -175,7 +170,7 @@ export default function DeliveryModal({
       unit_id: unitId,
       min_km: Number(z.min_km),
       max_km: Number(z.max_km),
-      fee: parseFee(z.fee),
+      fee: z.fee,
     };
     let res: Response;
     if (z._new || !z.id) {
@@ -366,14 +361,12 @@ export default function DeliveryModal({
             {/* Pedido mínimo */}
             <div style={{ marginBottom: 20 }}>
               <div style={{ fontSize: 13, color: "var(--dash-text)", marginBottom: 6 }}>Pedido mínimo</div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 13, color: "var(--dash-text-muted)" }}>R$</span>
-                <input
-                  style={{ ...inp, width: 120 }} placeholder="0,00"
-                  value={settings.delivery_min_order}
-                  onChange={(e) => setSettings((p) => ({ ...p, delivery_min_order: e.target.value }))}
-                />
-              </div>
+              <MoneyInput
+                value={settings.delivery_min_order}
+                onChange={(cents) => setSettings((p) => ({ ...p, delivery_min_order: cents }))}
+                wrapperStyle={{ width: 160 }}
+                style={{ ...inp, width: "100%" }}
+              />
             </div>
           </div>
 
@@ -429,13 +422,13 @@ export default function DeliveryModal({
                 onChange={(e) => updateZone(idx, "max_km", e.target.value)}
                 onBlur={() => saveZone(idx)}
               />
-              <input
-                style={{ ...inp, borderColor: z._dirty ? `${GN}66` : undefined }}
-                placeholder="0,00"
-                value={z.fee}
-                onChange={(e) => updateZone(idx, "fee", e.target.value)}
-                onBlur={() => saveZone(idx)}
-              />
+              <div onBlur={() => saveZone(idx)}>
+                <MoneyInput
+                  value={z.fee}
+                  onChange={(cents) => updateZone(idx, "fee", cents)}
+                  style={{ ...inp, borderColor: z._dirty ? `${GN}66` : undefined }}
+                />
+              </div>
               <button
                 onClick={() => deleteZone(idx)}
                 disabled={saving}
@@ -515,7 +508,7 @@ export default function DeliveryModal({
               )}
               {testResult.available && (
                 <div style={{ fontSize: 13, color: "var(--dash-text)", marginBottom: 4 }}>
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><DollarSign size={13} />Taxa: <strong>R$ {fmtFee(testResult.fee)}</strong></span>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><DollarSign size={13} />Taxa: <strong>{formatCents(testResult.fee)}</strong></span>
                 </div>
               )}
               <div style={{ fontSize: 12, color: "var(--dash-text-muted)", marginTop: 4 }}>{testResult.message}</div>

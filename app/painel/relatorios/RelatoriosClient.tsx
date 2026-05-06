@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { Package, CheckCircle2, DollarSign, Target, CreditCard, Trophy, Download, Sun, TrendingUp, CalendarDays, ShoppingBag, AlertTriangle, Banknote } from "lucide-react";
+import { formatCents } from "@/lib/money";
 
 type DayData = { date: string; orders: number; revenue: number };
 type Product = { name: string; qty: number; revenue: number };
@@ -34,9 +35,7 @@ interface Props {
 const TABS = ["Diário", "Semanal", "Mensal", "Produtos"] as const;
 type Tab = (typeof TABS)[number];
 
-function R(cents: number) {
-  return `R$ ${(cents / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
-}
+const R = formatCents;
 
 function pct(part: number, total: number) {
   if (!total) return 0;
