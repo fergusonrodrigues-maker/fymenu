@@ -267,43 +267,96 @@ function PricingCard({
 
 // ── Pricing Plans Data ────────────────────────────────────────────────────────
 // Preços vigentes a partir de 06/05/2026 (centralizado em lib/plans.ts).
+// Lista de features é cumulativa ("Tudo do plano X, mais:"), com checklist ✓.
 const PLANS = {
   menu: {
-    name: "Menu", icon: "🍽️", units: "Até 2 unidades",
+    name: "Menu",
+    tagline: "Vitrine premium + Analytics IA",
+    icon: "🍽️", units: "Até 2 unidades",
     prices: { MONTHLY: "149", QUARTERLY: "129", SEMIANNUALLY: "99" },
     totals: { MONTHLY: "149", QUARTERLY: "387", SEMIANNUALLY: "594" },
     savings: { QUARTERLY: "13%", SEMIANNUALLY: "34%" } as Record<string, string>,
-    features: ["Cardápio de vídeo 9:16", "Categorias com horário", "Modo TV autoplay", "Analytics com IA + sugestões", "Relatório em PDF", "Link público + QR Code"],
-    cta: "Começar agora", highlight: false,
+    features: [
+      "Cardápio em vídeo 9:16",
+      "Variações, combos e adicionais",
+      "Modo TV",
+      "Analytics em tempo real",
+      "Top produtos e horários de pico",
+      "Análise IA do cardápio",
+      "Relatório PDF",
+    ],
+    trial: false,
+    cta: "Começar agora",
+    href: "/checkout?plan=menu",
+    highlight: false,
   },
   menupro: {
-    name: "MenuPro", icon: "⭐", units: "Até 3 unidades", badge: "MAIS POPULAR",
+    name: "MenuPro",
+    tagline: "Operação completa para restaurantes",
+    icon: "⭐", units: "Até 3 unidades", badge: "MAIS POPULAR",
     prices: { MONTHLY: "499", QUARTERLY: "449", SEMIANNUALLY: "399" },
     totals: { MONTHLY: "499", QUARTERLY: "1.347", SEMIANNUALLY: "2.394" },
     savings: { QUARTERLY: "10%", SEMIANNUALLY: "20%" } as Record<string, string>,
-    features: ["Tudo do Menu +", "Pedidos via WhatsApp + iFood", "Link de delivery + mesa", "Comanda digital completa", "Cozinha + Garçom em tempo real", "CRM básico de clientes", "Estoque básico", "Financeiro delivery + mesa", "IA na descrição de produtos"],
-    cta: "Testar grátis 7 dias", highlight: true,
+    features: [
+      "Tudo do plano Menu, mais:",
+      "IA escreve descrições de produtos",
+      "Pedidos via WhatsApp + tracking",
+      "Link de delivery",
+      "Comanda digital com QR Code",
+      "Cliente chama garçom na mesa",
+      "Cozinha imprime na hora (cozinha, bar, caixa)",
+      "Garçom no portal funcionário",
+      "CRM básico (cadastro de clientes)",
+      "Estoque básico (controle de quantidade)",
+      "Financeiro de delivery e mesa",
+    ],
+    trial: true,
+    cta: "Testar 7 dias grátis",
+    href: "/checkout?plan=menupro&trial=true",
+    highlight: true,
   },
   business: {
-    name: "Business", icon: "🏢", units: "5 unidades fixo", badge: "7 DIAS GRÁTIS",
+    name: "Business",
+    tagline: "Gestão completa com IA",
+    icon: "🏢", units: "Até 5 unidades", badge: "7 DIAS GRÁTIS",
     prices: { MONTHLY: "1.250", QUARTERLY: "1.129", SEMIANNUALLY: "999" },
     totals: { MONTHLY: "1.250", QUARTERLY: "3.387", SEMIANNUALLY: "5.994" },
     savings: { QUARTERLY: "10%", SEMIANNUALLY: "20%" } as Record<string, string>,
-    features: ["Tudo do MenuPro +", "Equipe completa + ponto + salários", "Estoque com ficha técnica + markup + IA", "CRM com disparo de mensagens", "Financeiro com custos + balanço + meta + IA", "Chatbot IA no WhatsApp", "Portal do gerente", "Botão chamar gerente em mesa"],
-    cta: "Testar grátis 7 dias", highlight: false,
+    features: [
+      "Tudo do plano MenuPro, mais:",
+      "Financeiro com custos, lucro e meta",
+      "IA pró-labore (sugestão de retirada)",
+      "Estoque com ficha técnica e validade",
+      "IA upload de notas fiscais",
+      "Equipe completa com ponto e folha",
+      "CRM com disparo de mensagens",
+      "Chatbot WhatsApp 24h com IA",
+      "Portal gerente",
+      "Botão \"chamar gerente\" na mesa",
+    ],
+    trial: true,
+    cta: "Testar 7 dias grátis",
+    href: "/checkout?plan=business&trial=true",
+    highlight: false,
   },
 } as const;
 
 // ── Plan Card (with hover effects) ───────────────────────────────────────────
 type PlanKey = keyof typeof PLANS;
-function PlanCard({ planKey, plan, theme }: {
+type CycleKey = "MONTHLY" | "QUARTERLY" | "SEMIANNUALLY";
+
+const CYCLE_MONTHS: Record<CycleKey, number> = {
+  MONTHLY: 1, QUARTERLY: 3, SEMIANNUALLY: 6,
+};
+
+function PlanCard({ planKey, plan, theme, cycle }: {
   planKey: PlanKey;
   plan: typeof PLANS[PlanKey];
   theme: "dark" | "light";
+  cycle: CycleKey;
 }) {
   const [hovered, setHovered] = useState(false);
   const [pressed, setPressed] = useState(false);
-  const [cycle, setCycle] = useState<"MONTHLY" | "QUARTERLY" | "SEMIANNUALLY">("QUARTERLY");
   const isAccent = plan.highlight; // menupro → cyan/green gradient
   const isPurple = planKey === "menu";
   const isGreen = planKey === "business";
@@ -358,12 +411,13 @@ function PlanCard({ planKey, plan, theme }: {
         borderRadius: 24,
         height: "100%",
         transform: pressed
-          ? "translateY(-4px) scale(0.99)"
+          ? (isAccent ? "translateY(-4px) scale(1.04)" : "translateY(-4px) scale(0.99)")
           : hovered
-            ? "translateY(-8px)"
-            : "none",
+            ? (isAccent ? "translateY(-12px) scale(1.06)" : "translateY(-8px)")
+            : (isAccent ? "scale(1.05)" : "none"),
         transition: "transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)",
         cursor: "pointer",
+        zIndex: isAccent ? 2 : 1,
       }}
     >
       {/* Inner card: keeps overflow:hidden to clip glow/shine overlays */}
@@ -450,44 +504,12 @@ function PlanCard({ planKey, plan, theme }: {
 
         <div style={{ textAlign: "center", marginBottom: 20 }}>
           <div style={{ fontSize: 22, fontWeight: 900, ...(dark && isGreen ? { background: "linear-gradient(135deg, #8B6914, #FFD700, #C6930A, #FFE55C, #8B6914)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" } : { color: dark ? "var(--lp-price-color)" : "#1a1a1a" }) }}>{plan.name}</div>
-          <div style={{ fontSize: 13, color: dark ? (isGreen ? "#FFD700" : "var(--lp-text-secondary)") : "#666", marginTop: 2 }}>{plan.units}</div>
-        </div>
-
-        {/* Per-card cycle selector */}
-        <div style={{
-          display: "flex",
-          background: dark ? "rgba(255,255,255,0.06)" : `rgba(${lRgb},0.06)`,
-          borderRadius: 10, padding: 3, marginBottom: 16, gap: 2,
-        }}>
-          {([
-            { key: "MONTHLY", label: "Mensal" },
-            { key: "QUARTERLY", label: "Trimestral" },
-            { key: "SEMIANNUALLY", label: "Semestral" },
-          ] as const).map((c) => (
-            <button
-              key={c.key}
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCycle(c.key); }}
-              style={{
-                flex: 1, border: "none", cursor: "pointer", fontFamily: "inherit",
-                padding: "6px 4px", borderRadius: 7, fontSize: 11, fontWeight: 700,
-                background: cycle === c.key
-                  ? dark
-                    ? (isGreen ? "#C6930A" : (hex ? `rgba(${rgb},0.2)` : "rgba(255,255,255,0.12)"))
-                    : lHex
-                  : "transparent",
-                color: cycle === c.key
-                  ? dark
-                    ? (isGreen ? "#000" : (hex ?? "#fff"))
-                    : "#fff"
-                  : dark
-                    ? "rgba(255,255,255,0.35)"
-                    : "#888",
-                transition: "all 0.2s ease",
-              }}
-            >
-              {c.label}
-            </button>
-          ))}
+          <div style={{
+            fontSize: 12, marginTop: 4, padding: "0 12px",
+            color: dark ? "rgba(255,255,255,0.55)" : "rgba(0,0,0,0.55)",
+            fontWeight: 500, lineHeight: 1.4,
+          }}>{plan.tagline}</div>
+          <div style={{ fontSize: 12, color: dark ? (isGreen ? "#FFD700" : "var(--lp-text-secondary)") : "#888", marginTop: 6 }}>{plan.units}</div>
         </div>
 
         <div style={{ textAlign: "center", marginBottom: 20 }}>
@@ -495,34 +517,50 @@ function PlanCard({ planKey, plan, theme }: {
             R${plan.prices[cycle]}
             <span style={{ fontSize: 14, fontWeight: 400, color: dark ? "var(--lp-text-secondary)" : "#999" }}>/mês</span>
           </div>
-          {cycle !== "MONTHLY" && (
+          {cycle !== "MONTHLY" ? (
             <div
               key={cycle}
               style={{
-                display: "inline-flex", alignItems: "center", marginTop: 6,
-                background: dark
-                  ? (isGreen ? "#FFD700" : isPurple ? "#a78bfa" : "#00ffae")
-                  : (isGreen ? "#C6930A" : isPurple ? "#8b5cf6" : "#00b07a"),
-                color: dark ? "#000" : "#fff",
-                fontSize: 12, fontWeight: 700, padding: "4px 14px", borderRadius: 999,
-                opacity: 0,
-                animation: "pill-pop 0.5s ease-out 0.3s forwards",
+                fontSize: 11, marginTop: 8, lineHeight: 1.4,
+                color: dark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.5)",
               }}
             >
-              Economia de {(plan.savings as Record<string, string>)[cycle]}
+              cobrado a cada {CYCLE_MONTHS[cycle]} meses<br/>
+              <strong style={{ color: dark ? (isGreen ? "#FFD700" : (hex ?? "rgba(255,255,255,0.85)")) : lHex }}>
+                R${plan.totals[cycle]} total · economia de {(plan.savings as Record<string, string>)[cycle]}
+              </strong>
             </div>
+          ) : (
+            <div style={{ height: 30, marginTop: 8 }} />
           )}
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 24, flex: 1 }}>
-          {plan.features.map((f) => (
-            <div key={f} style={{ fontSize: 14, color: dark ? (isGreen ? "rgba(255,255,255,0.85)" : "var(--lp-text)") : "#4a4a4a", display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ color: dark ? (isGreen ? "#FFD700" : (hex ?? "#00cc8a")) : (isGreen ? "#C6930A" : lHex), fontSize: 12 }}>✓</span> {f}
-            </div>
-          ))}
+          {plan.features.map((f) => {
+            const isCumulativeHeader = /^Tudo do plano /.test(f);
+            if (isCumulativeHeader) {
+              return (
+                <div key={f} style={{
+                  fontSize: 12, fontWeight: 800, letterSpacing: "0.02em",
+                  color: dark ? (isGreen ? "#FFD700" : (hex ?? "#fff")) : (isGreen ? "#C6930A" : lHex),
+                  textTransform: "uppercase",
+                  borderBottom: dark ? "1px solid rgba(255,255,255,0.08)" : `1px solid rgba(${lRgb},0.18)`,
+                  paddingBottom: 6, marginBottom: 2,
+                }}>
+                  {f}
+                </div>
+              );
+            }
+            return (
+              <div key={f} style={{ fontSize: 14, color: dark ? (isGreen ? "rgba(255,255,255,0.85)" : "var(--lp-text)") : "#4a4a4a", display: "flex", alignItems: "flex-start", gap: 8 }}>
+                <span style={{ color: dark ? (isGreen ? "#FFD700" : (hex ?? "#00cc8a")) : (isGreen ? "#C6930A" : lHex), fontSize: 12, lineHeight: 1.6, flexShrink: 0 }}>✓</span>
+                <span>{f}</span>
+              </div>
+            );
+          })}
         </div>
 
-        <a href="/cadastro"
+        <a href={plan.href}
           style={{
             display: "block", textAlign: "center", padding: "14px", borderRadius: 14,
             background: dark
@@ -556,9 +594,100 @@ function PlanCard({ planKey, plan, theme }: {
             </span>
           ) : plan.cta}
         </a>
+        {plan.trial && (
+          <div style={{
+            textAlign: "center", marginTop: 8, fontSize: 11,
+            color: dark ? "rgba(255,255,255,0.45)" : "rgba(0,0,0,0.45)",
+          }}>
+            Sem cobrança nos 7 primeiros dias · cancele quando quiser
+          </div>
+        )}
         </div>
       </div>
     </div>
+  );
+}
+
+// ── Pricing Section (global cycle toggle drives all 3 cards) ─────────────────
+function PricingSection({ theme }: { theme: "dark" | "light" }) {
+  const [cycle, setCycle] = useState<CycleKey>("QUARTERLY");
+  const dark = theme === "dark";
+
+  const cycleOptions = [
+    { key: "MONTHLY" as const,      label: "Mensal" },
+    { key: "QUARTERLY" as const,    label: "Trimestral", saving: "-10%" },
+    { key: "SEMIANNUALLY" as const, label: "Semestral",  saving: "-20%" },
+  ];
+
+  return (
+    <>
+      {/* Global cycle toggle */}
+      <div style={{ display: "flex", justifyContent: "center", marginBottom: 40 }}>
+        <div
+          role="tablist"
+          style={{
+            display: "inline-flex",
+            background: dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)",
+            border: dark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
+            borderRadius: 999,
+            padding: 4,
+            gap: 2,
+          }}
+        >
+          {cycleOptions.map((c) => {
+            const active = cycle === c.key;
+            return (
+              <button
+                key={c.key}
+                role="tab"
+                aria-selected={active}
+                onClick={() => setCycle(c.key)}
+                style={{
+                  border: "none", cursor: "pointer", fontFamily: "inherit",
+                  padding: "8px 18px", borderRadius: 999, fontSize: 13, fontWeight: 700,
+                  background: active
+                    ? (dark ? "linear-gradient(135deg, #00ffae, #00d9ff)" : "linear-gradient(135deg, #00b07a, #00d9a0)")
+                    : "transparent",
+                  color: active ? "#000" : (dark ? "rgba(255,255,255,0.55)" : "rgba(0,0,0,0.55)"),
+                  transition: "all 0.2s ease",
+                  display: "inline-flex", alignItems: "center", gap: 6,
+                }}
+              >
+                {c.label}
+                {c.saving && (
+                  <span style={{
+                    fontSize: 10, fontWeight: 800,
+                    padding: "1px 6px", borderRadius: 6,
+                    background: active ? "rgba(0,0,0,0.12)" : (dark ? "rgba(0,255,174,0.15)" : "rgba(0,176,122,0.12)"),
+                    color: active ? "#000" : (dark ? "#00ffae" : "#00b07a"),
+                  }}>
+                    {c.saving}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Plan cards */}
+      <div
+        className="pricing-grid"
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(3, 1fr)",
+          alignItems: "stretch",
+          gap: 20,
+          maxWidth: 1100,
+          margin: "0 auto",
+          padding: "0 16px",
+        }}
+      >
+        {(Object.keys(PLANS) as PlanKey[]).map((key) => (
+          <PlanCard key={key} planKey={key} plan={PLANS[key]} theme={theme} cycle={cycle} />
+        ))}
+      </div>
+    </>
   );
 }
 
@@ -1753,12 +1882,8 @@ export default function LandingPage() {
             </p>
           </div>
 
-          {/* Plan cards */}
-          <div className="pricing-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", alignItems: "stretch", gap: 20, maxWidth: 1000, margin: "0 auto", padding: "0 16px" }}>
-            {(Object.keys(PLANS) as PlanKey[]).map((key) => (
-              <PlanCard key={key} planKey={key} plan={PLANS[key]} theme={theme} />
-            ))}
-          </div>
+          {/* Plan cards with global cycle toggle */}
+          <PricingSection theme={theme} />
         </section>
 
         {/* ── CTA Final ── */}
