@@ -4,6 +4,7 @@ import { AlertTriangle, FolderOpen, CheckCircle2, Download, Gem, RefreshCw, Spar
 import { createPortal } from "react-dom";
 import { createClient } from "@/lib/supabase/client";
 import LoadingSpinner, { ContentEnter } from "@/components/LoadingSpinner";
+import { hasPlanFeature } from "@/lib/plans";
 
 const supabase = createClient();
 const WA_GREEN = "#25D366";
@@ -731,7 +732,10 @@ function WaIcon({ size = 16 }: { size?: number }) {
 }
 
 // ─── Main CRM Modal ───────────────────────────────────────────────────────────
-export default function CrmModal({ unit, restaurant, onOpenImport }: { unit: any; restaurant: any; onOpenImport?: (type: string) => void }) {
+export default function CrmModal({ unit, restaurant, unitFeatures, onOpenImport }: { unit: any; restaurant: any; unitFeatures?: Record<string, boolean>; onOpenImport?: (type: string) => void }) {
+  // O botão "Importar histórico" usa o pipeline NF-e/IA, que faz parte do
+  // estoque completo (Business). O CRM básico (cadastro) já é MenuPro+.
+  const canImport = hasPlanFeature(restaurant?.plan, "stockComplete", unitFeatures);
   const [tab, setTab] = useState<"clientes" | "frequencia" | "delivery">("clientes");
   // CRM customers (from crm_customers table)
   const [crmCustomers, setCrmCustomers] = useState<CrmCustomer[]>([]);
@@ -897,7 +901,7 @@ export default function CrmModal({ unit, restaurant, onOpenImport }: { unit: any
       </div>
 
       {/* Importar clientes históricos */}
-      {onOpenImport && restaurant?.plan === "business" && (
+      {onOpenImport && canImport && (
         <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 4 }}>
           <button
             onClick={() => onOpenImport("crm_customers")}

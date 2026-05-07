@@ -13,6 +13,7 @@ import AIButton from "@/components/AIButton";
 import AIWaveLoader from "@/components/AIWaveLoader";
 import { MoneyInput } from "@/components/ui/MoneyInput";
 import { formatCents } from "@/lib/money";
+import { hasPlanFeature } from "@/lib/plans";
 import {
   Info, FileText, X, CheckCircle2, Clipboard, Package, Sparkles,
   AlertCircle, Clock,
@@ -138,16 +139,11 @@ function NewProductFormInline({ categoryId, section, customSections, anyProductE
   );
 }
 
-const PLAN_FEATURES_CARDAPIO: Record<string, string[]> = {
-  menu: [],
-  menupro: [],
-  business: ["recipe"],
-};
-
-export default function CardapioModal({ unit, categories, products, upsellItems, restaurant, onClose }: {
-  unit: Unit | null; categories: Category[]; products: Product[]; upsellItems: any[]; restaurant?: Restaurant | null; onClose: () => void;
+export default function CardapioModal({ unit, categories, products, upsellItems, restaurant, unitFeatures, onClose }: {
+  unit: Unit | null; categories: Category[]; products: Product[]; upsellItems: any[]; restaurant?: Restaurant | null; unitFeatures?: Record<string, boolean>; onClose: () => void;
 }) {
-  const hasRecipeFeature = PLAN_FEATURES_CARDAPIO[restaurant?.plan as keyof typeof PLAN_FEATURES_CARDAPIO]?.includes("recipe") || false;
+  // Ficha técnica vem com stockComplete (Business).
+  const hasRecipeFeature = hasPlanFeature(restaurant?.plan, "stockComplete", unitFeatures);
 
   const [expandedCat, setExpandedCat] = useState<string | null>(null);
   const [expandedProductId, setExpandedProductId] = useState<string | null>(null);

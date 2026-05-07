@@ -8,6 +8,7 @@ import AIButton from "@/components/AIButton";
 import AIWaveLoader from "@/components/AIWaveLoader";
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell } from "recharts";
 import { Eye, MousePointerClick, CheckCircle2, FileText, Bike, BarChart3, Lock, RefreshCw, Download, X, Star } from "lucide-react";
+import { hasPlanFeature } from "@/lib/plans";
 
 const supabase = createClient();
 
@@ -35,12 +36,14 @@ export default function AnalyticsModal({
   products,
   categories,
   restaurant,
+  unitFeatures,
 }: {
   analytics: { views: number; clicks: number; orders: number };
   unit: Unit | null;
   products?: any[];
   categories?: any[];
   restaurant?: { plan: string } | null;
+  unitFeatures?: Record<string, boolean>;
 }) {
   const [tab, setTab] = useState<Tab>("Geral");
   const [topProducts, setTopProducts] = useState<{ name: string; thumb: string; count: number }[]>([]);
@@ -406,7 +409,8 @@ export default function AnalyticsModal({
     }
   }
 
-  const hasMenuProFeature = restaurant?.plan === "menupro" || restaurant?.plan === "business";
+  // PDF/avaliações/import/attention-time são MenuPro+ — proxy via iaDescription.
+  const hasMenuProFeature = hasPlanFeature(restaurant?.plan, "iaDescription", unitFeatures);
   const visibleTabs: Tab[] = [
     "Geral",
     "Produtos",
@@ -507,7 +511,7 @@ export default function AnalyticsModal({
       )}
 
       {/* PDF download — MenuPro/Business only */}
-      {(restaurant?.plan === "menupro" || restaurant?.plan === "business") && (
+      {hasMenuProFeature && (
         <div style={{ display: "flex", justifyContent: "flex-end" }}>
           <button
             onClick={handleDownloadPDF}
@@ -724,7 +728,7 @@ export default function AnalyticsModal({
               Tempo médio que cada cliente fica vendo o produto
             </div>
 
-            {(restaurant?.plan === "menupro" || restaurant?.plan === "business") ? (
+            {hasMenuProFeature ? (
               loadingAttention ? (
                 <div style={{ display: "flex", justifyContent: "center", padding: 20 }}><LoadingSpinner size="sm" /></div>
               ) : (
@@ -931,7 +935,7 @@ export default function AnalyticsModal({
             <>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
                 <div style={{ fontSize: 14, fontWeight: 700, color: "var(--dash-text)" }}>Análise com IA</div>
-                {(restaurant?.plan === "menupro" || restaurant?.plan === "business") && (
+                {hasMenuProFeature && (
                   <button onClick={() => setShowImportAnalytics(true)} style={{
                     padding: "8px 14px", borderRadius: 10, border: "none", cursor: "pointer",
                     background: "var(--dash-card-hover)", color: "var(--dash-text-muted)", fontSize: 12,

@@ -10,6 +10,7 @@ import AIButton from "@/components/AIButton";
 import AIWaveLoader from "@/components/AIWaveLoader";
 import { MoneyInput } from "@/components/ui/MoneyInput";
 import { formatCents } from "@/lib/money";
+import { hasPlanFeature } from "@/lib/plans";
 import {
   Download, X, CheckCircle2, MessageCircle, UtensilsCrossed, Lock, Bike,
   Package, DollarSign, Target, CreditCard, Star, TrendingUp, Calendar,
@@ -122,12 +123,6 @@ function ReportGrowthBadge({ value }: { value: number | null }) {
   );
 }
 
-const PLAN_FEATURES: Record<string, string[]> = {
-  menu: ["whatsapp_revenue"],
-  menupro: ["whatsapp_revenue", "delivery_revenue", "mesa_revenue", "split_view"],
-  business: ["whatsapp_revenue", "delivery_revenue", "mesa_revenue", "split_view", "costs", "balance", "daily_goal", "ai_report", "import"],
-};
-
 function getSource(order: any): string {
   if (order.source) return order.source;
   if (order.table_number && order.table_number > 0) return "mesa";
@@ -135,17 +130,33 @@ function getSource(order: any): string {
   return "delivery";
 }
 
-export default function FinanceiroModal({ unit, analytics, reportData, restaurant, onOpenPlano, onOpenImport }: {
+export default function FinanceiroModal({ unit, analytics, reportData, restaurant, onOpenPlano, onOpenImport, unitFeatures }: {
   unit: Unit | null;
   analytics: { views: number; clicks: number; orders: number };
   reportData: ReportData;
   restaurant: Restaurant;
   onOpenPlano: () => void;
   onOpenImport?: (type: string) => void;
+  unitFeatures?: Record<string, boolean>;
 }) {
-  const hasFeature = (feature: string) => {
-    const plan = restaurant?.plan || "menu";
-    return PLAN_FEATURES[plan]?.includes(feature) || false;
+  // Local labels mapped to lib/plans.ts FeatureKeys.
+  // - splitView (mesa/delivery breakdown) requires finance (MenuPro+).
+  // - costs/balance/daily_goal/ai_report require financeComplete (Business).
+  // - import (NF-e via IA) requires stockComplete (Business).
+  const hasFeature = (feature: "mesa_revenue" | "delivery_revenue" | "daily_goal" | "balance" | "costs" | "ai_report" | "import"): boolean => {
+    const plan = restaurant?.plan;
+    switch (feature) {
+      case "mesa_revenue":
+      case "delivery_revenue":
+        return hasPlanFeature(plan, "finance", unitFeatures);
+      case "daily_goal":
+      case "balance":
+      case "costs":
+      case "ai_report":
+        return hasPlanFeature(plan, "financeComplete", unitFeatures);
+      case "import":
+        return hasPlanFeature(plan, "stockComplete", unitFeatures);
+    }
   };
 
   const ALL_TABS = [

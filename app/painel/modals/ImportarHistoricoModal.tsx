@@ -7,6 +7,7 @@ import type { Unit, Restaurant } from "../types";
 import { createImportBatch, extractDataWithAI } from "../importar/actions";
 import { parseMoneyToCents } from "../importar/utils";
 import type { ImportTargetTable } from "../importar/utils";
+import { hasPlanFeature } from "@/lib/plans";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Props {
@@ -15,6 +16,7 @@ interface Props {
   initialType?: ImportTargetTable;
   onClose: () => void;
   onOpenPlano: () => void;
+  unitFeatures?: Record<string, boolean>;
 }
 
 type Step = 1 | 2 | 3 | 4 | 5;
@@ -391,8 +393,8 @@ function Stepper({ current }: { current: Step }) {
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
-export default function ImportarHistoricoModal({ unit, restaurant, initialType, onClose, onOpenPlano }: Props) {
-  const isBusiness = restaurant.plan === "business";
+export default function ImportarHistoricoModal({ unit, restaurant, initialType, onClose, onOpenPlano, unitFeatures }: Props) {
+  const isBusiness = hasPlanFeature(restaurant?.plan, "stockComplete", unitFeatures);
 
   const [step, setStep] = useState<Step>(1);
   const [selectedType, setSelectedType] = useState<ImportTargetTable | null>(initialType ?? null);

@@ -7,6 +7,7 @@ import AIWaveLoader from "@/components/AIWaveLoader";
 import {
   X, CheckCircle2, Download, Package, Pencil, Calendar, AlertCircle, RefreshCw, Tag,
 } from "lucide-react";
+import { hasPlanFeature } from "@/lib/plans";
 
 const supabase = createClient();
 
@@ -37,7 +38,7 @@ function fmtBRL(v: number) {
   return `R$ ${(v / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
 }
 
-export default function EstoqueModal({ unit, restaurant, onOpenImport }: { unit: any; restaurant: any; onOpenImport?: (type: string) => void }) {
+export default function EstoqueModal({ unit, restaurant, unitFeatures, onOpenImport }: { unit: any; restaurant: any; unitFeatures?: Record<string, boolean>; onOpenImport?: (type: string) => void }) {
   const [tab, setTab] = useState<"lista" | "alertas" | "movimentacoes" | "previsao">("lista");
   const [items, setItems] = useState<any[]>([]);
   const [movements, setMovements] = useState<any[]>([]);
@@ -197,7 +198,8 @@ export default function EstoqueModal({ unit, restaurant, onOpenImport }: { unit:
     loadData();
   }
 
-  const isBusiness = restaurant?.plan === "business";
+  // stockComplete = ficha técnica + IA + validade (Business).
+  const isBusiness = hasPlanFeature(restaurant?.plan, "stockComplete", unitFeatures);
 
   function getExpiryStatus(item: any): { label: string; color: string; priority: number } {
     if (!item.expiry_date) return { label: "", color: "", priority: 99 };
@@ -571,7 +573,7 @@ export default function EstoqueModal({ unit, restaurant, onOpenImport }: { unit:
       </div>
 
       {/* Importar movimentações históricas */}
-      {onOpenImport && restaurant?.plan === "business" && (
+      {onOpenImport && isBusiness && (
         <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 4 }}>
           <button
             onClick={() => onOpenImport("inventory_movements")}
