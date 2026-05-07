@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getTenantContext } from "@/lib/tenant/getTenantContext";
 import { listOrdersByUnit } from "./actions";
 import { formatPrice } from "@/lib/orders/validateOrder";
+import { requireFeatureOrRedirect } from "@/lib/server/requireFeatureOrRedirect";
 
 export default async function OrdersPage({
   searchParams,
@@ -18,6 +19,12 @@ export default async function OrdersPage({
 
   const activeUnit = units.find((u) => u.id === params.unit) ?? units[0];
   if (!activeUnit) redirect("/painel");
+
+  // Feature gate: WhatsApp orders (MenuPro+).
+  await requireFeatureOrRedirect("whatsappOrders", {
+    restaurantId: restaurant.id,
+    unitId: activeUnit.id,
+  });
 
   let orders: any[] = [];
   try {

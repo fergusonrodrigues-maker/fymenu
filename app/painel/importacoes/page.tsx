@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import ImportacoesClient from "./ImportacoesClient";
+import { requireFeatureOrRedirect } from "@/lib/server/requireFeatureOrRedirect";
 
 export const metadata = { title: "Importações Históricas — FyMenu" };
 
@@ -16,6 +17,9 @@ export default async function ImportacoesPage() {
     .maybeSingle();
 
   if (!restaurant) redirect("/painel");
+
+  // Feature gate: full stock import with AI (Business).
+  await requireFeatureOrRedirect("stockComplete", { restaurantId: restaurant.id });
 
   const { data: batches } = await supabase
     .from("import_batches")

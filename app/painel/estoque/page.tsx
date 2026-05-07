@@ -1,6 +1,7 @@
 ﻿import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import EstoqueClient from "./EstoqueClient";
+import { requireFeatureOrRedirect } from "@/lib/server/requireFeatureOrRedirect";
 
 export default async function EstoquePage() {
   const supabase = await createClient();
@@ -23,6 +24,12 @@ export default async function EstoquePage() {
     .single();
 
   if (!unit) redirect("/painel");
+
+  // Feature gate: stock (MenuPro+ has 'stock'; Business adds 'stockComplete').
+  await requireFeatureOrRedirect("stock", {
+    restaurantId: restaurant.id,
+    unitId: unit.id,
+  });
 
   const { data: categories } = await supabase
     .from("categories")
