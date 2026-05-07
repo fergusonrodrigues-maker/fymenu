@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendText } from "@/lib/zapi";
 import { isUnitMember } from "@/lib/tenant/isRestaurantMember";
+import { requireFeatureForAction } from "@/lib/server/requireFeatureForAction";
 
 function fillTemplate(body: string, vars: Record<string, string>): string {
   return body.replace(/\{\{(\w+)\}\}/g, (_, key) => vars[key] ?? "");
@@ -21,6 +22,15 @@ export async function POST(req: NextRequest) {
 
     if (!await isUnitMember(admin, user.id, unitId)) {
       return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
+    }
+
+    // Feature gate: WhatsApp orders (MenuPro+).
+    const gate = await requireFeatureForAction("whatsappOrders", { unitId });
+    if (!gate.ok) {
+      return NextResponse.json(
+        { error: "feature_not_available", code: gate.error, minPlan: gate.minPlan ?? null },
+        { status: 403 }
+      );
     }
 
     const { data: instance } = await admin

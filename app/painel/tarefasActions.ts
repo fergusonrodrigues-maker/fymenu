@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { logActivity } from "@/lib/audit/logActivity";
 import { ensureTodayTasks } from "@/lib/tarefas/ensureTodayTasks";
 import { revalidatePath } from "next/cache";
+import { requireFeatureForAction } from "@/lib/server/requireFeatureForAction";
 
 async function getUser(supabase: any) {
   const { data: { user } } = await supabase.auth.getUser();
@@ -21,6 +22,20 @@ async function assertMember(supabase: any, userId: string, restaurantId: string)
     .eq("status", "active")
     .maybeSingle();
   if (!data) throw new Error("Sem permissão.");
+}
+
+// Tarefas é parte do módulo de equipe — requer plano Business.
+async function assertEmployeesFeature(restaurantId: string, unitId?: string) {
+  const gate = await requireFeatureForAction("employees", { restaurantId, unitId });
+  if (!gate.ok) {
+    const err = new Error(
+      gate.error === "FEATURE_NOT_AVAILABLE"
+        ? "Disponível no plano Business"
+        : gate.message ?? gate.error
+    );
+    (err as { code?: string }).code = gate.error;
+    throw err;
+  }
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -115,6 +130,7 @@ export async function createTaskTemplate(input: TaskTemplateInput): Promise<void
   const supabase = await createClient();
   const user = await getUser(supabase);
   await assertMember(supabase, user.id, input.restaurantId);
+  await assertEmployeesFeature(input.restaurantId, input.unitId);
 
   const { data, error } = await supabase.from("task_templates").insert({
     unit_id: input.unitId,
@@ -152,6 +168,7 @@ export async function updateTaskTemplate(id: string, input: TaskTemplateInput): 
   const supabase = await createClient();
   const user = await getUser(supabase);
   await assertMember(supabase, user.id, input.restaurantId);
+  await assertEmployeesFeature(input.restaurantId, input.unitId);
 
   const { error } = await supabase.from("task_templates").update({
     name: input.name.trim(),
@@ -187,6 +204,7 @@ export async function deleteTaskTemplate(id: string, restaurantId: string, unitI
   const supabase = await createClient();
   const user = await getUser(supabase);
   await assertMember(supabase, user.id, restaurantId);
+  await assertEmployeesFeature(restaurantId, unitId);
 
   const { data: existing } = await supabase.from("task_templates").select("name").eq("id", id).maybeSingle();
 
@@ -219,6 +237,7 @@ export async function toggleTaskTemplate(
   const supabase = await createClient();
   const user = await getUser(supabase);
   await assertMember(supabase, user.id, restaurantId);
+  await assertEmployeesFeature(restaurantId, unitId);
 
   const { data: existing } = await supabase.from("task_templates").select("name").eq("id", id).maybeSingle();
 
@@ -248,6 +267,7 @@ export async function createManualTaskInstance(input: ManualTaskInput): Promise<
   const supabase = await createClient();
   const user = await getUser(supabase);
   await assertMember(supabase, user.id, input.restaurantId);
+  await assertEmployeesFeature(input.restaurantId, input.unitId);
 
   const { data, error } = await supabase.from("task_instances").insert({
     unit_id: input.unitId,
@@ -285,6 +305,7 @@ export async function updateTaskInstance(id: string, input: ManualTaskInput): Pr
   const supabase = await createClient();
   const user = await getUser(supabase);
   await assertMember(supabase, user.id, input.restaurantId);
+  await assertEmployeesFeature(input.restaurantId, input.unitId);
 
   const { error } = await supabase.from("task_instances").update({
     name: input.name.trim(),
@@ -318,6 +339,7 @@ export async function deleteTaskInstance(id: string, restaurantId: string, unitI
   const supabase = await createClient();
   const user = await getUser(supabase);
   await assertMember(supabase, user.id, restaurantId);
+  await assertEmployeesFeature(restaurantId, unitId);
 
   const { data: existing } = await supabase.from("task_instances").select("name").eq("id", id).maybeSingle();
   const { error } = await supabase.from("task_instances").delete().eq("id", id);

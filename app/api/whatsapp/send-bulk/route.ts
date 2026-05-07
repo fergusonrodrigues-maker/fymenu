@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendText } from "@/lib/zapi";
 import { isUnitMember } from "@/lib/tenant/isRestaurantMember";
+import { requireFeatureForAction } from "@/lib/server/requireFeatureForAction";
 
 const BULK_LIMIT = 200;
 const DELAY_MS = 3000;
@@ -30,6 +31,15 @@ export async function POST(req: NextRequest) {
 
     if (!await isUnitMember(admin, user.id, unitId)) {
       return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
+    }
+
+    // Feature gate: CRM broadcast / disparo de mensagens (Business).
+    const gate = await requireFeatureForAction("crmBroadcast", { unitId });
+    if (!gate.ok) {
+      return NextResponse.json(
+        { error: "feature_not_available", code: gate.error, minPlan: gate.minPlan ?? null },
+        { status: 403 }
+      );
     }
 
     const { data: instance } = await admin

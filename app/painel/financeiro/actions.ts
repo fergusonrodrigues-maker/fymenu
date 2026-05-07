@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { logActivity } from "@/lib/audit/logActivity";
+import { requireFeatureForAction } from "@/lib/server/requireFeatureForAction";
 
 export async function createExpense(input: {
   restaurantId: string;
@@ -12,6 +13,13 @@ export async function createExpense(input: {
   isRecurring: boolean;
   date: string;
 }): Promise<{ data?: any; error?: string }> {
+  // Feature gate: full financial module with cost/balance/goal (Business).
+  const gate = await requireFeatureForAction("financeComplete", {
+    restaurantId: input.restaurantId,
+    unitId: input.unitId,
+  });
+  if (!gate.ok) return { error: gate.error };
+
   const supabase = await createClient();
 
   const { data, error } = await supabase
@@ -52,6 +60,10 @@ export async function deleteExpense(
   id: string,
   restaurantId: string,
 ): Promise<{ error?: string }> {
+  // Feature gate: full financial module (Business).
+  const gate = await requireFeatureForAction("financeComplete", { restaurantId });
+  if (!gate.ok) return { error: gate.error };
+
   const supabase = await createClient();
 
   let expenseInfo: { name: string; unit_id: string } | null = null;
