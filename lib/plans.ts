@@ -251,3 +251,60 @@ export const PLAN_PRICES_ASAAS: Record<PlanCode, Record<"MONTHLY" | "QUARTERLY" 
     SEMIANNUALLY: PLANS.business.prices.semestral    * CYCLE_MONTHS.semestral,
   },
 };
+
+// ── Feature gating helpers ────────────────────────────────────────────────────
+
+export type FeatureKey = keyof PlanFeatures;
+
+/**
+ * Verifica se um plano tem acesso a uma feature.
+ * Considera unit_features overrides se passar unitFeatures (ex: cliente Menu
+ * com chatbot liberado manualmente pelo suporte).
+ */
+export function hasPlanFeature(
+  plan: PlanCode | string | null | undefined,
+  feature: FeatureKey,
+  unitFeatures?: Record<string, boolean>
+): boolean {
+  // Override por unidade tem prioridade (admin pode liberar feature manual)
+  if (unitFeatures && feature in unitFeatures) {
+    return unitFeatures[feature];
+  }
+
+  // Fallback pro schema do plano
+  const normalized = (plan ?? "").toString().toLowerCase();
+  const planDef = (PLANS as Record<string, PlanDef | undefined>)[normalized];
+  if (!planDef) return false;
+  return planDef.features[feature] === true;
+}
+
+/**
+ * Server-side: lança erro 403 se não tiver acesso. Use em server actions e
+ * API routes que precisam ser bloqueadas. NUNCA chamar do client.
+ */
+export function assertPlanFeature(
+  plan: PlanCode | string | null | undefined,
+  feature: FeatureKey,
+  unitFeatures?: Record<string, boolean>
+): void {
+  if (!hasPlanFeature(plan, feature, unitFeatures)) {
+    const error = new Error(
+      `Feature "${feature}" não disponível no plano "${plan ?? "unknown"}"`
+    );
+    (error as { code?: string }).code = "FEATURE_NOT_AVAILABLE";
+    (error as { statusCode?: number }).statusCode = 403;
+    throw error;
+  }
+}
+
+/**
+ * Retorna o menor plano que tem acesso à feature (pra mensagem de upgrade).
+ *   minPlanForFeature("chatbotAI") -> "business"
+ *   minPlanForFeature("catalog")   -> "menu"
+ */
+export function minPlanForFeature(feature: FeatureKey): PlanCode | null {
+  for (const code of PLAN_ORDER) {
+    if (PLANS[code].features[feature] === true) return code;
+  }
+  return null;
+}
