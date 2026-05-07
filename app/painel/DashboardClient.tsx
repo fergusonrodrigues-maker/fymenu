@@ -7,7 +7,9 @@ import { createClient } from "@/lib/supabase/client";
 import dynamic from "next/dynamic";
 import type { Restaurant, Unit, StockStats, Category, Product, Profile, ReportData } from "./types";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import { hasPlanFeature, planLabel, maxUnits as planMaxUnits } from "@/lib/plan";
+import { planLabel, maxUnits as planMaxUnits } from "@/lib/plan";
+import { hasPlanFeature, minPlanForFeature, PLANS, type FeatureKey } from "@/lib/plans";
+import { UpgradePopup } from "@/components/plan/UpgradeGate";
 import { useModalHistory } from "@/lib/hooks/useModalHistory";
 import { Icon } from "@/components/ui/Icon";
 import { Package, AlertCircle, Target, Star, CreditCard, Link2, Bell, Store, Lock, Timer, UtensilsCrossed, ChefHat, Tv, Wallet, ClipboardList, MapPin, Users, Printer, Link, MessageCircle, Headphones, Truck, Settings, BarChart3, Bike, FileText, UserCircle, X, Clock, ListChecks } from "lucide-react";
@@ -308,125 +310,32 @@ const GRID_LAYOUTS: Record<string, Array<{ id: string; cols: number; mobileCols:
   ],
 };
 
-// ─── Plan access gate ─────────────────────────────────────────────────────────
-const PLAN_ACCESS: Record<string, string[]> = {
-  menu:     ["cardapio", "pedidos", "unidade", "configuracoes", "suporte"],
-  menupro:  ["cardapio", "pedidos", "unidade", "configuracoes", "suporte", "financeiro", "operacoes", "equipe", "modo_tv", "impressoras", "tarefas"],
-  business: ["cardapio", "pedidos", "unidade", "configuracoes", "suporte", "financeiro", "operacoes", "equipe", "modo_tv", "impressoras", "estoque", "crm", "whatsapp", "tarefas"],
-};
-
-// Maps card id → module id for PLAN_ACCESS lookup (cards not listed are always accessible)
-const CARD_TO_MODULE: Record<string, string> = {
-  cardapio:    "cardapio",
-  pedidos:     "pedidos",
-  unidade:     "unidade",
-  config:      "configuracoes",
-  suporte:     "suporte",
-  financeiro:  "financeiro",
-  operacoes:   "operacoes",
-  equipe:      "equipe",
-  tv:          "modo_tv",
-  impressoras: "impressoras",
-  estoque:     "estoque",
+// ─── Plan gate: card id → feature key (fonte única em lib/plans.ts) ──────────
+// Cards omissos = sempre acessíveis (analytics, delivery, plano, links, suporte…).
+const CARD_TO_FEATURE: Record<string, FeatureKey> = {
+  financeiro:  "financeComplete",
+  operacoes:   "operations",
+  equipe:      "employees",
+  tv:          "tvMode",
+  impressoras: "comanda",
+  estoque:     "stockComplete",
   crm:         "crm",
-  whatsapp:    "whatsapp",
-  tarefas:     "tarefas",
+  whatsapp:    "whatsappOrders",
+  tarefas:     "employees",
 };
-
-const MODULE_INFO: Record<string, { name: string; plan: string; desc: string }> = {
-  financeiro:  { name: "Financeiro",  plan: "MenuPro",  desc: "Relatórios de receita, custos e margens" },
-  operacoes:   { name: "Operações",   plan: "MenuPro",  desc: "Cozinha, garçom e acompanhamento em tempo real" },
-  equipe:      { name: "Equipe",      plan: "MenuPro",  desc: "Gestão de funcionários e avaliações" },
-  modo_tv:     { name: "Modo TV",     plan: "MenuPro",  desc: "Exibição do cardápio em telas e TVs" },
-  impressoras: { name: "Impressoras", plan: "MenuPro",  desc: "Impressão automática de pedidos por categoria" },
-  estoque:     { name: "Estoque",     plan: "Business", desc: "Controle completo de estoque com IA" },
-  crm:         { name: "CRM",         plan: "Business", desc: "Gestão de clientes e contatos" },
-  whatsapp:    { name: "WhatsApp",    plan: "Business", desc: "Mensagens automáticas e disparo em massa" },
-  tarefas:     { name: "Tarefas",     plan: "MenuPro",  desc: "Checklists e tarefas recorrentes para a equipe" },
-};
-
-// ─── Upgrade Gate Popup ───────────────────────────────────────────────────────
-function UpgradeGatePopup({
-  moduleId, icon, onClose, onViewPlans,
-}: {
-  moduleId: string; icon: React.ReactNode; onClose: () => void; onViewPlans: () => void;
-}) {
-  const info = MODULE_INFO[moduleId];
-  if (!info) return null;
-
-  useEffect(() => {
-    const t = setTimeout(onClose, 5000);
-    return () => clearTimeout(t);
-  }, [onClose]);
-
-  return (
-    <div
-      style={{
-        position: "fixed", inset: 0, zIndex: 10000,
-        background: "rgba(0,0,0,0.4)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        padding: "0 20px",
-      }}
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-    >
-      <div style={{
-        background: "var(--dash-modal-bg, rgba(15,15,15,0.97))",
-        border: "1px solid rgba(255,255,255,0.09)",
-        borderRadius: 22,
-        padding: "32px 28px 24px",
-        maxWidth: 400,
-        width: "100%",
-        boxShadow: "0 32px 80px rgba(0,0,0,0.65)",
-        animation: "upgradePopupIn 0.2s cubic-bezier(0.16,1,0.3,1)",
-      }}>
-        <div style={{ textAlign: "center", marginBottom: 24 }}>
-          <div style={{ fontSize: 44, marginBottom: 14, lineHeight: 1, display: "flex", justifyContent: "center", color: "var(--dash-accent)" }}>{icon}</div>
-          <div style={{ fontSize: 18, fontWeight: 800, color: "var(--dash-text, #fff)", marginBottom: 10, letterSpacing: "-0.3px" }}>
-            Recurso do plano {info.plan}
-          </div>
-          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>
-            O módulo <strong style={{ color: "rgba(255,255,255,0.8)", fontWeight: 700 }}>{info.name}</strong> está disponível
-            a partir do plano <strong style={{ color: "rgba(255,255,255,0.8)", fontWeight: 700 }}>{info.plan}</strong>.
-            Faça upgrade para desbloquear.
-          </div>
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <button
-            onClick={onViewPlans}
-            className="btn-gradient"
-            style={{ width: "100%", padding: "13px", fontSize: 14, fontWeight: 700, borderRadius: 12, cursor: "pointer", border: "none", fontFamily: "inherit" }}
-          >
-            Ver planos
-          </button>
-          <button
-            onClick={onClose}
-            style={{
-              width: "100%", padding: "12px",
-              background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)",
-              borderRadius: 12, color: "rgba(255,255,255,0.5)", fontSize: 14, fontWeight: 600,
-              cursor: "pointer", fontFamily: "inherit",
-              transition: "background 0.15s",
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.1)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; }}
-          >
-            Voltar
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // ─── Main Component ──────────────────────────────────────────────────────────
 export default function DashboardClient({
   restaurant, unit, profile, categories, products, upsellItems, analytics, tvCount, stockStats, reportData,
+  unitFeatures = {},
 }: {
   restaurant: Restaurant; unit: Unit | null; profile: Profile;
   categories: Category[]; products: Product[];
   upsellItems: any[]; analytics: { views: number; clicks: number; orders: number };
   tvCount: number; stockStats: StockStats;
   reportData: ReportData;
+  /** Per-unit feature overrides from unit_features (admin/suporte). */
+  unitFeatures?: Record<string, boolean>;
 }) {
   const router = useRouter();
   const [modal, setModal] = useState<"analytics" | "cardapio" | "pedidos" | "financeiro" | "unidade" | "plano" | "config" | "tv" | "modotv" | "estoque" | "operacoes" | "equipe" | "impressoras" | "links" | "crm" | "whatsapp" | "delivery" | "criar-unidade" | "importar" | "historico" | "tarefas" | null>(null);
@@ -438,7 +347,7 @@ export default function DashboardClient({
 
   // ── Plan gate state ──
   const [deniedCardId, setDeniedCardId] = useState<string | null>(null);
-  const [upgradePopup, setUpgradePopup] = useState<{ moduleId: string; icon: React.ReactNode } | null>(null);
+  const [upgradePopup, setUpgradePopup] = useState<{ feature: FeatureKey } | null>(null);
   const [highlightPlan, setHighlightPlan] = useState<string | null>(null);
 
   const trialDays = Math.max(0, Math.ceil((new Date(restaurant.trial_ends_at).getTime() - Date.now()) / 86400000));
@@ -524,17 +433,16 @@ export default function DashboardClient({
   // ── Plan gate helpers ──
   const hasCardAccess = useCallback((cardId: string): boolean => {
     if (restaurantState.free_access) return true;
-    const moduleId = CARD_TO_MODULE[cardId];
-    if (!moduleId) return true; // analytics, delivery, plano, links — always accessible
-    const plan = restaurantState.plan ?? "menu";
-    return PLAN_ACCESS[plan]?.includes(moduleId) ?? true;
-  }, [restaurantState.free_access, restaurantState.plan]);
+    const feature = CARD_TO_FEATURE[cardId];
+    if (!feature) return true; // analytics, delivery, plano, links, suporte — always accessible
+    return hasPlanFeature(restaurantState.plan, feature, unitFeatures);
+  }, [restaurantState.free_access, restaurantState.plan, unitFeatures]);
 
-  const triggerDenied = useCallback((cardId: string, icon: React.ReactNode) => {
-    const moduleId = CARD_TO_MODULE[cardId];
-    if (!moduleId) return;
+  const triggerDenied = useCallback((cardId: string) => {
+    const feature = CARD_TO_FEATURE[cardId];
+    if (!feature) return;
     setDeniedCardId(cardId);
-    setUpgradePopup({ moduleId, icon });
+    setUpgradePopup({ feature });
     setTimeout(() => setDeniedCardId(null), 600);
   }, []);
 
@@ -1467,12 +1375,13 @@ export default function DashboardClient({
                 const isBlocked = !hasCardAccess(item.id);
                 const isDenied  = deniedCardId === item.id;
                 const blockedClick = isBlocked
-                  ? () => triggerDenied(item.id, config.icon)
+                  ? () => triggerDenied(item.id)
                   : null;
                 const blockedStyle: React.CSSProperties = isBlocked ? { opacity: 0.5 } : {};
                 const cardClass = `card${isDenied ? " card-denied" : ""}`;
-                const moduleIdForCard = CARD_TO_MODULE[item.id];
-                const LockBadge = isBlocked && moduleIdForCard ? (
+                const featureForCard = CARD_TO_FEATURE[item.id];
+                const minPlanCode = featureForCard ? minPlanForFeature(featureForCard) : null;
+                const LockBadge = isBlocked && minPlanCode ? (
                   <div style={{
                     position: "absolute", top: 8, right: 8,
                     display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3,
@@ -1485,7 +1394,7 @@ export default function DashboardClient({
                       color: "rgba(255,255,255,0.4)",
                       borderRadius: 4, fontWeight: 600,
                     }}>
-                      {MODULE_INFO[moduleIdForCard]?.plan}
+                      {PLANS[minPlanCode].name}
                     </span>
                   </div>
                 ) : null;
@@ -1774,14 +1683,20 @@ export default function DashboardClient({
           onOpenPlano={() => { close(); open("plano"); }}
         />
       </Modal>
-      {upgradePopup && (
-        <UpgradeGatePopup
-          moduleId={upgradePopup.moduleId}
-          icon={upgradePopup.icon}
-          onClose={() => setUpgradePopup(null)}
-          onViewPlans={() => { const info = MODULE_INFO[upgradePopup.moduleId]; const key = info?.plan === "Business" ? "business" : info?.plan === "MenuPro" ? "menupro" : null; setHighlightPlan(key); setUpgradePopup(null); open("plano"); }}
-        />
-      )}
+      {upgradePopup && (() => {
+        const minPlan = minPlanForFeature(upgradePopup.feature);
+        return (
+          <UpgradePopup
+            minPlan={minPlan}
+            onClose={() => setUpgradePopup(null)}
+            onViewPlans={() => {
+              setHighlightPlan(minPlan);
+              setUpgradePopup(null);
+              open("plano");
+            }}
+          />
+        );
+      })()}
       <ChatWidget
         restaurantId={restaurant.id}
         open={chatOpen}

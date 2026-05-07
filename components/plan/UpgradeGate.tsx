@@ -124,12 +124,18 @@ export function UpgradeGate({
   );
 }
 
-function UpgradePopup({
+export function UpgradePopup({
   minPlan,
   onClose,
+  onViewPlans,
+  description,
 }: {
   minPlan: PlanCode | null;
   onClose: () => void;
+  /** When provided, overrides the default <a href="/painel/planos"> with a button. */
+  onViewPlans?: () => void;
+  /** Optional override for the body copy. */
+  description?: string;
 }) {
   const planName = minPlan ? PLANS[minPlan].name : "superior";
   const href = `/painel/planos${minPlan ? `?upgrade=${minPlan}` : ""}`;
@@ -176,28 +182,49 @@ function UpgradePopup({
             Disponível no plano {planName}
           </div>
           <div style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", lineHeight: 1.6 }}>
-            Faça upgrade pra desbloquear essa funcionalidade.
+            {description ?? "Faça upgrade pra desbloquear essa funcionalidade."}
           </div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <a
-            href={href}
-            style={{
-              display: "block",
-              textAlign: "center",
-              width: "100%",
-              padding: "13px",
-              fontSize: 14,
-              fontWeight: 700,
-              borderRadius: 12,
-              background: "var(--dash-accent, #00ffae)",
-              color: "#000",
-              textDecoration: "none",
-              fontFamily: "inherit",
-            }}
-          >
-            Ver planos
-          </a>
+          {onViewPlans ? (
+            <button
+              type="button"
+              onClick={onViewPlans}
+              style={{
+                width: "100%",
+                padding: "13px",
+                fontSize: 14,
+                fontWeight: 700,
+                borderRadius: 12,
+                background: "var(--dash-accent, #00ffae)",
+                color: "#000",
+                border: "none",
+                cursor: "pointer",
+                fontFamily: "inherit",
+              }}
+            >
+              Ver planos
+            </button>
+          ) : (
+            <a
+              href={href}
+              style={{
+                display: "block",
+                textAlign: "center",
+                width: "100%",
+                padding: "13px",
+                fontSize: 14,
+                fontWeight: 700,
+                borderRadius: 12,
+                background: "var(--dash-accent, #00ffae)",
+                color: "#000",
+                textDecoration: "none",
+                fontFamily: "inherit",
+              }}
+            >
+              Ver planos
+            </a>
+          )}
           <button
             type="button"
             onClick={onClose}

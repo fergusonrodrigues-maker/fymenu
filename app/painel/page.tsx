@@ -1,6 +1,7 @@
 ﻿import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import DashboardClient from "./DashboardClient";
+import { getRestaurantPlan } from "@/lib/server/getRestaurantPlan";
 
 type OrderRow = {
   id: string;
@@ -208,6 +209,10 @@ export default async function DashboardPage({ searchParams }: { searchParams?: P
     },
   };
 
+  // Per-unit feature overrides from unit_features table (admin/suporte can flip
+  // individual flags). Empty when there are no overrides — gate falls back to plan.
+  const { unitFeatures } = await getRestaurantPlan(restaurant.id, unit?.id);
+
   return (
     <DashboardClient
       restaurant={restaurant}
@@ -220,6 +225,7 @@ export default async function DashboardPage({ searchParams }: { searchParams?: P
       tvCount={tvCount ?? 0}
       stockStats={stockStats}
       reportData={reportData}
+      unitFeatures={unitFeatures}
     />
   );
 }
