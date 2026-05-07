@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   Smartphone, Tv, Layers, Sparkles,
   MessageCircle, QrCode, Printer, BellRing,
@@ -273,9 +274,9 @@ const PLANS = {
     name: "Menu",
     tagline: "Vitrine premium + Analytics IA",
     icon: "🍽️", units: "Até 2 unidades",
-    prices: { MONTHLY: "149", QUARTERLY: "129", SEMIANNUALLY: "99" },
-    totals: { MONTHLY: "149", QUARTERLY: "387", SEMIANNUALLY: "594" },
-    savings: { QUARTERLY: "13%", SEMIANNUALLY: "34%" } as Record<string, string>,
+    prices: { MONTHLY: "199,90", QUARTERLY: "179,90", SEMIANNUALLY: "159,90" },
+    totals: { MONTHLY: "199,90", QUARTERLY: "539,70", SEMIANNUALLY: "959,40" },
+    savings: { QUARTERLY: "10%", SEMIANNUALLY: "20%" } as Record<string, string>,
     features: [
       "Cardápio em vídeo 9:16",
       "Variações, combos e adicionais",
@@ -349,14 +350,85 @@ const CYCLE_MONTHS: Record<CycleKey, number> = {
   MONTHLY: 1, QUARTERLY: 3, SEMIANNUALLY: 6,
 };
 
-function PlanCard({ planKey, plan, theme, cycle }: {
+// ── Per-card compact cycle toggle ────────────────────────────────────────────
+function CycleToggle({
+  value,
+  onChange,
+  activeBg,
+  activeFg,
+  inactiveFg,
+  trackBg,
+}: {
+  value: CycleKey;
+  onChange: (c: CycleKey) => void;
+  activeBg: string;
+  activeFg: string;
+  inactiveFg: string;
+  trackBg: string;
+}) {
+  const options: { v: CycleKey; label: string; discount?: string }[] = [
+    { v: "MONTHLY",      label: "Mensal" },
+    { v: "QUARTERLY",    label: "Tri", discount: "-10%" },
+    { v: "SEMIANNUALLY", label: "Sem", discount: "-20%" },
+  ];
+
+  return (
+    <div
+      role="tablist"
+      style={{
+        display: "inline-flex",
+        gap: 2,
+        background: trackBg,
+        padding: 3,
+        borderRadius: 999,
+        marginBottom: 14,
+        alignSelf: "center",
+      }}
+    >
+      {options.map((opt) => {
+        const isActive = value === opt.v;
+        return (
+          <button
+            key={opt.v}
+            type="button"
+            role="tab"
+            aria-selected={isActive}
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onChange(opt.v); }}
+            style={{
+              padding: "5px 11px",
+              borderRadius: 999,
+              fontSize: 11,
+              fontFamily: "inherit",
+              fontWeight: isActive ? 700 : 500,
+              background: isActive ? activeBg : "transparent",
+              color: isActive ? activeFg : inactiveFg,
+              border: "none",
+              cursor: "pointer",
+              transition: "background 0.2s ease, color 0.2s ease",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+            }}
+          >
+            {opt.label}
+            {opt.discount && !isActive && (
+              <span style={{ fontSize: 9, opacity: 0.7 }}>{opt.discount}</span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function PlanCard({ planKey, plan, theme }: {
   planKey: PlanKey;
   plan: typeof PLANS[PlanKey];
   theme: "dark" | "light";
-  cycle: CycleKey;
 }) {
   const [hovered, setHovered] = useState(false);
   const [pressed, setPressed] = useState(false);
+  const [cycle, setCycle] = useState<CycleKey>("MONTHLY");
   const isAccent = plan.highlight; // menupro → cyan/green gradient
   const isPurple = planKey === "menu";
   const isGreen = planKey === "business";
@@ -512,27 +584,56 @@ function PlanCard({ planKey, plan, theme, cycle }: {
           <div style={{ fontSize: 12, color: dark ? (isGreen ? "#FFD700" : "var(--lp-text-secondary)") : "#888", marginTop: 6 }}>{plan.units}</div>
         </div>
 
-        <div style={{ textAlign: "center", marginBottom: 20 }}>
-          <div style={{ fontSize: 38, fontWeight: 900, ...(dark && isGreen ? { background: "linear-gradient(135deg, #8B6914, #FFD700, #C6930A, #FFE55C, #8B6914)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" } : { color: dark ? (hex ?? "var(--lp-price-color)") : lHex }), transition: "all 0.2s ease" }}>
-            R${plan.prices[cycle]}
-            <span style={{ fontSize: 14, fontWeight: 400, color: dark ? "var(--lp-text-secondary)" : "#999" }}>/mês</span>
-          </div>
-          {cycle !== "MONTHLY" ? (
-            <div
+        {/* Per-card cycle toggle */}
+        <div style={{ display: "flex", justifyContent: "center" }}>
+          <CycleToggle
+            value={cycle}
+            onChange={setCycle}
+            activeBg={dark
+              ? (isGreen ? "linear-gradient(135deg, #8B6914, #FFD700, #C6930A)" : (hex ?? "rgba(255,255,255,0.18)"))
+              : lHex}
+            activeFg={dark ? (isAccent ? "#000" : (isGreen ? "#000" : "#000")) : "#fff"}
+            inactiveFg={dark ? "rgba(255,255,255,0.55)" : "rgba(0,0,0,0.5)"}
+            trackBg={dark ? "rgba(255,255,255,0.06)" : `rgba(${lRgb},0.08)`}
+          />
+        </div>
+
+        <div style={{ textAlign: "center", marginBottom: 20, minHeight: 86 }}>
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
               key={cycle}
-              style={{
-                fontSize: 11, marginTop: 8, lineHeight: 1.4,
-                color: dark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.5)",
-              }}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              style={{ fontSize: 38, fontWeight: 900, ...(dark && isGreen ? { background: "linear-gradient(135deg, #8B6914, #FFD700, #C6930A, #FFE55C, #8B6914)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" } : { color: dark ? (hex ?? "var(--lp-price-color)") : lHex }) }}
             >
-              cobrado a cada {CYCLE_MONTHS[cycle]} meses<br/>
-              <strong style={{ color: dark ? (isGreen ? "#FFD700" : (hex ?? "rgba(255,255,255,0.85)")) : lHex }}>
-                R${plan.totals[cycle]} total · economia de {(plan.savings as Record<string, string>)[cycle]}
-              </strong>
-            </div>
-          ) : (
-            <div style={{ height: 30, marginTop: 8 }} />
-          )}
+              R${plan.prices[cycle]}
+              <span style={{ fontSize: 14, fontWeight: 400, color: dark ? "var(--lp-text-secondary)" : "#999" }}>/mês</span>
+            </motion.div>
+          </AnimatePresence>
+          <AnimatePresence mode="wait" initial={false}>
+            {cycle !== "MONTHLY" ? (
+              <motion.div
+                key={`sub-${cycle}`}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                style={{
+                  fontSize: 11, marginTop: 8, lineHeight: 1.4,
+                  color: dark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.5)",
+                }}
+              >
+                Cobrado R${plan.totals[cycle]} a cada {CYCLE_MONTHS[cycle]} meses<br/>
+                <strong style={{ color: dark ? (isGreen ? "#FFD700" : (hex ?? "rgba(255,255,255,0.85)")) : lHex }}>
+                  economia de {(plan.savings as Record<string, string>)[cycle]}
+                </strong>
+              </motion.div>
+            ) : (
+              <div key="sub-spacer" style={{ height: 30, marginTop: 8 }} />
+            )}
+          </AnimatePresence>
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 24, flex: 1 }}>
@@ -608,86 +709,25 @@ function PlanCard({ planKey, plan, theme, cycle }: {
   );
 }
 
-// ── Pricing Section (global cycle toggle drives all 3 cards) ─────────────────
+// ── Pricing Section (each card holds its own cycle state) ────────────────────
 function PricingSection({ theme }: { theme: "dark" | "light" }) {
-  const [cycle, setCycle] = useState<CycleKey>("QUARTERLY");
-  const dark = theme === "dark";
-
-  const cycleOptions = [
-    { key: "MONTHLY" as const,      label: "Mensal" },
-    { key: "QUARTERLY" as const,    label: "Trimestral", saving: "-10%" },
-    { key: "SEMIANNUALLY" as const, label: "Semestral",  saving: "-20%" },
-  ];
-
   return (
-    <>
-      {/* Global cycle toggle */}
-      <div style={{ display: "flex", justifyContent: "center", marginBottom: 40 }}>
-        <div
-          role="tablist"
-          style={{
-            display: "inline-flex",
-            background: dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)",
-            border: dark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.06)",
-            borderRadius: 999,
-            padding: 4,
-            gap: 2,
-          }}
-        >
-          {cycleOptions.map((c) => {
-            const active = cycle === c.key;
-            return (
-              <button
-                key={c.key}
-                role="tab"
-                aria-selected={active}
-                onClick={() => setCycle(c.key)}
-                style={{
-                  border: "none", cursor: "pointer", fontFamily: "inherit",
-                  padding: "8px 18px", borderRadius: 999, fontSize: 13, fontWeight: 700,
-                  background: active
-                    ? (dark ? "linear-gradient(135deg, #00ffae, #00d9ff)" : "linear-gradient(135deg, #00b07a, #00d9a0)")
-                    : "transparent",
-                  color: active ? "#000" : (dark ? "rgba(255,255,255,0.55)" : "rgba(0,0,0,0.55)"),
-                  transition: "all 0.2s ease",
-                  display: "inline-flex", alignItems: "center", gap: 6,
-                }}
-              >
-                {c.label}
-                {c.saving && (
-                  <span style={{
-                    fontSize: 10, fontWeight: 800,
-                    padding: "1px 6px", borderRadius: 6,
-                    background: active ? "rgba(0,0,0,0.12)" : (dark ? "rgba(0,255,174,0.15)" : "rgba(0,176,122,0.12)"),
-                    color: active ? "#000" : (dark ? "#00ffae" : "#00b07a"),
-                  }}>
-                    {c.saving}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Plan cards */}
-      <div
-        className="pricing-grid"
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(3, 1fr)",
-          alignItems: "stretch",
-          gap: 20,
-          maxWidth: 1100,
-          margin: "0 auto",
-          padding: "0 16px",
-        }}
-      >
-        {(Object.keys(PLANS) as PlanKey[]).map((key) => (
-          <PlanCard key={key} planKey={key} plan={PLANS[key]} theme={theme} cycle={cycle} />
-        ))}
-      </div>
-    </>
+    <div
+      className="pricing-grid"
+      style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(3, 1fr)",
+        alignItems: "stretch",
+        gap: 20,
+        maxWidth: 1100,
+        margin: "0 auto",
+        padding: "0 16px",
+      }}
+    >
+      {(Object.keys(PLANS) as PlanKey[]).map((key) => (
+        <PlanCard key={key} planKey={key} plan={PLANS[key]} theme={theme} />
+      ))}
+    </div>
   );
 }
 

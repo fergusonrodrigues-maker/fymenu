@@ -110,9 +110,9 @@ export const PLANS: Record<PlanCode, PlanDef> = {
     trialDays: 0,
     hasTrial: false,
     prices: {
-      monthly: 14900,
-      quarterly: 12900,
-      semestral: 9900,
+      monthly: 19990,
+      quarterly: 17990,
+      semestral: 15990,
     },
     features: {
       ...ALL_FALSE,
