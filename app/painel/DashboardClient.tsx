@@ -7,8 +7,11 @@ import { createClient } from "@/lib/supabase/client";
 import dynamic from "next/dynamic";
 import type { Restaurant, Unit, StockStats, Category, Product, Profile, ReportData } from "./types";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import { planLabel, maxUnits as planMaxUnits } from "@/lib/plan";
-import { hasPlanFeature, minPlanForFeature, PLANS, type FeatureKey } from "@/lib/plans";
+import {
+  hasPlanFeature, minPlanForFeature, PLANS,
+  planLabel, maxUnits as planMaxUnits,
+  type FeatureKey,
+} from "@/lib/plans";
 import { UpgradePopup } from "@/components/plan/UpgradeGate";
 import { useModalHistory } from "@/lib/hooks/useModalHistory";
 import { Icon } from "@/components/ui/Icon";

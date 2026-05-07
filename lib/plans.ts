@@ -308,3 +308,27 @@ export function minPlanForFeature(feature: FeatureKey): PlanCode | null {
   }
   return null;
 }
+
+// ── Plan name helpers (migrated from lib/plan.ts) ────────────────────────────
+
+/**
+ * Normaliza variantes/aliases ("menu_pro", "pro", "Menu", "BUSINESS"...) em um
+ * PlanCode canônico. Default: "menu" (free tier visível).
+ */
+export function normalizePlanName(plan: string | undefined | null): PlanCode {
+  if (!plan) return "menu";
+  const p = plan.toLowerCase().trim();
+  if (p === "business") return "business";
+  if (p === "menupro" || p === "menu_pro" || p === "pro") return "menupro";
+  return "menu";
+}
+
+/** Label legível do plano: "Menu" | "MenuPro" | "Business". */
+export function planLabel(plan: string | undefined | null): string {
+  return PLANS[normalizePlanName(plan)].name;
+}
+
+/** Limite de unidades por plano (Menu=2, MenuPro=3, Business=5). */
+export function maxUnits(plan: string | undefined | null): number {
+  return PLANS[normalizePlanName(plan)].maxUnits;
+}

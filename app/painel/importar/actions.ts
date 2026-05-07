@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { normalizePlanName } from "@/lib/plan";
+import { normalizePlanName } from "@/lib/plans";
 import { parseMoneyToCents } from "./utils";
 import type { ImportTargetTable, ImportSourceMethod, ImportResult } from "./utils";
 import OpenAI from "openai";
