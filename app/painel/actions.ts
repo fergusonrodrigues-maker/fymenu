@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { invalidateMenuCache } from "@/lib/cache/invalidateMenuCache";
 import { uploadToR2, generateMediaKey, isR2Configured } from "@/lib/r2";
 import { logActivity } from "@/lib/audit/logActivity";
+import { requireFeatureForAction } from "@/lib/server/requireFeatureForAction";
 
 function normalizeName(name: string) {
   return name.trim();
@@ -674,6 +675,15 @@ export async function removeUpsellItem(formData: FormData): Promise<void> {
 /* ========================= ESTOQUE ========================= */
 
 export async function updateProductStock(formData: FormData): Promise<void> {
+  const gate = await requireFeatureForAction("stock");
+  if (!gate.ok) {
+    throw new Error(
+      gate.error === "FEATURE_NOT_AVAILABLE"
+        ? `Controle de estoque indisponível no seu plano. Faça upgrade para ${gate.minPlan ?? "MenuPro"}.`
+        : "Sem permissão."
+    );
+  }
+
   const supabase = await createClient();
 
   const id = String(formData.get("id") ?? "");
@@ -696,6 +706,15 @@ export async function updateProductStock(formData: FormData): Promise<void> {
 }
 
 export async function adjustStock(formData: FormData): Promise<void> {
+  const gate = await requireFeatureForAction("stock");
+  if (!gate.ok) {
+    throw new Error(
+      gate.error === "FEATURE_NOT_AVAILABLE"
+        ? `Controle de estoque indisponível no seu plano. Faça upgrade para ${gate.minPlan ?? "MenuPro"}.`
+        : "Sem permissão."
+    );
+  }
+
   const supabase = await createClient();
 
   const { data: { user } } = await supabase.auth.getUser();
