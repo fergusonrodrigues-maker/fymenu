@@ -91,9 +91,8 @@ export default function OnboardingClient({
         )}
         {step === 3 && (
           <StepMenu
-            data={data}
-            userId={userId}
-            restaurantId={restaurantId}
+            onNext={() => setStep(4)}
+            onBack={() => setStep(2)}
           />
         )}
         {step === 4 && (

@@ -1,53 +1,15 @@
 ﻿"use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import type { OnboardingData } from "./OnboardingClient";
 import { PLANS as PLAN_DEFS } from "@/lib/plans";
 import { formatCents } from "@/lib/money";
 
 export default function StepMenu({
-  data,
-  userId,
-  restaurantId,
+  onNext,
+  onBack,
 }: {
-  data: OnboardingData;
-  userId: string;
-  restaurantId: string;
+  onNext: () => void;
+  onBack: () => void;
 }) {
-  const router = useRouter();
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function finish() {
-    setSaving(true);
-    setError(null);
-
-    const res = await fetch("/api/onboarding/complete", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        restaurantId,
-        firstName: data.first_name,
-        lastName: data.last_name,
-        phone: data.phone,
-        document: data.document,
-        restaurantName: data.restaurant_name,
-        whatsapp: data.whatsapp,
-        instagram: data.instagram,
-      }),
-    });
-
-    if (!res.ok) {
-      const json = await res.json().catch(() => ({}));
-      setError(json.error || "Erro ao finalizar configuração. Tente novamente.");
-      setSaving(false);
-      return;
-    }
-
-    router.push("/painel");
-  }
-
   return (
     <div style={{ display: "grid", gap: 24 }}>
       <div>
@@ -98,51 +60,30 @@ export default function StepMenu({
         </p>
       </div>
 
-      {error && (
-        <div style={{
-          padding: "12px 16px", borderRadius: 12,
-          background: "rgba(255,80,80,0.1)",
-          border: "1px solid rgba(255,80,80,0.3)",
-          color: "#ff6b6b", fontSize: 13,
-        }}>
-          {error}
-        </div>
-      )}
-
       <div style={{ display: "grid", gap: 10 }}>
         <button
-          onClick={finish}
-          disabled={saving}
+          onClick={onNext}
           style={{
             padding: "16px", borderRadius: 14, width: "100%",
-            background: saving ? "rgba(255,255,255,0.5)" : "#fff",
+            background: "#fff",
             color: "#000", fontWeight: 900, fontSize: 16,
-            cursor: saving ? "not-allowed" : "pointer", border: "none",
-            transition: "background 0.2s",
+            cursor: "pointer", border: "none",
           }}
         >
-          {saving ? "Criando..." : "Testar grátis por 7 dias"}
+          Continuar para escolha do plano →
         </button>
 
         <button
-          onClick={() => router.push("/planos")}
-          disabled={saving}
+          onClick={onBack}
           style={{
             padding: "14px", borderRadius: 14, width: "100%",
-            background: "transparent", color: "rgba(255,255,255,0.7)",
-            fontWeight: 800, fontSize: 14, cursor: "pointer",
-            border: "1px solid rgba(255,255,255,0.15)",
+            background: "transparent", color: "rgba(255,255,255,0.5)",
+            fontWeight: 700, fontSize: 14, cursor: "pointer",
+            border: "1px solid rgba(255,255,255,0.12)",
           }}
         >
-          Já quero ativar um plano
+          ← Voltar
         </button>
-
-        <p style={{
-          color: "rgba(255,255,255,0.25)", fontSize: 11,
-          margin: 0, textAlign: "center",
-        }}>
-          No teste você monta tudo. Para publicar e compartilhar, ative um plano.
-        </p>
       </div>
     </div>
   );
