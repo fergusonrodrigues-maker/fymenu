@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, lazy, Suspense, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { UtensilsCrossed, Star, Building2, MessageCircle, LogOut, Users } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { Profile, Restaurant } from "../types";
@@ -11,8 +11,6 @@ import { listMembers, inviteMember, revokeInvite, removeMember } from "../member
 import type { MemberData } from "../membersActions";
 import { getLastEditForEntities, LastEditInfo } from "@/app/painel/historicoActions";
 import LastEditBadge from "@/components/audit/LastEditBadge";
-
-const PaymentModal = lazy(() => import("./PaymentModal"));
 
 const supabase = createClient();
 
@@ -89,9 +87,6 @@ export default function ConfigModal({ profile, restaurant }: { profile: Profile;
   // Plano
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [canceling, setCanceling] = useState(false);
-  const [payingForPlan, setPayingForPlan] = useState<{
-    planKey: string; planName: string; accent: string; accentRgb: string;
-  } | null>(null);
 
   // Sócios
   const [members, setMembers] = useState<MemberData[]>([]);
@@ -256,20 +251,6 @@ export default function ConfigModal({ profile, restaurant }: { profile: Profile;
 
   return (
     <div style={{ paddingTop: 8, position: "relative" }}>
-      {/* Payment modal overlay */}
-      {payingForPlan && (
-        <Suspense fallback={null}>
-          <PaymentModal
-            planKey={payingForPlan.planKey}
-            planName={payingForPlan.planName}
-            accent={payingForPlan.accent}
-            accentRgb={payingForPlan.accentRgb}
-            onClose={() => setPayingForPlan(null)}
-            onSuccess={() => { setPayingForPlan(null); window.location.reload(); }}
-          />
-        </Suspense>
-      )}
-
       {/* Invite modal overlay */}
       {showInviteModal && (
         <div style={{
@@ -609,10 +590,7 @@ export default function ConfigModal({ profile, restaurant }: { profile: Profile;
 
                   {/* Action button */}
                   <button
-                    onClick={isCurrent ? undefined : () => setPayingForPlan({
-                      planKey: plan.key, planName: plan.name,
-                      accent: plan.accent, accentRgb: plan.accentRgb,
-                    })}
+                    onClick={isCurrent ? undefined : () => { window.location.href = `/checkout?plan=${plan.key}`; }}
                     disabled={isCurrent}
                     style={{
                       width: "100%", padding: "12px", borderRadius: 12,
