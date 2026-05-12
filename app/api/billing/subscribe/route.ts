@@ -1,3 +1,5 @@
+// DEPRECATED: use /api/plan/checkout (hosted checkout).
+// Inline cartão sem PCI scope. Será removido após validação do hosted checkout.
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -23,6 +25,8 @@ function resolveAmount(planId: string, cycle: string): number | null {
 }
 
 export async function POST(req: NextRequest) {
+  console.warn("[billing/subscribe] DEPRECATED — migrar caller para /api/plan/checkout");
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

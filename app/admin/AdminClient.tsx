@@ -19,6 +19,8 @@ type Restaurant = {
   plan: string | null;
   status: string;
   free_access: boolean | null;
+  is_complimentary?: boolean | null;
+  complimentary_reason?: string | null;
   created_at: string;
 };
 
@@ -104,6 +106,12 @@ interface Props {
       max_uses: number | null; current_uses: number; is_active: boolean;
       expires_at: string | null; created_at: string;
       partners: { name: string } | null;
+    }>;
+    adminCoupons: Array<{
+      id: string; code: string; discount_percent: number; discount_value: number;
+      trial_extra_days: number; max_uses: number | null; current_uses: number;
+      is_active: boolean; expires_at: string | null; valid_for_plan: string | null;
+      created_at: string;
     }>;
     referrals: Array<{
       id: string; partner_id: string; restaurant_id: string; coupon_id: string | null;
@@ -247,6 +255,9 @@ function ManagePanel({
   const [plan, setPlan] = useState(restaurant.plan ?? "");
   const [status, setStatus] = useState(restaurant.status);
   const [freeAccess, setFreeAccess] = useState(!!restaurant.free_access);
+  const [complimentary, setComplimentary] = useState(!!restaurant.is_complimentary);
+  const [complimentaryReason, setComplimentaryReason] = useState(restaurant.complimentary_reason ?? "");
+  const [showComplimentaryModal, setShowComplimentaryModal] = useState(false);
   const [saving, setSaving] = useState<string | null>(null);
   const [confirmDeactivate, setConfirmDeactivate] = useState(false);
   const [msg, setMsg] = useState<{ text: string; ok: boolean } | null>(null);
@@ -344,6 +355,39 @@ function ManagePanel({
       onUpdated(restaurant.id, { free_access: val, status: val ? "active" : status });
       if (val) setStatus("active");
     } else setMsg({ text: r.error ?? "Erro", ok: false });
+  }
+
+  function requestToggleComplimentary(val: boolean) {
+    if (val) {
+      setShowComplimentaryModal(true);
+    } else {
+      if (!window.confirm("Remover marca de cortesia? O restaurante voltará a precisar pagar.")) return;
+      void applyComplimentary(false, "");
+    }
+  }
+
+  async function applyComplimentary(val: boolean, reason: string) {
+    setSaving("complimentary");
+    const r = await call("/api/admin/update-restaurant", {
+      restaurantId: restaurant.id,
+      is_complimentary: val,
+      complimentary_reason: reason || null,
+    });
+    setSaving(null);
+    if (r.success) {
+      setComplimentary(val);
+      if (val) setComplimentaryReason(reason);
+      onUpdated(restaurant.id, {
+        is_complimentary: val,
+        complimentary_reason: val ? reason : restaurant.complimentary_reason,
+        status: val ? "active" : status,
+      });
+      if (val) setStatus("active");
+      setMsg({ text: val ? "Cortesia ativada!" : "Cortesia removida", ok: true });
+      setShowComplimentaryModal(false);
+    } else {
+      setMsg({ text: r.error ?? "Erro", ok: false });
+    }
   }
 
   async function deactivate() {
@@ -460,6 +504,66 @@ function ManagePanel({
             </label>
             <p className="text-xs text-gray-600 mt-1">Quando ativado, seta status = active e marca free_access = true</p>
           </Section>
+
+          {/* Cortesia permanente */}
+          <Section title="🎁 Cortesia (super admin)">
+            <label className="flex items-center justify-between cursor-pointer">
+              <span className="text-sm text-gray-300">Marcar como cortesia permanente</span>
+              <button
+                onClick={() => requestToggleComplimentary(!complimentary)}
+                disabled={saving === "complimentary"}
+                className="relative rounded-full flex-shrink-0"
+                style={{
+                  width: 44, height: 24,
+                  background: complimentary ? "#a855f7" : "#3a3a3a",
+                  transition: "background 0.25s cubic-bezier(0.4,0,0.2,1)",
+                  cursor: "pointer",
+                }}
+              >
+                <span
+                  className="absolute rounded-full"
+                  style={{
+                    top: 2, width: 20, height: 20,
+                    background: "#fff",
+                    boxShadow: "0 2px 4px rgba(0,0,0,0.3)",
+                    transform: complimentary ? "translateX(20px)" : "translateX(2px)",
+                    transition: "transform 0.25s cubic-bezier(0.4,0,0.2,1)",
+                  }}
+                />
+              </button>
+            </label>
+            {complimentary && complimentaryReason && (
+              <p className="text-xs text-purple-300/70 mt-2">Motivo: {complimentaryReason}</p>
+            )}
+            <p className="text-xs text-gray-600 mt-1">Quando ativado, nunca é cobrado e ignora bloqueios de trial/pagamento.</p>
+          </Section>
+
+          {showComplimentaryModal && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4" onClick={() => setShowComplimentaryModal(false)}>
+              <div className="bg-gray-900 border border-purple-500/30 rounded-2xl p-6 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+                <h3 className="text-white font-bold mb-1">Ativar cortesia</h3>
+                <p className="text-xs text-gray-500 mb-4">Informe o motivo para o histórico interno.</p>
+                <textarea
+                  value={complimentaryReason}
+                  onChange={(e) => setComplimentaryReason(e.target.value)}
+                  rows={3}
+                  placeholder="Ex.: Cortesia super admin pré-launch"
+                  className="w-full bg-gray-800/60 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white outline-none resize-none"
+                />
+                <div className="flex gap-2 mt-4">
+                  <button onClick={() => setShowComplimentaryModal(false)} className="flex-1 py-2 rounded-lg border border-gray-700 text-gray-400 text-sm">Cancelar</button>
+                  <button
+                    onClick={() => applyComplimentary(true, complimentaryReason.trim())}
+                    disabled={saving === "complimentary" || !complimentaryReason.trim()}
+                    className="flex-1 py-2 rounded-lg text-white text-sm font-semibold disabled:opacity-40"
+                    style={{ background: "linear-gradient(135deg, #a855f7, #d946ef)" }}
+                  >
+                    {saving === "complimentary" ? "Salvando..." : "Confirmar"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Ver detalhes */}
           <Section title="Detalhes">
@@ -671,11 +775,58 @@ export default function AdminClient({
   const [photoError, setPhotoError] = useState<string | null>(null);
 
   // Partners state
-  const [partnerTab, setPartnerTab] = useState<"parceiros" | "cupons" | "indicacoes" | "comissoes">("parceiros");
+  const [partnerTab, setPartnerTab] = useState<"parceiros" | "cupons" | "admin_cupons" | "indicacoes" | "comissoes">("parceiros");
   const [partnersState, setPartnersState] = useState(partnerData.partners);
   const [couponsState, setCouponsState] = useState(partnerData.coupons);
+  const [adminCouponsState, setAdminCouponsState] = useState(partnerData.adminCoupons);
   const [referralsState] = useState(partnerData.referrals);
   const [payoutsState, setPayoutsState] = useState(partnerData.payouts);
+
+  // Admin coupon (super admin → cortesia 7d)
+  const [showAddAdminCoupon, setShowAddAdminCoupon] = useState(false);
+  const [adminCouponCode, setAdminCouponCode] = useState("");
+  const [adminCouponPlan, setAdminCouponPlan] = useState<"menu" | "menupro" | "business">("menu");
+  const [adminCouponTrialDays, setAdminCouponTrialDays] = useState(7);
+  const [adminCouponMaxUses, setAdminCouponMaxUses] = useState(1);
+  const [adminCouponExpiresAt, setAdminCouponExpiresAt] = useState("");
+  const [adminCouponError, setAdminCouponError] = useState<string | null>(null);
+  const [adminCouponCreated, setAdminCouponCreated] = useState<{ code: string; checkout_url: string } | null>(null);
+
+  async function handleCreateAdminCoupon() {
+    setAdminCouponError(null);
+    const res = await fetch("/api/admin/coupons", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        code: adminCouponCode.trim().toUpperCase() || undefined,
+        valid_for_plan: adminCouponPlan,
+        trial_extra_days: adminCouponTrialDays,
+        max_uses: adminCouponMaxUses,
+        expires_at: adminCouponExpiresAt || null,
+      }),
+    });
+    const json = await res.json();
+    if (!res.ok) { setAdminCouponError(json.error ?? "Erro"); return; }
+    setAdminCouponsState((prev) => [json.coupon, ...prev]);
+    setAdminCouponCreated({ code: json.coupon.code, checkout_url: json.checkout_url });
+    setAdminCouponCode("");
+    setAdminCouponPlan("menu");
+    setAdminCouponTrialDays(7);
+    setAdminCouponMaxUses(1);
+    setAdminCouponExpiresAt("");
+  }
+
+  async function handleDisableAdminCoupon(id: string) {
+    if (!confirm("Desativar este cupom?")) return;
+    const res = await fetch(`/api/admin/coupons?id=${id}`, { method: "DELETE" });
+    if (res.ok) {
+      setAdminCouponsState((prev) => prev.map((c) => c.id === id ? { ...c, is_active: false } : c));
+    }
+  }
+
+  async function copyToClipboard(value: string) {
+    try { await navigator.clipboard.writeText(value); } catch {}
+  }
   // Add partner form
   const [showAddPartner, setShowAddPartner] = useState(false);
   const [editingPartnerId, setEditingPartnerId] = useState<string | null>(null);
@@ -1240,6 +1391,9 @@ export default function AdminClient({
                             {r.name}
                             {r.free_access && (
                               <span className="ml-2 px-1.5 py-0.5 rounded text-xs" style={{ background: "rgba(0,255,174,0.08)", color: "#00ffae", border: "1px solid rgba(0,255,174,0.18)" }}>grátis</span>
+                            )}
+                            {r.is_complimentary && (
+                              <span className="ml-2 px-1.5 py-0.5 rounded text-xs" style={{ background: "rgba(168,85,247,0.1)", color: "#c084fc", border: "1px solid rgba(168,85,247,0.25)" }}>🎁 Cortesia</span>
                             )}
                           </td>
                           <td className="px-6 py-3">
@@ -2332,12 +2486,12 @@ export default function AdminClient({
             </div>
 
             {/* Sub-tabs */}
-            <div className="flex gap-1 border-b border-gray-800 pb-1">
-              {(["parceiros", "cupons", "indicacoes", "comissoes"] as const).map((t) => {
-                const labels = { parceiros: "Parceiros", cupons: "Cupons", indicacoes: "Indicações", comissoes: "Comissões" };
+            <div className="flex gap-1 border-b border-gray-800 pb-1 overflow-x-auto">
+              {(["parceiros", "cupons", "admin_cupons", "indicacoes", "comissoes"] as const).map((t) => {
+                const labels = { parceiros: "Parceiros", cupons: "Cupons", admin_cupons: "Admin Cupons", indicacoes: "Indicações", comissoes: "Comissões" };
                 return (
                   <button key={t} onClick={() => setPartnerTab(t)}
-                    className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors ${partnerTab === t ? "border-[#00ffae] text-[#00ffae]" : "border-transparent text-gray-400 hover:text-gray-200"}`}>
+                    className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap ${partnerTab === t ? "border-[#00ffae] text-[#00ffae]" : "border-transparent text-gray-400 hover:text-gray-200"}`}>
                     {labels[t]}
                   </button>
                 );
@@ -2593,6 +2747,125 @@ export default function AdminClient({
                                 </tr>
                               )}
                             </React.Fragment>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Sub-tab: Admin Cupons (super admin trial 7d) */}
+            {partnerTab === "admin_cupons" && (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="font-bold text-gray-200">Cupons Admin</h3>
+                    <p className="text-xs text-gray-500 mt-1">Cupons criados pelo super admin (cortesia / trial estendido). Sem parceiro vinculado.</p>
+                  </div>
+                  <button onClick={() => { setShowAddAdminCoupon(true); setAdminCouponCreated(null); setAdminCouponError(null); }} className="px-3 py-1.5 rounded-lg text-[#050505] text-xs font-semibold" style={{ background: "linear-gradient(135deg, #a855f7, #d946ef)" }}>
+                    + Criar cupom
+                  </button>
+                </div>
+
+                {showAddAdminCoupon && (
+                  <div className="p-4 rounded-xl bg-gray-800/60 border border-purple-700/30 space-y-3">
+                    {adminCouponCreated ? (
+                      <div className="space-y-3">
+                        <div className="text-purple-300 text-sm font-semibold">✓ Cupom criado!</div>
+                        <div className="bg-gray-900 rounded-lg p-4 space-y-2">
+                          <div className="text-xs text-gray-500 uppercase tracking-wider">Código</div>
+                          <div className="flex items-center gap-2">
+                            <code className="text-2xl text-white font-mono font-bold tracking-widest">{adminCouponCreated.code}</code>
+                            <button onClick={() => copyToClipboard(adminCouponCreated.code)} className="px-2 py-1 rounded text-xs bg-purple-900/40 text-purple-200 border border-purple-700/40">Copiar código</button>
+                          </div>
+                          <div className="text-xs text-gray-500 uppercase tracking-wider mt-3">Link de checkout</div>
+                          <div className="flex items-center gap-2">
+                            <code className="text-xs text-gray-300 break-all flex-1">{typeof window !== "undefined" ? window.location.origin + adminCouponCreated.checkout_url : adminCouponCreated.checkout_url}</code>
+                            <button onClick={() => copyToClipboard((typeof window !== "undefined" ? window.location.origin : "") + adminCouponCreated.checkout_url)} className="px-2 py-1 rounded text-xs bg-purple-900/40 text-purple-200 border border-purple-700/40 whitespace-nowrap">Copiar link</button>
+                          </div>
+                        </div>
+                        <button onClick={() => { setShowAddAdminCoupon(false); setAdminCouponCreated(null); }} className="w-full py-2 rounded-lg border border-gray-700 text-gray-300 text-sm">Fechar</button>
+                      </div>
+                    ) : (
+                      <>
+                        <div>
+                          <label className="text-gray-400 text-xs block mb-1">Código (deixe vazio para gerar)</label>
+                          <input type="text" placeholder="ABC12345" value={adminCouponCode} onChange={(e) => setAdminCouponCode(e.target.value.toUpperCase().replace(/\s/g, ""))} className="w-full px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 text-white text-sm outline-none font-mono tracking-wider" />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-gray-400 text-xs block mb-1">Plano válido *</label>
+                            <select value={adminCouponPlan} onChange={(e) => setAdminCouponPlan(e.target.value as "menu" | "menupro" | "business")} className="w-full px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 text-white text-sm outline-none">
+                              <option value="menu">Menu</option>
+                              <option value="menupro">MenuPro</option>
+                              <option value="business">Business</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="text-gray-400 text-xs block mb-1">Dias de trial *</label>
+                            <input type="number" min={0} value={adminCouponTrialDays} onChange={(e) => setAdminCouponTrialDays(Number(e.target.value))} className="w-full px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 text-white text-sm outline-none" />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-gray-400 text-xs block mb-1">Máx. usos</label>
+                            <input type="number" min={1} value={adminCouponMaxUses} onChange={(e) => setAdminCouponMaxUses(Number(e.target.value))} className="w-full px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 text-white text-sm outline-none" />
+                          </div>
+                          <div>
+                            <label className="text-gray-400 text-xs block mb-1">Expira em (opcional)</label>
+                            <input type="date" value={adminCouponExpiresAt} onChange={(e) => setAdminCouponExpiresAt(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 text-white text-sm outline-none" />
+                          </div>
+                        </div>
+                        {adminCouponError && <p className="text-red-400 text-xs">{adminCouponError}</p>}
+                        <div className="flex gap-2">
+                          <button onClick={() => { setShowAddAdminCoupon(false); setAdminCouponError(null); }} className="flex-1 py-2 rounded-lg border border-gray-700 text-gray-400 text-sm">Cancelar</button>
+                          <button onClick={handleCreateAdminCoupon} className="flex-1 py-2 rounded-lg text-white text-sm font-semibold" style={{ background: "linear-gradient(135deg, #a855f7, #d946ef)" }}>Criar cupom</button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+
+                <div className="bg-gray-900/60 rounded-2xl border border-gray-800 overflow-hidden">
+                  {adminCouponsState.length === 0 ? (
+                    <p className="text-gray-600 text-sm p-6">Nenhum cupom admin cadastrado.</p>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-gray-800 text-gray-500 text-xs uppercase tracking-wider">
+                            <th className="px-4 py-3 text-left">Código</th>
+                            <th className="px-4 py-3 text-left">Plano</th>
+                            <th className="px-4 py-3 text-left">Trial</th>
+                            <th className="px-4 py-3 text-left">Usos</th>
+                            <th className="px-4 py-3 text-left">Expira</th>
+                            <th className="px-4 py-3 text-left">Status</th>
+                            <th className="px-4 py-3 text-left">Ações</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {adminCouponsState.map((c) => (
+                            <tr key={c.id} className="border-b border-gray-800/50 hover:bg-gray-800/30">
+                              <td className="px-4 py-3 text-white font-mono font-bold tracking-wider">{c.code}</td>
+                              <td className="px-4 py-3 text-gray-300 uppercase text-xs">{c.valid_for_plan ?? "qualquer"}</td>
+                              <td className="px-4 py-3 text-gray-300">+{c.trial_extra_days}d</td>
+                              <td className="px-4 py-3 text-gray-400">{c.current_uses}{c.max_uses ? `/${c.max_uses}` : ""}</td>
+                              <td className="px-4 py-3 text-gray-400 text-xs">{fmtDate(c.expires_at)}</td>
+                              <td className="px-4 py-3">
+                                <span className={`px-2 py-0.5 rounded text-xs font-semibold ${c.is_active ? "bg-green-900/40 text-green-300" : "bg-red-900/40 text-red-300"}`}>
+                                  {c.is_active ? "Ativo" : "Inativo"}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 flex items-center gap-2">
+                                <button onClick={() => copyToClipboard(c.code)} className="text-[#00ffae]/70 text-xs hover:text-[#00ffae]">Copiar código</button>
+                                <button onClick={() => copyToClipboard(`${typeof window !== "undefined" ? window.location.origin : ""}/checkout?plan=${c.valid_for_plan ?? "menu"}&coupon=${c.code}`)} className="text-purple-300/70 text-xs hover:text-purple-300">Copiar link</button>
+                                {c.is_active && (
+                                  <button onClick={() => handleDisableAdminCoupon(c.id)} className="text-red-400 text-xs hover:text-red-300">Desativar</button>
+                                )}
+                              </td>
+                            </tr>
                           ))}
                         </tbody>
                       </table>

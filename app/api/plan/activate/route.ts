@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
+import { PLANS, type PlanCode } from "@/lib/plans";
 
 export async function POST(req: NextRequest) {
   try {
@@ -76,16 +77,20 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const trialDays = plan === "business" ? 7 : 0;
-    const trialEndsAt = new Date();
-    trialEndsAt.setDate(trialEndsAt.getDate() + (trialDays || 30));
+    const planDef = PLANS[plan as PlanCode];
+    let trialEndsAtIso: string | null = null;
+    if (planDef.hasTrial) {
+      const trialEndsAt = new Date();
+      trialEndsAt.setDate(trialEndsAt.getDate() + planDef.trialDays);
+      trialEndsAtIso = trialEndsAt.toISOString();
+    }
 
     const { error } = await supabase
       .from("restaurants")
       .update({
         plan,
-        status: plan === "business" ? "trial" : "active",
-        trial_ends_at: trialEndsAt.toISOString(),
+        status: planDef.hasTrial ? "trial" : "active",
+        trial_ends_at: trialEndsAtIso,
         onboarding_completed: true,
       })
       .eq("id", restaurantId);

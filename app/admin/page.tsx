@@ -45,6 +45,7 @@ export default async function AdminPage() {
     { data: photoSessionsData },
     { data: partnersData },
     { data: partnerCoupons },
+    { data: adminCoupons },
     { data: partnerReferrals },
     { data: partnerPayouts },
     { data: subscriptionsData },
@@ -64,7 +65,7 @@ export default async function AdminPage() {
     admin.from("payments").select("amount").gte("processed_at", thirtyDaysAgo),
     admin
       .from("restaurants")
-      .select("id, name, plan, status, free_access, created_at")
+      .select("id, name, plan, status, free_access, is_complimentary, complimentary_reason, created_at")
       .order("created_at", { ascending: false })
       .limit(200),
     admin
@@ -130,6 +131,7 @@ export default async function AdminPage() {
       .order("created_at", { ascending: false }),
     admin.from("partners").select("*").order("created_at", { ascending: false }),
     admin.from("partner_coupons").select("*, partners(name)").order("created_at", { ascending: false }),
+    admin.from("partner_coupons").select("*").eq("created_by_admin", true).order("created_at", { ascending: false }),
     admin.from("partner_referrals").select("*, partners(name), restaurants(name, plan, status)").order("created_at", { ascending: false }),
     admin.from("partner_payouts").select("*, partners(name)").order("created_at", { ascending: false }),
     admin
@@ -245,6 +247,7 @@ export default async function AdminPage() {
       partnerData={{
         partners: partnersData ?? [],
         coupons: partnerCoupons ?? [],
+        adminCoupons: adminCoupons ?? [],
         referrals: partnerReferrals ?? [],
         payouts: partnerPayouts ?? [],
       }}

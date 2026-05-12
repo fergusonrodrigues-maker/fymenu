@@ -49,10 +49,12 @@ export default async function MenuPresencialPage({
   if (unitData.payment_active === false && unitData.restaurant_id) {
     const { data: restaurantData } = await supabase
       .from("restaurants")
-      .select("free_access")
+      .select("free_access, is_complimentary")
       .eq("id", unitData.restaurant_id)
       .single();
-    if (!restaurantData?.free_access) return <InactiveScreen />;
+    if (!restaurantData?.free_access && !restaurantData?.is_complimentary) {
+      return <InactiveScreen />;
+    }
   }
 
   const unit: Unit = {

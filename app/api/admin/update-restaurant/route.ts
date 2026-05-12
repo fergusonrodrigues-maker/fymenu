@@ -10,7 +10,15 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { restaurantId, plan, status, free_access, trial_ends_at } = body;
+  const {
+    restaurantId,
+    plan,
+    status,
+    free_access,
+    trial_ends_at,
+    is_complimentary,
+    complimentary_reason,
+  } = body;
 
   const admin = createAdminClient();
   const updates: Record<string, unknown> = {};
@@ -22,6 +30,16 @@ export async function POST(req: NextRequest) {
     updates.free_access = free_access;
     if (free_access) updates.status = "active";
   }
+  if (is_complimentary !== undefined) {
+    updates.is_complimentary = !!is_complimentary;
+    if (is_complimentary) {
+      updates.complimentary_reason = complimentary_reason ?? null;
+      updates.complimentary_granted_at = new Date().toISOString();
+      updates.complimentary_granted_by = user.id;
+      updates.status = "active";
+      updates.trial_ends_at = null;
+    }
+  }
 
   const { error } = await admin
     .from("restaurants")
@@ -30,23 +48,32 @@ export async function POST(req: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  // Sync units when free_access changes
-  if (free_access !== undefined) {
-    if (free_access) {
+  // Sync units when free_access or is_complimentary changes
+  const accessFlag = free_access ?? is_complimentary;
+  if (free_access !== undefined || is_complimentary !== undefined) {
+    if (accessFlag) {
       await admin
         .from("units")
         .update({ payment_active: true, is_published: true })
         .eq("restaurant_id", restaurantId);
     } else {
-      const { data: activeSub } = await admin
-        .from("subscriptions")
-        .select("id")
-        .eq("restaurant_id", restaurantId)
-        .eq("status", "active")
-        .limit(1)
-        .single();
+      const [{ data: restaurantRow }, { data: activeSub }] = await Promise.all([
+        admin
+          .from("restaurants")
+          .select("free_access, is_complimentary")
+          .eq("id", restaurantId)
+          .single(),
+        admin
+          .from("subscriptions")
+          .select("id")
+          .eq("restaurant_id", restaurantId)
+          .eq("status", "active")
+          .limit(1)
+          .maybeSingle(),
+      ]);
 
-      if (!activeSub) {
+      const stillFree = restaurantRow?.free_access || restaurantRow?.is_complimentary;
+      if (!activeSub && !stillFree) {
         await admin
           .from("units")
           .update({ payment_active: false, is_published: false })
