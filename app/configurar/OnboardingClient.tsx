@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import StepPersonal from "./StepPersonal";
 import StepCompany from "./StepCompany";
 import StepMenu from "./StepMenu";
+import StepPlan from "./StepPlan";
 
 export type OnboardingData = {
   // Step 1
@@ -16,6 +17,8 @@ export type OnboardingData = {
   restaurant_name: string;
   whatsapp: string;
   instagram: string;
+  // Step 4 (cupom vindo do localStorage)
+  coupon_code?: string;
 };
 
 export default function OnboardingClient({
@@ -27,28 +30,25 @@ export default function OnboardingClient({
   restaurantId: string;
   userEmail: string;
 }) {
-  useEffect(() => {
-    const raw = localStorage.getItem("fy_pending_restaurant");
-    if (!raw || !restaurantId) return;
-    try {
-      const pending = JSON.parse(raw);
-      localStorage.removeItem("fy_pending_restaurant");
-      if (pending.coupon) {
-        fetch("/api/coupon/apply", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ code: pending.coupon, restaurant_id: restaurantId }),
-        });
-      }
-    } catch {}
-  }, [restaurantId]);
-
   const [step, setStep] = useState(1);
   const [data, setData] = useState<OnboardingData>({
     first_name: "", last_name: "", phone: "",
     email: userEmail, document: "",
     restaurant_name: "", whatsapp: "", instagram: "",
+    coupon_code: "",
   });
+
+  useEffect(() => {
+    const raw = localStorage.getItem("fy_pending_restaurant");
+    if (!raw) return;
+    try {
+      const pending = JSON.parse(raw);
+      localStorage.removeItem("fy_pending_restaurant");
+      if (pending.coupon) {
+        setData((d) => ({ ...d, coupon_code: pending.coupon }));
+      }
+    } catch {}
+  }, []);
 
   function next(partial: Partial<OnboardingData>) {
     setData((d) => ({ ...d, ...partial }));
@@ -64,7 +64,7 @@ export default function OnboardingClient({
     }}>
       {/* Progress */}
       <div style={{ display: "flex", gap: 8, marginBottom: 40 }}>
-        {[1, 2, 3].map((s) => (
+        {[1, 2, 3, 4].map((s) => (
           <div key={s} style={{
             width: s === step ? 32 : 8, height: 8,
             borderRadius: 999,
@@ -94,6 +94,13 @@ export default function OnboardingClient({
             data={data}
             userId={userId}
             restaurantId={restaurantId}
+          />
+        )}
+        {step === 4 && (
+          <StepPlan
+            restaurantId={restaurantId}
+            data={data}
+            onBack={() => setStep(3)}
           />
         )}
       </div>

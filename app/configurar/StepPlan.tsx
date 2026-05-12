@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { PLANS as PLAN_DEFS, type BillingCycle, type PlanCode } from "@/lib/plans";
 import { formatCents } from "@/lib/money";
+import type { OnboardingData } from "./OnboardingClient";
 
 const cycleToCanonical: Record<"monthly" | "quarterly" | "semiannual", BillingCycle> = {
   monthly: "monthly",
@@ -16,15 +17,18 @@ function planPriceCents(planKey: PlanCode, cycle: "monthly" | "quarterly" | "sem
 
 interface StepPlanProps {
   restaurantId: string;
+  data: OnboardingData;
   onBack: () => void;
 }
 
 export default function StepPlan({
   restaurantId,
+  data,
   onBack,
 }: StepPlanProps) {
   const [selectedCycle, setSelectedCycle] = useState<"monthly" | "quarterly" | "semiannual">("quarterly");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const plans = [
     {
@@ -81,7 +85,38 @@ export default function StepPlan({
 
   async function handleSelectPlan(planKey: string) {
     setLoading(true);
+    setError(null);
 
+    // 1. PRIMEIRO: gravar profile + membership + unit
+    //    (precisa rodar antes de qualquer window.location.href que mate o JS)
+    try {
+      const completeRes = await fetch("/api/onboarding/complete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          restaurantId,
+          firstName: data.first_name,
+          lastName: data.last_name,
+          phone: data.phone,
+          document: data.document,
+          restaurantName: data.restaurant_name,
+          whatsapp: data.whatsapp,
+          instagram: data.instagram,
+        }),
+      });
+      if (!completeRes.ok) {
+        const json = await completeRes.json().catch(() => ({}));
+        setError(json.error || "Erro ao salvar dados. Tente novamente.");
+        setLoading(false);
+        return;
+      }
+    } catch {
+      setError("Erro de conexão ao salvar dados. Tente novamente.");
+      setLoading(false);
+      return;
+    }
+
+    // 2. DEPOIS: ativar plano grátis OU cobrar via Asaas
     if (planKey === "menu") {
       const res = await fetch("/api/plan/activate", {
         method: "POST",
@@ -92,7 +127,7 @@ export default function StepPlan({
       if (res.ok) {
         window.location.href = "/painel";
       } else {
-        alert("Erro ao ativar plano. Tente novamente.");
+        setError("Erro ao ativar plano. Tente novamente.");
         setLoading(false);
       }
       return;
@@ -106,22 +141,23 @@ export default function StepPlan({
           restaurantId,
           plan: planKey,
           cycle: selectedCycle,
+          coupon_code: data.coupon_code || undefined,
         }),
       });
 
-      const data = await res.json().catch(() => ({}));
-      if (res.ok && data.checkoutUrl) {
-        window.location.href = data.checkoutUrl;
+      const respData = await res.json().catch(() => ({}));
+      if (res.ok && respData.checkoutUrl) {
+        window.location.href = respData.checkoutUrl;
         return;
       }
-      if (res.ok && data.complimentary) {
+      if (res.ok && respData.complimentary) {
         window.location.href = "/painel?msg=complimentary";
         return;
       }
-      alert(data?.error || "Erro ao processar. Tente novamente.");
+      setError(respData?.error || "Erro ao processar. Tente novamente.");
       setLoading(false);
     } catch {
-      alert("Erro de conexão. Tente novamente.");
+      setError("Erro de conexão. Tente novamente.");
       setLoading(false);
     }
   }
@@ -161,6 +197,25 @@ export default function StepPlan({
           ← Voltar
         </button>
       </div>
+
+      {error && (
+        <div
+          style={{
+            width: "100%",
+            maxWidth: 960,
+            padding: "12px 16px",
+            borderRadius: 12,
+            background: "rgba(255,80,80,0.1)",
+            border: "1px solid rgba(255,80,80,0.3)",
+            color: "#ff6b6b",
+            fontSize: 13,
+            marginBottom: 16,
+            textAlign: "center",
+          }}
+        >
+          {error}
+        </div>
+      )}
 
       {/* Seletor de ciclo */}
       <div
