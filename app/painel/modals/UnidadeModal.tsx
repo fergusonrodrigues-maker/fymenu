@@ -7,7 +7,7 @@ import LogoUploader from "../LogoUploader";
 import DominioSection from "../components/DominioSection";
 import { Unit } from "../types";
 import { createClient } from "@/lib/supabase/client";
-import { hasPlanFeature } from "@/lib/plans";
+import { normalizePlanName } from "@/lib/plans";
 
 const inp: React.CSSProperties = {
   width: "100%", padding: "10px 14px", borderRadius: 10,
@@ -39,7 +39,7 @@ function CopyLinkRow({ label, url }: { label: string; url: string }) {
 }
 
 export default function UnidadeModal({ unit, canAddUnit, plan, unitFeatures, restaurantStatus, onClose, onOpenPlans, onOpenCreateUnit }: { unit: Unit | null; canAddUnit: boolean; plan: string; unitFeatures?: Record<string, boolean>; restaurantStatus?: string; onClose: () => void; onOpenPlans?: () => void; onOpenCreateUnit?: () => void }) {
-  const isTopTier = hasPlanFeature(plan, "managerPortal", unitFeatures);
+  const isTopTier = normalizePlanName(plan) === "business";
   const [isPublished, setIsPublished] = useState(unit?.is_published ?? false);
   const [showNewUnit, setShowNewUnit] = useState(false);
 
