@@ -1,6 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { hasPlanFeature } from "@/lib/plans";
+import { getRestaurantPlan } from "@/lib/server/getRestaurantPlan";
 
 export async function POST(req: NextRequest) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
+  const { data: member } = await supabase
+    .from("restaurant_members")
+    .select("restaurant_id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (!member?.restaurant_id) {
+    return NextResponse.json({ error: "no_restaurant" }, { status: 403 });
+  }
+
+  const { plan, unitFeatures } = await getRestaurantPlan(member.restaurant_id);
+  if (!hasPlanFeature(plan, "analyticsAI", unitFeatures)) {
+    console.warn(`[gating] user=${user.id} blocked from ia/import-analytics plan=${plan}`);
+    return NextResponse.json(
+      { error: "feature_not_available", minPlan: "menupro" },
+      { status: 403 }
+    );
+  }
+
   const formData = await req.formData();
   const file = formData.get("file") as File | null;
   const text = formData.get("text") as string | null;

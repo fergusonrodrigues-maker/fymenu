@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import OpenAI from "openai";
+import { hasPlanFeature } from "@/lib/plans";
 
 export const runtime = "nodejs";
 
@@ -43,8 +44,20 @@ export async function POST(req: NextRequest) {
       .select("plan")
       .eq("id", unitRow.restaurant_id)
       .single();
-    const plan = restaurant?.plan ?? "menu";
-    aiEnabled = plan === "menupro" || plan === "business";
+
+    const { data: featureRows } = await admin
+      .from("unit_features")
+      .select("feature, enabled")
+      .eq("unit_id", unitId);
+
+    const unitFeatures: Record<string, boolean> = {};
+    for (const f of (featureRows ?? []) as Array<{ feature: string; enabled: boolean | null }>) {
+      if (f.enabled !== null && f.enabled !== undefined) {
+        unitFeatures[f.feature] = f.enabled;
+      }
+    }
+
+    aiEnabled = hasPlanFeature(restaurant?.plan ?? "menu", "iaDescription", unitFeatures);
   }
 
   // ─── 3) Manual combos for this product ────────────────────────────────────
