@@ -322,7 +322,7 @@ const CARD_TO_FEATURE: Record<string, FeatureKey> = {
   equipe:      "employees",
   tv:          "tvMode",
   impressoras: "comanda",
-  estoque:     "stockComplete",
+  estoque:     "stock",
   crm:         "crm",
   whatsapp:    "whatsappOrders",
   tarefas:     "employees",
