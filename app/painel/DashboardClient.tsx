@@ -1569,7 +1569,7 @@ export default function DashboardClient({
         <FinanceiroModal unit={unit} analytics={analytics} reportData={reportData} restaurant={restaurantState} onOpenPlano={() => open("plano")} onOpenImport={openImport} />
       </Modal>
       <Modal open={modal === "unidade"} onClose={close} title="Unidade">
-        <UnidadeModal unit={unit} canAddUnit={canAddUnit} plan={restaurantState.plan} restaurantStatus={restaurantState.status} onClose={close} onOpenPlans={() => open("plano")} onOpenCreateUnit={() => { close(); open("criar-unidade"); }} />
+        <UnidadeModal unit={unit} canAddUnit={canAddUnit} plan={restaurantState.plan} unitFeatures={unitFeatures} restaurantStatus={restaurantState.status} onClose={close} onOpenPlans={() => open("plano")} onOpenCreateUnit={() => { close(); open("criar-unidade"); }} />
       </Modal>
       <Modal open={modal === "criar-unidade"} onClose={close} title="Nova Unidade" size="sm">
         <CriarUnidadeModal
@@ -1600,7 +1600,7 @@ export default function DashboardClient({
         {unit && <PrinterModal unitId={unit.id} categories={categories} />}
       </Modal>
       <Modal open={modal === "equipe"} onClose={close} title="Equipe" size="lg">
-        {unit && <StaffAnalyticsModal unitId={unit.id} plan={restaurantState.plan ?? "menu"} />}
+        {unit && <StaffAnalyticsModal unitId={unit.id} plan={restaurantState.plan ?? "menu"} unitFeatures={unitFeatures} />}
       </Modal>
       <Modal open={modal === "links"} onClose={close} title="Acessos rápidos" size="sm">
         <div style={{ paddingTop: 4 }}>

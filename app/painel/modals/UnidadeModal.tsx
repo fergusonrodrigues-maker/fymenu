@@ -7,6 +7,7 @@ import LogoUploader from "../LogoUploader";
 import DominioSection from "../components/DominioSection";
 import { Unit } from "../types";
 import { createClient } from "@/lib/supabase/client";
+import { hasPlanFeature } from "@/lib/plans";
 
 const inp: React.CSSProperties = {
   width: "100%", padding: "10px 14px", borderRadius: 10,
@@ -37,7 +38,8 @@ function CopyLinkRow({ label, url }: { label: string; url: string }) {
   );
 }
 
-export default function UnidadeModal({ unit, canAddUnit, plan, restaurantStatus, onClose, onOpenPlans, onOpenCreateUnit }: { unit: Unit | null; canAddUnit: boolean; plan: string; restaurantStatus?: string; onClose: () => void; onOpenPlans?: () => void; onOpenCreateUnit?: () => void }) {
+export default function UnidadeModal({ unit, canAddUnit, plan, unitFeatures, restaurantStatus, onClose, onOpenPlans, onOpenCreateUnit }: { unit: Unit | null; canAddUnit: boolean; plan: string; unitFeatures?: Record<string, boolean>; restaurantStatus?: string; onClose: () => void; onOpenPlans?: () => void; onOpenCreateUnit?: () => void }) {
+  const isTopTier = hasPlanFeature(plan, "managerPortal", unitFeatures);
   const [isPublished, setIsPublished] = useState(unit?.is_published ?? false);
   const [showNewUnit, setShowNewUnit] = useState(false);
 
@@ -611,11 +613,11 @@ export default function UnidadeModal({ unit, canAddUnit, plan, restaurantStatus,
           <div style={{ borderRadius: 14, padding: "16px", border: "1px solid rgba(250,204,21,0.2)", background: "var(--dash-warning-soft)" }}>
             <div style={{ color: "var(--dash-warning)", fontSize: 14, fontWeight: 700, marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}><AlertTriangle size={16} /> Limite atingido</div>
             <div style={{ color: "var(--dash-text-muted)", fontSize: 13, marginBottom: 14, lineHeight: 1.5 }}>
-              {plan === "business"
+              {isTopTier
                 ? "Você está no plano máximo (Business). Entre em contato para soluções personalizadas."
                 : `Seu plano atual não permite mais unidades. Faça upgrade para adicionar novas unidades.`}
             </div>
-            {plan !== "business" && (
+            {!isTopTier && (
               <button onClick={() => { setShowNewUnit(false); onClose(); onOpenPlans?.(); }} style={{ width: "100%", padding: "12px", borderRadius: 12, border: "none", background: "var(--dash-accent-soft)", color: "var(--dash-accent)", fontSize: 14, fontWeight: 800, cursor: "pointer", boxShadow: "var(--dash-shadow)" }}>
                 Ver Planos →
               </button>

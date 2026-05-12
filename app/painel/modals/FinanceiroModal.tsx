@@ -657,7 +657,7 @@ export default function FinanceiroModal({ unit, analytics, reportData, restauran
     <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingTop: 8 }}>
 
       {/* ── Importar histórico ── */}
-      {onOpenImport && restaurant.plan === "business" && (
+      {onOpenImport && hasPlanFeature(restaurant.plan, "financeComplete", unitFeatures) && (
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
           <button
             onClick={() => onOpenImport("business_expenses")}

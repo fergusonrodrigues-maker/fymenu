@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { createClient } from "@/lib/supabase/client";
 import FyLoader from "@/components/FyLoader";
 import { Users, Target, Bike, ChefHat, Eye, EyeOff, BarChart3, Pencil, X, Timer, Clock } from "lucide-react";
+import { hasPlanFeature } from "@/lib/plans";
 
 interface Employee {
   id: string;
@@ -87,7 +88,7 @@ function RatingStars({ value }: { value: number | null }) {
   );
 }
 
-export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; plan?: string }) {
+export default function StaffAnalyticsModal({ unitId, plan, unitFeatures }: { unitId: string; plan?: string; unitFeatures?: Record<string, boolean> }) {
   const [tab, setTab] = useState<"equipe" | "garcons" | "entregadores" | "ponto">("equipe");
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [waiterStats, setWaiterStats] = useState<WaiterStat[]>([]);
@@ -141,7 +142,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
   const [pontoView, setPontoView] = useState<"registro" | "historico" | "resumo">("registro");
 
   const supabase = createClient();
-  const isBusiness = plan === "business";
+  const isBusiness = hasPlanFeature(plan, "employees", unitFeatures);
 
   useEffect(() => {
     loadAll();
@@ -175,7 +176,7 @@ export default function StaffAnalyticsModal({ unitId, plan }: { unitId: string; 
   async function loadAll() {
     setLoading(true);
     const tasks = [loadEmployees(), loadWaiterStats(), loadDelivererStats(), loadCategories()];
-    if (plan === "business") tasks.push(loadTimeEntries());
+    if (hasPlanFeature(plan, "employees", unitFeatures)) tasks.push(loadTimeEntries());
     await Promise.all(tasks);
     setLoading(false);
   }
