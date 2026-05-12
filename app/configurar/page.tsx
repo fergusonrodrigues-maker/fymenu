@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import ConfigurarClient from "./ConfigurarClient";
+import OnboardingClient from "./OnboardingClient";
 
 export default async function ConfigurarPage() {
   const supabase = await createClient();
@@ -21,7 +21,6 @@ export default async function ConfigurarPage() {
 
   // Auto-provisiona restaurante se não existir
   let restaurantId = restaurant?.id;
-  let restaurantName = restaurant?.name ?? "";
   if (!restaurantId) {
     const defaultName = user.email?.split("@")[0] ?? "Meu Restaurante";
     const { data: newRestaurant } = await supabase
@@ -31,10 +30,9 @@ export default async function ConfigurarPage() {
         name: defaultName,
         status: "pending",
       })
-      .select("id, name")
+      .select("id")
       .single();
     restaurantId = newRestaurant?.id;
-    restaurantName = newRestaurant?.name ?? defaultName;
   }
 
   if (!restaurantId) {
@@ -63,10 +61,10 @@ export default async function ConfigurarPage() {
   }
 
   return (
-    <ConfigurarClient
+    <OnboardingClient
+      userId={user.id}
       restaurantId={restaurantId}
-      restaurantName={restaurantName}
-      currentPlan={restaurant?.plan ?? null}
+      userEmail={user.email ?? ""}
     />
   );
 }
