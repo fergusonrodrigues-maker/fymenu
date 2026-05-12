@@ -1585,7 +1585,7 @@ export default function DashboardClient({
         {unit && <ModoTVModal unit={unit} onClose={close} />}
       </Modal>
       <Modal open={modal === "plano"} onClose={close} title="Escolha seu plano" size="lg">
-        <PlanoModal restaurant={restaurantState} highlightPlan={highlightPlan} trialDays={trialDays} onUpgrade={() => { close(); router.push("/painel/planos"); }} onClose={() => { close(); setHighlightPlan(null); }} />
+        <PlanoModal restaurant={restaurantState} highlightPlan={highlightPlan} trialDays={trialDays} onClose={() => { close(); setHighlightPlan(null); }} />
       </Modal>
       <Modal open={modal === "config"} onClose={close} title="Configurações" size="lg">
         <ConfigModal profile={profile} restaurant={restaurantState} />

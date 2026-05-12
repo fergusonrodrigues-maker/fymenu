@@ -132,13 +132,13 @@ export function UpgradePopup({
 }: {
   minPlan: PlanCode | null;
   onClose: () => void;
-  /** When provided, overrides the default <a href="/painel/planos"> with a button. */
+  /** When provided, overrides the default <a href="/checkout?plan=..."> with a button. */
   onViewPlans?: () => void;
   /** Optional override for the body copy. */
   description?: string;
 }) {
   const planName = minPlan ? PLANS[minPlan].name : "superior";
-  const href = `/painel/planos${minPlan ? `?upgrade=${minPlan}` : ""}`;
+  const href = minPlan ? `/checkout?plan=${minPlan}` : "/checkout";
 
   return (
     <div
