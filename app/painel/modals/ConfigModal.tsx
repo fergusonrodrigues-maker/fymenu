@@ -170,15 +170,16 @@ export default function ConfigModal({ profile, restaurant }: { profile: Profile;
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ restaurantId: restaurant.id, plan: newPlan, cycle: "monthly" }),
       });
-      const json = await res.json();
+      const json = await res.json().catch(() => ({}));
       if (res.ok && json.checkoutUrl) {
         window.location.href = json.checkoutUrl;
-      } else if (res.ok) {
-        alert("Plano alterado com sucesso!");
-        window.location.reload();
-      } else {
-        alert(json.error || "Erro ao alterar plano");
+        return;
       }
+      if (res.ok && json.complimentary) {
+        window.location.href = "/painel?msg=complimentary";
+        return;
+      }
+      alert(json?.error || "Erro ao alterar plano");
     } catch { alert("Erro de conexão"); }
   }
 

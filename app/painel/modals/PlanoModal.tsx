@@ -164,41 +164,16 @@ export default function PlanoModal({
         }),
       });
 
-      if (res.ok) {
-        const data = await res.json();
-        if (data.checkoutUrl) {
-          window.location.href = data.checkoutUrl;
-          return;
-        }
-
-        // Apply trial_extension coupons for business plan
-        if (planKey === "business" && trialExtensionDays > 0) {
-          const supabase = createClient();
-          const { data: rest } = await supabase
-            .from("restaurants")
-            .select("trial_ends_at")
-            .eq("id", restaurant.id)
-            .single();
-          if (rest?.trial_ends_at) {
-            const extended = new Date(rest.trial_ends_at);
-            extended.setDate(extended.getDate() + trialExtensionDays);
-            await supabase
-              .from("restaurants")
-              .update({ trial_ends_at: extended.toISOString() })
-              .eq("id", restaurant.id);
-          }
-        }
-
-        const msg =
-          planKey === "business"
-            ? `Trial Business ativado! ${7 + trialExtensionDays} dias grátis iniciados`
-            : "Plano ativado com sucesso!";
-        setToast(msg);
-        setTimeout(() => window.location.reload(), 2200);
-      } else {
-        const err = await res.json().catch(() => ({}));
-        alert(err.error || "Erro ao processar plano");
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+        return;
       }
+      if (res.ok && data.complimentary) {
+        window.location.href = "/painel?msg=complimentary";
+        return;
+      }
+      alert(data?.error || "Erro ao processar plano");
     } catch {
       alert("Erro de conexão");
     }

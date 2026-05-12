@@ -111,18 +111,17 @@ export default function ConfigurarClient({
         }),
       });
 
-      if (res.ok) {
-        const data = await res.json();
-        if (data.checkoutUrl) {
-          window.location.href = data.checkoutUrl;
-        } else {
-          window.location.href = "/painel";
-        }
-      } else {
-        const err = await res.json();
-        alert(err.error || "Erro ao processar. Tente novamente.");
-        setLoading(false);
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+        return;
       }
+      if (res.ok && data.complimentary) {
+        window.location.href = "/painel?msg=complimentary";
+        return;
+      }
+      alert(data?.error || "Erro ao processar. Tente novamente.");
+      setLoading(false);
     } catch {
       alert("Erro de conexão. Tente novamente.");
       setLoading(false);
