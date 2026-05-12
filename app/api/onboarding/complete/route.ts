@@ -47,7 +47,29 @@ export async function POST(req: NextRequest) {
     .eq("id", restaurantId);
   if (completeError) return NextResponse.json({ error: "Erro ao finalizar configuração" }, { status: 500 });
 
-  // 5. Envia email de boas-vindas (não-bloqueante: falha silenciosa)
+  // 5. Garante membership owner (auto-heal em getTenantContext continua como backup)
+  const { error: memberErr } = await admin
+    .from("restaurant_members")
+    .upsert(
+      {
+        user_id: user.id,
+        restaurant_id: restaurantId,
+        role: "owner",
+        status: "active",
+        invited_email: user.email,
+        activated_at: new Date().toISOString(),
+      },
+      {
+        onConflict: "restaurant_id,user_id",
+        ignoreDuplicates: true,
+      },
+    );
+  if (memberErr) {
+    console.error("[onboarding/complete] Falha membership owner:", memberErr);
+    // NÃO retornar erro: getTenantContext auto-heal é backup
+  }
+
+  // 6. Envia email de boas-vindas (não-bloqueante: falha silenciosa)
   const displayName = firstName || restaurantName;
   const template = welcomeEmail(displayName, "Teste grátis");
   await sendEmail({ to: user.email!, ...template });
