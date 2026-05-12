@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isRestaurantMember } from "@/lib/tenant/isRestaurantMember";
+import { requireFeatureForAction } from "@/lib/server/requireFeatureForAction";
 
 export async function PATCH(
   req: NextRequest,
@@ -26,6 +27,14 @@ export async function PATCH(
     const restaurantId = (tpl as any).units?.restaurant_id;
     if (!restaurantId || !await isRestaurantMember(admin, user.id, restaurantId)) {
       return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
+    }
+
+    const gate = await requireFeatureForAction("whatsappOrders", { restaurantId, unitId: (tpl as any).unit_id ?? null });
+    if (!gate.ok) {
+      return NextResponse.json(
+        { error: "feature_not_available", code: gate.error, minPlan: gate.minPlan ?? null },
+        { status: 403 }
+      );
     }
 
     const allowed = ["name", "category", "body", "variables", "is_active"];
@@ -70,6 +79,14 @@ export async function DELETE(
     const restaurantId = (tpl as any).units?.restaurant_id;
     if (!restaurantId || !await isRestaurantMember(admin, user.id, restaurantId)) {
       return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
+    }
+
+    const gate = await requireFeatureForAction("whatsappOrders", { restaurantId });
+    if (!gate.ok) {
+      return NextResponse.json(
+        { error: "feature_not_available", code: gate.error, minPlan: gate.minPlan ?? null },
+        { status: 403 }
+      );
     }
 
     // Soft delete — preserve defaults

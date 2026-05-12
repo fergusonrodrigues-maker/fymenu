@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isUnitMember } from "@/lib/tenant/isRestaurantMember";
+import { requireFeatureForAction } from "@/lib/server/requireFeatureForAction";
 
 export async function GET(req: NextRequest) {
   try {
@@ -23,6 +24,14 @@ export async function GET(req: NextRequest) {
 
     if (!await isUnitMember(admin, user.id, unitId)) {
       return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
+    }
+
+    const gate = await requireFeatureForAction("whatsappOrders", { unitId });
+    if (!gate.ok) {
+      return NextResponse.json(
+        { error: "feature_not_available", code: gate.error, minPlan: gate.minPlan ?? null },
+        { status: 403 }
+      );
     }
 
     let query = admin
