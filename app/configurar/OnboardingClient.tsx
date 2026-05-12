@@ -75,7 +75,7 @@ export default function OnboardingClient({
       </div>
 
       {/* Steps */}
-      <div style={{ width: "100%", maxWidth: 480 }}>
+      <div style={{ width: "100%", maxWidth: step === 4 ? 960 : 480 }}>
         {step === 1 && (
           <StepPersonal
             initial={data}

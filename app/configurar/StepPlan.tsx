@@ -14,17 +14,15 @@ function planPriceCents(planKey: PlanCode, cycle: "monthly" | "quarterly" | "sem
   return PLAN_DEFS[planKey].prices[cycleToCanonical[cycle]];
 }
 
-interface ConfigurarClientProps {
+interface StepPlanProps {
   restaurantId: string;
-  restaurantName: string;
-  currentPlan: string | null;
+  onBack: () => void;
 }
 
-export default function ConfigurarClient({
+export default function StepPlan({
   restaurantId,
-  restaurantName,
-  currentPlan,
-}: ConfigurarClientProps) {
+  onBack,
+}: StepPlanProps) {
   const [selectedCycle, setSelectedCycle] = useState<"monthly" | "quarterly" | "semiannual">("quarterly");
   const [loading, setLoading] = useState(false);
 
@@ -131,69 +129,37 @@ export default function ConfigurarClient({
   return (
     <div
       style={{
-        minHeight: "100vh",
-        background: "#050505",
-        backgroundImage:
-          "radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px)",
-        backgroundSize: "24px 24px",
-        padding: "40px 16px",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        width: "100%",
       }}
     >
-      {/* Logo */}
+      {/* Header com Voltar */}
       <div
         style={{
-          width: 56,
-          height: 56,
-          borderRadius: 16,
-          background: "#00ffae",
+          width: "100%",
           display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          marginBottom: 24,
-          boxShadow: "0 0 40px rgba(0,255,174,0.15)",
-          flexShrink: 0,
+          justifyContent: "flex-start",
+          marginBottom: 16,
         }}
       >
-        <span
+        <button
+          type="button"
+          onClick={onBack}
           style={{
-            fontSize: 24,
-            fontWeight: 900,
-            color: "#050505",
-            fontStyle: "italic",
+            padding: "8px 14px",
+            borderRadius: 12,
+            background: "transparent",
+            color: "rgba(255,255,255,0.6)",
+            fontSize: 13,
+            fontWeight: 700,
+            border: "1px solid rgba(255,255,255,0.12)",
+            cursor: "pointer",
           }}
         >
-          fy
-        </span>
-      </div>
-
-      {/* Título */}
-      <div style={{ textAlign: "center", marginBottom: 8 }}>
-        <h1
-          style={{
-            fontSize: 28,
-            fontWeight: 900,
-            color: "#fff",
-            margin: 0,
-          }}
-        >
-          Bem-vindo ao FyMenu
-        </h1>
-      </div>
-      <div
-        style={{
-          fontSize: 14,
-          color: "rgba(255,255,255,0.4)",
-          marginBottom: 32,
-          textAlign: "center",
-        }}
-      >
-        {restaurantName
-          ? `Escolha o plano ideal pra ${restaurantName}`
-          : "Escolha o plano ideal pro seu restaurante"}
+          ← Voltar
+        </button>
       </div>
 
       {/* Seletor de ciclo */}
@@ -442,12 +408,6 @@ export default function ConfigurarClient({
         })}
       </div>
 
-      {/* Footer */}
-      <div style={{ marginTop: 40, textAlign: "center" }}>
-        <span style={{ fontSize: 10, color: "rgba(255,255,255,0.1)" }}>
-          Powered by FyMenu
-        </span>
-      </div>
     </div>
   );
 }
