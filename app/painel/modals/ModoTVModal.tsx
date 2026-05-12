@@ -53,7 +53,7 @@ export default function ModoTVModal({ unit, onClose }: { unit: any; onClose: () 
     if (!config.showPrices) params.set("prices", "0");
     if (config.showDescriptions) params.set("desc", "1");
     if (config.categories.length > 0) params.set("cats", config.categories.join(","));
-    const url = `/delivery/${unit.slug}/tv${params.toString() ? "?" + params.toString() : ""}`;
+    const url = `/tv/${unit.slug}${params.toString() ? "?" + params.toString() : ""}`;
     window.open(url, "_blank");
   }
 
@@ -203,7 +203,7 @@ export default function ModoTVModal({ unit, onClose }: { unit: any; onClose: () 
       </button>
 
       <div style={{ textAlign: "center", fontSize: 10, color: "var(--dash-text-muted)" }}>
-        fymenu.com/delivery/{unit.slug}/tv
+        fymenu.com/tv/{unit.slug}
       </div>
 
       {saving && (

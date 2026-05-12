@@ -1613,7 +1613,7 @@ export default function DashboardClient({
             {([
               { icon: <UtensilsCrossed size={26} />, label: "Cardápio Delivery",  href: `/delivery/${unit?.slug}`,         color: "var(--dash-accent-soft)" },
               { icon: <ClipboardList size={26} />,   label: "Cardápio Mesa",      href: `/delivery/${unit?.slug}?mode=mesa`, color: "var(--dash-accent-soft)" },
-              { icon: <Tv size={26} />,              label: "Modo TV",            href: `/delivery/${unit?.slug}/tv`,       color: "var(--dash-card)" },
+              { icon: <Tv size={26} />,              label: "Modo TV",            href: `/tv/${unit?.slug}`,                color: "var(--dash-card)" },
               { icon: <ChefHat size={26} />,         label: "Cozinha",            href: `/cozinha/${unit?.slug}`,           color: "var(--dash-warning-soft)" },
               { icon: <Target size={26} />,          label: "Garçom",             href: `/garcom/${unit?.slug}`,            color: "var(--dash-warning-soft)" },
               { icon: <CreditCard size={26} />,      label: "PDV",                href: `/pdv/${unit?.slug}`,               color: "var(--dash-info-soft)" },
