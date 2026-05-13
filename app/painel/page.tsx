@@ -1,6 +1,7 @@
 ﻿import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import DashboardClient from "./DashboardClient";
+import ModalDadosDono from "./modals/ModalDadosDono";
 import { getRestaurantPlan } from "@/lib/server/getRestaurantPlan";
 
 type OrderRow = {
@@ -77,7 +78,7 @@ export default async function DashboardPage({ searchParams }: { searchParams?: P
     .eq("owner_id", user.id)
     .single();
 
-  if (!restaurant || !restaurant.owner_document) {
+  if (!restaurant) {
     return (
       <div
         style={{
@@ -93,6 +94,18 @@ export default async function DashboardPage({ searchParams }: { searchParams?: P
       >
         <h2>Estamos preparando seu painel</h2>
         <p style={{ opacity: 0.7 }}>Em breve, complete seu cadastro pra começar.</p>
+      </div>
+    );
+  }
+
+  if (!restaurant.owner_document) {
+    return (
+      <div style={{ minHeight: "100vh", background: "#0a0a0a" }}>
+        <ModalDadosDono
+          userId={user.id}
+          restaurantId={restaurant.id}
+          userEmail={user.email!}
+        />
       </div>
     );
   }
