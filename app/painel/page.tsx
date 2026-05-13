@@ -73,12 +73,29 @@ export default async function DashboardPage({ searchParams }: { searchParams?: P
 
   const { data: restaurant } = await supabase
     .from("restaurants")
-    .select("id, name, plan, status, trial_ends_at, whatsapp, instagram, onboarding_completed, free_access")
+    .select("id, name, plan, status, trial_ends_at, whatsapp, instagram, onboarding_completed, free_access, owner_document")
     .eq("owner_id", user.id)
     .single();
 
-  if (!restaurant) redirect("/configurar");
-  if (!restaurant.onboarding_completed) redirect("/configurar");
+  if (!restaurant || !restaurant.owner_document) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          height: "100vh",
+          flexDirection: "column",
+          gap: 16,
+          background: "#0a0a0a",
+          color: "#fff",
+        }}
+      >
+        <h2>Estamos preparando seu painel</h2>
+        <p style={{ opacity: 0.7 }}>Em breve, complete seu cadastro pra começar.</p>
+      </div>
+    );
+  }
 
   const sp = searchParams ? await searchParams : {};
   const requestedUnitId = sp.unit_id;

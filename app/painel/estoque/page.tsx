@@ -10,12 +10,11 @@ export default async function EstoquePage() {
 
   const { data: restaurant } = await supabase
     .from("restaurants")
-    .select("id, onboarding_completed")
+    .select("id")
     .eq("owner_id", user.id)
     .single();
 
   if (!restaurant) redirect("/entrar");
-  if (!restaurant.onboarding_completed) redirect("/configurar");
 
   const { data: unit } = await supabase
     .from("units")
