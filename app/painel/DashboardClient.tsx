@@ -10,6 +10,7 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import {
   hasPlanFeature, minPlanForFeature, PLANS,
   planLabel, maxUnits as planMaxUnits,
+  hasActivePlan, FREE_PLAN_MAX_UNITS,
   type FeatureKey,
 } from "@/lib/plans";
 import { UpgradePopup } from "@/components/plan/UpgradeGate";
@@ -365,7 +366,7 @@ export default function DashboardClient({
     async function refreshRestaurant() {
       const { data } = await supabase
         .from("restaurants")
-        .select("id, name, plan, status, trial_ends_at, whatsapp, instagram, onboarding_completed, free_access")
+        .select("id, name, plan, status, trial_ends_at, whatsapp, instagram, onboarding_completed, free_access, is_complimentary")
         .eq("id", restaurant.id)
         .single();
       if (data) setRestaurantState(data as Restaurant);
@@ -406,8 +407,13 @@ export default function DashboardClient({
   const [allUnits, setAllUnits] = useState<any[]>([]);
   const [allUnitsLoaded, setAllUnitsLoaded] = useState(false);
   const [showUnitSelector, setShowUnitSelector] = useState(false);
-  // Plan restriction removed for unit creation — limits only apply to publish/domain
-  const canAddUnit = true;
+  // 1ª unidade sempre permitida; 2ª+ requer plano ativo (ou cortesia).
+  const hasActivePlanState = hasActivePlan({
+    plan: restaurantState.plan ?? null,
+    is_complimentary: !!restaurantState.is_complimentary,
+    status: restaurantState.status,
+  });
+  const canAddUnit = hasActivePlanState || allUnits.length < FREE_PLAN_MAX_UNITS;
 
   // Fetch all units for the restaurant
   useEffect(() => {
@@ -1174,16 +1180,22 @@ export default function DashboardClient({
                           )}
                         </button>
                       ))}
-                      <button onClick={() => {
-                        setShowUnitSelector(false);
-                        open("criar-unidade");
-                      }} style={{
-                        display: "flex", alignItems: "center", gap: 8,
-                        width: "100%", padding: "11px 14px",
-                        background: "transparent", border: "none", cursor: "pointer",
-                        color: "var(--dash-text-muted)", fontSize: 12,
-                      }}>
-                        <span>+</span> Nova unidade
+                      <button
+                        onClick={() => {
+                          setShowUnitSelector(false);
+                          if (canAddUnit) open("criar-unidade");
+                          else open("plano");
+                        }}
+                        title={canAddUnit ? undefined : "Disponível com plano ativo"}
+                        style={{
+                          display: "flex", alignItems: "center", gap: 8,
+                          width: "100%", padding: "11px 14px",
+                          background: "transparent", border: "none", cursor: "pointer",
+                          color: "var(--dash-text-muted)", fontSize: 12,
+                          opacity: canAddUnit ? 1 : 0.6,
+                        }}
+                      >
+                        <span>{canAddUnit ? "+" : "🔒"}</span> Nova unidade
                       </button>
                     </div>
                   )}
@@ -1506,23 +1518,22 @@ export default function DashboardClient({
       </div>
 
       <Modal open={modal === "analytics"} onClose={close} title="Analytics" size="lg">
-        <AnalyticsModal analytics={analytics} unit={unit} products={products} categories={categories} restaurant={restaurantState} />
+        <AnalyticsModal analytics={analytics} unit={unit} products={products} categories={categories} restaurant={{ ...restaurantState, plan: restaurantState.plan ?? "menu" }} />
       </Modal>
       <Modal open={modal === "pedidos"} onClose={close} title="Pedidos de hoje" size="lg">
         {unit && <PedidosModal unitId={unit.id} unit={unit} onOpenImport={openImport} />}
       </Modal>
       <Modal open={modal === "cardapio"} onClose={close} title="Cardápio" size="lg">
-        <CardapioModal unit={unit} categories={categories} products={products} upsellItems={upsellItems} restaurant={restaurantState} onClose={close} />
+        <CardapioModal unit={unit} categories={categories} products={products} upsellItems={upsellItems} restaurant={restaurantState} onClose={close} onOpenPlano={() => open("plano")} />
       </Modal>
       <Modal open={modal === "financeiro"} onClose={close} title="Financeiro" size="lg">
         <FinanceiroModal unit={unit} analytics={analytics} reportData={reportData} restaurant={restaurantState} onOpenPlano={() => open("plano")} onOpenImport={openImport} />
       </Modal>
       <Modal open={modal === "unidade"} onClose={close} title="Unidade">
-        <UnidadeModal unit={unit} canAddUnit={canAddUnit} plan={restaurantState.plan} unitFeatures={unitFeatures} restaurantStatus={restaurantState.status} onClose={close} onOpenPlans={() => open("plano")} onOpenCreateUnit={() => { close(); open("criar-unidade"); }} />
+        <UnidadeModal unit={unit} canAddUnit={canAddUnit} plan={restaurantState.plan ?? "menu"} unitFeatures={unitFeatures} restaurantStatus={restaurantState.status} onClose={close} onOpenPlans={() => open("plano")} onOpenCreateUnit={() => { close(); open("criar-unidade"); }} />
       </Modal>
       <Modal open={modal === "criar-unidade"} onClose={close} title="Nova Unidade" size="sm">
         <CriarUnidadeModal
-          restaurantId={restaurant.id}
           onSuccess={(newUnitId) => { close(); window.location.href = `/painel?unit_id=${newUnitId}`; }}
           onCancel={close}
         />

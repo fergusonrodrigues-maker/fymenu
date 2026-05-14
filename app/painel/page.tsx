@@ -74,7 +74,7 @@ export default async function DashboardPage({ searchParams }: { searchParams?: P
 
   const { data: restaurant } = await supabase
     .from("restaurants")
-    .select("id, name, plan, status, trial_ends_at, whatsapp, instagram, onboarding_completed, free_access, owner_document")
+    .select("id, name, plan, status, trial_ends_at, whatsapp, instagram, onboarding_completed, free_access, is_complimentary, owner_document")
     .eq("owner_id", user.id)
     .single();
 

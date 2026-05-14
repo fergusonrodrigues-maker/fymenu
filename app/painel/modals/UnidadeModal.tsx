@@ -2,7 +2,7 @@
 
 import React, { useRef, useState } from "react";
 import { Camera, Clock, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
-import { updateUnit, uploadCoverAction } from "../actions";
+import { updateUnit, uploadCoverAction, createUnit } from "../actions";
 import LogoUploader from "../LogoUploader";
 import DominioSection from "../components/DominioSection";
 import { Unit } from "../types";
@@ -591,15 +591,13 @@ export default function UnidadeModal({ unit, canAddUnit, plan, unitFeatures, res
           <div style={{ borderRadius: 14, padding: "16px", border: "1px solid var(--dash-border)", background: "var(--dash-card)" }}>
             <div style={{ color: "var(--dash-text)", fontSize: 14, fontWeight: 700, marginBottom: 12 }}>Nova Unidade</div>
             <form action={async (fd) => {
-              const { createClient: cc } = await import("@/lib/supabase/client");
-              const supabase = cc();
-              const { data: { user } } = await supabase.auth.getUser();
-              if (!user) return;
-              const { data: rest } = await supabase.from("restaurants").select("id").eq("owner_id", user.id).single();
-              if (!rest) return;
-              await supabase.from("units").insert({ restaurant_id: rest.id, name: String(fd.get("name")), slug: String(fd.get("slug")) });
-              setShowNewUnit(false);
-              window.location.reload();
+              try {
+                await createUnit(fd);
+                setShowNewUnit(false);
+                window.location.reload();
+              } catch (err) {
+                alert((err as Error).message || "Erro ao criar unidade.");
+              }
             }} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <input name="name" placeholder="Nome da unidade" required style={inp} />
               <input name="slug" placeholder="slug (ex: unidade-centro)" required style={inp} />

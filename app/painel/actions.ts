@@ -6,6 +6,7 @@ import { invalidateMenuCache } from "@/lib/cache/invalidateMenuCache";
 import { uploadToR2, generateMediaKey, isR2Configured } from "@/lib/r2";
 import { logActivity } from "@/lib/audit/logActivity";
 import { requireFeatureForAction } from "@/lib/server/requireFeatureForAction";
+import { hasActivePlan, FREE_PLAN_MAX_UNITS, FREE_PLAN_MAX_PRODUCTS } from "@/lib/plans";
 
 function normalizeName(name: string) {
   return name.trim();
@@ -71,6 +72,56 @@ async function getUnitIdOrThrow(unitIdFromForm?: string) {
 }
 
 /* ========================= UNIT ========================= */
+
+export async function createUnit(formData: FormData): Promise<{ id: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Não autenticado.");
+
+  const name = normalizeName(String(formData.get("name") ?? ""));
+  const slug = normalizeSlug(String(formData.get("slug") ?? ""));
+  const city = normalizeText(String(formData.get("city") ?? ""));
+  const whatsapp = normalizeText(String(formData.get("whatsapp") ?? ""));
+
+  if (!name) throw new Error("Nome da unidade é obrigatório.");
+  if (!slug) throw new Error("Slug é obrigatório.");
+
+  const { data: restaurant } = await supabase
+    .from("restaurants")
+    .select("id, plan, status, is_complimentary")
+    .eq("owner_id", user.id)
+    .maybeSingle();
+  if (!restaurant?.id) throw new Error("Restaurante não encontrado.");
+
+  const { count: existingUnits } = await supabase
+    .from("units")
+    .select("id", { count: "exact", head: true })
+    .eq("restaurant_id", restaurant.id);
+
+  if ((existingUnits ?? 0) >= FREE_PLAN_MAX_UNITS && !hasActivePlan(restaurant)) {
+    const err = new Error("Pra adicionar mais unidades, ative um plano.") as Error & { code?: string };
+    err.code = "max_units_free_plan";
+    throw err;
+  }
+
+  const { data: newUnit, error } = await supabase
+    .from("units")
+    .insert({
+      restaurant_id: restaurant.id,
+      name,
+      slug,
+      city: city || null,
+      whatsapp: whatsapp || null,
+      is_published: false,
+    })
+    .select("id")
+    .single();
+
+  if (error || !newUnit) throw new Error(error?.message ?? "Erro ao criar unidade.");
+
+  revalidatePath("/painel");
+  return { id: newUnit.id };
+}
 
 export async function updateUnit(formData: FormData): Promise<void> {
   const supabase = await createClient();
@@ -405,6 +456,28 @@ export async function createProduct(formData: FormData): Promise<void> {
     .single();
 
   if (catErr || !category?.unit_id) throw new Error("Categoria não encontrada.");
+
+  // Gate de plano free: máx FREE_PLAN_MAX_PRODUCTS produtos ativos por unidade.
+  const { data: unitRow } = await supabase
+    .from("units")
+    .select("restaurant_id, restaurants(plan, status, is_complimentary)")
+    .eq("id", category.unit_id)
+    .maybeSingle();
+  const rest = (unitRow?.restaurants ?? null) as { plan: string | null; status: string; is_complimentary: boolean } | null;
+  if (rest && !hasActivePlan(rest)) {
+    const { count: activeProducts } = await supabase
+      .from("products")
+      .select("id", { count: "exact", head: true })
+      .eq("unit_id", category.unit_id)
+      .eq("is_active", true);
+    if ((activeProducts ?? 0) >= FREE_PLAN_MAX_PRODUCTS) {
+      const err = new Error(
+        `Você atingiu o limite de ${FREE_PLAN_MAX_PRODUCTS} produtos. Ative um plano pra adicionar mais.`
+      ) as Error & { code?: string };
+      err.code = "max_products_free_plan";
+      throw err;
+    }
+  }
 
   const { data: last } = await supabase
     .from("products")

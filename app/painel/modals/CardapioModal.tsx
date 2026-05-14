@@ -13,7 +13,7 @@ import AIButton from "@/components/AIButton";
 import AIWaveLoader from "@/components/AIWaveLoader";
 import { MoneyInput } from "@/components/ui/MoneyInput";
 import { formatCents } from "@/lib/money";
-import { hasPlanFeature } from "@/lib/plans";
+import { hasPlanFeature, hasActivePlan, FREE_PLAN_MAX_PRODUCTS } from "@/lib/plans";
 import {
   Info, FileText, X, CheckCircle2, Clipboard, Package, Sparkles,
   AlertCircle, Clock,
@@ -49,7 +49,7 @@ const inpBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HT
   e.currentTarget.style.boxShadow = "none";
 };
 
-function NewProductFormInline({ categoryId, section, customSections, anyProductExpanded, onOpen }: { categoryId: string; section: string; customSections: CustomSection[]; anyProductExpanded: boolean; onOpen: () => void }) {
+function NewProductFormInline({ categoryId, section, customSections, anyProductExpanded, onOpen, blocked, productCount, onOpenPlano }: { categoryId: string; section: string; customSections: CustomSection[]; anyProductExpanded: boolean; onOpen: () => void; blocked?: boolean; productCount?: number; onOpenPlano?: () => void }) {
   const [open, setOpen] = useState(false);
   const [priceType, setPriceType] = useState("fixed");
   const [basePriceCents, setBasePriceCents] = useState(0);
@@ -76,11 +76,24 @@ function NewProductFormInline({ categoryId, section, customSections, anyProductE
     setIsAlcoholic(false);
   }
 
-  if (!open) return (
-    <button onClick={handleOpen} style={{ padding: "10px", borderRadius: 10, width: "100%", background: "transparent", border: "1px dashed var(--dash-border)", color: "var(--dash-text-muted)", fontSize: 13, cursor: "pointer" }}>
-      + Adicionar produto
-    </button>
-  );
+  if (!open) {
+    if (blocked) {
+      return (
+        <button
+          onClick={() => onOpenPlano?.()}
+          title="Disponível com plano ativo"
+          style={{ padding: "10px", borderRadius: 10, width: "100%", background: "rgba(250,204,21,0.06)", border: "1px dashed rgba(250,204,21,0.35)", color: "var(--dash-warning, #facc15)", fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
+        >
+          🔒 Limite de {FREE_PLAN_MAX_PRODUCTS} produtos atingido — Ativar plano
+        </button>
+      );
+    }
+    return (
+      <button onClick={handleOpen} style={{ padding: "10px", borderRadius: 10, width: "100%", background: "transparent", border: "1px dashed var(--dash-border)", color: "var(--dash-text-muted)", fontSize: 13, cursor: "pointer" }}>
+        + Adicionar produto{typeof productCount === "number" ? ` (${productCount}/${FREE_PLAN_MAX_PRODUCTS})` : ""}
+      </button>
+    );
+  }
   return (
     <form
       action={async (formData) => {
@@ -139,11 +152,19 @@ function NewProductFormInline({ categoryId, section, customSections, anyProductE
   );
 }
 
-export default function CardapioModal({ unit, categories, products, upsellItems, restaurant, unitFeatures, onClose }: {
-  unit: Unit | null; categories: Category[]; products: Product[]; upsellItems: any[]; restaurant?: Restaurant | null; unitFeatures?: Record<string, boolean>; onClose: () => void;
+export default function CardapioModal({ unit, categories, products, upsellItems, restaurant, unitFeatures, onClose, onOpenPlano }: {
+  unit: Unit | null; categories: Category[]; products: Product[]; upsellItems: any[]; restaurant?: Restaurant | null; unitFeatures?: Record<string, boolean>; onClose: () => void; onOpenPlano?: () => void;
 }) {
   // Ficha técnica vem com stockComplete (Business).
   const hasRecipeFeature = hasPlanFeature(restaurant?.plan, "stockComplete", unitFeatures);
+
+  // Gate de plano free: máx FREE_PLAN_MAX_PRODUCTS produtos ATIVOS por unidade.
+  // Cortesia (is_complimentary) e plano pago active bypassam.
+  const planActive = restaurant
+    ? hasActivePlan({ plan: restaurant.plan ?? null, is_complimentary: !!restaurant.is_complimentary, status: restaurant.status })
+    : false;
+  const activeProductCount = products.filter((p) => p.is_active !== false).length;
+  const productGateBlocked = !planActive && activeProductCount >= FREE_PLAN_MAX_PRODUCTS;
 
   const [expandedCat, setExpandedCat] = useState<string | null>(null);
   const [expandedProductId, setExpandedProductId] = useState<string | null>(null);
@@ -1740,6 +1761,9 @@ export default function CardapioModal({ unit, categories, products, upsellItems,
                         customSections={customSections}
                         anyProductExpanded={expandedProductId !== null}
                         onOpen={() => setExpandedProductId(null)}
+                        blocked={productGateBlocked}
+                        productCount={planActive ? undefined : activeProductCount}
+                        onOpenPlano={onOpenPlano}
                       />
                     </>
                   )}

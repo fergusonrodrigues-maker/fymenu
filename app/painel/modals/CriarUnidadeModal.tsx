@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { createUnit } from "../actions";
 
 function slugify(str: string): string {
   return str
@@ -38,11 +39,9 @@ const label: React.CSSProperties = {
 };
 
 export default function CriarUnidadeModal({
-  restaurantId,
   onSuccess,
   onCancel,
 }: {
-  restaurantId: string;
   onSuccess: (newUnitId: string) => void;
   onCancel: () => void;
 }) {
@@ -101,27 +100,15 @@ export default function CriarUnidadeModal({
 
     setLoading(true);
     try {
-      const supabase = createClient();
-      const { data: newUnit, error: insertError } = await supabase
-        .from("units")
-        .insert({
-          restaurant_id: restaurantId,
-          name: name.trim(),
-          slug: slug.trim(),
-          city: city.trim() || null,
-          whatsapp: whatsapp.trim() || null,
-          is_published: false,
-        })
-        .select("id")
-        .single();
-
-      if (insertError || !newUnit) {
-        setError("Erro ao criar unidade. Tente novamente.");
-        return;
-      }
-      onSuccess(newUnit.id);
-    } catch {
-      setError("Erro inesperado. Tente novamente.");
+      const fd = new FormData();
+      fd.set("name", name.trim());
+      fd.set("slug", slug.trim());
+      fd.set("city", city.trim());
+      fd.set("whatsapp", whatsapp.trim());
+      const { id } = await createUnit(fd);
+      onSuccess(id);
+    } catch (err) {
+      setError((err as Error).message || "Erro ao criar unidade. Tente novamente.");
     } finally {
       setLoading(false);
     }

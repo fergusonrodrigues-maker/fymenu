@@ -275,3 +275,28 @@ export function planLabel(plan: string | undefined | null): string {
 export function maxUnits(plan: string | undefined | null): number {
   return PLANS[normalizePlanName(plan)].maxUnits;
 }
+
+/**
+ * Fonte canônica de "tem plano ativo". Cortesia (is_complimentary=true) bypassa
+ * todas as outras checagens — admin libera acesso permanente independente de
+ * pagamento. Sem cortesia: precisa de plan != null E status === "active".
+ *
+ * Use em gates de criação de unidade, produto, publicar cardápio, features
+ * premium, etc.
+ */
+export function hasActivePlan(restaurant: {
+  plan: string | null;
+  is_complimentary: boolean;
+  status: string;
+}): boolean {
+  if (restaurant.is_complimentary) return true;
+  if (!restaurant.plan) return false;
+  if (restaurant.status !== "active") return false;
+  return true;
+}
+
+/** Limite de produtos no plano free (gate aplicado quando !hasActivePlan). */
+export const FREE_PLAN_MAX_PRODUCTS = 10;
+
+/** Limite de unidades no plano free (gate aplicado quando !hasActivePlan). */
+export const FREE_PLAN_MAX_UNITS = 1;
