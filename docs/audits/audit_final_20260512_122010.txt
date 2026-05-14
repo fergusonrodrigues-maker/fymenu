@@ -1,0 +1,465 @@
+﻿AUDITORIA FINAL PRE-FIXES - 05/12/2026 12:20:10
+======================================================================
+
+=== A.1 Conteudo do PlanoModal.tsx (linhas 140-220) ===
+          setCoupons(data.map((d: any) => ({
+            coupon_code: d.coupon_code,
+            discount_type: d.partner_coupons?.discount_type ?? null,
+            trial_extra_days: d.partner_coupons?.trial_extra_days ?? 0,
+            discount_value: d.partner_coupons?.discount_value ?? null,
+          })));
+        }
+      });
+  }, [restaurant.id]);
+
+  const trialExtensionDays = coupons
+    .filter((c) => c.discount_type === "trial_extension")
+    .reduce((sum, c) => sum + c.trial_extra_days, 0);
+
+  async function handleSelectPlan(planKey: string) {
+    setPlanLoading(true);
+    try {
+      const res = await fetch("/api/plan/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          restaurantId: restaurant.id,
+          plan: planKey,
+          cycle: planCycle,
+        }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+        return;
+      }
+      if (res.ok && data.complimentary) {
+        window.location.href = "/painel?msg=complimentary";
+        return;
+      }
+      alert(data?.error || "Erro ao processar plano");
+    } catch {
+      alert("Erro de conexÃ£o");
+    }
+    setPlanLoading(false);
+  }
+
+  async function handleCancelPlan() {
+    setPlanLoading(true);
+    try {
+      const res = await fetch("/api/plan/activate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ restaurantId: restaurant.id, plan: "cancel" }),
+      });
+      if (res.ok) {
+        window.location.reload();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert(err.error || "Erro ao cancelar plano");
+      }
+    } catch {
+      alert("Erro de conexÃ£o");
+    }
+    setPlanLoading(false);
+    setShowCancelConfirm(false);
+  }
+
+  const currentPlanData = PLANS.find((p) => p.key === currentPlan);
+
+  // â”€â”€ Toast overlay â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  if (toast) {
+    return (
+      <div style={{ paddingTop: 24, textAlign: "center" }}>
+        <div style={{
+          padding: "24px 28px", borderRadius: 20,
+          background: "rgba(0,255,174,0.06)", border: "1px solid rgba(0,255,174,0.18)",
+          animation: "planGoldSpin 0s",
+        }}>
+          <div style={{ marginBottom: 12, display: "flex", justifyContent: "center", color: "var(--dash-accent)" }}><Sparkles size={36} /></div>
+          <div style={{ fontSize: 16, fontWeight: 900, color: "var(--dash-accent)", marginBottom: 8 }}>
+            {toast}
+          </div>
+          <div style={{ fontSize: 12, color: "var(--dash-text-muted)" }}>
+            Recarregando o painel...
+
+=== A.2 Todas mensagens de erro no PlanoModal ===
+
+LineNumber Line                                                  
+---------- ----                                                  
+       176       alert(data?.error || "Erro ao processar plano");
+       178       alert("Erro de conexão");                       
+       195         alert(err.error || "Erro ao cancelar plano"); 
+       198       alert("Erro de conexão");                       
+
+
+
+=== A.3 Estado de loading no PlanoModal ===
+
+LineNumber Line                                      
+---------- ----                                      
+       549                         ? "Processando..."
+
+
+
+=== A.4 ConfigModal.tsx (suspeito de mesmo bug) ===
+      setConfirmPassword("");
+      setTimeout(() => setPasswordSuccess(false), 3000);
+    }
+    setChangingPassword(false);
+  }
+
+  async function handleChangePlan(newPlan: string) {
+    try {
+      const res = await fetch("/api/plan/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ restaurantId: restaurant.id, plan: newPlan, cycle: "monthly" }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (res.ok && json.checkoutUrl) {
+        window.location.href = json.checkoutUrl;
+        return;
+      }
+      if (res.ok && json.complimentary) {
+        window.location.href = "/painel?msg=complimentary";
+        return;
+      }
+      alert(json?.error || "Erro ao alterar plano");
+    } catch { alert("Erro de conexÃ£o"); }
+  }
+
+  async function handleCancelPlan() {
+    setCanceling(true);
+    try {
+      const res = await fetch("/api/subscription/cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ restaurantId: restaurant.id }),
+      });
+      if (res.ok) {
+        alert("Plano cancelado. Seu cardÃ¡pio ficarÃ¡ ativo atÃ© o fim do perÃ­odo pago.");
+        setShowCancelConfirm(false);
+      } else {
+        const json = await res.json();
+        alert(json.error || "Erro ao cancelar");
+
+=== B.1 Features no LandingClient ===
+features: [
+      "CardÃ¡pio em vÃ­deo 9:16",
+      "VariaÃ§Ãµes, combos e adicionais",
+      "Modo TV",
+      "Analytics em tempo real",
+      "Top produtos e horÃ¡rios de pico",
+      "AnÃ¡lise IA do cardÃ¡pio",
+      "RelatÃ³rio PDF",
+    ]
+features: [
+      "Tudo do plano Menu, mais:",
+      "IA escreve descriÃ§Ãµes de produtos",
+      "Pedidos via WhatsApp + tracking",
+      "Link de delivery",
+      "Comanda digital com QR Code",
+      "Cliente chama garÃ§om na mesa",
+      "Cozinha imprime na hora (cozinha, bar, caixa)",
+      "GarÃ§om no portal funcionÃ¡rio",
+      "CRM bÃ¡sico (cadastro de clientes)",
+      "Estoque bÃ¡sico (controle de quantidade)",
+      "Financeiro de delivery e mesa",
+    ]
+features: [
+      "Tudo do plano MenuPro, mais:",
+      "Financeiro com custos, lucro e meta",
+      "IA prÃ³-labore (sugestÃ£o de retirada)",
+      "Estoque com ficha tÃ©cnica e validade",
+      "IA upload de notas fiscais",
+      "Equipe completa com ponto e folha",
+      "CRM com disparo de mensagens",
+      "Chatbot WhatsApp 24h com IA",
+      "Portal gerente",
+      "BotÃ£o \"chamar gerente\" na mesa",
+    ]
+
+=== B.2 Features no PlanoModal ===
+features: [
+      "CardÃ¡pio de vÃ­deo 9:16",
+      "Categorias com horÃ¡rio",
+      "Modo TV autoplay",
+      "Analytics com IA + sugestÃµes",
+      "RelatÃ³rio em PDF",
+      "Link pÃºblico + QR Code",
+    ]
+features: [
+      "Tudo do Menu +",
+      "Pedidos via WhatsApp + iFood",
+      "Link delivery + mesa",
+      "Comanda digital completa",
+      "Cozinha + GarÃ§om em tempo real",
+      "CRM bÃ¡sico de clientes",
+      "Estoque bÃ¡sico",
+      "Financeiro delivery + mesa",
+    ]
+features: [
+      "Tudo do MenuPro +",
+      "Equipe completa + ponto + salÃ¡rios",
+      "Estoque com ficha tÃ©cnica + IA",
+      "CRM com disparo de mensagens",
+      "Financeiro com custos + balanÃ§o + IA",
+      "Chatbot IA no WhatsApp",
+      "Portal do gerente",
+    ]
+
+=== B.3 PLANS em lib/plans.ts (a fonte da verdade) ===
+
+=== B.4 PlanoModal importa PLANS de lib/plans.ts? ===
+
+LineNumber Line                                                                               
+---------- ----                                                                               
+         7 import { PLANS as PLAN_DEFS, type BillingCycle, type PlanCode } from "@/lib/plans";
+
+
+
+=== C.1 CriarUnidadeModal completo (linhas 90-140) ===
+  useEffect(() => {
+    if (!slug) { setSlugStatus("idle"); return; }
+    if (checkTimeout.current) clearTimeout(checkTimeout.current);
+    checkTimeout.current = setTimeout(() => checkSlug(slug), 400);
+    return () => { if (checkTimeout.current) clearTimeout(checkTimeout.current); };
+  }, [slug, checkSlug]);
+
+  async function handleCreate() {
+    setError(null);
+    if (!name.trim()) { setError("Nome da unidade Ã© obrigatÃ³rio."); return; }
+    if (slugStatus !== "ok") { setError("Verifique o slug antes de continuar."); return; }
+
+    setLoading(true);
+    try {
+      const supabase = createClient();
+      const { data: newUnit, error: insertError } = await supabase
+        .from("units")
+        .insert({
+          restaurant_id: restaurantId,
+          name: name.trim(),
+          slug: slug.trim(),
+          city: city.trim() || null,
+          whatsapp: whatsapp.trim() || null,
+          is_published: false,
+        })
+        .select("id")
+        .single();
+
+      if (insertError || !newUnit) {
+        setError("Erro ao criar unidade. Tente novamente.");
+        return;
+      }
+      onSuccess(newUnit.id);
+    } catch {
+      setError("Erro inesperado. Tente novamente.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const slugFeedback = {
+    idle:     { text: "", color: "" },
+    checking: { text: "Verificando...", color: "var(--dash-text-muted)" },
+    ok:       { text: "âœ“ DisponÃ­vel", color: "var(--dash-accent)" },
+    taken:    { text: "âœ— JÃ¡ em uso", color: "var(--dash-danger)" },
+    invalid:  { text: "âœ— MÃ­n. 3 caracteres, apenas letras, nÃºmeros e -", color: "var(--dash-danger)" },
+  }[slugStatus];
+
+  const preview = slug ? `fymenu.com/delivery/${slug}` : "";
+
+  return (
+
+=== C.2 Endpoint/action que CriarUnidadeModal chama ===
+
+LineNumber Line                        
+---------- ----                        
+       220       {/* Footer actions */}
+
+
+
+=== C.3 maxUnits check no codigo ===
+
+Path                                                                   LineNumber Line                                 
+----                                                                   ---------- ----                                 
+C:\Users\Ferguson\Documents\fymenu\app\configurar\ConfigurarClient.tsx         38         `Até ${PLAN_DEFS.menu.maxU...
+C:\Users\Ferguson\Documents\fymenu\app\configurar\ConfigurarClient.tsx         55         `Até ${PLAN_DEFS.menupro.m...
+C:\Users\Ferguson\Documents\fymenu\app\configurar\ConfigurarClient.tsx         71         `${PLAN_DEFS.business.maxU...
+C:\Users\Ferguson\Documents\fymenu\app\configurar\StepMenu.tsx                 79             features={[`Até ${PLAN...
+C:\Users\Ferguson\Documents\fymenu\app\configurar\StepMenu.tsx                 85             features={[`Até ${PLAN...
+C:\Users\Ferguson\Documents\fymenu\app\configurar\StepMenu.tsx                 92             features={[`${PLAN_DEF...
+C:\Users\Ferguson\Documents\fymenu\app\painel\modals\ConfigModal.tsx           24     units: `Até ${PLAN_DEFS.menu.m...
+C:\Users\Ferguson\Documents\fymenu\app\painel\modals\ConfigModal.tsx           31     units: `Até ${PLAN_DEFS.menupr...
+C:\Users\Ferguson\Documents\fymenu\app\painel\modals\ConfigModal.tsx           38     units: `${PLAN_DEFS.business.m...
+C:\Users\Ferguson\Documents\fymenu\app\painel\modals\PlanoModal.tsx            27     tagline: `Até ${PLAN_DEFS.menu...
+C:\Users\Ferguson\Documents\fymenu\app\painel\modals\PlanoModal.tsx            47     tagline: `Até ${PLAN_DEFS.menu...
+C:\Users\Ferguson\Documents\fymenu\app\painel\modals\PlanoModal.tsx            71     tagline: `${PLAN_DEFS.business...
+C:\Users\Ferguson\Documents\fymenu\app\painel\planos\PlanosClient.tsx          25     description: `Até ${PLAN_DEFS....
+C:\Users\Ferguson\Documents\fymenu\app\painel\planos\PlanosClient.tsx          31     description: `Até ${PLAN_DEFS....
+C:\Users\Ferguson\Documents\fymenu\app\painel\planos\PlanosClient.tsx          38     description: `${PLAN_DEFS.busi...
+
+
+
+=== C.4 RLS policy em units (insert) ===
+(rodar via MCP Supabase pelo Claude)
+
+=== D.1 Como o tema e decidido no painel ===
+
+Path                                                              LineNumber Line                                      
+----                                                              ---------- ----                                      
+C:\Users\Ferguson\Documents\fymenu\app\painel\DashboardClient.tsx          5 import ThemeToggle from "@/components/T...
+C:\Users\Ferguson\Documents\fymenu\app\painel\DashboardClient.tsx        559         /* ── Light Theme Text Override...
+C:\Users\Ferguson\Documents\fymenu\app\painel\DashboardClient.tsx       1205             <ThemeToggle />               
+C:\Users\Ferguson\Documents\fymenu\components\ThemeToggle.tsx              5 interface ThemeToggleProps {              
+C:\Users\Ferguson\Documents\fymenu\components\ThemeToggle.tsx              6   defaultTheme?: 'light' | 'dark'         
+C:\Users\Ferguson\Documents\fymenu\components\ThemeToggle.tsx              8   onThemeChange?: (theme: 'light' | 'da...
+C:\Users\Ferguson\Documents\fymenu\components\ThemeToggle.tsx             11 export default function ThemeToggle({     
+C:\Users\Ferguson\Documents\fymenu\components\ThemeToggle.tsx             12   defaultTheme = 'dark',                  
+C:\Users\Ferguson\Documents\fymenu\components\ThemeToggle.tsx             13   storageKey = 'fymenu-theme',            
+C:\Users\Ferguson\Documents\fymenu\components\ThemeToggle.tsx             14   onThemeChange                           
+C:\Users\Ferguson\Documents\fymenu\components\ThemeToggle.tsx             15 }: ThemeToggleProps) {                    
+C:\Users\Ferguson\Documents\fymenu\components\ThemeToggle.tsx             22     const savedTheme = localStorage.get...
+C:\Users\Ferguson\Documents\fymenu\components\ThemeToggle.tsx             25     let theme: 'light' | 'dark' = defau...
+C:\Users\Ferguson\Documents\fymenu\components\ThemeToggle.tsx             27     if (savedTheme) {                     
+C:\Users\Ferguson\Documents\fymenu\components\ThemeToggle.tsx             28       theme = savedTheme as 'light' | '...
+C:\Users\Ferguson\Documents\fymenu\components\ThemeToggle.tsx             30       theme = 'dark'                      
+C:\Users\Ferguson\Documents\fymenu\components\ThemeToggle.tsx             33     setIsDark(theme === 'dark')           
+C:\Users\Ferguson\Documents\fymenu\components\ThemeToggle.tsx             34     applyTheme(theme)                     
+C:\Users\Ferguson\Documents\fymenu\components\ThemeToggle.tsx             37   const applyTheme = (theme: 'light' | ...
+C:\Users\Ferguson\Documents\fymenu\components\ThemeToggle.tsx             39     htmlElement.classList.toggle('dark'...
+
+
+
+=== D.2 Default value de tema ===
+
+Path                                                            LineNumber Line                                        
+----                                                            ---------- ----                                        
+C:\Users\Ferguson\Documents\fymenu\components\ThemeToggle.tsx            6   defaultTheme?: 'light' | 'dark'           
+C:\Users\Ferguson\Documents\fymenu\components\ThemeToggle.tsx           12   defaultTheme = 'dark',                    
+C:\Users\Ferguson\Documents\fymenu\components\ThemeToggle.tsx           25     let theme: 'light' | 'dark' = default...
+C:\Users\Ferguson\Documents\fymenu\components\VideoShowcase.tsx         19 export default function VideoShowcase({ t...
+
+
+
+=== E.1 Modais que mostram preco (procurar hardcoded) ===
+AnalyticsModal.tsx	hardcoded_money: 0	import_PLANS: True
+CardapioModal.tsx	hardcoded_money: 0	import_PLANS: True
+ConfigModal.tsx	hardcoded_money: 0	import_PLANS: True
+CriarUnidadeModal.tsx	hardcoded_money: 0	import_PLANS: False
+CrmModal.tsx	hardcoded_money: 0	import_PLANS: True
+DeliveryModal.tsx	hardcoded_money: 1	import_PLANS: False
+EstoqueModal.tsx	hardcoded_money: 2	import_PLANS: True
+FinanceiroModal.tsx	hardcoded_money: 0	import_PLANS: True
+HistoricoEntityModal.tsx	hardcoded_money: 0	import_PLANS: False
+HistoricoModal.tsx	hardcoded_money: 0	import_PLANS: False
+ImportarHistoricoModal.tsx	hardcoded_money: 0	import_PLANS: True
+ModoTVModal.tsx	hardcoded_money: 0	import_PLANS: False
+PaymentModal.tsx	hardcoded_money: 0	import_PLANS: True
+PlanoModal.tsx	hardcoded_money: 0	import_PLANS: True
+PrinterModal.tsx	hardcoded_money: 4	import_PLANS: False
+TarefasModal.tsx	hardcoded_money: 0	import_PLANS: False
+TVModal.tsx	hardcoded_money: 0	import_PLANS: False
+UnidadeModal.tsx	hardcoded_money: 0	import_PLANS: True
+WhatsappModal.tsx	hardcoded_money: 0	import_PLANS: False
+
+=== E.2 Paginas com hardcoded de preco ===
+
+=== E.3 Console.error / try-catch em fluxo de pagamento ===
+
+Path                                                                       LineNumber
+----                                                                       ----------
+C:\Users\Ferguson\Documents\fymenu\app\api\plan\activate\route.ts                  33
+C:\Users\Ferguson\Documents\fymenu\app\api\plan\activate\route.ts                  99
+C:\Users\Ferguson\Documents\fymenu\app\api\plan\activate\route.ts                 107
+C:\Users\Ferguson\Documents\fymenu\app\api\plan\activate\route.ts                 108
+C:\Users\Ferguson\Documents\fymenu\app\api\plan\checkout\route.ts                  43
+C:\Users\Ferguson\Documents\fymenu\app\api\plan\checkout\route.ts                 207
+C:\Users\Ferguson\Documents\fymenu\app\api\plan\checkout\route.ts                 273
+C:\Users\Ferguson\Documents\fymenu\app\api\plan\checkout\route.ts                 274
+C:\Users\Ferguson\Documents\fymenu\app\api\billing\payment-status\route.ts         36
+C:\Users\Ferguson\Documents\fymenu\app\api\billing\subscribe\route.ts             139
+C:\Users\Ferguson\Documents\fymenu\app\api\billing\subscribe\route.ts             169
+C:\Users\Ferguson\Documents\fymenu\app\api\billing\subscribe\route.ts             170
+C:\Users\Ferguson\Documents\fymenu\app\painel\modals\AnalyticsModal.tsx           266
+C:\Users\Ferguson\Documents\fymenu\app\painel\modals\AnalyticsModal.tsx           267
+C:\Users\Ferguson\Documents\fymenu\app\painel\modals\AnalyticsModal.tsx           336
+C:\Users\Ferguson\Documents\fymenu\app\painel\modals\AnalyticsModal.tsx           337
+C:\Users\Ferguson\Documents\fymenu\app\painel\modals\AnalyticsModal.tsx           379
+C:\Users\Ferguson\Documents\fymenu\app\painel\modals\AnalyticsModal.tsx           380
+C:\Users\Ferguson\Documents\fymenu\app\painel\modals\AnalyticsModal.tsx           405
+C:\Users\Ferguson\Documents\fymenu\app\painel\modals\AnalyticsModal.tsx           406
+C:\Users\Ferguson\Documents\fymenu\app\painel\modals\CardapioModal.tsx            384
+C:\Users\Ferguson\Documents\fymenu\app\painel\modals\CardapioModal.tsx            402
+C:\Users\Ferguson\Documents\fymenu\app\painel\modals\CardapioModal.tsx            424
+C:\Users\Ferguson\Documents\fymenu\app\painel\modals\CardapioModal.tsx            425
+C:\Users\Ferguson\Documents\fymenu\app\painel\modals\CardapioModal.tsx            485
+
+
+
+=== F.1 APIs /api/ia/* tem auth.getUser? ===
+app\api\ia\analytics-suggestions\route.ts	auth: True	gate: True
+app\api\ia\analyze-reviews\route.ts	auth: True	gate: True
+app\api\ia\describe\route.ts	auth: True	gate: True
+app\api\ia\finance-analysis\route.ts	auth: True	gate: True
+app\api\ia\generate-description\route.ts	auth: True	gate: True
+app\api\ia\import\route.ts	auth: True	gate: True
+app\api\ia\import-analytics\route.ts	auth: True	gate: True
+app\api\ia\import-finance\route.ts	auth: True	gate: True
+app\api\ia\import-menu\route.ts	auth: True	gate: True
+app\api\ia\import-stock\route.ts	auth: True	gate: True
+app\api\ia\nutrition\route.ts	auth: True	gate: True
+app\api\ia\purchase-suggestions\route.ts	auth: True	gate: True
+app\api\ia\suggest-highlights\route.ts	auth: True	gate: True
+
+=== F.2 Modo TV: /delivery/[slug]/tv ainda aparece? ===
+
+Path                                                      LineNumber Line                                              
+----                                                      ---------- ----                                              
+C:\Users\Ferguson\Documents\fymenu\app\tv\[slug]\page.tsx          7 import TVDisplay from "@/app/delivery/[slug]/tv...
+
+
+
+=== F.3 WhatsApp card no GRID_LAYOUTS.menupro? ===
+
+=== G.1 Algum arquivo untracked esquecido? ===
+ M app/admin/AdminClient.tsx
+ M app/admin/page.tsx
+ M app/api/admin/update-restaurant/route.ts
+ M app/api/billing/subscribe/route.ts
+ M app/api/coupon/validate/route.ts
+ M app/api/plan/activate/route.ts
+ M app/api/plan/checkout/route.ts
+ M app/api/subscription/create/route.ts
+ M app/delivery/[slug]/menu/page.tsx
+ M app/delivery/[slug]/page.tsx
+ M app/menu/[slug]/page.tsx
+ M app/u/[slug]/mesa/page.tsx
+ M lib/server/getRestaurantPlan.ts
+?? app/api/admin/coupons/
+?? audit_20260511_213900.txt
+?? audit_20260511_214217.txt
+?? audit_final_20260512_122010.txt
+?? audit_painel_20260512_110858.txt
+?? audit_roads_20260512_111120.txt
+?? audit_rotas.ps1
+?? audit_rotas_20260511_221155.txt
+
+=== G.2 Ultimos 12 commits ===
+0a7ebb7 fix(gating): UnidadeModal usa tier-check puro em vez de managerPortal feature
+0dd182e feat(security): guard em pages filhas /painel sem protecao
+3603e15 refactor(gating): substituir plan === 'X' por hasPlanFeature
+43366e9 fix(ux): coerencia Estoque MenuPro (card vs page)
+390d6a3 fix(ux): card WhatsApp aparece no layout MenuPro
+bb2ce4d fix(ux): botao Modo TV aponta pra rota correta
+5598cf3 feat(security): guard em server actions sem protecao
+585553f feat(security): gate em /api/whatsapp/* restantes
+243d657 feat(security): auth + gate em todas as APIs /api/ia/*
+9262ce0 fix(checkout): adiciona pasta app/checkout que estava untracked
+7e8fe05 chore(db): versiona migration aplicada manualmente em 12/05/2026
+51086cf fix(billing): restaura branch complimentary + remove trial_extension legado do PlanoModal
+
+======================================================================
+Auditoria final salva em: audit_final_20260512_122010.txt

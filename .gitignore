@@ -42,3 +42,9 @@ next-env.d.ts
 .claude/worktrees/
 
 .vercel
+
+# Audit reports (mover pra docs/audits/ se quiser versionar)
+/audit_*.txt
+/audit_*.ps1
+/knip-report.txt
+/tsprune-report.txt

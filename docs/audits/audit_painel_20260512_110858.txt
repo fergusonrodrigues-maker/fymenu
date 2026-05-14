@@ -1,0 +1,225 @@
+﻿AUDITORIA COERENCIA PAINEL x PLANOS - 05/12/2026 11:08:58
+======================================================================
+
+=== 1.1 lib/plans.ts - features definidas por plano ===
+  name: string;
+  maxUnits: number;
+  trialDays: number;
+  hasTrial: boolean;
+  prices: Record<BillingCycle, number>;
+  features: PlanFeatures;
+    name: "Menu",
+    maxUnits: 2,
+    trialDays: 0,
+    hasTrial: false,
+    prices: {
+    features: {
+    name: "MenuPro",
+    maxUnits: 3,
+    trialDays: 7,
+    hasTrial: true,
+    prices: {
+    features: {
+    name: "Business",
+    maxUnits: 5,
+    trialDays: 7,
+    hasTrial: true,
+    prices: {
+    features: {
+export function maxUnits(plan: string | undefined | null): number {
+  return PLANS[normalizePlanName(plan)].maxUnits;
+
+=== 1.2 FeatureKey enum/type ===
+export type FeatureKey = keyof PlanFeatures;
+  feature: FeatureKey,
+  feature: FeatureKey,
+export function minPlanForFeature(feature: FeatureKey): PlanCode | null {
+
+=== 2.1 CARD_TO_FEATURE mapping (DashboardClient) ===
+app\painel\DashboardClient.tsx:318 const CARD_TO_FEATURE: Record<string, FeatureKey> = {
+app\painel\DashboardClient.tsx:439 const feature = CARD_TO_FEATURE[cardId];
+app\painel\DashboardClient.tsx:445 const feature = CARD_TO_FEATURE[cardId];
+app\painel\DashboardClient.tsx:1385 const featureForCard = CARD_TO_FEATURE[item.id];
+
+=== 3.1 Modais que chamam hasPlanFeature ===
+AnalyticsModal.tsx: 2 uso(s) de hasPlanFeature
+CardapioModal.tsx: 2 uso(s) de hasPlanFeature
+ConfigModal.tsx: 0 uso(s) de hasPlanFeature
+CriarUnidadeModal.tsx: 0 uso(s) de hasPlanFeature
+CrmModal.tsx: 2 uso(s) de hasPlanFeature
+DeliveryModal.tsx: 0 uso(s) de hasPlanFeature
+EstoqueModal.tsx: 2 uso(s) de hasPlanFeature
+FinanceiroModal.tsx: 4 uso(s) de hasPlanFeature
+HistoricoEntityModal.tsx: 0 uso(s) de hasPlanFeature
+HistoricoModal.tsx: 0 uso(s) de hasPlanFeature
+ImportarHistoricoModal.tsx: 2 uso(s) de hasPlanFeature
+ModoTVModal.tsx: 0 uso(s) de hasPlanFeature
+PaymentModal.tsx: 0 uso(s) de hasPlanFeature
+PlanoModal.tsx: 0 uso(s) de hasPlanFeature
+PrinterModal.tsx: 0 uso(s) de hasPlanFeature
+TarefasModal.tsx: 0 uso(s) de hasPlanFeature
+TVModal.tsx: 0 uso(s) de hasPlanFeature
+UnidadeModal.tsx: 0 uso(s) de hasPlanFeature
+WhatsappModal.tsx: 0 uso(s) de hasPlanFeature
+
+=== 3.2 Modais ainda com gating inline (plan === 'xxx') ===
+app\painel\DashboardClient.tsx:378 if (!unit?.id || (plan === "menu" && !restaurantState.free_access)) return;
+app\painel\DashboardClient.tsx:1424 background: restaurant?.plan === "business" ? "var(--dash-warning-soft)"
+app\painel\DashboardClient.tsx:1425 : restaurant?.plan === "menupro" ? "rgba(0,217,255,0.08)"
+app\painel\DashboardClient.tsx:1427 color: restaurant?.plan === "business" ? "var(--dash-warning)"
+app\painel\DashboardClient.tsx:1428 : restaurant?.plan === "menupro" ? "#00d9ff"
+app\painel\DashboardClient.tsx:1432 {restaurant?.plan === "menu" ? "Menu" : restaurant?.plan === "menupro" ? "MenuPro" : restaurant?.plan === "business" ? "Business" : restaurant?.plan}
+app\painel\components\StaffAnalyticsModal.tsx:144 const isBusiness = plan === "business";
+app\painel\components\StaffAnalyticsModal.tsx:178 if (plan === "business") tasks.push(loadTimeEntries());
+app\painel\modals\FinanceiroModal.tsx:660 {onOpenImport && restaurant.plan === "business" && (
+app\painel\modals\PlanoModal.tsx:386 (currentPlan === "menu" && plan.key !== "menu") ||
+app\painel\modals\PlanoModal.tsx:387 (currentPlan === "menupro" && plan.key === "business");
+app\painel\modals\UnidadeModal.tsx:614 {plan === "business"
+
+=== 4.1 Pages /painel guards ===
+PROTEGIDA: app\painel\page.tsx
+SEM GUARD: app\painel\admin\parceiros\page.tsx
+PROTEGIDA: app\painel\estoque\page.tsx
+PROTEGIDA: app\painel\ia\page.tsx
+PROTEGIDA: app\painel\importacoes\page.tsx
+PROTEGIDA: app\painel\orders\page.tsx
+SEM GUARD: app\painel\orders\[orderId]\page.tsx
+SEM GUARD: app\painel\planos\page.tsx
+SEM GUARD: app\painel\relatorios\page.tsx
+SEM GUARD: app\painel\tv\page.tsx
+
+=== 4.2 Server actions /painel com gating ===
+SEM GUARD: app\painel\actions.ts
+SEM GUARD: app\painel\historicoActions.ts
+SEM GUARD: app\painel\membersActions.ts
+SEM GUARD: app\painel\notificationsActions.ts
+PROTEGIDA: app\painel\tarefasActions.ts
+PROTEGIDA: app\painel\financeiro\actions.ts
+SEM GUARD: app\painel\importar\actions.ts
+SEM GUARD: app\painel\orders\actions.ts
+
+=== 5.1 APIs /api/whatsapp e /api/ia - auth + gate ===
+app\api\whatsapp\disconnect\route.ts	Auth:True	Gate:False
+app\api\whatsapp\messages\route.ts	Auth:True	Gate:False
+app\api\whatsapp\qrcode\route.ts	Auth:True	Gate:False
+app\api\whatsapp\send\route.ts	Auth:True	Gate:True
+app\api\whatsapp\send-bulk\route.ts	Auth:True	Gate:True
+app\api\whatsapp\settings\route.ts	Auth:True	Gate:True
+app\api\whatsapp\setup\route.ts	Auth:True	Gate:False
+app\api\whatsapp\status\route.ts	Auth:True	Gate:False
+app\api\whatsapp\teardown\route.ts	Auth:True	Gate:False
+app\api\whatsapp\templates\route.ts	Auth:True	Gate:False
+app\api\whatsapp\templates\[id]\route.ts	Auth:True	Gate:False
+app\api\whatsapp\webhook\route.ts	Auth:False	Gate:False
+app\api\ia\analytics-suggestions\route.ts	Auth:False	Gate:False
+app\api\ia\analyze-reviews\route.ts	Auth:False	Gate:False
+app\api\ia\describe\route.ts	Auth:False	Gate:False
+app\api\ia\finance-analysis\route.ts	Auth:False	Gate:False
+app\api\ia\generate-description\route.ts	Auth:False	Gate:False
+app\api\ia\import\route.ts	Auth:False	Gate:False
+app\api\ia\import-analytics\route.ts	Auth:False	Gate:False
+app\api\ia\import-finance\route.ts	Auth:False	Gate:False
+app\api\ia\import-menu\route.ts	Auth:False	Gate:False
+app\api\ia\import-stock\route.ts	Auth:False	Gate:False
+app\api\ia\nutrition\route.ts	Auth:False	Gate:False
+app\api\ia\purchase-suggestions\route.ts	Auth:False	Gate:False
+app\api\ia\suggest-highlights\route.ts	Auth:False	Gate:False
+
+=== 6.1 Callers do /api/plan/checkout ===
+app\api\billing\subscribe\route.ts:1 // DEPRECATED: use /api/plan/checkout (hosted checkout).
+app\api\billing\subscribe\route.ts:28 console.warn("[billing/subscribe] DEPRECATED — migrar caller para /api/plan/checkout");
+app\api\subscription\create\route.ts:1 // DEPRECATED: use /api/plan/checkout (hosted checkout).
+app\api\subscription\create\route.ts:8 console.warn("[subscription/create] DEPRECATED — migrar caller para /api/plan/checkout");
+app\checkout\CheckoutClient.tsx:87 const res = await fetch("/api/plan/checkout", {
+app\configurar\ConfigurarClient.tsx:104 const res = await fetch("/api/plan/checkout", {
+app\painel\modals\ConfigModal.tsx:168 const res = await fetch("/api/plan/checkout", {
+app\painel\modals\PlanoModal.tsx:157 const res = await fetch("/api/plan/checkout", {
+
+=== 6.2 Callers tratam data.complimentary? ===
+BUG: app\api\billing\subscribe\route.ts (nao trata complimentary)
+BUG: app\api\subscription\create\route.ts (nao trata complimentary)
+OK : app\checkout\CheckoutClient.tsx
+OK : app\configurar\ConfigurarClient.tsx
+OK : app\painel\modals\ConfigModal.tsx
+OK : app\painel\modals\PlanoModal.tsx
+
+=== 7.1 Modais de billing existentes ===
+ConfigModal.tsx
+PaymentModal.tsx
+PlanoModal.tsx
+
+=== 7.2 Modais de billing - importa PLANS? hardcoded? ===
+ConfigModal.tsx	importaPLANS:True	hardcoded:0
+PaymentModal.tsx	importaPLANS:True	hardcoded:0
+PlanoModal.tsx	importaPLANS:True	hardcoded:0
+
+=== 8.1 features na landing ===
+    features: [
+      "CardÃ¡pio em vÃ­deo 9:16",
+      "VariaÃ§Ãµes, combos e adicionais",
+      "Modo TV",
+      "Analytics em tempo real",
+      "Top produtos e horÃ¡rios de pico",
+      "AnÃ¡lise IA do cardÃ¡pio",
+      "RelatÃ³rio PDF",
+    ],
+    trial: false,
+    cta: "ComeÃ§ar agora",
+    href: "/checkout?plan=menu",
+    highlight: false,
+  },
+  menupro: {
+    name: "MenuPro",
+
+=== 8.2 FeatureKey usados (universo real) ===
+comanda
+employees
+finance
+financeComplete
+iaDescription
+stockComplete
+
+=== 9.1 UpgradeGate / UpgradePopup em uso ===
+app\painel\DashboardClient.tsx:1692 <UpgradePopup
+components\plan\UpgradeGate.tsx:85 {open && <UpgradePopup minPlan={minPlan} onClose={() => setOpen(false)} />}
+components\plan\UpgradeGate.tsx:122 {open && <UpgradePopup minPlan={minPlan} onClose={() => setOpen(false)} />}
+
+=== 10.1 Usuarios do getRestaurantPlan ===
+app\colaborador-app\[slug]\comandas\page.tsx:4
+app\colaborador-app\[slug]\comandas\page.tsx:24
+app\colaborador-app\[slug]\mesas\page.tsx:4
+app\colaborador-app\[slug]\mesas\page.tsx:24
+app\colaborador-app\[slug]\ponto\page.tsx:4
+app\colaborador-app\[slug]\ponto\page.tsx:24
+app\colaborador-app\[slug]\tarefas\page.tsx:4
+app\colaborador-app\[slug]\tarefas\page.tsx:24
+app\painel\page.tsx:4
+app\painel\page.tsx:214
+lib\server\getRestaurantPlan.ts:20
+lib\server\requireFeatureForAction.ts:1
+lib\server\requireFeatureForAction.ts:78
+lib\server\requireFeatureOrRedirect.ts:2
+lib\server\requireFeatureOrRedirect.ts:63
+
+=== 10.2 unitFeatures nos modais ===
+app\painel\modals\AnalyticsModal.tsx:39 unitFeatures,
+app\painel\modals\AnalyticsModal.tsx:46 unitFeatures?: Record<string, boolean>;
+app\painel\modals\AnalyticsModal.tsx:413 const hasMenuProFeature = hasPlanFeature(restaurant?.plan, "iaDescription", unitFeatures);
+app\painel\modals\CardapioModal.tsx:142 export default function CardapioModal({ unit, categories, products, upsellItems, restaurant, unitFeatures, onClose }: {
+app\painel\modals\CardapioModal.tsx:143 unit: Unit | null; categories: Category[]; products: Product[]; upsellItems: any[]; restaurant?: Restaurant | null; unitFeatures?: Record<string, boolean>; onClose: () => void;
+app\painel\modals\CardapioModal.tsx:146 const hasRecipeFeature = hasPlanFeature(restaurant?.plan, "stockComplete", unitFeatures);
+app\painel\modals\CrmModal.tsx:735 export default function CrmModal({ unit, restaurant, unitFeatures, onOpenImport }: { unit: any; restaurant: any; unitFeatures?: Record<string, boolean>; onOpenImport?: (type: string) => void }) {
+app\painel\modals\CrmModal.tsx:738 const canImport = hasPlanFeature(restaurant?.plan, "stockComplete", unitFeatures);
+app\painel\modals\EstoqueModal.tsx:41 export default function EstoqueModal({ unit, restaurant, unitFeatures, onOpenImport }: { unit: any; restaurant: any; unitFeatures?: Record<string, boolean>; onOpenImport?: (type: string) => void }) {
+app\painel\modals\EstoqueModal.tsx:202 const isBusiness = hasPlanFeature(restaurant?.plan, "stockComplete", unitFeatures);
+app\painel\modals\FinanceiroModal.tsx:133 export default function FinanceiroModal({ unit, analytics, reportData, restaurant, onOpenPlano, onOpenImport, unitFeatures }: {
+app\painel\modals\FinanceiroModal.tsx:140 unitFeatures?: Record<string, boolean>;
+app\painel\modals\FinanceiroModal.tsx:151 return hasPlanFeature(plan, "finance", unitFeatures);
+app\painel\modals\FinanceiroModal.tsx:156 return hasPlanFeature(plan, "financeComplete", unitFeatures);
+app\painel\modals\FinanceiroModal.tsx:158 return hasPlanFeature(plan, "stockComplete", unitFeatures);
+app\painel\modals\ImportarHistoricoModal.tsx:19 unitFeatures?: Record<string, boolean>;
+app\painel\modals\ImportarHistoricoModal.tsx:396 export default function ImportarHistoricoModal({ unit, restaurant, initialType, onClose, onOpenPlano, unitFeatures }: Props) {
+app\painel\modals\ImportarHistoricoModal.tsx:397 const isBusiness = hasPlanFeature(restaurant?.plan, "stockComplete", unitFeatures);
+
+======================================================================
+Auditoria de painel salva em: audit_painel_20260512_110858.txt

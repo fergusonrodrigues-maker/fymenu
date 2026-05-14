@@ -1,0 +1,1075 @@
+﻿AUDITORIA DE ROADS POR PLANO — 05/12/2026 11:11:20
+======================================================================
+
+=== 1.1 PLANS[*].features definidos em lib/plans.ts ===
+
+=== 1.2 Todos FeatureKey distintos usados no codigo ===
+comanda
+employees
+finance
+financeComplete
+iaDescription
+stockComplete
+
+=== 1.3 FeatureKey nos requireFeatureOrRedirect ===
+crmBroadcast
+employees
+financeComplete
+iaDescription
+stock
+stockComplete
+whatsappOrders
+
+=== 2.1 CARD_TO_FEATURE completo no DashboardClient ===
+CARD_TO_FEATURE: Record<string, FeatureKey> = {
+  financeiro:  "financeComplete",
+  operacoes:   "operations",
+  equipe:      "employees",
+  tv:          "tvMode",
+  impressoras: "comanda",
+  estoque:     "stockComplete",
+  crm:         "crm",
+  whatsapp:    "whatsappOrders",
+  tarefas:     "employees",
+}
+
+=== 2.2 Modais abertos por cada card ===
+
+>                 const isDenied  = deniedCardId === item.id;
+                  const blockedClick = isBlocked
+
+
+
+=== 3.1 Paginas /painel existentes e seu guard ===
+/painel	FEATURE: (sem guard)
+/painel/admin/parceiros	FEATURE: (sem guard)
+/painel/estoque	FEATURE: stock
+/painel/ia	FEATURE: iaDescription
+/painel/importacoes	FEATURE: stockComplete
+/painel/orders	FEATURE: whatsappOrders
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:52 caractere:42
++       $content = Get-Content $_.FullName -Raw -ErrorAction SilentlyCo ...
++                                          ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+/painel/orders/[orderId]	FEATURE: whatsappOrders
+/painel/planos	FEATURE: (sem guard)
+/painel/relatorios	FEATURE: (sem guard)
+/painel/tv	FEATURE: (sem guard)
+
+=== 3.2 Paginas /colaborador-app existentes e seu guard ===
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:67 caractere:42
++       $content = Get-Content $_.FullName -Raw -ErrorAction SilentlyCo ...
++                                          ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+app\colaborador-app\[slug]\page.tsx	FEATURE: (sem guard)
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:67 caractere:42
++       $content = Get-Content $_.FullName -Raw -ErrorAction SilentlyCo ...
++                                          ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+app\colaborador-app\[slug]\comandas\page.tsx	FEATURE: (sem guard)
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:67 caractere:42
++       $content = Get-Content $_.FullName -Raw -ErrorAction SilentlyCo ...
++                                          ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+app\colaborador-app\[slug]\comandas\[id]\page.tsx	FEATURE: (sem guard)
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:67 caractere:42
++       $content = Get-Content $_.FullName -Raw -ErrorAction SilentlyCo ...
++                                          ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+app\colaborador-app\[slug]\home\page.tsx	FEATURE: (sem guard)
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:67 caractere:42
++       $content = Get-Content $_.FullName -Raw -ErrorAction SilentlyCo ...
++                                          ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+app\colaborador-app\[slug]\mesas\page.tsx	FEATURE: (sem guard)
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:67 caractere:42
++       $content = Get-Content $_.FullName -Raw -ErrorAction SilentlyCo ...
++                                          ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+app\colaborador-app\[slug]\ponto\page.tsx	FEATURE: (sem guard)
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:67 caractere:42
++       $content = Get-Content $_.FullName -Raw -ErrorAction SilentlyCo ...
++                                          ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+app\colaborador-app\[slug]\tarefas\page.tsx	FEATURE: (sem guard)
+
+=== 4.1 Todas /api/ - quem tem hasPlanFeature? ===
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:82 caractere:42
++       $content = Get-Content $_.FullName -Raw -ErrorAction SilentlyCo ...
++                                          ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:82 caractere:42
++       $content = Get-Content $_.FullName -Raw -ErrorAction SilentlyCo ...
++                                          ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:82 caractere:42
++       $content = Get-Content $_.FullName -Raw -ErrorAction SilentlyCo ...
++                                          ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:82 caractere:42
++       $content = Get-Content $_.FullName -Raw -ErrorAction SilentlyCo ...
++                                          ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:82 caractere:42
++       $content = Get-Content $_.FullName -Raw -ErrorAction SilentlyCo ...
++                                          ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:82 caractere:42
++       $content = Get-Content $_.FullName -Raw -ErrorAction SilentlyCo ...
++                                          ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:82 caractere:42
++       $content = Get-Content $_.FullName -Raw -ErrorAction SilentlyCo ...
++                                          ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:82 caractere:42
++       $content = Get-Content $_.FullName -Raw -ErrorAction SilentlyCo ...
++                                          ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:82 caractere:42
++       $content = Get-Content $_.FullName -Raw -ErrorAction SilentlyCo ...
++                                          ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:82 caractere:42
++       $content = Get-Content $_.FullName -Raw -ErrorAction SilentlyCo ...
++                                          ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:82 caractere:42
++       $content = Get-Content $_.FullName -Raw -ErrorAction SilentlyCo ...
++                                          ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+
+=== 5.1 Todos os hrefs internos no app ===
+/admin
+/auth/reset-password
+/cadastro
+/configurar
+/entrar
+/operacoes
+/painel
+/painel/importacoes
+/painel/orders
+/painel/planos
+/painel/tv
+/pdv
+
+=== 5.2 router.push internos ===
+/colaborador/comandas
+/colaborador/home
+/colaborador/mesas
+/colaborador/ponto
+/colaborador/tarefas
+/entrar?pending=email
+/funcionario
+/funcionario/login
+/funcionario/portal
+/garcom
+/painel
+/painel/notificacoes
+/painel/planos
+/parceiro/painel
+/planos
+/suporte/dashboard
+
+=== 5.3 window.location.href internos ===
+/admin
+/admin/login
+/painel
+/painel?msg=complimentary
+
+=== 5.4 Pages top-level existentes ===
+/aceitar-convite
+/admin
+/cadastro
+/checkout
+/colaborador
+/configurar
+/cozinha
+/employee-dashboard
+/employee-login
+/entrar
+/funcionario
+/garcom
+/painel
+/parceiro
+/suporte
+
+=== 6.1 Texto das features na landing ===
+features: [
+      "CardÃ¡pio em vÃ­deo 9:16",
+      "VariaÃ§Ãµes, combos e adicionais",
+      "Modo TV",
+      "Analytics em tempo real",
+      "Top produtos e horÃ¡rios de pico",
+      "AnÃ¡lise IA do cardÃ¡pio",
+      "RelatÃ³rio PDF",
+    ]
+features: [
+      "Tudo do plano Menu, mais:",
+      "IA escreve descriÃ§Ãµes de produtos",
+      "Pedidos via WhatsApp + tracking",
+      "Link de delivery",
+      "Comanda digital com QR Code",
+      "Cliente chama garÃ§om na mesa",
+      "Cozinha imprime na hora (cozinha, bar, caixa)",
+      "GarÃ§om no portal funcionÃ¡rio",
+      "CRM bÃ¡sico (cadastro de clientes)",
+      "Estoque bÃ¡sico (controle de quantidade)",
+      "Financeiro de delivery e mesa",
+    ]
+features: [
+      "Tudo do plano MenuPro, mais:",
+      "Financeiro com custos, lucro e meta",
+      "IA prÃ³-labore (sugestÃ£o de retirada)",
+      "Estoque com ficha tÃ©cnica e validade",
+      "IA upload de notas fiscais",
+      "Equipe completa com ponto e folha",
+      "CRM com disparo de mensagens",
+      "Chatbot WhatsApp 24h com IA",
+      "Portal gerente",
+      "BotÃ£o \"chamar gerente\" na mesa",
+    ]
+
+=== 7.1 Quem chama /api/plan/checkout? ===
+
+Path                                                                    LineNumber
+----                                                                    ----------
+C:\Users\Ferguson\Documents\fymenu\app\api\billing\subscribe\route.ts            1
+C:\Users\Ferguson\Documents\fymenu\app\api\billing\subscribe\route.ts           28
+C:\Users\Ferguson\Documents\fymenu\app\api\subscription\create\route.ts          1
+C:\Users\Ferguson\Documents\fymenu\app\api\subscription\create\route.ts          8
+C:\Users\Ferguson\Documents\fymenu\app\checkout\CheckoutClient.tsx              87
+C:\Users\Ferguson\Documents\fymenu\app\configurar\ConfigurarClient.tsx         104
+C:\Users\Ferguson\Documents\fymenu\app\painel\modals\ConfigModal.tsx           168
+C:\Users\Ferguson\Documents\fymenu\app\painel\modals\PlanoModal.tsx            157
+
+
+
+=== 7.2 Cada caller trata data.complimentary? ===
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+app\api\billing\subscribe\route.ts	checkoutUrl: False	complimentary: False
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+app\api\subscription\create\route.ts	checkoutUrl: False	complimentary: False
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+app\checkout\CheckoutClient.tsx	checkoutUrl: True	complimentary: True
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+app\configurar\ConfigurarClient.tsx	checkoutUrl: True	complimentary: True
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+app\painel\modals\ConfigModal.tsx	checkoutUrl: True	complimentary: True
+app\painel\modals\PlanoModal.tsx	checkoutUrl: True	complimentary: True
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:140 caractere:45
++     Where-Object { (Get-Content $_.FullName -Raw -ErrorAction Silentl ...
++                                             ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+
+=== 8.1 Lista de modais em /painel/modals ===
+
+Name                      
+----                      
+AnalyticsModal.tsx        
+CardapioModal.tsx         
+ConfigModal.tsx           
+CriarUnidadeModal.tsx     
+CrmModal.tsx              
+DeliveryModal.tsx         
+EstoqueModal.tsx          
+FinanceiroModal.tsx       
+HistoricoEntityModal.tsx  
+HistoricoModal.tsx        
+ImportarHistoricoModal.tsx
+ModoTVModal.tsx           
+PaymentModal.tsx          
+PlanoModal.tsx            
+PrinterModal.tsx          
+TarefasModal.tsx          
+TVModal.tsx               
+UnidadeModal.tsx          
+WhatsappModal.tsx         
+
+
+
+=== 8.2 Cada modal - usa UpgradeGate/hasPlanFeature? ===
+AnalyticsModal.tsx	UpgradeGate:False	hasPlanFeature:True	gating_inline:0
+CardapioModal.tsx	UpgradeGate:False	hasPlanFeature:True	gating_inline:0
+ConfigModal.tsx	UpgradeGate:False	hasPlanFeature:False	gating_inline:0
+CriarUnidadeModal.tsx	UpgradeGate:False	hasPlanFeature:False	gating_inline:0
+CrmModal.tsx	UpgradeGate:False	hasPlanFeature:True	gating_inline:0
+DeliveryModal.tsx	UpgradeGate:False	hasPlanFeature:False	gating_inline:0
+EstoqueModal.tsx	UpgradeGate:False	hasPlanFeature:True	gating_inline:0
+FinanceiroModal.tsx	UpgradeGate:False	hasPlanFeature:True	gating_inline:1
+HistoricoEntityModal.tsx	UpgradeGate:False	hasPlanFeature:False	gating_inline:0
+HistoricoModal.tsx	UpgradeGate:False	hasPlanFeature:False	gating_inline:0
+ImportarHistoricoModal.tsx	UpgradeGate:False	hasPlanFeature:True	gating_inline:0
+ModoTVModal.tsx	UpgradeGate:False	hasPlanFeature:False	gating_inline:0
+PaymentModal.tsx	UpgradeGate:False	hasPlanFeature:False	gating_inline:0
+PlanoModal.tsx	UpgradeGate:False	hasPlanFeature:False	gating_inline:2
+PrinterModal.tsx	UpgradeGate:False	hasPlanFeature:False	gating_inline:0
+TarefasModal.tsx	UpgradeGate:False	hasPlanFeature:False	gating_inline:0
+TVModal.tsx	UpgradeGate:False	hasPlanFeature:False	gating_inline:0
+UnidadeModal.tsx	UpgradeGate:False	hasPlanFeature:False	gating_inline:1
+WhatsappModal.tsx	UpgradeGate:False	hasPlanFeature:False	gating_inline:0
+
+======================================================================
+Auditoria de roads salva em: audit_roads_20260512_111120.txt

@@ -1,0 +1,189 @@
+﻿AUDITORIA DE ROTAS QUEBRADAS - 05/11/2026 22:11:55
+======================================================================
+
+=== 1.1 Paginas existentes em /admin ===
+app\admin\page.tsx
+app\admin\login\page.tsx
+app\admin\relatorios\page.tsx
+
+=== 1.2 Hrefs internos chamando /admin/* ===
+
+=== 1.3 router.push/redirect pra /admin/* ===
+app\admin\page.tsx:13 -> if (!user) redirect("/admin/login");
+app\admin\page.tsx:16 -> if (!adminEmail || user.email !== adminEmail) redirect("/admin/login");
+
+=== 1.4 APIs /api/admin/* existentes ===
+app\api\admin\chats\route.ts
+app\api\admin\chats\[id]\route.ts
+app\api\admin\chats\[id]\messages\route.ts
+app\api\admin\coupons\route.ts
+app\api\admin\partners\route.ts
+app\api\admin\photo-sessions\route.ts
+app\api\admin\support-staff\route.ts
+app\api\admin\toggle-feature\route.ts
+app\api\admin\update-restaurant\route.ts
+app\api\admin\verify\route.ts
+
+=== 2.1 Paginas existentes em /parceiro ===
+app\parceiro\page.tsx
+app\parceiro\login\page.tsx
+app\parceiro\painel\page.tsx
+
+=== 2.2 APIs /api/parceiro/* existentes ===
+app\api\parceiro\change-password\route.ts
+app\api\parceiro\data\route.ts
+app\api\parceiro\login\route.ts
+
+=== 2.3 Hrefs chamando /parceiro/* ===
+
+=== 2.4 Tabelas partner_* no codigo ===
+app\admin\page.tsx:131 -> admin.from("partners").select("*").order("created_at", { ascending: false }),
+app\admin\page.tsx:132 -> admin.from("partner_coupons").select("*, partners(name)").order("created_at", { ascending: false }),
+app\admin\page.tsx:133 -> admin.from("partner_referrals").select("*, partners(name), restaurants(name, plan, status)").order("created_at", { ascending: false }),
+app\admin\page.tsx:134 -> admin.from("partner_payouts").select("*, partners(name)").order("created_at", { ascending: false }),
+app\api\admin\coupons\route.ts:51 -> .from("partner_coupons")
+app\api\admin\coupons\route.ts:65 -> .from("partner_coupons")
+app\api\admin\coupons\route.ts:99 -> .from("partner_coupons")
+app\api\admin\coupons\route.ts:118 -> .from("partner_coupons")
+app\api\admin\partners\route.ts:20 -> .from("partners")
+app\api\admin\partners\route.ts:35 -> await admin.from("partners").update({ password_hash: hash }).eq("id", data.id);
+app\api\admin\partners\route.ts:42 -> const { error } = await admin.from("partners").update(updates).eq("id", id);
+app\api\admin\partners\route.ts:48 -> const { error } = await admin.from("partners").delete().eq("id", body.id);
+app\api\admin\partners\route.ts:55 -> .from("partner_coupons")
+app\api\admin\partners\route.ts:74 -> const { error } = await admin.from("partner_coupons").update(updates).eq("id", id);
+app\api\admin\partners\route.ts:80 -> const { error } = await admin.from("partner_coupons").delete().eq("id", body.id);
+app\api\admin\partners\route.ts:87 -> .from("partner_payouts")
+app\api\admin\partners\route.ts:105 -> .from("partner_payouts")
+app\api\admin\partners\route.ts:113 -> const { error } = await admin.from("partner_payouts").delete().eq("id", body.id);
+app\api\coupon\apply\route.ts:14 -> .from("partner_coupons")
+app\api\coupon\apply\route.ts:30 -> .from("partner_coupons")
+
+=== 3.1 Paginas existentes em /suporte ===
+app\suporte\page.tsx
+app\suporte\dashboard\page.tsx
+app\suporte\login\page.tsx
+
+=== 3.2 APIs /api/suporte/* existentes ===
+app\api\suporte\analytics\route.ts
+app\api\suporte\chats\route.ts
+app\api\suporte\chats\[id]\route.ts
+app\api\suporte\chats\[id]\messages\route.ts
+app\api\suporte\chats\[id]\read\route.ts
+app\api\suporte\crm\route.ts
+app\api\suporte\equipe\route.ts
+app\api\suporte\equipe\[id]\route.ts
+app\api\suporte\features\route.ts
+app\api\suporte\financeiro\route.ts
+app\api\suporte\login\route.ts
+app\api\suporte\me\route.ts
+app\api\suporte\orders\route.ts
+app\api\suporte\planos\[restaurantId]\route.ts
+app\api\suporte\products\route.ts
+app\api\suporte\restaurantes\route.ts
+app\api\suporte\units\route.ts
+
+=== 3.3 Hrefs chamando /suporte/* ===
+
+=== 4.1 Fetches pra /api/admin que podem estar quebrados ===
+app\admin\AdminClient.tsx:1000 -> /api/admin/partners
+app\admin\AdminClient.tsx:3476 -> /api/admin/chats?${params}
+app\admin\AdminClient.tsx:3493 -> /api/admin/chats/${active.id}/messages
+app\admin\AdminClient.tsx:3505 -> /api/admin/chats/${c.id}/messages
+app\admin\AdminClient.tsx:3515 -> /api/admin/chats/${active.id}/messages
+app\admin\AdminClient.tsx:3531 -> /api/admin/chats/${active.id}
+app\admin\AdminClient.tsx:3536 -> /api/admin/chats/${active.id}
+app\admin\AdminClient.tsx:756 -> /api/admin/photo-sessions
+app\admin\AdminClient.tsx:836 -> /api/admin/support-staff
+app\admin\AdminClient.tsx:852 -> /api/admin/support-staff
+app\admin\AdminClient.tsx:862 -> /api/admin/support-staff
+app\admin\AdminClient.tsx:888 -> /api/admin/support-staff
+app\admin\AdminClient.tsx:920 -> /api/admin/support-staff
+app\admin\AdminClient.tsx:982 -> /api/admin/update-restaurant
+app\admin\login\AdminLoginClient.tsx:21 -> /api/admin/verify
+
+=== 4.2 Fetches pra /api/parceiro ===
+app\parceiro\login\PartnerLoginClient.tsx:18 -> /api/parceiro/login
+app\parceiro\PartnerDashboard.tsx:144 -> /api/parceiro/data
+app\parceiro\PartnerDashboard.tsx:171 -> /api/parceiro/change-password
+
+=== 4.3 Fetches pra /api/suporte ===
+app\suporte\dashboard\page.tsx:1060 -> /api/suporte/chats?${params}
+app\suporte\dashboard\page.tsx:1084 -> /api/suporte/chats/${activeConv.id}
+app\suporte\dashboard\page.tsx:1097 -> /api/suporte/chats/${c.id}/messages
+app\suporte\dashboard\page.tsx:1101 -> /api/suporte/chats/${c.id}/read
+app\suporte\dashboard\page.tsx:1109 -> /api/suporte/chats/${activeConv.id}/messages
+app\suporte\dashboard\page.tsx:1126 -> /api/suporte/chats/${activeConv.id}
+app\suporte\dashboard\page.tsx:1133 -> /api/suporte/chats/${activeConv.id}
+app\suporte\dashboard\page.tsx:1323 -> /api/suporte/me
+app\suporte\dashboard\page.tsx:1331 -> /api/suporte/chats?status=open&page=1
+app\suporte\dashboard\page.tsx:200 -> /api/suporte/${path}?${qs}
+app\suporte\dashboard\page.tsx:509 -> /api/suporte/products
+app\suporte\dashboard\page.tsx:760 -> /api/suporte/features
+app\suporte\dashboard\page.tsx:814 -> /api/suporte/planos/${editing.id}
+app\suporte\dashboard\page.tsx:883 -> /api/suporte/equipe
+app\suporte\dashboard\page.tsx:895 -> /api/suporte/equipe/${id}
+app\suporte\login\page.tsx:20 -> /api/suporte/login
+
+=== 5.1 Componentes admin que ninguem usa ===
+ORFAO: app\admin\[slug]\menu\components\AddonManager.tsx
+ORFAO: app\admin\[slug]\menu\components\AvailabilityScheduler.tsx
+ORFAO: app\admin\[slug]\menu\components\BulkEditToolbar.tsx
+ORFAO: app\admin\[slug]\menu\components\ProductTypeSelector.tsx
+ORFAO: app\admin\[slug]\settings\components\PrinterSettings.tsx
+ORFAO: components\MouseGlow.tsx
+
+=== 6.1 Todos hrefs internos unicos (pra revisar) ===
+/admin
+/auth/reset-password
+/cadastro
+/configurar
+/entrar
+/operacoes
+/painel
+/painel/importacoes
+/painel/orders
+/painel/planos
+/painel/tv
+/pdv
+
+=== 6.2 Rotas top-level que existem como pages ===
+/aceitar-convite
+/admin
+/cadastro
+/checkout
+/colaborador
+/configurar
+/cozinha
+/employee-dashboard
+/employee-login
+/entrar
+/funcionario
+/garcom
+/painel
+/parceiro
+/suporte
+
+=== 7.1 APIs definidas mas que nenhum codigo chama ===
+NAO USADA: /api/admin/chats/[id]
+NAO USADA: /api/admin/chats/[id]/messages
+NAO USADA: /api/crm/customers/[id]
+NAO USADA: /api/cron/weekly-report
+NAO USADA: /api/deliveries/tracking
+NAO USADA: /api/funcionario/categories
+NAO USADA: /api/referrals
+NAO USADA: /api/reports/email
+NAO USADA: /api/suporte/analytics
+NAO USADA: /api/suporte/chats/[id]/messages
+NAO USADA: /api/suporte/crm
+NAO USADA: /api/suporte/equipe/[id]
+NAO USADA: /api/suporte/financeiro
+NAO USADA: /api/suporte/orders
+NAO USADA: /api/suporte/planos/[restaurantId]
+NAO USADA: /api/suporte/restaurantes
+NAO USADA: /api/suporte/units
+NAO USADA: /api/webhook/asaas
+NAO USADA: /api/webhooks
+NAO USADA: /api/whatsapp/templates/[id]
+
+======================================================================
+Auditoria de rotas salva em: audit_rotas_20260511_221155.txt

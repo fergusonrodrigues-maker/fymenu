@@ -1,0 +1,524 @@
+﻿FyMenu Hard Engineering Audit - 05/11/2026 21:42:17
+======================================================================
+
+=== 1.1 APIs que tocam Asaas ===
+
+=== 1.2 Imports do lib Asaas ===
+
+Path                                                                       Line                                        
+----                                                                       ----                                        
+C:\Users\Ferguson\Documents\fymenu\app\api\billing\payment-status\route.ts import { asaasRequest } from "@/lib/asaas"; 
+C:\Users\Ferguson\Documents\fymenu\app\api\billing\subscribe\route.ts      import { asaasRequest, AsaasError } from ...
+C:\Users\Ferguson\Documents\fymenu\app\api\subscription\cancel\route.ts    import { asaasRequest } from "@/lib/asaas"; 
+C:\Users\Ferguson\Documents\fymenu\app\api\subscription\create\route.ts    import { asaasRequest, getOrCreateAsaasCu...
+C:\Users\Ferguson\Documents\fymenu\app\api\webhook\asaas\route.ts          import { PLAN_LABELS } from "@/lib/asaas";  
+
+
+
+=== 2.1 PLAN_PRICES / PLAN_FEATURES legados ===
+
+=== 3.1 Routes usando SERVICE_ROLE direto ===
+
+=== 3.2 Routes API sem auth.getUser() (excluindo webhooks) ===
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:38 caractere:42
++     $content = Get-Content $api.FullName -Raw -ErrorAction SilentlyCo ...
++                                          ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:38 caractere:42
++     $content = Get-Content $api.FullName -Raw -ErrorAction SilentlyCo ...
++                                          ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\analytics\report-pdf\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\auth\signout\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\billing\payment-status\route.ts
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:38 caractere:42
++     $content = Get-Content $api.FullName -Raw -ErrorAction SilentlyCo ...
++                                          ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\coupon\apply\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\coupon\validate\route.ts
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:38 caractere:42
++     $content = Get-Content $api.FullName -Raw -ErrorAction SilentlyCo ...
++                                          ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\cron\weekly-report\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\deliveries\tracking\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\delivery\calculate\route.ts
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:38 caractere:42
++     $content = Get-Content $api.FullName -Raw -ErrorAction SilentlyCo ...
++                                          ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\employees\history\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\employees\login\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\employees\timeclock\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\funcionario\avaliacoes\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\funcionario\categories\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\funcionario\change-password\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\funcionario\login\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\funcionario\logout\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\funcionario\lookup-unit\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\funcionario\me\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\funcionario\ponto\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\funcionario\session\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\funcionario\status\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\ia\analytics-suggestions\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\ia\analyze-reviews\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\ia\describe\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\ia\finance-analysis\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\ia\generate-description\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\ia\import\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\ia\import-analytics\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\ia\import-finance\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\ia\import-menu\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\ia\import-stock\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\ia\nutrition\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\ia\purchase-suggestions\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\ia\suggest-highlights\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\menu\generate-cache\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\orders\table\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\parceiro\change-password\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\parceiro\data\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\parceiro\login\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\plan\activate\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\plan\checkout\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\ratings\create\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\referrals\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\suporte\analytics\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\suporte\chats\route.ts
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:38 caractere:42
++     $content = Get-Content $api.FullName -Raw -ErrorAction SilentlyCo ...
++                                          ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\suporte\chats\[id]\route.ts
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:38 caractere:42
++     $content = Get-Content $api.FullName -Raw -ErrorAction SilentlyCo ...
++                                          ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\suporte\chats\[id]\messages\route.ts
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:38 caractere:42
++     $content = Get-Content $api.FullName -Raw -ErrorAction SilentlyCo ...
++                                          ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\suporte\chats\[id]\read\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\suporte\crm\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\suporte\equipe\route.ts
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:38 caractere:42
++     $content = Get-Content $api.FullName -Raw -ErrorAction SilentlyCo ...
++                                          ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\suporte\equipe\[id]\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\suporte\features\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\suporte\financeiro\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\suporte\login\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\suporte\me\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\suporte\orders\route.ts
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:38 caractere:42
++     $content = Get-Content $api.FullName -Raw -ErrorAction SilentlyCo ...
++                                          ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\suporte\planos\[restaurantId]\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\suporte\products\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\suporte\restaurantes\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\suporte\units\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\units\domain-suggestions\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\upload\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\upload\delete\route.ts
+FALTA AUTH: C:\Users\Ferguson\Documents\fymenu\app\api\upsell-ai\route.ts
+Get-Content : Não é possível localizar um parâmetro que coincida com o nome de parâmetro 'Raw'.
+No linha:38 caractere:42
++     $content = Get-Content $api.FullName -Raw -ErrorAction SilentlyCo ...
++                                          ~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-Content], ParameterBindingException
+    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+
+=== 4.1 URLs hardcoded Asaas ===
+
+=== 4.2 URLs hardcoded fymenu.com ===
+
+=== 4.3 Valores monetarios hardcoded ===
+
+Path                                                                   LineNumber Line                                 
+----                                                                   ---------- ----                                 
+C:\Users\Ferguson\Documents\fymenu\app\admin\AdminClient.tsx                 2892                       <label class...
+C:\Users\Ferguson\Documents\fymenu\app\painel\modals\DeliveryModal.tsx        454             As faixas são salvas a...
+C:\Users\Ferguson\Documents\fymenu\app\painel\modals\EstoqueModal.tsx         450                 placeholder={"Cole...
+C:\Users\Ferguson\Documents\fymenu\app\painel\modals\PrinterModal.tsx         628                   <div style={{ di...
+C:\Users\Ferguson\Documents\fymenu\app\painel\modals\PrinterModal.tsx         629                   <div style={{ di...
+C:\Users\Ferguson\Documents\fymenu\app\painel\modals\PrinterModal.tsx         630                   <div style={{ di...
+C:\Users\Ferguson\Documents\fymenu\app\painel\modals\PrinterModal.tsx         636                   <div style={{ fo...
+C:\Users\Ferguson\Documents\fymenu\lib\money.ts                                13  *   4990   → "R$ 49,90"             
+C:\Users\Ferguson\Documents\fymenu\lib\money.ts                                41  * character so "R$ 49,90", "49.90...
+C:\Users\Ferguson\Documents\fymenu\lib\plans.ts                               216  *   getTotalCents("menupro", "qua...
+
+
+
+=== 5.1 Hrefs internos pra rotas criticas ===
+
+=== 5.2 Paginas top-level existentes ===
+NAO EXISTE: /checkout
+NAO EXISTE: /signup
+EXISTE: /cadastro -> app/cadastro/page.tsx
+NAO EXISTE: /onboarding
+NAO EXISTE: /comecar
+NAO EXISTE: /register
+EXISTE: /entrar -> app/entrar/page.tsx
+NAO EXISTE: /login
+
+=== 6.1 createClient suspeito ===
+
+Path                                                                                 LineNumber
+----                                                                                 ----------
+C:\Users\Ferguson\Documents\fymenu\app\api\admin\chats\route.ts                               4
+C:\Users\Ferguson\Documents\fymenu\app\api\admin\chats\route.ts                              29
+C:\Users\Ferguson\Documents\fymenu\app\api\admin\chats\[id]\route.ts                          4
+C:\Users\Ferguson\Documents\fymenu\app\api\admin\chats\[id]\route.ts                         26
+C:\Users\Ferguson\Documents\fymenu\app\api\admin\chats\[id]\route.ts                         46
+C:\Users\Ferguson\Documents\fymenu\app\api\admin\chats\[id]\messages\route.ts                 4
+C:\Users\Ferguson\Documents\fymenu\app\api\admin\chats\[id]\messages\route.ts                26
+C:\Users\Ferguson\Documents\fymenu\app\api\admin\chats\[id]\messages\route.ts                57
+C:\Users\Ferguson\Documents\fymenu\app\api\admin\partners\route.ts                            3
+C:\Users\Ferguson\Documents\fymenu\app\api\admin\partners\route.ts                           16
+C:\Users\Ferguson\Documents\fymenu\app\api\admin\photo-sessions\route.ts                      3
+C:\Users\Ferguson\Documents\fymenu\app\api\admin\photo-sessions\route.ts                     15
+C:\Users\Ferguson\Documents\fymenu\app\api\admin\support-staff\route.ts                       3
+C:\Users\Ferguson\Documents\fymenu\app\api\admin\support-staff\route.ts                      16
+C:\Users\Ferguson\Documents\fymenu\app\api\admin\toggle-feature\route.ts                      3
+C:\Users\Ferguson\Documents\fymenu\app\api\admin\toggle-feature\route.ts                     13
+C:\Users\Ferguson\Documents\fymenu\app\api\admin\update-restaurant\route.ts                   3
+C:\Users\Ferguson\Documents\fymenu\app\api\admin\update-restaurant\route.ts                  15
+C:\Users\Ferguson\Documents\fymenu\app\api\billing\payment-status\route.ts                    2
+C:\Users\Ferguson\Documents\fymenu\app\api\billing\payment-status\route.ts                   15
+C:\Users\Ferguson\Documents\fymenu\app\api\billing\subscribe\route.ts                         3
+C:\Users\Ferguson\Documents\fymenu\app\api\billing\subscribe\route.ts                        38
+C:\Users\Ferguson\Documents\fymenu\app\api\chat\conversations\route.ts                        4
+C:\Users\Ferguson\Documents\fymenu\app\api\chat\conversations\route.ts                       22
+C:\Users\Ferguson\Documents\fymenu\app\api\chat\conversations\route.ts                       77
+C:\Users\Ferguson\Documents\fymenu\app\api\chat\conversations\[id]\messages\route.ts          4
+C:\Users\Ferguson\Documents\fymenu\app\api\chat\conversations\[id]\messages\route.ts         18
+C:\Users\Ferguson\Documents\fymenu\app\api\chat\conversations\[id]\messages\route.ts         41
+C:\Users\Ferguson\Documents\fymenu\app\api\chat\conversations\[id]\messages\route.ts         76
+C:\Users\Ferguson\Documents\fymenu\app\api\coupon\apply\route.ts                              2
+C:\Users\Ferguson\Documents\fymenu\app\api\coupon\apply\route.ts                             10
+C:\Users\Ferguson\Documents\fymenu\app\api\coupon\validate\route.ts                           2
+C:\Users\Ferguson\Documents\fymenu\app\api\coupon\validate\route.ts                           8
+C:\Users\Ferguson\Documents\fymenu\app\api\crm\customers\route.ts                             3
+C:\Users\Ferguson\Documents\fymenu\app\api\crm\customers\route.ts                            10
+C:\Users\Ferguson\Documents\fymenu\app\api\crm\customers\route.ts                            32
+C:\Users\Ferguson\Documents\fymenu\app\api\crm\customers\import\route.ts                      3
+C:\Users\Ferguson\Documents\fymenu\app\api\crm\customers\import\route.ts                     34
+C:\Users\Ferguson\Documents\fymenu\app\api\crm\customers\[id]\route.ts                        3
+C:\Users\Ferguson\Documents\fymenu\app\api\crm\customers\[id]\route.ts                        7
+C:\Users\Ferguson\Documents\fymenu\app\api\crm\customers\[id]\route.ts                       29
+C:\Users\Ferguson\Documents\fymenu\app\api\crm\customers\[id]\route.ts                       74
+C:\Users\Ferguson\Documents\fymenu\app\api\cron\weekly-report\route.ts                        2
+C:\Users\Ferguson\Documents\fymenu\app\api\cron\weekly-report\route.ts                       48
+C:\Users\Ferguson\Documents\fymenu\app\api\delivery\settings\route.ts                         3
+C:\Users\Ferguson\Documents\fymenu\app\api\delivery\settings\route.ts                        16
+C:\Users\Ferguson\Documents\fymenu\app\api\delivery\settings\route.ts                        25
+C:\Users\Ferguson\Documents\fymenu\app\api\delivery\settings\route.ts                        53
+C:\Users\Ferguson\Documents\fymenu\app\api\delivery\zones\route.ts                            3
+C:\Users\Ferguson\Documents\fymenu\app\api\delivery\zones\route.ts                           17
+C:\Users\Ferguson\Documents\fymenu\app\api\delivery\zones\route.ts                           26
+C:\Users\Ferguson\Documents\fymenu\app\api\delivery\zones\route.ts                           54
+C:\Users\Ferguson\Documents\fymenu\app\api\delivery\zones\[id]\route.ts                       3
+C:\Users\Ferguson\Documents\fymenu\app\api\delivery\zones\[id]\route.ts                       8
+C:\Users\Ferguson\Documents\fymenu\app\api\delivery\zones\[id]\route.ts                      53
+C:\Users\Ferguson\Documents\fymenu\app\api\delivery\zones\[id]\route.ts                      78
+C:\Users\Ferguson\Documents\fymenu\app\api\employees\create\route.ts                          3
+C:\Users\Ferguson\Documents\fymenu\app\api\employees\create\route.ts                         50
+C:\Users\Ferguson\Documents\fymenu\app\api\funcionario\avaliacoes\route.ts                    2
+C:\Users\Ferguson\Documents\fymenu\app\api\funcionario\avaliacoes\route.ts                   19
+C:\Users\Ferguson\Documents\fymenu\app\api\funcionario\categories\route.ts                    2
+C:\Users\Ferguson\Documents\fymenu\app\api\funcionario\categories\route.ts                   11
+C:\Users\Ferguson\Documents\fymenu\app\api\funcionario\login\route.ts                         2
+C:\Users\Ferguson\Documents\fymenu\app\api\funcionario\login\route.ts                        72
+C:\Users\Ferguson\Documents\fymenu\app\api\funcionario\lookup-unit\route.ts                   2
+C:\Users\Ferguson\Documents\fymenu\app\api\funcionario\lookup-unit\route.ts                  22
+C:\Users\Ferguson\Documents\fymenu\app\api\funcionario\me\route.ts                            2
+C:\Users\Ferguson\Documents\fymenu\app\api\funcionario\me\route.ts                           18
+C:\Users\Ferguson\Documents\fymenu\app\api\funcionario\ponto\route.ts                         2
+C:\Users\Ferguson\Documents\fymenu\app\api\funcionario\ponto\route.ts                        27
+C:\Users\Ferguson\Documents\fymenu\app\api\funcionario\ponto\route.ts                        47
+C:\Users\Ferguson\Documents\fymenu\app\api\funcionario\session\route.ts                       2
+C:\Users\Ferguson\Documents\fymenu\app\api\funcionario\session\route.ts                      17
+C:\Users\Ferguson\Documents\fymenu\app\api\funcionario\status\route.ts                        2
+C:\Users\Ferguson\Documents\fymenu\app\api\funcionario\status\route.ts                       25
+C:\Users\Ferguson\Documents\fymenu\app\api\menu\generate-cache\route.ts                       3
+C:\Users\Ferguson\Documents\fymenu\app\api\menu\generate-cache\route.ts                      39
+C:\Users\Ferguson\Documents\fymenu\app\api\onboarding\complete\route.ts                       3
+C:\Users\Ferguson\Documents\fymenu\app\api\onboarding\complete\route.ts                      15
+C:\Users\Ferguson\Documents\fymenu\app\api\parceiro\change-password\route.ts                  2
+C:\Users\Ferguson\Documents\fymenu\app\api\parceiro\change-password\route.ts                 12
+C:\Users\Ferguson\Documents\fymenu\app\api\parceiro\data\route.ts                             2
+C:\Users\Ferguson\Documents\fymenu\app\api\parceiro\data\route.ts                             8
+C:\Users\Ferguson\Documents\fymenu\app\api\parceiro\login\route.ts                            2
+C:\Users\Ferguson\Documents\fymenu\app\api\parceiro\login\route.ts                           10
+C:\Users\Ferguson\Documents\fymenu\app\api\referrals\route.ts                                 2
+C:\Users\Ferguson\Documents\fymenu\app\api\referrals\route.ts                                21
+C:\Users\Ferguson\Documents\fymenu\app\api\referrals\route.ts                                71
+C:\Users\Ferguson\Documents\fymenu\app\api\subscription\cancel\route.ts                       3
+C:\Users\Ferguson\Documents\fymenu\app\api\subscription\cancel\route.ts                      11
+C:\Users\Ferguson\Documents\fymenu\app\api\subscription\create\route.ts                       3
+C:\Users\Ferguson\Documents\fymenu\app\api\subscription\create\route.ts                      23
+C:\Users\Ferguson\Documents\fymenu\app\api\suporte\analytics\route.ts                         2
+C:\Users\Ferguson\Documents\fymenu\app\api\suporte\analytics\route.ts                        20
+C:\Users\Ferguson\Documents\fymenu\app\api\suporte\chats\route.ts                             2
+C:\Users\Ferguson\Documents\fymenu\app\api\suporte\chats\route.ts                            20
+C:\Users\Ferguson\Documents\fymenu\app\api\suporte\chats\[id]\route.ts                        2
+C:\Users\Ferguson\Documents\fymenu\app\api\suporte\chats\[id]\route.ts                       16
+C:\Users\Ferguson\Documents\fymenu\app\api\suporte\chats\[id]\route.ts                       61
+C:\Users\Ferguson\Documents\fymenu\app\api\suporte\chats\[id]\messages\route.ts               2
+C:\Users\Ferguson\Documents\fymenu\app\api\suporte\chats\[id]\messages\route.ts              17
+C:\Users\Ferguson\Documents\fymenu\app\api\suporte\chats\[id]\messages\route.ts              49
+C:\Users\Ferguson\Documents\fymenu\app\api\suporte\chats\[id]\read\route.ts                   2
+C:\Users\Ferguson\Documents\fymenu\app\api\suporte\chats\[id]\read\route.ts                  16
+C:\Users\Ferguson\Documents\fymenu\app\api\suporte\crm\route.ts                               2
+C:\Users\Ferguson\Documents\fymenu\app\api\suporte\crm\route.ts                              16
+C:\Users\Ferguson\Documents\fymenu\app\api\suporte\equipe\route.ts                            2
+C:\Users\Ferguson\Documents\fymenu\app\api\suporte\equipe\route.ts                           12
+C:\Users\Ferguson\Documents\fymenu\app\api\suporte\equipe\route.ts                           36
+C:\Users\Ferguson\Documents\fymenu\app\api\suporte\equipe\[id]\route.ts                       2
+C:\Users\Ferguson\Documents\fymenu\app\api\suporte\equipe\[id]\route.ts                      18
+C:\Users\Ferguson\Documents\fymenu\app\api\suporte\equipe\[id]\route.ts                      68
+C:\Users\Ferguson\Documents\fymenu\app\api\suporte\features\route.ts                          2
+C:\Users\Ferguson\Documents\fymenu\app\api\suporte\features\route.ts                         14
+C:\Users\Ferguson\Documents\fymenu\app\api\suporte\features\route.ts                         41
+C:\Users\Ferguson\Documents\fymenu\app\api\suporte\financeiro\route.ts                        2
+C:\Users\Ferguson\Documents\fymenu\app\api\suporte\financeiro\route.ts                       15
+C:\Users\Ferguson\Documents\fymenu\app\api\suporte\login\route.ts                             2
+C:\Users\Ferguson\Documents\fymenu\app\api\suporte\login\route.ts                            10
+C:\Users\Ferguson\Documents\fymenu\app\api\suporte\me\route.ts                                2
+C:\Users\Ferguson\Documents\fymenu\app\api\suporte\me\route.ts                                9
+C:\Users\Ferguson\Documents\fymenu\app\api\suporte\orders\route.ts                            2
+C:\Users\Ferguson\Documents\fymenu\app\api\suporte\orders\route.ts                           17
+C:\Users\Ferguson\Documents\fymenu\app\api\suporte\planos\[restaurantId]\route.ts             2
+C:\Users\Ferguson\Documents\fymenu\app\api\suporte\planos\[restaurantId]\route.ts            21
+C:\Users\Ferguson\Documents\fymenu\app\api\suporte\planos\[restaurantId]\route.ts            58
+C:\Users\Ferguson\Documents\fymenu\app\api\suporte\products\route.ts                          2
+C:\Users\Ferguson\Documents\fymenu\app\api\suporte\products\route.ts                         20
+C:\Users\Ferguson\Documents\fymenu\app\api\suporte\products\route.ts                         49
+C:\Users\Ferguson\Documents\fymenu\app\api\suporte\restaurantes\route.ts                      2
+C:\Users\Ferguson\Documents\fymenu\app\api\suporte\restaurantes\route.ts                     18
+C:\Users\Ferguson\Documents\fymenu\app\api\suporte\units\route.ts                             2
+C:\Users\Ferguson\Documents\fymenu\app\api\suporte\units\route.ts                            17
+C:\Users\Ferguson\Documents\fymenu\app\api\upsell-ai\route.ts                                 2
+C:\Users\Ferguson\Documents\fymenu\app\api\upsell-ai\route.ts                                 8
+C:\Users\Ferguson\Documents\fymenu\app\api\webhook\asaas\route.ts                             2
+C:\Users\Ferguson\Documents\fymenu\app\api\webhook\asaas\route.ts                            18
+C:\Users\Ferguson\Documents\fymenu\app\api\webhooks\route.ts                                  2
+C:\Users\Ferguson\Documents\fymenu\app\api\webhooks\route.ts                                 51
+C:\Users\Ferguson\Documents\fymenu\app\api\whatsapp\disconnect\route.ts                       3
+C:\Users\Ferguson\Documents\fymenu\app\api\whatsapp\disconnect\route.ts                      14
+C:\Users\Ferguson\Documents\fymenu\app\api\whatsapp\messages\route.ts                         3
+C:\Users\Ferguson\Documents\fymenu\app\api\whatsapp\messages\route.ts                        22
+C:\Users\Ferguson\Documents\fymenu\app\api\whatsapp\qrcode\route.ts                           3
+C:\Users\Ferguson\Documents\fymenu\app\api\whatsapp\qrcode\route.ts                          16
+C:\Users\Ferguson\Documents\fymenu\app\api\whatsapp\send\route.ts                             3
+C:\Users\Ferguson\Documents\fymenu\app\api\whatsapp\send\route.ts                            21
+C:\Users\Ferguson\Documents\fymenu\app\api\whatsapp\send-bulk\route.ts                        3
+C:\Users\Ferguson\Documents\fymenu\app\api\whatsapp\send-bulk\route.ts                       30
+C:\Users\Ferguson\Documents\fymenu\app\api\whatsapp\settings\route.ts                         3
+C:\Users\Ferguson\Documents\fymenu\app\api\whatsapp\settings\route.ts                        18
+C:\Users\Ferguson\Documents\fymenu\app\api\whatsapp\setup\route.ts                            8
+C:\Users\Ferguson\Documents\fymenu\app\api\whatsapp\setup\route.ts                           68
+C:\Users\Ferguson\Documents\fymenu\app\api\whatsapp\status\route.ts                           3
+C:\Users\Ferguson\Documents\fymenu\app\api\whatsapp\status\route.ts                          16
+C:\Users\Ferguson\Documents\fymenu\app\api\whatsapp\teardown\route.ts                         8
+C:\Users\Ferguson\Documents\fymenu\app\api\whatsapp\teardown\route.ts                        20
+C:\Users\Ferguson\Documents\fymenu\app\api\whatsapp\templates\route.ts                        3
+C:\Users\Ferguson\Documents\fymenu\app\api\whatsapp\templates\route.ts                        7
+C:\Users\Ferguson\Documents\fymenu\app\api\whatsapp\templates\[id]\route.ts                   3
+C:\Users\Ferguson\Documents\fymenu\app\api\whatsapp\templates\[id]\route.ts                  17
+C:\Users\Ferguson\Documents\fymenu\app\api\whatsapp\templates\[id]\route.ts                  61
+C:\Users\Ferguson\Documents\fymenu\app\api\whatsapp\webhook\route.ts                          2
+C:\Users\Ferguson\Documents\fymenu\app\api\whatsapp\webhook\route.ts                         28
+C:\Users\Ferguson\Documents\fymenu\app\api\whatsapp\webhook\route.ts                         60
+
+
+
+=== 7.1 TODO/FIXME/HACK ===
+
+Path                                                                                                LineNumber Line    
+----                                                                                                ---------- ----    
+C:\Users\Ferguson\Documents\fymenu\app\admin\relatorios\AdminRelatoriosClient.tsx                          127      ...
+C:\Users\Ferguson\Documents\fymenu\app\admin\AdminClient.tsx                                              1070     i...
+C:\Users\Ferguson\Documents\fymenu\app\admin\AdminClient.tsx                                              1146      ...
+C:\Users\Ferguson\Documents\fymenu\app\admin\AdminClient.tsx                                              1199      ...
+C:\Users\Ferguson\Documents\fymenu\app\admin\AdminClient.tsx                                              1209      ...
+C:\Users\Ferguson\Documents\fymenu\app\admin\AdminClient.tsx                                              1475      ...
+C:\Users\Ferguson\Documents\fymenu\app\admin\AdminClient.tsx                                              1484      ...
+C:\Users\Ferguson\Documents\fymenu\app\admin\AdminClient.tsx                                              1501      ...
+C:\Users\Ferguson\Documents\fymenu\app\admin\AdminClient.tsx                                              1563      ...
+C:\Users\Ferguson\Documents\fymenu\app\admin\AdminClient.tsx                                              1566      ...
+C:\Users\Ferguson\Documents\fymenu\app\admin\AdminClient.tsx                                              1622      ...
+C:\Users\Ferguson\Documents\fymenu\app\admin\AdminClient.tsx                                              1624      ...
+C:\Users\Ferguson\Documents\fymenu\app\admin\AdminClient.tsx                                              1641      ...
+C:\Users\Ferguson\Documents\fymenu\app\admin\AdminClient.tsx                                              1653      ...
+C:\Users\Ferguson\Documents\fymenu\app\admin\AdminClient.tsx                                              1667      ...
+C:\Users\Ferguson\Documents\fymenu\app\admin\AdminClient.tsx                                              1675      ...
+C:\Users\Ferguson\Documents\fymenu\app\admin\AdminClient.tsx                                              1692      ...
+C:\Users\Ferguson\Documents\fymenu\app\admin\AdminClient.tsx                                              2232      ...
+C:\Users\Ferguson\Documents\fymenu\app\admin\AdminClient.tsx                                              2611      ...
+C:\Users\Ferguson\Documents\fymenu\app\admin\AdminClient.tsx                                              2687      ...
+C:\Users\Ferguson\Documents\fymenu\app\admin\AdminClient.tsx                                              2709      ...
+C:\Users\Ferguson\Documents\fymenu\app\admin\AdminClient.tsx                                              3558      ...
+C:\Users\Ferguson\Documents\fymenu\app\api\billing\subscribe\route.ts                                       35     r...
+C:\Users\Ferguson\Documents\fymenu\app\api\ia\import\route.ts                                               13 - has...
+C:\Users\Ferguson\Documents\fymenu\app\api\ia\import\route.ts                                              148      ...
+C:\Users\Ferguson\Documents\fymenu\app\api\ia\import-finance\route.ts                                       62      ...
+C:\Users\Ferguson\Documents\fymenu\app\api\plan\checkout\route.ts                                          108     /...
+C:\Users\Ferguson\Documents\fymenu\app\auth\reset-password\page.tsx                                         22      ...
+C:\Users\Ferguson\Documents\fymenu\app\auth\reset-password\UpdatePasswordForm.tsx                           22      ...
+C:\Users\Ferguson\Documents\fymenu\app\colaborador-app\[slug]\comandas\[id]\CloseComandaModal.tsx          488      ...
+C:\Users\Ferguson\Documents\fymenu\app\colaborador-app\[slug]\comandas\[id]\CloseComandaModal.tsx          568     l...
+C:\Users\Ferguson\Documents\fymenu\app\colaborador-app\[slug]\comandas\[id]\ComandaDetailClient.tsx        873      ...
+C:\Users\Ferguson\Documents\fymenu\app\colaborador-app\[slug]\comandas\[id]\ProductPickerModal.tsx         145      ...
+C:\Users\Ferguson\Documents\fymenu\app\colaborador-app\[slug]\home\ColaboradorHomeClient.tsx                29   if ...
+C:\Users\Ferguson\Documents\fymenu\app\colaborador-app\[slug]\_components\OpenComandaModal.tsx             217      ...
+C:\Users\Ferguson\Documents\fymenu\app\delivery\[slug]\pdv\PDVClient.tsx                                   120      ...
+C:\Users\Ferguson\Documents\fymenu\app\delivery\[slug]\pdv\PDVClient.tsx                                   198      ...
+C:\Users\Ferguson\Documents\fymenu\app\delivery\[slug]\pdv\PDVClient.tsx                                   284      ...
+C:\Users\Ferguson\Documents\fymenu\app\entrar\EntrarClient.tsx                                             132      ...
+C:\Users\Ferguson\Documents\fymenu\app\painel\components\PedidosModal.tsx                                   37 type ...
+C:\Users\Ferguson\Documents\fymenu\app\painel\components\PedidosModal.tsx                                  200     t...
+C:\Users\Ferguson\Documents\fymenu\app\painel\components\PedidosModal.tsx                                  282     {...
+C:\Users\Ferguson\Documents\fymenu\app\painel\components\RestaurantOperationsModal.tsx                     442      ...
+C:\Users\Ferguson\Documents\fymenu\app\painel\components\StaffAnalyticsModal.tsx                           876      ...
+C:\Users\Ferguson\Documents\fymenu\app\painel\estoque\EstoqueClient.tsx                                    139      ...
+C:\Users\Ferguson\Documents\fymenu\app\painel\ia\ImportClient.tsx                                          431      ...
+C:\Users\Ferguson\Documents\fymenu\app\painel\importacoes\ImportacoesClient.tsx                            136      ...
+C:\Users\Ferguson\Documents\fymenu\app\painel\importacoes\ImportacoesClient.tsx                            206      ...
+C:\Users\Ferguson\Documents\fymenu\app\painel\importar\actions.ts                                          219      ...
+C:\Users\Ferguson\Documents\fymenu\app\painel\importar\actions.ts                                          287   pay...
+
+
+
+=== 8.1 console.log em producao ===
+
+Path                                                                       LineNumber
+----                                                                       ----------
+C:\Users\Ferguson\Documents\fymenu\app\api\billing\subscribe\route.ts              12
+C:\Users\Ferguson\Documents\fymenu\app\api\cron\weekly-report\route.ts            112
+C:\Users\Ferguson\Documents\fymenu\app\api\referrals\route.ts                      59
+C:\Users\Ferguson\Documents\fymenu\app\api\webhooks\route.ts                       48
+C:\Users\Ferguson\Documents\fymenu\app\painel\ProductRow.tsx                      310
+C:\Users\Ferguson\Documents\fymenu\app\painel\ProductRow.tsx                      316
+C:\Users\Ferguson\Documents\fymenu\app\painel\ProductRow.tsx                      318
+C:\Users\Ferguson\Documents\fymenu\lib\hooks\useOrderRealtime.ts                   35
+C:\Users\Ferguson\Documents\fymenu\lib\hooks\useOrderRealtime.ts                   41
+C:\Users\Ferguson\Documents\fymenu\lib\notifications\createNotification.ts        121
+C:\Users\Ferguson\Documents\fymenu\lib\services\printQueueService.ts               70
+C:\Users\Ferguson\Documents\fymenu\lib\asaas.ts                                    55
+C:\Users\Ferguson\Documents\fymenu\lib\zapi.ts                                     32
+C:\Users\Ferguson\Documents\fymenu\lib\zapi.ts                                     39
+
+
+
+=== 9.1 ENV vars usadas ===
+ADMIN_EMAIL
+ASAAS_API_KEY
+ASAAS_SANDBOX
+ASAAS_WEBHOOK_TOKEN
+CRON_SECRET
+IP_HASH_SALT
+NEXT_PUBLIC_DOMAIN
+NEXT_PUBLIC_R
+NEXT_PUBLIC_SITE_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY
+NEXT_PUBLIC_SUPABASE_URL
+NODE_ENV
+OPENAI_API_KEY
+R
+REPORT_FROM_EMAIL
+RESEND_API_KEY
+SLACK_WEBHOOK_URL
+SUPABASE_SERVICE_ROLE_KEY
+TELEGRAM_BOT_TOKEN
+TELEGRAM_CHAT_ID
+ZAPI_ADMIN_TOKEN
+
+=== 10.1 Top 15 chunks ===
+
+Name                    SizeKB
+----                    ------
+dc1c94485fcac6f8.js      411,6
+f9a4eca87e75a791.js      402,2
+f2f58a7e93290fbb.js      219,4
+f4a9fa55aa0b52bb.js      178,6
+84ca854979bad301.js      138,5
+a6dad97d9634a72d.js.map    113
+a6dad97d9634a72d.js        110
+0b068fc460c292de.css      91,3
+92f5d375c8769ba6.js       87,7
+9963cfca23352219.js       86,6
+a88ebb38d3c253a8.js       82,5
+66d5f6bdfc686c52.js       78,9
+4ba9844caa6c76a0.js       63,3
+405ea41108cffe54.js       57,1
+07e052e706153099.js       56,7
+
+
+
+=== 11.1 Worktrees ===
+C:/Users/Ferguson/Documents/fymenu                                     0667d8c [main]
+C:/Users/Ferguson/Documents/fymenu/.claude/worktrees/agent-a55855fe    3efccbb [worktree-agent-a55855fe]
+C:/Users/Ferguson/Documents/fymenu/.claude/worktrees/stupefied-pasteur af59dca [claude/stupefied-pasteur]
+
+=== 11.2 Branches nao-mergeadas ===
+
+=== 11.3 Ultimos 10 commits ===
+0667d8c cleanup(gating): delete lib/plan.ts; single source of truth in lib/plans.ts
+b34166c refactor(gating): migrate 6 modals to hasPlanFeature
+fbeae25 refactor(gating): migrate DashboardClient to hasPlanFeature + UpgradePopup
+b7d2c5d feat(gating): apply guards on server actions + critical API routes
+f126208 feat(gating): apply guards on /painel routes + colaborador-app pages
+9e218ee feat(gating): server helpers requireFeatureOrRedirect + requireFeatureForAction
+d8f69aa fix(landing): preço Menu R\$199,90 + toggle individual animado por card
+da5af0c feat(plans): foundation for plan-based feature gating
+bc4e343 feat(landing): cards de planos cumulativos com toggle global + CTAs
+6d208c6 feat(landing): adicionar 4 grupos com 15 cards de servicos
+
+=== 12.1 Convencoes no repo ===
+NAO EXISTE: SKILL.md
+NAO EXISTE: CONVENTIONS.md
+NAO EXISTE: CONTRIBUTING.md
+NAO EXISTE: CLAUDE.md
+NAO EXISTE: .env.example
+NAO EXISTE: CHANGELOG.md
+
+=== 13.1 use client com service_role (RISCO) ===
+RISCO: C:\Users\Ferguson\Documents\fymenu\app\admin\relatorios\AdminRelatoriosClient.tsx e use client mas tem service_role
+
+======================================================================
+Auditoria salva em: audit_20260511_214217.txt

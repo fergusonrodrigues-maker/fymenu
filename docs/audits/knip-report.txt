@@ -1,0 +1,85 @@
+Unused files (51)
+app/admin/[slug]/menu/components/AddonManager.tsx: app/admin/[slug]/menu/components/AddonManager.tsx
+app/admin/[slug]/menu/components/AvailabilityScheduler.tsx: app/admin/[slug]/menu/components/AvailabilityScheduler.tsx
+app/admin/[slug]/menu/components/BulkEditToolbar.tsx: app/admin/[slug]/menu/components/BulkEditToolbar.tsx
+app/admin/[slug]/menu/components/ProductTypeSelector.tsx: app/admin/[slug]/menu/components/ProductTypeSelector.tsx
+app/admin/[slug]/settings/components/PrinterSettings.tsx: app/admin/[slug]/settings/components/PrinterSettings.tsx
+app/configurar/OnboardingClient.tsx: app/configurar/OnboardingClient.tsx
+app/configurar/StepCompany.tsx: app/configurar/StepCompany.tsx
+app/configurar/StepMenu.tsx: app/configurar/StepMenu.tsx
+app/configurar/StepPersonal.tsx: app/configurar/StepPersonal.tsx
+app/configurar/StepPlan.tsx: app/configurar/StepPlan.tsx
+app/delivery/[slug]/CarouselSnap.tsx: app/delivery/[slug]/CarouselSnap.tsx
+app/delivery/[slug]/CategoryCarousel.tsx: app/delivery/[slug]/CategoryCarousel.tsx
+app/delivery/[slug]/FeaturedCarousel.tsx: app/delivery/[slug]/FeaturedCarousel.tsx
+app/delivery/[slug]/ProductCard.tsx: app/delivery/[slug]/ProductCard.tsx
+app/delivery/[slug]/components/FloatingWhatsAppButton.tsx: app/delivery/[slug]/components/FloatingWhatsAppButton.tsx
+app/delivery/[slug]/components/MenuCarousel.tsx: app/delivery/[slug]/components/MenuCarousel.tsx
+app/delivery/[slug]/components/MenuInfoBar.tsx: app/delivery/[slug]/components/MenuInfoBar.tsx
+app/delivery/[slug]/useCarouselSnap.tsx: app/delivery/[slug]/useCarouselSnap.tsx
+app/painel/CategoryRow.tsx: app/painel/CategoryRow.tsx
+app/painel/CopyButton.tsx: app/painel/CopyButton.tsx
+app/painel/CopyLinkButton.tsx: app/painel/CopyLinkButton.tsx
+app/painel/components/AddonManager.tsx: app/painel/components/AddonManager.tsx
+app/painel/components/OrderRatingModal.tsx: app/painel/components/OrderRatingModal.tsx
+app/painel/ia/DescribeAIButton.tsx: app/painel/ia/DescribeAIButton.tsx
+app/types/kitchen.ts: app/types/kitchen.ts
+app/u/[slug]/comanda/components/AuditHistory.tsx: app/u/[slug]/comanda/components/AuditHistory.tsx
+app/u/[slug]/comanda/components/ComandaHeader.tsx: app/u/[slug]/comanda/components/ComandaHeader.tsx
+app/u/[slug]/comanda/components/PaymentOptions.tsx: app/u/[slug]/comanda/components/PaymentOptions.tsx
+app/u/[slug]/comanda/components/SimpleCalculator.tsx: app/u/[slug]/comanda/components/SimpleCalculator.tsx
+app/u/[slug]/comanda/components/SubComandaCalculator.tsx: app/u/[slug]/comanda/components/SubComandaCalculator.tsx
+components/MouseGlow.tsx: components/MouseGlow.tsx
+lib/components/fymenu/MenuMobileV1.tsx: lib/components/fymenu/MenuMobileV1.tsx
+lib/hooks/useBulkProductEdit.ts: lib/hooks/useBulkProductEdit.ts
+lib/hooks/useCategoryFilters.ts: lib/hooks/useCategoryFilters.ts
+lib/hooks/useComandaCalculator.ts: lib/hooks/useComandaCalculator.ts
+lib/hooks/useCreateOrder.ts: lib/hooks/useCreateOrder.ts
+lib/hooks/useOrderAudit.ts: lib/hooks/useOrderAudit.ts
+lib/hooks/useOrderRealtime.ts: lib/hooks/useOrderRealtime.ts
+lib/hooks/usePlanFeature.ts: lib/hooks/usePlanFeature.ts
+lib/hooks/useProductAvailability.ts: lib/hooks/useProductAvailability.ts
+lib/hooks/useProductType.ts: lib/hooks/useProductType.ts
+lib/hooks/useSubComanda.ts: lib/hooks/useSubComanda.ts
+lib/modal-styles.ts: lib/modal-styles.ts
+lib/seo/schemas.ts: lib/seo/schemas.ts
+lib/services/printQueueService.ts: lib/services/printQueueService.ts
+lib/supabase.ts: lib/supabase.ts
+lib/versions/menuVersioning.ts: lib/versions/menuVersioning.ts
+lib/whatsapp-notifications.ts: lib/whatsapp-notifications.ts
+public/sw.js: public/sw.js
+scripts/generate-icons.js: scripts/generate-icons.js
+supabase/functions/generate-description/index.ts: supabase/functions/generate-description/index.ts
+Unused dependencies (1)
+package.json: @aws-sdk/s3-request-presigner, @types/bcryptjs
+Unused devDependencies (1)
+package.json: @types/pdf-parse
+Unlisted dependencies (3)
+lib/notifications/createNotification.ts: server-only
+lib/print/generateReceipt.ts: server-only
+lib/tarefas/ensureTodayTasks.ts: server-only
+Unused exports (16)
+app/colaborador-app/atendimentoActions.ts: getComandaDetail, listTableCalls
+app/delivery/[slug]/orderBuilder.ts: buildExternalLink, formatPrice
+app/painel/actions.ts: reorderCategories, addUpsellItem, removeUpsellItem, updateProfile, changePlan
+app/painel/notificationsActions.ts: countUnread
+app/painel/orders/actions.ts: createOrderIntent
+app/painel/tarefasActions.ts: getCompletionPhotoUrl
+components/plan/UpgradeGate.tsx: UpgradeGate
+lib/asaas.ts: PLAN_PRICES, CYCLE_LABELS
+lib/email-templates.ts: paymentReminderEmail
+lib/orders/buildOrderMessage.ts: isValidWhatsAppNumber
+lib/orders/validateOrder.ts: calculateItemTotal
+lib/plans.ts: FROM_ASAAS_CYCLE, CYCLE_LABEL, CYCLE_MONTHS, PLAN_ORDER, REFERRAL_COMMISSION, getPriceCents, getCycleSavingsPercent, assertPlanFeature
+lib/print/generateReceipt.ts: generateKitchenOrderHTML, generatePartialCheckHTML, generateFinalReceiptHTML
+lib/suporte-auth.ts: ROLE_PERMISSIONS
+lib/upload.ts: deleteMedia
+lib/zapi.ts: sendImage, sendLink
+Unused exported types (7)
+app/colaborador-app/atendimentoActions.ts: TableCallType, TableCallStatus, ComandaDetailResult, TableCallRow
+app/delivery/[slug]/menuTypes.ts: CategoryWithProducts
+app/delivery/[slug]/useTrack.ts: MenuEventType
+app/painel/types.ts: ReportPeriodStats, ReportWeekly, ReportMonthly
+components/ui/Icon.tsx: IconName
+lib/plans.ts: PlanFeatures
+lib/print/generateReceipt.ts: ReceiptType

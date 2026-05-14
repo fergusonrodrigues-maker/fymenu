@@ -1,0 +1,368 @@
+npm warn exec The following package was not found and will be installed: ts-prune@0.10.3
+\middleware.ts:26 - middleware
+\middleware.ts:178 - config
+\next.config.ts:15 - default
+\app\layout.tsx:42 - default
+\app\layout.tsx:16 - metadata
+\app\layout.tsx:33 - viewport
+\app\page.tsx:12 - default
+\app\page.tsx:3 - metadata
+\app\sitemap.ts:4 - default
+\components\MouseGlow.tsx:5 - default
+\lib\asaas.ts:29 - PLAN_PRICES
+\lib\asaas.ts:37 - CYCLE_LABELS
+\lib\delivery-calculator.ts:27 - DeliveryFeeResult (used in module)
+\lib\email-templates.ts:87 - paymentReminderEmail
+\lib\funcionario-session.ts:10 - EmployeeSession (used in module)
+\lib\imageCompress.ts:5 - CompressOptions (used in module)
+\lib\modal-styles.ts:18 - modalStyles
+\lib\plans.ts:210 - getPriceCents
+\lib\plans.ts:227 - getCycleSavingsPercent
+\lib\plans.ts:285 - assertPlanFeature
+\lib\plans.ts:20 - FROM_ASAAS_CYCLE
+\lib\plans.ts:26 - CYCLE_LABEL
+\lib\plans.ts:33 - CYCLE_MONTHS (used in module)
+\lib\plans.ts:39 - PlanFeatures (used in module)
+\lib\plans.ts:65 - PlanDef (used in module)
+\lib\plans.ts:200 - PLAN_ORDER (used in module)
+\lib\plans.ts:204 - REFERRAL_COMMISSION
+\lib\supabase.ts:3 - createClient (used in module)
+\lib\suporte-auth.ts:4 - SuporteStaff (used in module)
+\lib\suporte-auth.ts:27 - ROLE_PERMISSIONS (used in module)
+\lib\upload.ts:83 - deleteMedia
+\lib\whatsapp-notifications.ts:33 - sendOrderNotification
+\lib\whatsapp-notifications.ts:7 - OrderEventType (used in module)
+\lib\zapi.ts:98 - sendImage
+\lib\zapi.ts:141 - sendLink
+\app\aceitar-convite\page.tsx:6 - default
+\app\admin\page.tsx:8 - default
+\app\admin\page.tsx:6 - metadata
+\app\cadastro\loading.tsx:2 - default
+\app\cadastro\page.tsx:3 - default
+\app\checkout\page.tsx:14 - default
+\app\colaborador\page.tsx:7 - default
+\app\colaborador\page.tsx:3 - metadata
+\app\colaborador-app\actions.ts:11 - AuthResult (used in module)
+\app\comanda\loading.tsx:2 - default
+\app\configurar\OnboardingClient.tsx:24 - default
+\app\configurar\page.tsx:4 - default
+\app\cozinha\loading.tsx:2 - default
+\app\cozinha\page.tsx:7 - default
+\app\cozinha\page.tsx:5 - metadata
+\app\employee-dashboard\page.tsx:62 - default
+\app\employee-login\page.tsx:138 - default
+\app\entrar\loading.tsx:2 - default
+\app\entrar\page.tsx:4 - default
+\app\entrega\loading.tsx:2 - default
+\app\funcionario\loading.tsx:2 - default
+\app\funcionario\page.tsx:65 - default
+\app\garcom\loading.tsx:2 - default
+\app\garcom\page.tsx:7 - default
+\app\garcom\page.tsx:5 - metadata
+\app\hub\loading.tsx:2 - default
+\app\painel\actions.ts:352 - reorderCategories
+\app\painel\actions.ts:606 - addUpsellItem
+\app\painel\actions.ts:658 - removeUpsellItem
+\app\painel\actions.ts:791 - updateProfile
+\app\painel\actions.ts:813 - changePlan
+\app\painel\CategoryRow.tsx:11 - default
+\app\painel\CopyButton.tsx:5 - default
+\app\painel\CopyLinkButton.tsx:5 - default
+\app\painel\layout.tsx:8 - default
+\app\painel\layout.tsx:4 - metadata
+\app\painel\loading.tsx:2 - default
+\app\painel\notificationsActions.ts:64 - countUnread
+\app\painel\notificationsActions.ts:37 - ListNotificationsResult (used in module)
+\app\painel\page.tsx:70 - default
+\app\painel\tarefasActions.ts:470 - getCompletionPhotoUrl
+\app\painel\types.ts:14 - ReportPeriodStats (used in module)
+\app\painel\types.ts:23 - ReportWeekly (used in module)
+\app\painel\types.ts:24 - ReportMonthly (used in module)
+\app\parceiro\loading.tsx:2 - default
+\app\parceiro\page.tsx:6 - default
+\app\pdv\loading.tsx:2 - default
+\app\suporte\page.tsx:6 - default
+\app\tv\loading.tsx:2 - default
+\app\types\kitchen.ts:3 - WaiterStatus (used in module)
+\app\types\kitchen.ts:4 - KitchenStatus (used in module)
+\app\types\kitchen.ts:5 - PaymentMethod (used in module)
+\app\types\kitchen.ts:6 - PaymentStatus (used in module)
+\app\types\kitchen.ts:7 - KitchenEventType (used in module)
+\app\types\kitchen.ts:9 - OrderIntent (used in module)
+\app\types\kitchen.ts:33 - OrderItem (used in module)
+\app\types\kitchen.ts:43 - Payment
+\app\types\kitchen.ts:53 - KitchenEvent
+\app\types\kitchen.ts:61 - KanbanColumn
+\components\plan\UpgradeGate.tsx:29 - UpgradeGate
+\components\ui\Icon.tsx:154 - IconName (used in module)
+\lib\hooks\useCategoryFilters.ts:10 - useCategoryFilters
+\lib\hooks\useCategoryFilters.ts:4 - CategoryWithType (used in module)
+\lib\hooks\useCreateOrder.ts:7 - useCreateOrder
+\lib\hooks\useOrderRealtime.ts:11 - useOrderRealtime
+\lib\hooks\usePlanFeature.ts:15 - usePlanFeature
+\lib\hooks\usePrinterConfig.ts:34 - PrinterCreateInput (used in module)
+\lib\hooks\useSubComanda.ts:4 - SubComanda (used in module)
+\lib\notifications\createNotification.ts:5 - CreateNotificationInput (used in module)
+\lib\orders\buildOrderMessage.ts:40 - isValidWhatsAppNumber
+\lib\orders\validateOrder.ts:3 - calculateItemTotal (used in module)
+\lib\print\generateReceipt.ts:160 - generateKitchenOrderHTML (used in module)
+\lib\print\generateReceipt.ts:199 - generatePartialCheckHTML (used in module)
+\lib\print\generateReceipt.ts:229 - generateFinalReceiptHTML (used in module)
+\lib\print\generateReceipt.ts:4 - ReceiptType
+\lib\seo\schemas.ts:1 - RestaurantSchema
+\lib\seo\schemas.ts:21 - LocalBusinessSchema
+\lib\server\getRestaurantPlan.ts:4 - RestaurantPlanContext (used in module)
+\lib\server\requireFeatureForAction.ts:10 - FeatureCheckOk (used in module)
+\lib\server\requireFeatureForAction.ts:19 - FeatureCheckError (used in module)
+\lib\server\requireFeatureOrRedirect.ts:6 - FeatureContext (used in module)
+\lib\services\printQueueService.ts:10 - routeOrderToPrinters
+\lib\tableCalls\createCustomerCall.ts:7 - CreateCustomerCallResult (used in module)
+\lib\tenant\getTenantContext.ts:7 - AllMembership (used in module)
+\lib\versions\menuVersioning.ts:6 - createMenuVersion (used in module)
+\lib\versions\menuVersioning.ts:54 - restoreMenuVersion
+\lib\versions\menuVersioning.ts:83 - listMenuVersions
+\app\admin\login\page.tsx:10 - default
+\app\admin\login\page.tsx:5 - metadata
+\app\admin\relatorios\page.tsx:8 - default
+\app\admin\relatorios\page.tsx:6 - metadata
+\app\api\referrals\route.ts:4 - POST
+\app\api\referrals\route.ts:64 - GET
+\app\api\upload\route.ts:21 - POST
+\app\api\upload\route.ts:4 - runtime
+\app\api\upload\route.ts:5 - maxDuration
+\app\api\upsell-ai\route.ts:8 - POST
+\app\api\upsell-ai\route.ts:6 - runtime
+\app\api\webhooks\route.ts:35 - POST
+\app\api\webhooks\route.ts:63 - GET
+\app\auth\confirm-email\page.tsx:4 - default
+\app\auth\reset-password\page.tsx:5 - default
+\app\colaborador-app\[slug]\layout.tsx:10 - default
+\app\colaborador-app\[slug]\page.tsx:4 - default
+\app\comanda\[slug]\loading.tsx:2 - default
+\app\comanda\[slug]\page.tsx:7 - default
+\app\comanda\[slug]\page.tsx:5 - revalidate
+\app\cozinha\[slug]\page.tsx:13 - default
+\app\delivery\[slug]\CarouselSnap.tsx:21 - useCarouselSnap
+\app\delivery\[slug]\FeaturedCarousel.tsx:15 - default
+\app\delivery\[slug]\layout.tsx:5 - default
+\app\delivery\[slug]\layout.tsx:1 - metadata
+\app\delivery\[slug]\loading.tsx:2 - default
+\app\delivery\[slug]\menuTypes.ts:62 - CategoryWithProducts
+\app\delivery\[slug]\orderBuilder.ts:74 - buildExternalLink
+\app\delivery\[slug]\orderBuilder.ts:86 - formatPrice
+\app\delivery\[slug]\orderBuilder.ts:91 - CartOrderItem (used in module)
+\app\delivery\[slug]\page.tsx:45 - generateMetadata
+\app\delivery\[slug]\page.tsx:88 - default
+\app\delivery\[slug]\page.tsx:10 - revalidate (used in module)
+\app\delivery\[slug]\ProductCard.tsx:13 - default
+\app\delivery\[slug]\useCarouselSnap.tsx:14 - useCarouselSnap
+\app\delivery\[slug]\useTrack.ts:6 - MenuEventType (used in module)
+\app\delivery\[slug]\useTrack.ts:20 - TrackPayload (used in module)
+\app\entrega\[param]\page.tsx:610 - default
+\app\funcionario\[slug]\page.tsx:42 - default
+\app\funcionario\login\page.tsx:6 - default
+\app\funcionario\portal\page.tsx:137 - default
+\app\garcom\[slug]\page.tsx:13 - default
+\app\hub\[slug]\page.tsx:17 - default
+\app\menu\[slug]\page.tsx:27 - default
+\app\menu\[slug]\page.tsx:12 - revalidate (used in module)
+\app\operacoes\[slug]\loading.tsx:2 - default
+\app\operacoes\[slug]\page.tsx:11 - default
+\app\operacoes\[slug]\page.tsx:9 - metadata
+\app\painel\components\AddonManager.tsx:16 - AddonManager
+\app\painel\components\OrderRatingModal.tsx:52 - default
+\app\painel\estoque\page.tsx:6 - default
+\app\painel\ia\DescribeAIButton.tsx:15 - useDescribeAI (used in module)
+\app\painel\ia\DescribeAIButton.tsx:55 - DescribeAIButton
+\app\painel\ia\page.tsx:6 - default
+\app\painel\importacoes\page.tsx:8 - default
+\app\painel\importacoes\page.tsx:6 - metadata
+\app\painel\orders\page.tsx:8 - default
+\app\painel\relatorios\page.tsx:72 - default
+\app\painel\relatorios\page.tsx:5 - metadata
+\app\painel\tv\page.tsx:5 - default
+\app\parceiro\login\page.tsx:8 - default
+\app\parceiro\login\page.tsx:3 - metadata
+\app\parceiro\painel\page.tsx:6 - default
+\app\pdv\[slug]\page.tsx:17 - default
+\app\rastreio\[code]\loading.tsx:2 - default
+\app\rastreio\[code]\page.tsx:7 - default
+\app\rastreio\[code]\page.tsx:5 - revalidate
+\app\suporte\dashboard\page.tsx:1307 - default
+\app\suporte\login\page.tsx:7 - default
+\app\tv\[slug]\page.tsx:11 - default
+\app\tv\[slug]\page.tsx:9 - dynamic
+\lib\components\fymenu\MenuMobileV1.tsx:53 - default
+\app\api\admin\chats\route.ts:18 - GET
+\app\api\admin\coupons\route.ts:24 - POST
+\app\api\admin\coupons\route.ts:93 - GET
+\app\api\admin\coupons\route.ts:109 - DELETE
+\app\api\admin\partners\route.ts:6 - POST
+\app\api\admin\photo-sessions\route.ts:5 - POST
+\app\api\admin\support-staff\route.ts:6 - POST
+\app\api\admin\toggle-feature\route.ts:5 - POST
+\app\api\admin\update-restaurant\route.ts:5 - POST
+\app\api\admin\verify\route.ts:4 - POST
+\app\api\analytics\report-pdf\route.ts:3 - POST
+\app\api\auth\signout\route.ts:4 - POST
+\app\api\chat\conversations\route.ts:18 - GET
+\app\api\chat\conversations\route.ts:69 - POST
+\app\api\coupon\apply\route.ts:4 - POST
+\app\api\coupon\validate\route.ts:5 - POST
+\app\api\coupon\validate\route.ts:35 - GET
+\app\api\crm\customers\route.ts:21 - POST
+\app\api\cron\weekly-report\route.ts:40 - GET
+\app\api\deliveries\tracking\route.ts:5 - POST
+\app\api\deliveries\tracking\route.ts:61 - GET
+\app\api\delivery\calculate\route.ts:6 - POST
+\app\api\delivery\settings\route.ts:21 - GET
+\app\api\delivery\settings\route.ts:37 - PATCH
+\app\api\delivery\zones\route.ts:22 - GET
+\app\api\delivery\zones\route.ts:38 - POST
+\app\api\employees\create\route.ts:7 - POST
+\app\api\employees\history\route.ts:4 - GET
+\app\api\employees\login\route.ts:5 - POST
+\app\api\employees\timeclock\route.ts:20 - POST
+\app\api\employees\timeclock\route.ts:114 - GET
+\app\api\funcionario\avaliacoes\route.ts:10 - GET
+\app\api\funcionario\categories\route.ts:5 - GET
+\app\api\funcionario\change-password\route.ts:14 - POST
+\app\api\funcionario\login\route.ts:49 - POST
+\app\api\funcionario\logout\route.ts:8 - POST
+\app\api\funcionario\lookup-unit\route.ts:10 - POST
+\app\api\funcionario\me\route.ts:9 - GET
+\app\api\funcionario\ponto\route.ts:14 - GET
+\app\api\funcionario\ponto\route.ts:38 - POST
+\app\api\funcionario\session\route.ts:8 - PATCH
+\app\api\funcionario\status\route.ts:12 - PATCH
+\app\api\ia\analytics-suggestions\route.ts:6 - POST
+\app\api\ia\analyze-reviews\route.ts:6 - POST
+\app\api\ia\describe\route.ts:9 - POST
+\app\api\ia\describe\route.ts:7 - runtime
+\app\api\ia\finance-analysis\route.ts:6 - POST
+\app\api\ia\generate-description\route.ts:9 - POST
+\app\api\ia\generate-description\route.ts:7 - runtime
+\app\api\ia\import\route.ts:95 - POST
+\app\api\ia\import\route.ts:7 - runtime
+\app\api\ia\import-analytics\route.ts:6 - POST
+\app\api\ia\import-finance\route.ts:6 - POST
+\app\api\ia\import-menu\route.ts:34 - POST
+\app\api\ia\import-menu\route.ts:7 - runtime
+\app\api\ia\import-stock\route.ts:33 - POST
+\app\api\ia\import-stock\route.ts:7 - runtime
+\app\api\ia\nutrition\route.ts:9 - POST
+\app\api\ia\nutrition\route.ts:7 - runtime
+\app\api\ia\purchase-suggestions\route.ts:9 - POST
+\app\api\ia\purchase-suggestions\route.ts:7 - runtime
+\app\api\ia\suggest-highlights\route.ts:9 - POST
+\app\api\ia\suggest-highlights\route.ts:7 - runtime
+\app\api\menu\generate-cache\route.ts:18 - POST
+\app\api\onboarding\complete\route.ts:7 - POST
+\app\api\orders\table\route.ts:4 - POST
+\app\api\parceiro\change-password\route.ts:5 - POST
+\app\api\parceiro\data\route.ts:4 - GET
+\app\api\parceiro\login\route.ts:5 - POST
+\app\api\plan\activate\route.ts:5 - POST
+\app\api\plan\checkout\route.ts:33 - POST
+\app\api\ratings\create\route.ts:4 - POST
+\app\api\reports\email\route.ts:85 - POST
+\app\api\subscription\cancel\route.ts:6 - POST
+\app\api\suporte\analytics\route.ts:5 - GET
+\app\api\suporte\chats\route.ts:5 - GET
+\app\api\suporte\crm\route.ts:5 - GET
+\app\api\suporte\equipe\route.ts:6 - GET
+\app\api\suporte\equipe\route.ts:22 - POST
+\app\api\suporte\features\route.ts:5 - GET
+\app\api\suporte\features\route.ts:31 - PATCH
+\app\api\suporte\financeiro\route.ts:5 - GET
+\app\api\suporte\login\route.ts:5 - POST
+\app\api\suporte\me\route.ts:4 - GET
+\app\api\suporte\orders\route.ts:5 - GET
+\app\api\suporte\products\route.ts:5 - GET
+\app\api\suporte\products\route.ts:41 - PATCH
+\app\api\suporte\restaurantes\route.ts:5 - GET
+\app\api\suporte\units\route.ts:5 - GET
+\app\api\units\domain-suggestions\route.ts:4 - POST
+\app\api\upload\delete\route.ts:4 - POST
+\app\api\webhook\asaas\route.ts:7 - POST
+\app\api\whatsapp\disconnect\route.ts:8 - POST
+\app\api\whatsapp\messages\route.ts:7 - GET
+\app\api\whatsapp\qrcode\route.ts:8 - GET
+\app\api\whatsapp\send\route.ts:12 - POST
+\app\api\whatsapp\send-bulk\route.ts:19 - POST
+\app\api\whatsapp\settings\route.ts:7 - PATCH
+\app\api\whatsapp\setup\route.ts:58 - POST
+\app\api\whatsapp\status\route.ts:8 - GET
+\app\api\whatsapp\teardown\route.ts:12 - DELETE
+\app\api\whatsapp\templates\route.ts:13 - GET
+\app\api\whatsapp\templates\route.ts:48 - POST
+\app\api\whatsapp\webhook\route.ts:9 - POST
+\app\colaborador-app\[slug]\_components\OpenComandaModal.tsx:12 - OpenComandaModalProps (used in module)
+\app\colaborador-app\[slug]\_components\TableCallModal.tsx:26 - TableCallModalProps (used in module)
+\app\colaborador-app\[slug]\comandas\page.tsx:8 - default
+\app\colaborador-app\[slug]\home\page.tsx:3 - default
+\app\colaborador-app\[slug]\mesas\page.tsx:8 - default
+\app\colaborador-app\[slug]\ponto\actions.ts:20 - PointEntry (used in module)
+\app\colaborador-app\[slug]\ponto\page.tsx:8 - default
+\app\colaborador-app\[slug]\tarefas\page.tsx:8 - default
+\app\comanda\[slug]\[hash]\page.tsx:9 - default
+\app\comanda\[slug]\[hash]\page.tsx:7 - revalidate
+\app\delivery\[slug]\components\FloatingWhatsAppButton.tsx:9 - FloatingWhatsAppButton
+\app\delivery\[slug]\components\MenuCarousel.tsx:22 - MenuCarousel
+\app\delivery\[slug]\components\MenuInfoBar.tsx:15 - MenuInfoBar
+\app\delivery\[slug]\hub-central\page.tsx:7 - default
+\app\delivery\[slug]\hub-central\page.tsx:5 - metadata
+\app\delivery\[slug]\menu\page.tsx:12 - default
+\app\delivery\[slug]\menu\page.tsx:10 - revalidate
+\app\delivery\[slug]\pdv\layout.tsx:4 - default
+\app\delivery\[slug]\pdv\page.tsx:7 - default
+\app\delivery\[slug]\pdv\page.tsx:5 - metadata
+\app\delivery\[slug]\tv\page.tsx:7 - default
+\app\delivery\[slug]\tv\page.tsx:5 - dynamic
+\app\funcionario\[slug]\perfil\page.tsx:9 - default
+\app\funcionario\[slug]\ponto\page.tsx:9 - default
+\app\garcom\comanda\[id]\page.tsx:7 - default
+\app\garcom\comanda\[id]\page.tsx:5 - metadata
+\app\painel\admin\parceiros\page.tsx:14 - default
+\app\painel\orders\[orderId]\layout.tsx:3 - default
+\app\painel\orders\[orderId]\page.tsx:15 - default
+\app\u\[slug]\mesa\page.tsx:23 - generateMetadata
+\app\u\[slug]\mesa\page.tsx:44 - default
+\app\u\[slug]\mesa\page.tsx:9 - revalidate (used in module)
+\app\admin\[slug]\menu\components\AddonManager.tsx:14 - AddonManager
+\app\admin\[slug]\menu\components\AvailabilityScheduler.tsx:12 - AvailabilityScheduler
+\app\admin\[slug]\menu\components\BulkEditToolbar.tsx:12 - BulkEditToolbar
+\app\admin\[slug]\menu\components\ProductTypeSelector.tsx:17 - ProductTypeSelector
+\app\admin\[slug]\settings\components\PrinterSettings.tsx:12 - PrinterSettings
+\app\api\admin\chats\[id]\route.ts:18 - GET
+\app\api\admin\chats\[id]\route.ts:37 - PATCH
+\app\api\crm\customers\[id]\route.ts:22 - PATCH
+\app\api\crm\customers\[id]\route.ts:67 - DELETE
+\app\api\crm\customers\import\route.ts:18 - POST
+\app\api\delivery\zones\[id]\route.ts:29 - PATCH
+\app\api\delivery\zones\[id]\route.ts:69 - DELETE
+\app\api\suporte\chats\[id]\route.ts:5 - PATCH
+\app\api\suporte\chats\[id]\route.ts:51 - GET
+\app\api\suporte\equipe\[id]\route.ts:6 - PATCH
+\app\api\suporte\equipe\[id]\route.ts:53 - DELETE
+\app\api\suporte\planos\[restaurantId]\route.ts:5 - PATCH
+\app\api\suporte\planos\[restaurantId]\route.ts:48 - GET
+\app\api\whatsapp\templates\[id]\route.ts:7 - PATCH
+\app\api\whatsapp\templates\[id]\route.ts:60 - DELETE
+\app\colaborador-app\[slug]\comandas\[id]\actions.ts:483 - UpdateComandaInfoInput (used in module)
+\app\colaborador-app\[slug]\comandas\[id]\actions.ts:636 - CloseComandaResult (used in module)
+\app\colaborador-app\[slug]\comandas\[id]\CloseComandaModal.tsx:32 - CloseComandaModalProps (used in module)
+\app\colaborador-app\[slug]\comandas\[id]\page.tsx:3 - default
+\app\colaborador-app\[slug]\comandas\[id]\ProductPickerModal.tsx:13 - ProductPickerModalProps (used in module)
+\app\u\[slug]\comanda\components\AuditHistory.tsx:11 - AuditHistory
+\app\u\[slug]\comanda\components\ComandaHeader.tsx:10 - ComandaHeader
+\app\u\[slug]\comanda\components\PaymentOptions.tsx:12 - PaymentOptions
+\app\u\[slug]\comanda\components\SimpleCalculator.tsx:15 - SimpleCalculator
+\app\u\[slug]\comanda\components\SubComandaCalculator.tsx:18 - SubComandaCalculator
+\app\api\admin\chats\[id]\messages\route.ts:18 - GET
+\app\api\admin\chats\[id]\messages\route.ts:46 - POST
+\app\api\chat\conversations\[id]\messages\route.ts:30 - GET
+\app\api\chat\conversations\[id]\messages\route.ts:62 - POST
+\app\api\suporte\chats\[id]\messages\route.ts:5 - GET
+\app\api\suporte\chats\[id]\messages\route.ts:36 - POST
+\app\api\suporte\chats\[id]\read\route.ts:6 - POST
