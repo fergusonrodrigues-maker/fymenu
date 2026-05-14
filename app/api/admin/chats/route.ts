@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   const convIds = (data ?? []).map((c) => c.id);
-  let unreadByConv: Record<string, number> = {};
+  const unreadByConv: Record<string, number> = {};
   if (convIds.length > 0) {
     const { data: unread } = await admin
       .from("support_messages")

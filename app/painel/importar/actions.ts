@@ -86,7 +86,7 @@ export async function createImportBatch(params: {
 
   // ── Build insert rows per target table ────────────────────────────────────
   const BATCH_SIZE = 100;
-  let allInserts: Record<string, any>[] = [];
+  const allInserts: Record<string, any>[] = [];
 
   for (let i = 0; i < params.rows.length; i++) {
     const row = params.rows[i];

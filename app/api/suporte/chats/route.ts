@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
 
   // Count unread messages per conversation (client messages without read_at)
   const convIds = (data ?? []).map((c) => c.id);
-  let unreadByConv: Record<string, number> = {};
+  const unreadByConv: Record<string, number> = {};
   if (convIds.length > 0) {
     const { data: unread } = await admin
       .from("support_messages")

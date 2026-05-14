@@ -118,11 +118,13 @@ export async function createNotification(input: CreateNotificationInput): Promis
       input.whatsappMessage ??
       [input.title, input.body].filter(Boolean).join("\n");
 
-    console.log("[notif] zapi send:", {
-      notificationId: notif.id,
-      phoneMasked: phone.replace(/(\d{4})\d+(\d{4})/, "$1***$2"),
-      messageLength: message.length,
-    });
+    if (process.env.NODE_ENV !== "production") {
+      console.log("[notif] zapi send:", {
+        notificationId: notif.id,
+        phoneMasked: phone.replace(/(\d{4})\d+(\d{4})/, "$1***$2"),
+        messageLength: message.length,
+      });
+    }
 
     const result = await sendText(
       instance.zapi_instance_id,

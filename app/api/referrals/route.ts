@@ -56,7 +56,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Erro ao registrar indicação" }, { status: 500 });
   }
 
-  console.log(`[Referral] ${email} indicado por ${referred_by}`);
+  if (process.env.NODE_ENV !== "production") {
+    console.log(`[Referral] ${email} indicado por ${referred_by}`);
+  }
 
   return NextResponse.json({ success: true, message: "Indicação registrada com sucesso!" });
 }

@@ -44,7 +44,7 @@ export default function MesasClient({ slug }: { slug: string }) {
       const result = await listMesasWithStatus(token);
       // Detect newly-arrived pending calls so we only chime/vibrate once each.
       const seen = knownCallIdsRef.current;
-      let firstPaint = seen.size === 0;
+      const firstPaint = seen.size === 0;
       const ringNeeded: boolean[] = [];
       result.mesas.forEach((m) => {
         if (m.active_call && m.active_call.status === "pending") {

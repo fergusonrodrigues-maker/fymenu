@@ -109,6 +109,8 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  console.log(`[Cron weekly-report] Sent ${sent}/${restaurants.length}`);
+  if (process.env.NODE_ENV !== "production") {
+    console.log(`[Cron weekly-report] Sent ${sent}/${restaurants.length}`);
+  }
   return NextResponse.json({ sent, total: restaurants.length, results });
 }

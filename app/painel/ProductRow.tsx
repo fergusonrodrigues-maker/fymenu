@@ -307,15 +307,12 @@ export default function ProductRow({
   async function handleDelete(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
-    console.log('[delete] Triggered for product:', product.id);
     if (deleting) return;
     setDeleting(true);
     try {
       const formData = new FormData();
       formData.append('id', product.id);
-      console.log('[delete] Calling deleteProduct...');
       await deleteProduct(formData);
-      console.log('[delete] Success');
       onClose();
     } catch (err) {
       console.error('[delete] Failed:', err);

@@ -41,7 +41,9 @@ export async function asaasRequest(method: string, endpoint: string, body?: any)
   });
 
   const rawText = await res.text();
-  console.log(`[ASAAS] ${method} ${endpoint} → ${res.status}`, rawText.substring(0, 500));
+  if (process.env.NODE_ENV !== "production") {
+    console.log(`[ASAAS] ${method} ${endpoint} → ${res.status}`, rawText.substring(0, 500));
+  }
 
   let data: any;
   try {

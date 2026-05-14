@@ -280,7 +280,7 @@ export default function MenuClient({
       try { document.head.removeChild(script); } catch {}
       try { document.body.removeChild(noscript); } catch {}
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [unit.facebook_pixel_id]);
 
   // Dispatch event so ProductVideoCards pause/resume when modal opens/closes

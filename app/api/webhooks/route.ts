@@ -45,7 +45,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Campo 'event' obrigatório" }, { status: 400 });
   }
 
-  console.log(`[Webhook] Event: ${event}`, data);
+  if (process.env.NODE_ENV !== "production") {
+    console.log(`[Webhook] Event: ${event}`, data);
+  }
 
   // Log to DB
   const admin = createAdminClient();

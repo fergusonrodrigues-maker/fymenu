@@ -1699,7 +1699,7 @@ export default function AdminClient({
           const periodDays = parseInt(finPeriod) || 30;
           const periodCutoff = Date.now() - periodDays * 24 * 60 * 60 * 1000;
 
-          let filteredOrders = consumerData.orders.filter((o) => {
+          const filteredOrders = consumerData.orders.filter((o) => {
             const t = new Date(o.created_at).getTime();
             if (t < periodCutoff) return false;
             if (finRestaurantFilter !== "all") {

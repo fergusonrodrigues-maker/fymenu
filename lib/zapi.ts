@@ -29,14 +29,18 @@ async function zapiRequest<T = unknown>(
     };
     if (clientToken) headers["Client-Token"] = clientToken;
 
-    console.log(`[zapi:${reqId}] → ${method} ${redactZapiUrl(url)}`);
+    if (process.env.NODE_ENV !== "production") {
+      console.log(`[zapi:${reqId}] → ${method} ${redactZapiUrl(url)}`);
+    }
 
     const res = await fetch(url, { ...options, headers });
     const rawBody = await res.text();
     let parsed: unknown = null;
     try { parsed = rawBody ? JSON.parse(rawBody) : null; } catch { /* keep rawBody */ }
 
-    console.log(`[zapi:${reqId}] ← ${res.status} ${res.ok ? "OK" : "FAIL"}${res.ok ? "" : ` body=${rawBody.slice(0, 300)}`}`);
+    if (process.env.NODE_ENV !== "production") {
+      console.log(`[zapi:${reqId}] ← ${res.status} ${res.ok ? "OK" : "FAIL"}${res.ok ? "" : ` body=${rawBody.slice(0, 300)}`}`);
+    }
 
     if (!res.ok) {
       const obj = parsed as Record<string, unknown> | null;
