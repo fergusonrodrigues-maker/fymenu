@@ -11,7 +11,7 @@ export type DayData = { date: string; orders: number; revenue: number };
 export type ReportProduct = { name: string; qty: number; revenue: number };
 export type ReportPayments = { cash: number; card: number; pix: number };
 
-export type ReportPeriodStats = {
+type ReportPeriodStats = {
   orders: number;
   completed: number;
   revenue: number;
@@ -20,8 +20,8 @@ export type ReportPeriodStats = {
   products: ReportProduct[];
 };
 
-export type ReportWeekly = ReportPeriodStats & { byDay: DayData[] };
-export type ReportMonthly = ReportPeriodStats & {
+type ReportWeekly = ReportPeriodStats & { byDay: DayData[] };
+type ReportMonthly = ReportPeriodStats & {
   byDay: DayData[];
   growthOrders: number | null;
   growthRevenue: number | null;

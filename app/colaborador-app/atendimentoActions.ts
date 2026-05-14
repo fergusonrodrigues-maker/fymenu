@@ -31,8 +31,8 @@ function assertWaiterRole(role: string | null) {
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-export type TableCallType = "order" | "question" | "close_bill" | "waiter" | "manager" | string;
-export type TableCallStatus = "pending" | "acknowledged" | "resolved" | "dismissed" | string;
+type TableCallType = "order" | "question" | "close_bill" | "waiter" | "manager" | string;
+type TableCallStatus = "pending" | "acknowledged" | "resolved" | "dismissed" | string;
 
 export type TableCallSummary = {
   id: string;
@@ -88,21 +88,6 @@ export type AvailableMesa = {
   id: string;
   number: number;
   label: string | null;
-};
-
-export type ComandaDetailResult = {
-  id: string;
-  customer_name: string | null;
-  customer_phone: string | null;
-  mesa_number: number | null;
-  table_number: number | null;
-  total: number;
-  guest_count: number | null;
-  notes: string | null;
-  status: string;
-  short_code: string | null;
-  created_at: string;
-  opened_by_name: string | null;
 };
 
 export type CreateComandaInput = {
@@ -243,34 +228,6 @@ export async function getAtendimentoCounts(token: string): Promise<AtendimentoCo
     mesasOccupied: mesasRes.count ?? 0,
     comandasOpen: comandasRes.count ?? 0,
     callsPending: callsRes.count ?? 0,
-  };
-}
-
-export async function getComandaDetail(token: string, comandaId: string): Promise<ComandaDetailResult | null> {
-  const { db, employeeRole, unitId } = await authenticate(token);
-  assertWaiterRole(employeeRole);
-
-  const { data } = await db
-    .from("comandas")
-    .select("id, unit_id, customer_name, customer_phone, mesa_number, table_number, total, guest_count, notes, status, short_code, created_at, opened_by_name")
-    .eq("id", comandaId)
-    .maybeSingle();
-
-  if (!data || data.unit_id !== unitId) return null;
-
-  return {
-    id: data.id,
-    customer_name: data.customer_name,
-    customer_phone: data.customer_phone,
-    mesa_number: data.mesa_number,
-    table_number: data.table_number,
-    total: Number(data.total ?? 0),
-    guest_count: data.guest_count,
-    notes: data.notes,
-    status: data.status,
-    short_code: data.short_code,
-    created_at: data.created_at,
-    opened_by_name: data.opened_by_name,
   };
 }
 
@@ -417,41 +374,6 @@ export async function createComanda(
 }
 
 // ─── Table calls ─────────────────────────────────────────────────────────────
-
-export type TableCallRow = {
-  id: string;
-  unit_id: string;
-  mesa_id: string | null;
-  table_number: number | null;
-  type: string | null;
-  status: string;
-  source: string | null;
-  created_at: string;
-  acknowledged_at: string | null;
-  acknowledged_by: string | null;
-  resolved_at: string | null;
-  resolved_by: string | null;
-};
-
-export async function listTableCalls(
-  token: string,
-  status?: "pending" | "acknowledged" | "resolved" | "dismissed",
-): Promise<TableCallRow[]> {
-  const { db, employeeRole, unitId } = await authenticate(token);
-  assertWaiterRole(employeeRole);
-
-  let query = db.from("table_calls")
-    .select("id, unit_id, mesa_id, table_number, type, status, source, created_at, acknowledged_at, acknowledged_by, resolved_at, resolved_by")
-    .eq("unit_id", unitId)
-    .order("created_at", { ascending: false })
-    .limit(50);
-  if (status) query = query.eq("status", status);
-  else query = query.in("status", ["pending", "acknowledged"]);
-
-  const { data, error } = await query;
-  if (error) throw new Error(error.message);
-  return (data ?? []) as TableCallRow[];
-}
 
 async function updateCallStatus(
   token: string,

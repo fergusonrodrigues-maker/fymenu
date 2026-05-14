@@ -1,8 +1,6 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-export type ReceiptType = "kitchen_order" | "partial_check" | "final_receipt";
-
 export type PrintJob = {
   printerId: string;
   printerName: string;
@@ -157,7 +155,7 @@ function renderItemLine(item: any, paperWidth: number): string {
 
 // ─── Generators ───────────────────────────────────────────────────────────
 
-export async function generateKitchenOrderHTML(opts: {
+async function generateKitchenOrderHTML(opts: {
   comandaId: string;
   itemIds: string[];
   printer: PrinterRow;
@@ -196,7 +194,7 @@ ${opts.printer.footer_message ? `<div class="sep"></div><div class="center small
   return wrapHtml({ title: `Cozinha — ${mesaLabel}`, bodyHtml: body, paperWidth });
 }
 
-export async function generatePartialCheckHTML(opts: {
+async function generatePartialCheckHTML(opts: {
   comandaId: string;
   printer: PrinterRow;
 }): Promise<string> {
@@ -226,7 +224,7 @@ ${opts.printer.footer_message ? `<div class="sep"></div><div class="center small
   return wrapHtml({ title: `Conta parcial — ${mesaLabel}`, bodyHtml: body, paperWidth });
 }
 
-export async function generateFinalReceiptHTML(opts: {
+async function generateFinalReceiptHTML(opts: {
   comandaId: string;
   printer: PrinterRow;
 }): Promise<string> {

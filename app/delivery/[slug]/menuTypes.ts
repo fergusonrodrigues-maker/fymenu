@@ -58,11 +58,6 @@ export type Product = {
   avail_mode?: string | null;  // 'both' | 'delivery' | 'mesa'
 };
 
-// Categoria com produtos embutidos (usado em CategoryPillsTop e similares)
-export type CategoryWithProducts = Category & {
-  products: Product[];
-};
-
 // ─── Helpers (server-safe) ───────────────────────────────────────────────────
 export function toNumberOrNull(v: unknown): number | null {
   if (v === null || v === undefined) return null;

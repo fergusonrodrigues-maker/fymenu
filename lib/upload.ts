@@ -8,15 +8,6 @@ const SUPABASE_BUCKET: Record<string, string> = {
   logo:  "logos",
 };
 
-function isR2Url(url: string): boolean {
-  const r2PublicUrl = process.env.NEXT_PUBLIC_R2_PUBLIC_URL || "";
-  return (
-    (!!r2PublicUrl && url.includes(r2PublicUrl)) ||
-    url.includes("r2.dev") ||
-    url.includes("media.fymenu.com")
-  );
-}
-
 /**
  * Faz upload de mídia — tenta R2 primeiro, fallback automático pro Supabase Storage.
  * @param file      Arquivo a enviar
@@ -76,36 +67,3 @@ export async function uploadMedia(
   }
 }
 
-/**
- * Deleta mídia — roteia automaticamente para R2 ou Supabase Storage
- * com base na URL. URLs antigas do Supabase são ignoradas (não deletadas via R2).
- */
-export async function deleteMedia(url: string): Promise<void> {
-  if (!url) return;
-
-  if (isR2Url(url)) {
-    try {
-      await fetch("/api/upload/delete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
-      });
-    } catch (err) {
-      console.error("R2 delete error:", err);
-    }
-    return;
-  }
-
-  // URL do Supabase Storage — deletar via SDK
-  try {
-    const supabase = createClient();
-    const urlObj = new URL(url);
-    const pathMatch = urlObj.pathname.match(/\/storage\/v1\/object\/public\/([^/]+)\/(.+)/);
-    if (pathMatch) {
-      const [, bucket, filePath] = pathMatch;
-      await supabase.storage.from(bucket).remove([filePath]);
-    }
-  } catch (err) {
-    console.error("Supabase delete error:", err);
-  }
-}

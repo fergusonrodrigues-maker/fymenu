@@ -95,21 +95,6 @@ export async function sendText(
   );
 }
 
-export async function sendImage(
-  instanceId: string,
-  token: string,
-  phone: string,
-  imageUrl: string,
-  caption?: string,
-  clientToken?: string
-) {
-  return zapiRequest(
-    `${instanceUrl(instanceId, token)}/send-image`,
-    { method: "POST", body: JSON.stringify({ phone, image: imageUrl, caption }) },
-    clientToken
-  );
-}
-
 export async function markAsRead(
   instanceId: string,
   token: string,
@@ -138,19 +123,3 @@ export async function startTyping(
   );
 }
 
-export async function sendLink(
-  instanceId: string,
-  token: string,
-  phone: string,
-  message: string,
-  linkUrl: string,
-  title?: string,
-  description?: string,
-  clientToken?: string
-) {
-  return zapiRequest(
-    `${instanceUrl(instanceId, token)}/send-link`,
-    { method: "POST", body: JSON.stringify({ phone, message, linkUrl, title, description }) },
-    clientToken
-  );
-}

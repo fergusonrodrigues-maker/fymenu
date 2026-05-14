@@ -84,34 +84,3 @@ export function subscriptionConfirmedEmail(
   };
 }
 
-export function paymentReminderEmail(
-  name: string,
-  plan: string,
-  dueDate: string,
-): { subject: string; html: string } {
-  return {
-    subject: `Lembrete: pagamento do plano ${plan} vence em breve`,
-    html: `
-      <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 560px; margin: 0 auto; background: #050505; border-radius: 16px; overflow: hidden;">
-        <div style="background: #fbbf24; padding: 24px; text-align: center;">
-          <h1 style="color: #000; font-size: 24px; font-weight: 900; margin: 0;">FyMenu</h1>
-        </div>
-        <div style="padding: 32px 24px; color: #fff;">
-          <h2 style="font-size: 18px; font-weight: 800; margin: 0 0 12px;">Lembrete de pagamento ⏰</h2>
-          <p style="color: rgba(255,255,255,0.6); font-size: 14px; line-height: 1.6;">
-            Olá ${name}, o pagamento do seu plano <strong>${plan}</strong> vence em <strong style="color: #fbbf24;">${dueDate}</strong>.
-          </p>
-          <p style="color: rgba(255,255,255,0.4); font-size: 13px; line-height: 1.6; margin-top: 12px;">
-            Mantenha seu cardápio publicado renovando seu plano.
-          </p>
-          <a href="https://fymenu.com/painel" style="display: block; text-align: center; padding: 14px; margin-top: 20px; background: rgba(251,191,36,0.1); color: #fbbf24; font-size: 14px; font-weight: 800; text-decoration: none; border-radius: 12px;">
-            Verificar pagamento →
-          </a>
-        </div>
-        <div style="padding: 16px 24px; border-top: 1px solid rgba(255,255,255,0.04); text-align: center;">
-          <p style="color: rgba(255,255,255,0.2); font-size: 11px; margin: 0;">FyMenu · fymenu.com</p>
-        </div>
-      </div>
-    `,
-  };
-}

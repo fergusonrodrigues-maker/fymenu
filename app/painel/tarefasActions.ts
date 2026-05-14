@@ -467,9 +467,3 @@ export async function listTaskCompletions(
   return completionsWithUrls;
 }
 
-export async function getCompletionPhotoUrl(photoPath: string): Promise<string | null> {
-  if (!photoPath) return null;
-  const supabase = await createClient();
-  const { data } = await supabase.storage.from("task-photos").createSignedUrl(photoPath, 3600);
-  return data?.signedUrl ?? null;
-}

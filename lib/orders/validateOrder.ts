@@ -1,6 +1,6 @@
 import type { OrderItemInput, OrderItem } from '@/lib/types/orders';
 
-export function calculateItemTotal(qty: number, unitPrice: number): number {
+function calculateItemTotal(qty: number, unitPrice: number): number {
   if (qty < 1 || unitPrice < 0) return 0;
   return Number((qty * unitPrice).toFixed(2));
 }

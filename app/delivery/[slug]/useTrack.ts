@@ -3,7 +3,7 @@
 import { useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 
-export type MenuEventType =
+type MenuEventType =
   | "menu_view"
   | "category_view"
   | "product_view"

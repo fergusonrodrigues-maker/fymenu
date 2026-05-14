@@ -71,22 +71,6 @@ export function buildWhatsAppMessage(
   return `https://wa.me/${phone}?text=${text}`;
 }
 
-export function buildExternalLink(
-  orderLink: string,
-  _payload: OrderPayload
-): string {
-  return orderLink;
-}
-
-/**
- * @deprecated since the cents migration. Prefer `formatCents` from
- * `@/lib/money` directly. Kept as a thin alias to avoid mass-renaming
- * call sites mid-migration. Input is integer cents.
- */
-export function formatPrice(value: number): string {
-  return formatCents(value);
-}
-
 // Multi-item cart WhatsApp message
 export interface CartOrderItem {
   name: string;

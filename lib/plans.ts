@@ -16,27 +16,14 @@ export const ASAAS_CYCLE: Record<BillingCycle, "MONTHLY" | "QUARTERLY" | "SEMIAN
   semestral: "SEMIANNUALLY",
 };
 
-// Reverse map for routes that receive Asaas-style cycle names.
-export const FROM_ASAAS_CYCLE: Record<"MONTHLY" | "QUARTERLY" | "SEMIANNUALLY", BillingCycle> = {
-  MONTHLY: "monthly",
-  QUARTERLY: "quarterly",
-  SEMIANNUALLY: "semestral",
-};
-
-export const CYCLE_LABEL: Record<BillingCycle, string> = {
-  monthly: "Mensal",
-  quarterly: "Trimestral",
-  semestral: "Semestral",
-};
-
 // Number of months billed per cycle (used to compute the total charge).
-export const CYCLE_MONTHS: Record<BillingCycle, number> = {
+const CYCLE_MONTHS: Record<BillingCycle, number> = {
   monthly: 1,
   quarterly: 3,
   semestral: 6,
 };
 
-export interface PlanFeatures {
+interface PlanFeatures {
   catalog: boolean;
   videoMenu: boolean;
   tvMode: boolean;
@@ -197,19 +184,7 @@ export const PLANS: Record<PlanCode, PlanDef> = {
   },
 };
 
-export const PLAN_ORDER: PlanCode[] = ["menu", "menupro", "business"];
-
-// Referral commission paid to the partner (recurring).
-// Indicated client gets NO discount.
-export const REFERRAL_COMMISSION = 0.10;
-
-/**
- * Per-month price in cents for a given plan/cycle.
- *   getPriceCents("menupro", "quarterly") → 44900
- */
-export function getPriceCents(plan: PlanCode, cycle: BillingCycle): number {
-  return PLANS[plan].prices[cycle];
-}
+const PLAN_ORDER: PlanCode[] = ["menu", "menupro", "business"];
 
 /**
  * Total amount billed at once for the cycle (per-month × months).
@@ -217,19 +192,6 @@ export function getPriceCents(plan: PlanCode, cycle: BillingCycle): number {
  */
 export function getTotalCents(plan: PlanCode, cycle: BillingCycle): number {
   return PLANS[plan].prices[cycle] * CYCLE_MONTHS[cycle];
-}
-
-/**
- * Discount percentage of a non-monthly cycle vs the plan's monthly price.
- * Returns an integer (0-100). Returns 0 for "monthly".
- *   getCycleSavingsPercent("menu", "semestral") → 34
- */
-export function getCycleSavingsPercent(plan: PlanCode, cycle: BillingCycle): number {
-  if (cycle === "monthly") return 0;
-  const monthly = PLANS[plan].prices.monthly;
-  const cycleMonth = PLANS[plan].prices[cycle];
-  if (!monthly) return 0;
-  return Math.round(((monthly - cycleMonth) / monthly) * 100);
 }
 
 // ── Asaas-cycle convenience: routes that receive "MONTHLY"/etc. ───────────────
@@ -276,25 +238,6 @@ export function hasPlanFeature(
   const planDef = (PLANS as Record<string, PlanDef | undefined>)[normalized];
   if (!planDef) return false;
   return planDef.features[feature] === true;
-}
-
-/**
- * Server-side: lança erro 403 se não tiver acesso. Use em server actions e
- * API routes que precisam ser bloqueadas. NUNCA chamar do client.
- */
-export function assertPlanFeature(
-  plan: PlanCode | string | null | undefined,
-  feature: FeatureKey,
-  unitFeatures?: Record<string, boolean>
-): void {
-  if (!hasPlanFeature(plan, feature, unitFeatures)) {
-    const error = new Error(
-      `Feature "${feature}" não disponível no plano "${plan ?? "unknown"}"`
-    );
-    (error as { code?: string }).code = "FEATURE_NOT_AVAILABLE";
-    (error as { statusCode?: number }).statusCode = 403;
-    throw error;
-  }
 }
 
 /**

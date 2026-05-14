@@ -349,16 +349,6 @@ export async function updateCategory(formData: FormData): Promise<void> {
   revalidatePath("/u");
 }
 
-export async function reorderCategories(orderedIds: string[]): Promise<void> {
-  const supabase = await createClient();
-  await Promise.all(
-    orderedIds.map((id, index) =>
-      supabase.from("categories").update({ order_index: index }).eq("id", id)
-    )
-  );
-  revalidatePath("/painel");
-}
-
 export async function deleteCategory(formData: FormData): Promise<void> {
   const supabase = await createClient();
 
@@ -601,77 +591,6 @@ export async function deleteProduct(formData: FormData): Promise<void> {
   revalidatePath("/u");
 }
 
-/* ========================= UPSELL ========================= */
-
-export async function addUpsellItem(formData: FormData): Promise<void> {
-  const supabase = await createClient();
-
-  const productId = String(formData.get("product_id") ?? "");
-  const upsellProductId = String(formData.get("upsell_product_id") ?? "");
-
-  if (!productId || !upsellProductId) throw new Error("IDs inválidos.");
-
-  let { data: group } = await supabase
-    .from("product_upsells")
-    .select("id")
-    .eq("product_id", productId)
-    .maybeSingle();
-
-  if (!group) {
-    const { data: created, error: groupErr } = await supabase
-      .from("product_upsells")
-      .insert({ product_id: productId })
-      .select("id")
-      .single();
-    if (groupErr || !created) throw new Error(groupErr?.message ?? "Erro ao criar grupo de upsell.");
-    group = created;
-  }
-
-  const { count } = await supabase
-    .from("product_upsell_items")
-    .select("id", { count: "exact", head: true })
-    .eq("upsell_id", group.id);
-
-  if ((count ?? 0) >= 3) throw new Error("Máximo de 3 sugestões atingido.");
-
-  const { data: existing } = await supabase
-    .from("product_upsell_items")
-    .select("id")
-    .eq("upsell_id", group.id)
-    .eq("product_id", upsellProductId)
-    .maybeSingle();
-
-  if (existing) return;
-
-  const { error } = await supabase.from("product_upsell_items").insert({
-    upsell_id: group.id,
-    product_id: upsellProductId,
-    position: count ?? 0,
-  });
-
-  if (error) throw new Error(error.message);
-
-  revalidatePath("/painel");
-  revalidatePath("/u");
-}
-
-export async function removeUpsellItem(formData: FormData): Promise<void> {
-  const supabase = await createClient();
-
-  const id = String(formData.get("id") ?? "");
-  if (!id) throw new Error("ID inválido.");
-
-  const { error } = await supabase
-    .from("product_upsell_items")
-    .delete()
-    .eq("id", id);
-
-  if (error) throw new Error(error.message);
-
-  revalidatePath("/painel");
-  revalidatePath("/u");
-}
-
 /* ========================= ESTOQUE ========================= */
 
 export async function updateProductStock(formData: FormData): Promise<void> {
@@ -786,40 +705,3 @@ export async function updateProductNutrition(formData: FormData): Promise<void> 
   revalidatePath("/u");
 }
 
-/* ========================= PROFILE ========================= */
-
-export async function updateProfile(formData: FormData): Promise<void> {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("Não autenticado.");
-
-  const firstName = normalizeText(String(formData.get("first_name") ?? ""));
-  const lastName = normalizeText(String(formData.get("last_name") ?? ""));
-  const phone = normalizeText(String(formData.get("phone") ?? ""));
-  const address = normalizeText(String(formData.get("address") ?? ""));
-  const city = normalizeText(String(formData.get("city") ?? ""));
-
-  const { error } = await supabase
-    .from("profiles")
-    .update({ first_name: firstName || null, last_name: lastName || null, phone: phone || null, address: address || null, city: city || null })
-    .eq("id", user.id);
-
-  if (error) throw new Error(error.message);
-  revalidatePath("/painel");
-}
-
-/* ========================= PLAN ========================= */
-
-export async function changePlan(newPlan: "basic" | "pro"): Promise<void> {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("Não autenticado.");
-
-  const { error } = await supabase
-    .from("restaurants")
-    .update({ plan: newPlan, status: "active" })
-    .eq("owner_id", user.id);
-
-  if (error) throw new Error(error.message);
-  revalidatePath("/painel");
-}

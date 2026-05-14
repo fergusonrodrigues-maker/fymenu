@@ -61,18 +61,6 @@ export async function listNotifications(
   return { items, unreadCount, userId };
 }
 
-export async function countUnread(restaurantId: string): Promise<number> {
-  const { supabase, userId } = await authMember(restaurantId);
-  // We fetch read_by only and filter client-side; for a personal "unread" count
-  // this is fine — typical restaurant sees < 200 lifetime notifications.
-  const { data } = await supabase
-    .from("notifications")
-    .select("read_by")
-    .eq("restaurant_id", restaurantId);
-  if (!data) return 0;
-  return data.filter((n: any) => !(n.read_by ?? []).includes(userId)).length;
-}
-
 export async function markAsRead(
   notificationId: string,
   restaurantId: string,

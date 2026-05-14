@@ -151,7 +151,7 @@ const ICONS = {
   "lista":          FileText,
 } as const;
 
-export type IconName = keyof typeof ICONS;
+type IconName = keyof typeof ICONS;
 
 interface IconProps {
   name: IconName;

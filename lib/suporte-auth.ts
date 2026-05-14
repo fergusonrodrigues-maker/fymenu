@@ -24,7 +24,7 @@ const GERENTE_PERMS = [
   ...MODERADOR_PERMS, "gerenciar_planos", "ver_financeiro_global", "aprovar_solicitacoes",
 ];
 
-export const ROLE_PERMISSIONS: Record<string, string[]> = {
+const ROLE_PERMISSIONS: Record<string, string[]> = {
   viewer:    VIEWER_PERMS,
   suporte:   SUPORTE_PERMS,
   support:   SUPORTE_PERMS,    // English alias
