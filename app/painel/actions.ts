@@ -73,6 +73,62 @@ async function getUnitIdOrThrow(unitIdFromForm?: string) {
 
 /* ========================= UNIT ========================= */
 
+export async function publishUnit(unitId: string, publish: boolean): Promise<void> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Não autenticado.");
+
+  if (!unitId) throw new Error("Unit ID obrigatório.");
+
+  // Buscar unit + restaurant numa query só.
+  const { data: unitRow } = await supabase
+    .from("units")
+    .select("id, restaurant_id, restaurants(plan, status, is_complimentary)")
+    .eq("id", unitId)
+    .maybeSingle();
+  if (!unitRow?.restaurant_id) throw new Error("Unidade não encontrada.");
+
+  // Verificar membership.
+  const { data: member } = await supabase
+    .from("restaurant_members")
+    .select("id")
+    .eq("restaurant_id", unitRow.restaurant_id)
+    .eq("user_id", user.id)
+    .eq("status", "active")
+    .maybeSingle();
+  // Fallback: owner direto (sem entry em restaurant_members).
+  let isOwner = false;
+  if (!member) {
+    const { data: ownerRest } = await supabase
+      .from("restaurants")
+      .select("id")
+      .eq("id", unitRow.restaurant_id)
+      .eq("owner_id", user.id)
+      .maybeSingle();
+    isOwner = !!ownerRest;
+  }
+  if (!member && !isOwner) throw new Error("Sem permissão.");
+
+  // Pra PUBLICAR, exige plano ativo. Pra DESPUBLICAR, sempre pode.
+  if (publish) {
+    const rawRest = unitRow.restaurants as unknown;
+    const rest = Array.isArray(rawRest) ? rawRest[0] : rawRest;
+    if (!rest || !hasActivePlan(rest as { plan: string | null; status: string; is_complimentary: boolean })) {
+      const err = new Error("Pra publicar seu cardápio você precisa de um plano ativo.") as Error & { code?: string };
+      err.code = "publish_requires_plan";
+      throw err;
+    }
+  }
+
+  const { error } = await supabase
+    .from("units")
+    .update({ is_published: publish })
+    .eq("id", unitId);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/painel");
+}
+
 export async function createUnit(formData: FormData): Promise<{ id: string }> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -136,8 +192,6 @@ export async function updateUnit(formData: FormData): Promise<void> {
   const instagram = normalizeText(String(formData.get("instagram") ?? ""));
   const whatsapp = normalizeText(String(formData.get("whatsapp") ?? ""));
   const mapsUrl = normalizeText(String(formData.get("maps_url") ?? ""));
-  const isPublishedRaw = formData.get("is_published");
-  const isPublished = isPublishedRaw === "true" || isPublishedRaw === "on";
 
   if (!name) throw new Error("Nome da unidade é obrigatório.");
 
@@ -146,7 +200,7 @@ export async function updateUnit(formData: FormData): Promise<void> {
   try {
     const { data } = await supabase
       .from("units")
-      .select("name, address, city, neighborhood, instagram, whatsapp, maps_url, is_published, restaurant_id")
+      .select("name, address, city, neighborhood, instagram, whatsapp, maps_url, restaurant_id")
       .eq("id", unitId)
       .single();
     oldUnit = data;
@@ -163,7 +217,6 @@ export async function updateUnit(formData: FormData): Promise<void> {
       instagram: instagram || null,
       whatsapp: whatsapp || null,
       maps_url: mapsUrl || null,
-      is_published: isPublished,
     })
     .eq("id", unitId);
 
@@ -173,7 +226,7 @@ export async function updateUnit(formData: FormData): Promise<void> {
     const newValues: Record<string, any> = {
       name, address: address || null, city: city || null,
       neighborhood: neighborhood || null, instagram: instagram || null,
-      whatsapp: whatsapp || null, maps_url: mapsUrl || null, is_published: isPublished,
+      whatsapp: whatsapp || null, maps_url: mapsUrl || null,
     };
     const changes: Record<string, any> = {};
     if (oldUnit) {

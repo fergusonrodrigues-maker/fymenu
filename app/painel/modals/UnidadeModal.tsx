@@ -2,12 +2,12 @@
 
 import React, { useRef, useState } from "react";
 import { Camera, Clock, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
-import { updateUnit, uploadCoverAction, createUnit } from "../actions";
+import { updateUnit, uploadCoverAction, createUnit, publishUnit } from "../actions";
 import LogoUploader from "../LogoUploader";
 import DominioSection from "../components/DominioSection";
 import { Unit } from "../types";
 import { createClient } from "@/lib/supabase/client";
-import { normalizePlanName } from "@/lib/plans";
+import { normalizePlanName, hasActivePlan as computeHasActivePlan } from "@/lib/plans";
 
 const inp: React.CSSProperties = {
   width: "100%", padding: "10px 14px", borderRadius: 10,
@@ -38,9 +38,10 @@ function CopyLinkRow({ label, url }: { label: string; url: string }) {
   );
 }
 
-export default function UnidadeModal({ unit, canAddUnit, plan, unitFeatures, restaurantStatus, onClose, onOpenPlans, onOpenCreateUnit }: { unit: Unit | null; canAddUnit: boolean; plan: string; unitFeatures?: Record<string, boolean>; restaurantStatus?: string; onClose: () => void; onOpenPlans?: () => void; onOpenCreateUnit?: () => void }) {
+export default function UnidadeModal({ unit, canAddUnit, plan, unitFeatures, restaurantStatus, restaurantIsComplimentary, onClose, onOpenPlans, onOpenCreateUnit }: { unit: Unit | null; canAddUnit: boolean; plan: string; unitFeatures?: Record<string, boolean>; restaurantStatus?: string; restaurantIsComplimentary?: boolean; onClose: () => void; onOpenPlans?: () => void; onOpenCreateUnit?: () => void }) {
   const isTopTier = normalizePlanName(plan) === "business";
   const [isPublished, setIsPublished] = useState(unit?.is_published ?? false);
+  const [publishing, setPublishing] = useState(false);
   const [showNewUnit, setShowNewUnit] = useState(false);
 
   const coverInputRef = useRef<HTMLInputElement>(null);
@@ -85,10 +86,11 @@ export default function UnidadeModal({ unit, canAddUnit, plan, unitFeatures, res
     </div>
   );
 
-  const hasActivePlan =
-    !!plan &&
-    restaurantStatus !== "pending" &&
-    restaurantStatus !== "canceled";
+  const hasActivePlan = computeHasActivePlan({
+    plan: plan || null,
+    is_complimentary: !!restaurantIsComplimentary,
+    status: restaurantStatus ?? "",
+  });
 
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const unitId = unit.id;
@@ -335,7 +337,6 @@ export default function UnidadeModal({ unit, canAddUnit, plan, unitFeatures, res
 
         <form action={updateUnit} onSubmit={() => setTimeout(onClose, 300)} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           <input type="hidden" name="unit_id" value={unit.id} />
-          <input type="hidden" name="is_published" value={String(isPublished)} />
 
           {[
             { name: "name", label: "Nome da unidade", value: unit.name },
@@ -359,18 +360,30 @@ export default function UnidadeModal({ unit, canAddUnit, plan, unitFeatures, res
             </div>
             <button
               type="button"
-              onClick={() => {
+              disabled={publishing}
+              onClick={async () => {
+                if (publishing) return;
                 if (!isPublished && !hasActivePlan) {
                   onOpenPlans?.();
                   return;
                 }
-                setIsPublished((v) => !v);
+                const next = !isPublished;
+                setPublishing(true);
+                try {
+                  await publishUnit(unit.id, next);
+                  setIsPublished(next);
+                } catch (err) {
+                  alert((err as Error).message || "Erro ao publicar.");
+                } finally {
+                  setPublishing(false);
+                }
               }}
               style={{
                 width: 44, height: 26, borderRadius: 13, border: "none",
                 background: isPublished ? "var(--dash-accent)" : "var(--dash-card-hover)",
                 position: "relative", transition: "background 0.2s",
-                cursor: "pointer", flexShrink: 0,
+                cursor: publishing ? "wait" : "pointer", flexShrink: 0,
+                opacity: publishing ? 0.6 : 1,
               }}
             >
               <span style={{

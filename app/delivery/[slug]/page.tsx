@@ -2,9 +2,11 @@ import { createClient } from "@/lib/supabase/server";
 import { getOrBuildMenuCache } from "@/lib/cache/buildMenuCache";
 import type { MenuCacheData } from "@/lib/cache/buildMenuCache";
 import MenuClient from "./MenuClient";
+import CardapioEmPreparacao from "./CardapioEmPreparacao";
 import type { Category, Product, ProductVariation, Unit } from "./menuTypes";
 import { normalizePublicSlug, slugify, toNumberOrNull } from "./menuTypes";
 import type { UpsellSuggestion } from "./UpsellModal";
+import { hasActivePlan } from "@/lib/plans";
 import type { Metadata } from "next";
 
 export const revalidate = 0;
@@ -108,7 +110,7 @@ export default async function Page({
   const { data: unitData, error: unitErr } = await supabase
     .from("units")
     .select(
-      "id, restaurant_id, name, slug, city, neighborhood, whatsapp, instagram, maps_url, logo_url, cover_url, banner_url, description, payment_active, facebook_pixel_id, ifood_url, ifood_platform, business_hours, force_status, delivery_enabled"
+      "id, restaurant_id, name, slug, city, neighborhood, whatsapp, instagram, maps_url, logo_url, cover_url, banner_url, description, is_published, payment_active, facebook_pixel_id, ifood_url, ifood_platform, business_hours, force_status, delivery_enabled"
     )
     .eq("slug", publicSlug)
     .maybeSingle();
@@ -116,17 +118,31 @@ export default async function Page({
   if (unitErr) return <ErrorScreen message={unitErr.message} />;
   if (!unitData) return <NotFoundScreen slug={publicSlug} />;
 
-  // ─── Access control ────────────────────────────────────────────────────────
-  if (unitData.payment_active === false && unitData.restaurant_id) {
+  // ─── Paywall: precisa estar publicado E ter plano ativo ───────────────────
+  // Cortesia (is_complimentary=true) bypassa o gate de plano.
+  let restaurantName = unitData.name ?? "Restaurante";
+  if (unitData.restaurant_id) {
     const { data: restaurantData } = await supabase
       .from("restaurants")
-      .select("free_access, is_complimentary")
+      .select("name, plan, status, is_complimentary")
       .eq("id", unitData.restaurant_id)
       .single();
 
-    if (!restaurantData?.free_access && !restaurantData?.is_complimentary) {
-      return <InactiveScreen />;
+    if (restaurantData?.name) restaurantName = restaurantData.name;
+
+    const planActive = restaurantData
+      ? hasActivePlan({
+          plan: restaurantData.plan ?? null,
+          is_complimentary: !!restaurantData.is_complimentary,
+          status: restaurantData.status ?? "",
+        })
+      : false;
+
+    if (!unitData.is_published || !planActive) {
+      return <CardapioEmPreparacao restaurantName={restaurantName} slug={publicSlug} />;
     }
+  } else if (!unitData.is_published) {
+    return <CardapioEmPreparacao restaurantName={restaurantName} slug={publicSlug} />;
   }
 
   const unit: Unit = {
@@ -278,16 +294,3 @@ function NotFoundScreen({ slug }: { slug: string }) {
   );
 }
 
-function InactiveScreen() {
-  return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
-      <div className="max-w-md w-full text-center">
-        <div style={{ fontSize: 48, marginBottom: 16 }}>🔒</div>
-        <p className="text-lg font-semibold">Cardápio inativo</p>
-        <p className="mt-2 text-sm text-white/60">
-          Este cardápio está inativo. O proprietário precisa ativar um plano.
-        </p>
-      </div>
-    </div>
-  );
-}

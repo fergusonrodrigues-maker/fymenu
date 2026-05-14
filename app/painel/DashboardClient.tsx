@@ -1530,7 +1530,7 @@ export default function DashboardClient({
         <FinanceiroModal unit={unit} analytics={analytics} reportData={reportData} restaurant={restaurantState} onOpenPlano={() => open("plano")} onOpenImport={openImport} />
       </Modal>
       <Modal open={modal === "unidade"} onClose={close} title="Unidade">
-        <UnidadeModal unit={unit} canAddUnit={canAddUnit} plan={restaurantState.plan ?? "menu"} unitFeatures={unitFeatures} restaurantStatus={restaurantState.status} onClose={close} onOpenPlans={() => open("plano")} onOpenCreateUnit={() => { close(); open("criar-unidade"); }} />
+        <UnidadeModal unit={unit} canAddUnit={canAddUnit} plan={restaurantState.plan ?? "menu"} unitFeatures={unitFeatures} restaurantStatus={restaurantState.status} restaurantIsComplimentary={!!restaurantState.is_complimentary} onClose={close} onOpenPlans={() => open("plano")} onOpenCreateUnit={() => { close(); open("criar-unidade"); }} />
       </Modal>
       <Modal open={modal === "criar-unidade"} onClose={close} title="Nova Unidade" size="sm">
         <CriarUnidadeModal
