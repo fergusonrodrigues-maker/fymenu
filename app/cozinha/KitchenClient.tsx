@@ -2,8 +2,10 @@
 
 import React from "react";
 import { useEffect, useRef, useState } from "react";
-import { ChefHat, CheckCircle2, Truck, AlertCircle } from "lucide-react";
+import { ChefHat, CheckCircle2, Truck, AlertCircle, Printer } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import ReceiptPrinter, { type PrintJobLite } from "@/components/print/ReceiptPrinter";
+import { buildOrderIntentKitchenJobs, markKitchenPrinted } from "@/app/painel/printActions";
 
 type KOrder = {
   id: string;
@@ -17,6 +19,7 @@ type KOrder = {
   created_at: string;
   waiter_confirmed_at: string | null;
   delivery_status?: string | null;
+  kitchen_printed_at?: string | null;
 };
 
 const deliveryLabels: Record<string, { text: string; color: string }> = {
@@ -50,10 +53,69 @@ export default function KitchenClient({ unitId, unitName, restaurantName, initia
   const supabase = createClient();
   const audioCtxRef = useRef<AudioContext | null>(null);
 
+  // Print pipeline state: jobs feed ReceiptPrinter; printingState tracks
+  // whether the current batch should stamp kitchen_printed_at on complete.
+  const [printJobs, setPrintJobs] = useState<PrintJobLite[] | null>(null);
+  const [printingState, setPrintingState] = useState<{ orderId: string; markOnDone: boolean } | null>(null);
+  const [noPrinterWarning, setNoPrinterWarning] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+  // IDs we've already dispatched for auto-print this session — avoids re-firing
+  // when the same order arrives again via realtime UPDATE.
+  const autoPrintedRef = useRef<Set<string>>(new Set());
+
   useEffect(() => {
     const id = setInterval(() => setTick((t) => t + 1), 10000);
     return () => clearInterval(id);
   }, []);
+
+  const flashToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast((curr) => (curr === msg ? null : curr)), 2500);
+  };
+
+  const triggerPrint = async (orderId: string, markOnDone: boolean) => {
+    if (printingState) return; // ReceiptPrinter is busy; let the in-flight job finish
+    const result = await buildOrderIntentKitchenJobs(orderId);
+    if (!result.ok) {
+      if (result.error === "no_printer_configured") {
+        setNoPrinterWarning(true);
+      }
+      return;
+    }
+    setPrintingState({ orderId, markOnDone });
+    setPrintJobs(result.jobs);
+  };
+
+  const handlePrintComplete = async () => {
+    const finished = printingState;
+    setPrintJobs(null);
+    setPrintingState(null);
+    if (!finished) return;
+    if (finished.markOnDone) {
+      await markKitchenPrinted(finished.orderId);
+      setOrders((prev) => prev.map((o) => (o.id === finished.orderId ? { ...o, kitchen_printed_at: new Date().toISOString() } : o)));
+      const shortId = finished.orderId.slice(0, 8).toUpperCase();
+      flashToast(`Cupom #${shortId} impresso`);
+    }
+  };
+
+  const handleReprint = async (orderId: string) => {
+    await triggerPrint(orderId, false);
+  };
+
+  // Auto-print scanner: any order with status='confirmed' and kitchen_printed_at=null
+  // gets queued once. Dedupe via autoPrintedRef so realtime UPDATEs (kitchen_status
+  // changes, etc.) don't re-trigger after we already started a job.
+  useEffect(() => {
+    if (printingState) return;
+    const next = orders.find(
+      (o) => o.status === "confirmed" && !o.kitchen_printed_at && !autoPrintedRef.current.has(o.id),
+    );
+    if (!next) return;
+    autoPrintedRef.current.add(next.id);
+    void triggerPrint(next.id, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orders, printingState]);
 
   const playBell = () => {
     try {
@@ -132,12 +194,19 @@ export default function KitchenClient({ unitId, unitName, restaurantName, initia
         </div>
       </header>
 
+      {noPrinterWarning && (
+        <div style={{ padding: "10px 20px", background: "rgba(251,191,36,0.06)", borderBottom: "1px solid rgba(251,191,36,0.2)", color: "#fbbf24", fontSize: 12, display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+          <AlertCircle size={14} /> Sem impressora ativa configurada. Configure em <strong>Painel → Impressoras</strong> pra cupons automáticos.
+          <button onClick={() => setNoPrinterWarning(false)} style={{ marginLeft: "auto", background: "transparent", border: "none", color: "rgba(251,191,36,0.6)", cursor: "pointer", fontSize: 16, padding: "0 4px" }}>×</button>
+        </div>
+      )}
+
       <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", overflow: "hidden", height: "calc(100vh - 57px)" }}>
         {/* NOVOS */}
         <KColumn title="NOVOS" accentColor="rgba(248,113,113,0.5)" titleColor="#f87171" bg="rgba(248,113,113,0.015)">
           {waiting.length === 0 && <KEmptyCol text="Nenhum pedido novo" />}
           {waiting.map((o) => (
-            <KitchenCard key={o.id} order={o} tick={tick}>
+            <KitchenCard key={o.id} order={o} tick={tick} onReprint={() => handleReprint(o.id)}>
               <button onClick={() => markKitchenStatus(o.id, "preparing")} style={{ width: "100%", padding: 10, borderRadius: 10, border: "none", cursor: "pointer", background: "rgba(251,191,36,0.1)", color: "#fbbf24", fontSize: 12, fontWeight: 700, marginTop: 10, boxShadow: "0 1px 0 rgba(251,191,36,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><ChefHat size={13} /> Iniciar Preparo</span>
               </button>
@@ -149,7 +218,7 @@ export default function KitchenClient({ unitId, unitName, restaurantName, initia
         <KColumn title="EM PREPARO" accentColor="rgba(251,191,36,0.5)" titleColor="#fbbf24" bg="rgba(251,191,36,0.015)">
           {preparing.length === 0 && <KEmptyCol text="Nenhum em preparo" />}
           {preparing.map((o) => (
-            <KitchenCard key={o.id} order={o} tick={tick}>
+            <KitchenCard key={o.id} order={o} tick={tick} onReprint={() => handleReprint(o.id)}>
               <button onClick={() => markKitchenStatus(o.id, "ready")} style={{ width: "100%", padding: 10, borderRadius: 10, border: "none", cursor: "pointer", background: "rgba(0,255,174,0.1)", color: "#00ffae", fontSize: 12, fontWeight: 700, marginTop: 10, boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset" }}>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><CheckCircle2 size={13} /> Marcar Pronto</span>
               </button>
@@ -161,7 +230,7 @@ export default function KitchenClient({ unitId, unitName, restaurantName, initia
         <KColumn title="PRONTOS" accentColor="rgba(0,255,174,0.4)" titleColor="#00ffae" bg="rgba(0,255,174,0.01)">
           {ready.length === 0 && <KEmptyCol text="Nenhum pronto ainda" />}
           {ready.map((o) => (
-            <KitchenCard key={o.id} order={o} tick={tick}>
+            <KitchenCard key={o.id} order={o} tick={tick} onReprint={() => handleReprint(o.id)}>
               {o.delivery_status !== "delivered" && (
                 <button onClick={() => markKitchenStatus(o.id, "delivered")} style={{ width: "100%", padding: 10, borderRadius: 10, border: "1px solid rgba(255,255,255,0.08)", cursor: "pointer", background: "rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.5)", fontSize: 12, fontWeight: 600, marginTop: 10 }}>
                   <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Truck size={13} /> Entregue — Remover</span>
@@ -171,6 +240,14 @@ export default function KitchenClient({ unitId, unitName, restaurantName, initia
           ))}
         </KColumn>
       </div>
+
+      {toast && (
+        <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", padding: "10px 18px", borderRadius: 10, background: "rgba(0,255,174,0.12)", color: "#00ffae", fontSize: 12, fontWeight: 700, border: "1px solid rgba(0,255,174,0.25)", boxShadow: "0 8px 24px rgba(0,0,0,0.3)", zIndex: 50, display: "inline-flex", alignItems: "center", gap: 8 }}>
+          <Printer size={13} /> {toast}
+        </div>
+      )}
+
+      <ReceiptPrinter jobs={printJobs} onComplete={handlePrintComplete} />
     </div>
   );
 }
@@ -192,11 +269,12 @@ function KEmptyCol({ text }: { text: string }) {
   );
 }
 
-function KitchenCard({ order, tick, children }: { order: KOrder; tick: number; children: React.ReactNode }) {
+function KitchenCard({ order, tick, onReprint, children }: { order: KOrder; tick: number; onReprint?: () => void; children: React.ReactNode }) {
   const tableLabel = order.table_number != null ? `Mesa ${order.table_number}` : "S/ Mesa";
   const since = order.waiter_confirmed_at ?? order.created_at;
   const secs = elapsedSeconds(since);
   const isLate = secs > 600;
+  const printed = !!order.kitchen_printed_at;
 
   return (
     <div style={{
@@ -205,11 +283,18 @@ function KitchenCard({ order, tick, children }: { order: KOrder; tick: number; c
       border: `1px solid ${isLate ? "rgba(248,113,113,0.25)" : "rgba(255,255,255,0.05)"}`,
       boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
     }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8, gap: 6 }}>
         <span style={{ fontSize: 14, fontWeight: 800, color: "#fff" }}>{tableLabel}</span>
-        <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 6, background: isLate ? "rgba(248,113,113,0.1)" : "rgba(255,255,255,0.06)", color: isLate ? "#f87171" : "rgba(255,255,255,0.4)" }}>
-          {elapsed(since)}
-        </span>
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+          {printed && (
+            <span title="Cupom impresso" style={{ fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 6, background: "rgba(0,255,174,0.06)", color: "#00ffae", border: "1px solid rgba(0,255,174,0.15)", display: "inline-flex", alignItems: "center", gap: 3 }}>
+              <Printer size={9} /> ✓
+            </span>
+          )}
+          <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 6, background: isLate ? "rgba(248,113,113,0.1)" : "rgba(255,255,255,0.06)", color: isLate ? "#f87171" : "rgba(255,255,255,0.4)" }}>
+            {elapsed(since)}
+          </span>
+        </div>
       </div>
       <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 3 }}>
         {order.items?.map((item, i) => (
@@ -240,6 +325,11 @@ function KitchenCard({ order, tick, children }: { order: KOrder; tick: number; c
         </div>
       )}
       {children}
+      {onReprint && (
+        <button onClick={onReprint} style={{ width: "100%", padding: 8, borderRadius: 10, border: "1px solid rgba(255,255,255,0.06)", cursor: "pointer", background: "rgba(255,255,255,0.02)", color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 600, marginTop: 6, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+          <Printer size={11} /> Reimprimir
+        </button>
+      )}
     </div>
   );
 }

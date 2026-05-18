@@ -194,6 +194,78 @@ ${opts.printer.footer_message ? `<div class="sep"></div><div class="center small
   return wrapHtml({ title: `Cozinha — ${mesaLabel}`, bodyHtml: body, paperWidth });
 }
 
+// order_intents has items as a JSONB column, not a separate comanda_items
+// table — so this generator is parallel to generateKitchenOrderHTML (kept
+// intact for the comanda flow) and consumes the JSONB shape directly.
+type OrderIntentItem = {
+  qty?: number;
+  quantity?: number;
+  unit_price?: number;
+  total?: number;
+  code_name?: string;
+  name?: string;
+  notes?: string;
+  addons?: Array<{ name?: string; price?: number }> | null;
+};
+
+type OrderIntentForPrint = {
+  id: string;
+  items: OrderIntentItem[] | null;
+  table_number: number | null;
+  customer_name?: string | null;
+  notes: string | null;
+  total: number;
+  created_at: string;
+  waiter_confirmed_at?: string | null;
+  source?: string | null;
+};
+
+export async function generateOrderIntentKitchenHTML(opts: {
+  orderIntent: OrderIntentForPrint;
+  printer: PrinterRow;
+  unitId: string;
+}): Promise<string> {
+  const db = createAdminClient();
+  const unit = await loadUnit(db, opts.unitId);
+
+  const paperWidth = opts.printer.paper_width ?? 80;
+  const o = opts.orderIntent;
+  const tableLabel = o.table_number != null ? `Mesa ${o.table_number}` : "Balcão / Delivery";
+  const shortId = (o.id || "").slice(0, 8).toUpperCase();
+  const sourceLabel = o.source === "whatsapp" ? "WhatsApp" : o.source === "qr" ? "QR Mesa" : "Pedido";
+  const items = Array.isArray(o.items) ? o.items : [];
+
+  const itemsHtml = items.map((it) => {
+    const qty = Number(it.qty ?? it.quantity ?? 1);
+    const name = it.code_name ?? it.name ?? "Item";
+    const addons = Array.isArray(it.addons) ? it.addons : [];
+    const addonsHtml = addons.length
+      ? addons.map((a) => `<div class="meta">+ ${escapeHtml(a?.name ?? "")}</div>`).join("")
+      : "";
+    return `
+<div class="item">
+  <div class="bold">${qty}× ${escapeHtml(name)}</div>
+  ${addonsHtml}
+  ${it.notes ? `<div class="meta">▶ ${escapeHtml(it.notes)}</div>` : ""}
+</div>`;
+  }).join("");
+
+  const stamp = o.waiter_confirmed_at ?? o.created_at;
+  const body = `
+${renderHeader({ unit, printerLogo: opts.printer.print_logo ?? false, title: "PEDIDO COZINHA", paperWidth })}
+<div class="row"><div class="l bold">${escapeHtml(tableLabel)}</div><div class="r small muted">${fmtDateTime(stamp)}</div></div>
+<div class="row"><div class="l small">${escapeHtml(sourceLabel)}</div><div class="r small">#${escapeHtml(shortId)}</div></div>
+${o.customer_name ? `<div class="row"><div class="l small">Cliente: ${escapeHtml(o.customer_name)}</div></div>` : ""}
+<div class="sep"></div>
+${itemsHtml || '<div class="muted small center">(nenhum item)</div>'}
+${o.notes ? `<div class="sep"></div><div class="small">Obs: ${escapeHtml(o.notes)}</div>` : ""}
+<div class="heavy"></div>
+<div class="center small">— preparar e entregar —</div>
+${opts.printer.footer_message ? `<div class="sep"></div><div class="center small muted">${escapeHtml(opts.printer.footer_message)}</div>` : ""}
+`;
+  return wrapHtml({ title: `Cozinha — ${tableLabel}`, bodyHtml: body, paperWidth });
+}
+
 async function generatePartialCheckHTML(opts: {
   comandaId: string;
   printer: PrinterRow;

@@ -45,7 +45,7 @@ export default function HubSlugPage() {
 
       const { data: orders } = await supabase
         .from("order_intents")
-        .select("id, table_number, items, total, status, waiter_status, kitchen_status, notes, created_at, waiter_confirmed_at")
+        .select("id, table_number, items, total, status, waiter_status, kitchen_status, notes, created_at, waiter_confirmed_at, kitchen_printed_at")
         .eq("unit_id", unitData.id)
         .eq("status", "confirmed")
         .order("created_at", { ascending: false });

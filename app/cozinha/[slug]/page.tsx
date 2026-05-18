@@ -41,7 +41,7 @@ export default function CozinhaSlugPage() {
 
       const { data: orders } = await supabase
         .from("order_intents")
-        .select("id, table_number, items, total, status, waiter_status, kitchen_status, notes, created_at, waiter_confirmed_at, delivery_status")
+        .select("id, table_number, items, total, status, waiter_status, kitchen_status, notes, created_at, waiter_confirmed_at, delivery_status, kitchen_printed_at")
         .eq("unit_id", unitData.id)
         .eq("status", "confirmed")
         .neq("kitchen_status", "delivered")

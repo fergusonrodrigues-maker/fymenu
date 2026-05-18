@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ChefHat, CreditCard, ShieldAlert, BellRing, CheckCircle2, Link2, Truck, AlertTriangle } from "lucide-react";
+import { ChefHat, CreditCard, ShieldAlert, BellRing, CheckCircle2, Link2, Truck, AlertTriangle, Printer } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import ReceiptPrinter, { type PrintJobLite } from "@/components/print/ReceiptPrinter";
+import { buildOrderIntentKitchenJobs, markKitchenPrinted } from "@/app/painel/printActions";
 
 type HubOrder = {
   id: string;
@@ -15,6 +17,7 @@ type HubOrder = {
   notes: string | null;
   created_at: string;
   waiter_confirmed_at: string | null;
+  kitchen_printed_at?: string | null;
 };
 
 interface Props {
@@ -47,10 +50,61 @@ export default function HubClient({ unitId, unitName, restaurantName, slug, init
   const supabase = createClient();
   const audioCtxRef = useRef<AudioContext | null>(null);
 
+  // Print pipeline — same shape as KitchenClient.
+  const [printJobs, setPrintJobs] = useState<PrintJobLite[] | null>(null);
+  const [printingState, setPrintingState] = useState<{ orderId: string; markOnDone: boolean } | null>(null);
+  const [noPrinterWarning, setNoPrinterWarning] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+  const autoPrintedRef = useRef<Set<string>>(new Set());
+
   useEffect(() => {
     const id = setInterval(() => setTick((t) => t + 1), 10000);
     return () => clearInterval(id);
   }, []);
+
+  const flashToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast((curr) => (curr === msg ? null : curr)), 2500);
+  };
+
+  const triggerPrint = async (orderId: string, markOnDone: boolean) => {
+    if (printingState) return;
+    const result = await buildOrderIntentKitchenJobs(orderId);
+    if (!result.ok) {
+      if (result.error === "no_printer_configured") setNoPrinterWarning(true);
+      return;
+    }
+    setPrintingState({ orderId, markOnDone });
+    setPrintJobs(result.jobs);
+  };
+
+  const handlePrintComplete = async () => {
+    const finished = printingState;
+    setPrintJobs(null);
+    setPrintingState(null);
+    if (!finished) return;
+    if (finished.markOnDone) {
+      await markKitchenPrinted(finished.orderId);
+      setOrders((prev) => prev.map((o) => (o.id === finished.orderId ? { ...o, kitchen_printed_at: new Date().toISOString() } : o)));
+      const shortId = finished.orderId.slice(0, 8).toUpperCase();
+      flashToast(`Cupom #${shortId} impresso`);
+    }
+  };
+
+  const handleReprint = async (orderId: string) => {
+    await triggerPrint(orderId, false);
+  };
+
+  useEffect(() => {
+    if (printingState) return;
+    const next = orders.find(
+      (o) => o.status === "confirmed" && !o.kitchen_printed_at && !autoPrintedRef.current.has(o.id),
+    );
+    if (!next) return;
+    autoPrintedRef.current.add(next.id);
+    void triggerPrint(next.id, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orders, printingState]);
 
   const playBell = () => {
     try {
@@ -173,13 +227,20 @@ export default function HubClient({ unitId, unitName, restaurantName, slug, init
         </div>
       )}
 
+      {noPrinterWarning && (
+        <div style={{ padding: "10px 20px", background: "rgba(251,191,36,0.06)", borderBottom: "1px solid rgba(251,191,36,0.2)", color: "#fbbf24", fontSize: 12, display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+          <AlertTriangle size={14} /> Sem impressora ativa configurada. Configure em <strong>Painel → Impressoras</strong> pra cupons automáticos.
+          <button onClick={() => setNoPrinterWarning(false)} style={{ marginLeft: "auto", background: "transparent", border: "none", color: "rgba(251,191,36,0.6)", cursor: "pointer", fontSize: 16, padding: "0 4px" }}>×</button>
+        </div>
+      )}
+
       {/* Kanban */}
       <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", overflow: "hidden" }}>
         {/* NOVOS */}
         <HubColumn title="NOVOS" accentColor="rgba(248,113,113,0.5)" titleColor="#f87171" bg="rgba(248,113,113,0.015)">
           {novos.length === 0 && <HubEmptyState text="Nenhum pedido novo" />}
           {novos.map((o) => (
-            <HubOrderCard key={o.id} order={o} tick={tick}>
+            <HubOrderCard key={o.id} order={o} tick={tick} onReprint={() => handleReprint(o.id)}>
               <button onClick={() => markKitchenStatus(o.id, "preparing")} style={{ width: "100%", padding: 10, borderRadius: 10, border: "none", cursor: "pointer", background: "rgba(251,191,36,0.1)", color: "#fbbf24", fontSize: 12, fontWeight: 700, marginTop: 10, boxShadow: "0 1px 0 rgba(251,191,36,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
                 <ChefHat size={14} /> Iniciar Preparo
               </button>
@@ -191,7 +252,7 @@ export default function HubClient({ unitId, unitName, restaurantName, slug, init
         <HubColumn title="EM PREPARO" accentColor="rgba(251,191,36,0.5)" titleColor="#fbbf24" bg="rgba(251,191,36,0.015)">
           {preparando.length === 0 && <HubEmptyState text="Nenhum em preparo" />}
           {preparando.map((o) => (
-            <HubOrderCard key={o.id} order={o} tick={tick}>
+            <HubOrderCard key={o.id} order={o} tick={tick} onReprint={() => handleReprint(o.id)}>
               <button onClick={() => markKitchenStatus(o.id, "ready")} style={{ width: "100%", padding: 10, borderRadius: 10, border: "none", cursor: "pointer", background: "rgba(0,255,174,0.1)", color: "#00ffae", fontSize: 12, fontWeight: 700, marginTop: 10, boxShadow: "0 1px 0 rgba(0,255,174,0.08) inset, 0 -1px 0 rgba(0,0,0,0.15) inset", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
                 <CheckCircle2 size={14} /> Marcar Pronto
               </button>
@@ -203,7 +264,7 @@ export default function HubClient({ unitId, unitName, restaurantName, slug, init
         <HubColumn title="PRONTOS" accentColor="rgba(0,255,174,0.4)" titleColor="#00ffae" bg="rgba(0,255,174,0.01)">
           {prontos.length === 0 && <HubEmptyState text="Nenhum pronto ainda" />}
           {prontos.map((o) => (
-            <HubOrderCard key={o.id} order={o} tick={tick}>
+            <HubOrderCard key={o.id} order={o} tick={tick} onReprint={() => handleReprint(o.id)}>
               <button
                 onClick={() => { const link = `${window.location.origin}/entrega/${o.id}`; navigator.clipboard.writeText(link).then(() => { setCopiedId(o.id); setTimeout(() => setCopiedId(null), 2000); }); }}
                 style={{ width: "100%", padding: 10, borderRadius: 10, border: "1px solid rgba(96,165,250,0.25)", cursor: "pointer", background: "rgba(96,165,250,0.08)", color: "#60a5fa", fontSize: 12, fontWeight: 600, marginTop: 10 }}
@@ -217,6 +278,14 @@ export default function HubClient({ unitId, unitName, restaurantName, slug, init
           ))}
         </HubColumn>
       </div>
+
+      {toast && (
+        <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", padding: "10px 18px", borderRadius: 10, background: "rgba(0,255,174,0.12)", color: "#00ffae", fontSize: 12, fontWeight: 700, border: "1px solid rgba(0,255,174,0.25)", boxShadow: "0 8px 24px rgba(0,0,0,0.3)", zIndex: 50, display: "inline-flex", alignItems: "center", gap: 8 }}>
+          <Printer size={13} /> {toast}
+        </div>
+      )}
+
+      <ReceiptPrinter jobs={printJobs} onComplete={handlePrintComplete} />
     </div>
   );
 }
@@ -238,11 +307,12 @@ function HubEmptyState({ text }: { text: string }) {
   );
 }
 
-function HubOrderCard({ order, tick, children }: { order: HubOrder; tick: number; children: React.ReactNode }) {
+function HubOrderCard({ order, tick, onReprint, children }: { order: HubOrder; tick: number; onReprint?: () => void; children: React.ReactNode }) {
   const label = order.table_number != null ? `Mesa ${order.table_number}` : "S/ Mesa";
   const since = order.waiter_confirmed_at ?? order.created_at;
   const secs = elapsedSeconds(since);
   const isLate = secs > 600;
+  const printed = !!order.kitchen_printed_at;
 
   return (
     <div style={{
@@ -251,11 +321,18 @@ function HubOrderCard({ order, tick, children }: { order: HubOrder; tick: number
       border: `1px solid ${isLate ? "rgba(248,113,113,0.25)" : "rgba(255,255,255,0.05)"}`,
       boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 -1px 0 rgba(0,0,0,0.15) inset",
     }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8, gap: 6 }}>
         <span style={{ fontSize: 14, fontWeight: 800, color: "#fff" }}>{label}</span>
-        <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 6, background: isLate ? "rgba(248,113,113,0.1)" : "rgba(255,255,255,0.06)", color: isLate ? "#f87171" : "rgba(255,255,255,0.4)" }}>
-          {elapsed(since)}
-        </span>
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+          {printed && (
+            <span title="Cupom impresso" style={{ fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 6, background: "rgba(0,255,174,0.06)", color: "#00ffae", border: "1px solid rgba(0,255,174,0.15)", display: "inline-flex", alignItems: "center", gap: 3 }}>
+              <Printer size={9} /> ✓
+            </span>
+          )}
+          <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 6, background: isLate ? "rgba(248,113,113,0.1)" : "rgba(255,255,255,0.06)", color: isLate ? "#f87171" : "rgba(255,255,255,0.4)" }}>
+            {elapsed(since)}
+          </span>
+        </div>
       </div>
       <ul style={{ listStyle: "none", margin: "0 0 6px", padding: 0, display: "flex", flexDirection: "column", gap: 3 }}>
         {order.items?.map((item, i) => (
@@ -273,6 +350,11 @@ function HubOrderCard({ order, tick, children }: { order: HubOrder; tick: number
         <span style={{ fontSize: 12, fontWeight: 700, color: "#a78bfa" }}>{formatPrice(order.total)}</span>
       </div>
       {children}
+      {onReprint && (
+        <button onClick={onReprint} style={{ width: "100%", padding: 8, borderRadius: 10, border: "1px solid rgba(255,255,255,0.06)", cursor: "pointer", background: "rgba(255,255,255,0.02)", color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 600, marginTop: 6, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+          <Printer size={11} /> Reimprimir
+        </button>
+      )}
     </div>
   );
 }
