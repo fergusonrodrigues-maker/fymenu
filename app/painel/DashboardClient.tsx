@@ -16,7 +16,7 @@ import {
 import { UpgradePopup } from "@/components/plan/UpgradeGate";
 import { useModalHistory } from "@/lib/hooks/useModalHistory";
 import { Icon } from "@/components/ui/Icon";
-import { Package, AlertCircle, Target, Star, CreditCard, Link2, Bell, Store, Lock, Timer, UtensilsCrossed, ChefHat, Tv, Wallet, ClipboardList, MapPin, Users, Printer, Link, MessageCircle, Headphones, Truck, Settings, BarChart3, Bike, FileText, UserCircle, X, Clock, ListChecks } from "lucide-react";
+import { Package, AlertCircle, Target, Star, CreditCard, Link2, Bell, Store, Lock, Timer, UtensilsCrossed, ChefHat, Tv, Wallet, ClipboardList, MapPin, Users, Printer, Link, MessageCircle, Headphones, Truck, Settings, BarChart3, Bike, Briefcase, FileText, UserCircle, X, Clock, ListChecks } from "lucide-react";
 
 const loadingFallback = <div style={{padding:40,display:"flex",justifyContent:"center"}}><LoadingSpinner size="sm" /></div>;
 
@@ -467,7 +467,7 @@ export default function DashboardClient({
     plano:       { icon: <Star size={22} />,            label: "Plano",           sub: () => restaurantState.status === "trial" ? `Trial · ${trialDays}d` : (restaurantState.status === "active" || restaurantState.free_access) ? planLabel(restaurantState.plan) : "Nenhum plano ativo", modalKey: "plano" },
     config:      { icon: <Settings size={22} />,        label: "Configurações",   sub: () => `Perfil · ${planLabel(restaurantState.plan)} · Segurança`, modalKey: "config" },
     estoque:     { icon: <Package size={22} />,         label: "Estoque",         sub: () => stockStats.out > 0 ? `${stockStats.out} esgotado${stockStats.out !== 1 ? "s" : ""}` : stockStats.low > 0 ? `${stockStats.low} baixo${stockStats.low !== 1 ? "s" : ""}` : "Tudo em ordem", modalKey: "estoque" },
-    operacoes:   { icon: <BarChart3 size={22} />,       label: "Operações",       sub: "Cozinha · Garçom · Andamento", modalKey: "operacoes" },
+    operacoes:   { icon: <Briefcase size={22} />,       label: "Gerente",         sub: "Visão geral do restaurante em tempo real", modalKey: "operacoes" },
     equipe:      { icon: <Users size={22} />,            label: "Equipe",          sub: "Funcionários · Avaliações", modalKey: "equipe" },
     impressoras: { icon: <Printer size={22} />,          label: "Impressoras",     sub: "Roteamento por categoria", modalKey: "impressoras" },
     links:       { icon: <Link2 size={22} />,            label: "Links Rápidos",   sub: "Acessos do sistema", modalKey: "links" },
@@ -1300,7 +1300,7 @@ export default function DashboardClient({
             cardapio:    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>,
             pedidos:     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>,
             financeiro:  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>,
-            operacoes:   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>,
+            operacoes:   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>,
             unidade:     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>,
             equipe:      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
             estoque:     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>,
@@ -1426,8 +1426,8 @@ export default function DashboardClient({
                         <IconBox id="operacoes" pulse />
                         <span style={{ display: "inline-flex", padding: "3px 8px", borderRadius: 6, background: "var(--dash-accent-soft)", color: "var(--dash-accent)", fontSize: 9, fontWeight: 700 }}>● Realtime</span>
                       </div>
-                      <div style={{ color: "var(--dash-text)", fontSize: 14, fontWeight: 700, lineHeight: 1.2 }}>Operações</div>
-                      <div style={{ color: "var(--dash-text-secondary)", fontSize: 12, lineHeight: 1.3 }}>Cozinha · Garçom · Andamento</div>
+                      <div style={{ color: "var(--dash-text)", fontSize: 14, fontWeight: 700, lineHeight: 1.2 }}>Gerente</div>
+                      <div style={{ color: "var(--dash-text-secondary)", fontSize: 12, lineHeight: 1.3 }}>Visão geral do restaurante em tempo real</div>
                       {LockBadge}
                     </div>
                   );
@@ -1553,7 +1553,7 @@ export default function DashboardClient({
       <Modal open={modal === "estoque"} onClose={close} title="Estoque" size="lg">
         <EstoqueModal unit={unit} restaurant={restaurantState} onOpenImport={openImport} />
       </Modal>
-      <Modal open={modal === "operacoes"} onClose={close} title="Operações" size="lg">
+      <Modal open={modal === "operacoes"} onClose={close} title="Portal do Gerente" size="lg">
         {unit && <RestaurantOperationsModal unitId={unit.id} comandaClosePermission={unit.comanda_close_permission ?? "somente_caixa"} comandaRequirePhone={unit.comanda_require_phone ?? false} />}
       </Modal>
       <Modal open={modal === "impressoras"} onClose={close} title="Impressoras" size="lg">
@@ -1579,7 +1579,7 @@ export default function DashboardClient({
               { icon: <Target size={26} />,          label: "Garçom",             href: `/garcom/${unit?.slug}`,            color: "var(--dash-warning-soft)" },
               { icon: <CreditCard size={26} />,      label: "PDV",                href: `/pdv/${unit?.slug}`,               color: "var(--dash-info-soft)" },
               { icon: <Store size={26} />,           label: "Hub Central",        href: `/hub/${unit?.slug}`,               color: "var(--dash-purple-soft)" },
-              { icon: <BarChart3 size={26} />,       label: "Operações",          href: `/operacoes/${unit?.slug}`,         color: "var(--dash-purple-soft)" },
+              { icon: <Briefcase size={26} />,       label: "Gerente",            href: `/operacoes/${unit?.slug}`,         color: "var(--dash-purple-soft)" },
               { icon: <UserCircle size={26} />,      label: "Portal Funcionário", href: "/funcionario/login",               color: "var(--dash-card)" },
               { icon: <Bike size={26} />,            label: "Entregador",         href: `/entrega/${unit?.slug}`,           color: "var(--dash-warning-soft)" },
               { icon: <FileText size={26} />,        label: "Comanda",            href: `/comanda/${unit?.slug}/demo`,      color: "var(--dash-info-soft)" },

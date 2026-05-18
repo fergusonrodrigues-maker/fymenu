@@ -505,7 +505,7 @@ export default function WaiterClient({
               {mesas.length === 0 ? (
                 <div style={{ textAlign: "center", padding: 40, color: "rgba(255,255,255,0.2)", fontSize: 12, borderRadius: 16, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)" }}>
                   <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}><LayoutGrid size={32} /></div>
-                  Nenhuma mesa cadastrada.<br />Peça ao gerente pra adicionar em Operações.
+                  Nenhuma mesa cadastrada.<br />Peça ao gerente pra adicionar em Gerente no painel.
                 </div>
               ) : (
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>

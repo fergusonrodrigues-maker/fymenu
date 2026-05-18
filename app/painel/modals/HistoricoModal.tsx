@@ -21,7 +21,7 @@ const MODULE_LABELS: Record<string, string> = {
   whatsapp: "WhatsApp",
   delivery: "Delivery",
   tv: "Modo TV",
-  operations: "Operações",
+  operations: "Gerente",
 };
 
 const MODULE_COLORS: Record<string, string> = {
