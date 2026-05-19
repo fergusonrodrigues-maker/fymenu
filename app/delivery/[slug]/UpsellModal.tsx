@@ -231,6 +231,9 @@ export default function UpsellModal({
         customer_phone: phoneClean,
         status: "pending",
         delivery_status: "pending",
+        // Anti-trote: 30s window for manager to approve/reject before the
+        // pg_cron job auto-confirms (fn_auto_confirm_expired_delivery_intents).
+        confirmation_deadline_at: new Date(Date.now() + 30 * 1000).toISOString(),
         total: finalPayload.total,
         source: "whatsapp",
         items: [

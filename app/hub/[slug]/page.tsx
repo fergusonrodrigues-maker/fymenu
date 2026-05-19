@@ -20,6 +20,7 @@ export default function HubSlugPage() {
   const [unit, setUnit] = useState<any>(null);
   const [restaurant, setRestaurant] = useState<any>(null);
   const [initialOrders, setInitialOrders] = useState<any[]>([]);
+  const [initialPendingOrders, setInitialPendingOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -43,14 +44,28 @@ export default function HubSlugPage() {
         .single();
       if (rest) setRestaurant(rest);
 
-      const { data: orders } = await supabase
-        .from("order_intents")
-        .select("id, table_number, items, total, status, waiter_status, kitchen_status, notes, created_at, waiter_confirmed_at, kitchen_printed_at")
-        .eq("unit_id", unitData.id)
-        .eq("status", "confirmed")
-        .order("created_at", { ascending: false });
+      const HUB_SELECT =
+        "id, table_number, items, total, status, waiter_status, kitchen_status, notes, created_at, waiter_confirmed_at, kitchen_printed_at, confirmation_deadline_at, rejected_at, customer_name, source";
+
+      const [{ data: orders }, { data: pending }] = await Promise.all([
+        supabase
+          .from("order_intents")
+          .select(HUB_SELECT)
+          .eq("unit_id", unitData.id)
+          .eq("status", "confirmed")
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("order_intents")
+          .select(HUB_SELECT)
+          .eq("unit_id", unitData.id)
+          .eq("status", "pending")
+          .eq("waiter_status", "pending")
+          .is("rejected_at", null)
+          .order("created_at", { ascending: true }),
+      ]);
 
       setInitialOrders(orders ?? []);
+      setInitialPendingOrders(pending ?? []);
       setLoading(false);
     }
     load();
@@ -75,6 +90,7 @@ export default function HubSlugPage() {
       restaurantName={restaurant?.name ?? ""}
       slug={slug}
       initialOrders={initialOrders}
+      initialPendingOrders={initialPendingOrders}
     />
   );
 }

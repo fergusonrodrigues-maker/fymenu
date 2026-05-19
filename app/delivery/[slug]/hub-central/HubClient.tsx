@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ChefHat, CreditCard, ShieldAlert, BellRing, CheckCircle2, Link2, Truck, AlertTriangle, Printer } from "lucide-react";
+import { ChefHat, CreditCard, ShieldAlert, BellRing, CheckCircle2, Link2, Truck, AlertTriangle, Printer, Shield, X as XIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import ReceiptPrinter, { type PrintJobLite } from "@/components/print/ReceiptPrinter";
-import { buildOrderIntentKitchenJobs, markKitchenPrinted } from "@/app/painel/printActions";
+import { buildOrderIntentKitchenJobs, markKitchenPrinted, confirmOrderIntentEarly, rejectOrderIntent } from "@/app/painel/printActions";
 
 type HubOrder = {
   id: string;
@@ -18,6 +18,10 @@ type HubOrder = {
   created_at: string;
   waiter_confirmed_at: string | null;
   kitchen_printed_at?: string | null;
+  confirmation_deadline_at?: string | null;
+  rejected_at?: string | null;
+  customer_name?: string | null;
+  source?: string | null;
 };
 
 interface Props {
@@ -26,6 +30,7 @@ interface Props {
   restaurantName: string;
   slug: string;
   initialOrders: HubOrder[];
+  initialPendingOrders?: HubOrder[];
 }
 
 function elapsed(from: string) {
@@ -42,11 +47,18 @@ function formatPrice(cents: number) {
   return `R$ ${(cents / 100).toFixed(2).replace(".", ",")}`;
 }
 
-export default function HubClient({ unitId, unitName, restaurantName, slug, initialOrders }: Props) {
+export default function HubClient({ unitId, unitName, restaurantName, slug, initialOrders, initialPendingOrders }: Props) {
   const [orders, setOrders] = useState<HubOrder[]>(initialOrders);
+  const [pendingOrders, setPendingOrders] = useState<HubOrder[]>(initialPendingOrders ?? []);
   const [tick, setTick] = useState(0);
+  // Separate fast tick for the 30s countdown — only runs while there's
+  // something to count down on, so we don't spin a 1s interval forever.
+  const [countdownTick, setCountdownTick] = useState(0);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [tableCalls, setTableCalls] = useState<any[]>([]);
+  const [rejectTarget, setRejectTarget] = useState<HubOrder | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+  const [actionBusy, setActionBusy] = useState<string | null>(null);
   const supabase = createClient();
   const audioCtxRef = useRef<AudioContext | null>(null);
 
@@ -61,6 +73,12 @@ export default function HubClient({ unitId, unitName, restaurantName, slug, init
     const id = setInterval(() => setTick((t) => t + 1), 10000);
     return () => clearInterval(id);
   }, []);
+
+  useEffect(() => {
+    if (pendingOrders.length === 0) return;
+    const id = setInterval(() => setCountdownTick((t) => t + 1), 1000);
+    return () => clearInterval(id);
+  }, [pendingOrders.length]);
 
   const flashToast = (msg: string) => {
     setToast(msg);
@@ -95,6 +113,41 @@ export default function HubClient({ unitId, unitName, restaurantName, slug, init
     await triggerPrint(orderId, false);
   };
 
+  const handleConfirmEarly = async (orderId: string) => {
+    if (actionBusy) return;
+    setActionBusy(orderId);
+    try {
+      const res = await confirmOrderIntentEarly(orderId);
+      if (res.ok) {
+        // Optimistic remove — realtime will reconcile shortly anyway, but this
+        // keeps the UI responsive instead of waiting on the round-trip.
+        setPendingOrders((prev) => prev.filter((p) => p.id !== orderId));
+      }
+    } finally {
+      setActionBusy(null);
+    }
+  };
+
+  const handleRejectConfirm = async () => {
+    if (!rejectTarget || actionBusy) return;
+    const id = rejectTarget.id;
+    setActionBusy(id);
+    try {
+      const res = await rejectOrderIntent({ orderId: id, reason: rejectReason.trim() || undefined });
+      if (res.ok) {
+        setPendingOrders((prev) => prev.filter((p) => p.id !== id));
+        setRejectTarget(null);
+        setRejectReason("");
+      }
+    } finally {
+      setActionBusy(null);
+    }
+  };
+
+  // Read tick to force re-render every second while pending orders exist.
+  // We don't *use* the value — the read is what subscribes us to changes.
+  void countdownTick;
+
   useEffect(() => {
     if (printingState) return;
     const next = orders.find(
@@ -128,7 +181,19 @@ export default function HubClient({ unitId, unitName, restaurantName, slug, init
       .on("postgres_changes", { event: "*", schema: "public", table: "order_intents", filter: `unit_id=eq.${unitId}` }, (payload) => {
         if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
           const o = payload.new as HubOrder;
-          if (o.status === "confirmed" && o.kitchen_status !== "delivered") {
+          const isPending = o.status === "pending" && o.waiter_status === "pending" && !o.rejected_at;
+          const isActive = o.status === "confirmed" && o.kitchen_status !== "delivered";
+
+          // Remove from either bucket first; the branches below re-add to the
+          // correct one. Idempotent + handles transitions (pending→confirmed,
+          // pending→cancelled) without leaving the row in both lists.
+          setPendingOrders((prev) => prev.filter((x) => x.id !== o.id));
+
+          if (isPending) {
+            if (payload.eventType === "INSERT") playBell();
+            setPendingOrders((prev) => [...prev, o].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()));
+            setOrders((prev) => prev.filter((x) => x.id !== o.id));
+          } else if (isActive) {
             if (payload.eventType === "INSERT") playBell();
             setOrders((prev) => {
               const exists = prev.find((x) => x.id === o.id);
@@ -140,7 +205,9 @@ export default function HubClient({ unitId, unitName, restaurantName, slug, init
             setOrders((prev) => prev.filter((x) => x.id !== o.id));
           }
         } else if (payload.eventType === "DELETE") {
-          setOrders((prev) => prev.filter((x) => x.id !== (payload.old as HubOrder).id));
+          const oldId = (payload.old as HubOrder).id;
+          setOrders((prev) => prev.filter((x) => x.id !== oldId));
+          setPendingOrders((prev) => prev.filter((x) => x.id !== oldId));
         }
       })
       .subscribe();
@@ -199,6 +266,11 @@ export default function HubClient({ unitId, unitName, restaurantName, slug, init
               <span style={{ padding: "4px 10px", borderRadius: 8, background: "rgba(0,255,174,0.06)", color: "#00ffae", fontSize: 10, fontWeight: 700, border: "1px solid rgba(0,255,174,0.15)" }}>{prontos.length} pronto{prontos.length !== 1 ? "s" : ""}</span>
             </>
           )}
+          {pendingOrders.length > 0 && (
+            <span style={{ padding: "4px 10px", borderRadius: 8, background: "rgba(96,165,250,0.08)", color: "#60a5fa", fontSize: 10, fontWeight: 700, border: "1px solid rgba(96,165,250,0.25)", display: "inline-flex", alignItems: "center", gap: 4 }}>
+              <Shield size={10} /> {pendingOrders.length} aguardando
+            </span>
+          )}
           <a href="/pdv" style={{ marginLeft: 4, padding: "6px 12px", borderRadius: 8, border: "none", cursor: "pointer", background: "rgba(167,139,250,0.12)", color: "#a78bfa", fontSize: 10, fontWeight: 700, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4 }}><CreditCard size={12} /> PDV</a>
         </div>
       </header>
@@ -223,6 +295,24 @@ export default function HubClient({ unitId, unitName, restaurantName, slug, init
               </div>
               <button onClick={async () => { await supabase.from("table_calls").update({ status: "resolved", acknowledged_by: unitName, acknowledged_at: new Date().toISOString(), resolved_at: new Date().toISOString(), resolved_by: unitName }).eq("id", call.id); }} style={{ padding: "6px 14px", borderRadius: 8, border: "none", cursor: "pointer", background: "rgba(0,255,174,0.1)", color: "#00ffae", fontSize: 11, fontWeight: 700 }}>✓ Atender</button>
             </div>
+          ))}
+        </div>
+      )}
+
+      {pendingOrders.length > 0 && (
+        <div style={{ padding: "12px 20px", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", flexDirection: "column", gap: 8, flexShrink: 0, background: "rgba(96,165,250,0.02)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, color: "#60a5fa", fontSize: 11, fontWeight: 800, letterSpacing: "0.04em", textTransform: "uppercase" }}>
+            <Shield size={12} /> Aguardando confirmação
+            <span style={{ color: "rgba(255,255,255,0.3)", fontWeight: 500, textTransform: "none", letterSpacing: 0 }}>· cliente fez pedido pelo WhatsApp</span>
+          </div>
+          {pendingOrders.map((o) => (
+            <PendingOrderCard
+              key={o.id}
+              order={o}
+              busy={actionBusy === o.id}
+              onConfirm={() => handleConfirmEarly(o.id)}
+              onAskReject={() => { setRejectTarget(o); setRejectReason(""); }}
+            />
           ))}
         </div>
       )}
@@ -285,7 +375,92 @@ export default function HubClient({ unitId, unitName, restaurantName, slug, init
         </div>
       )}
 
+      {rejectTarget && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={(e) => { if (e.target === e.currentTarget) setRejectTarget(null); }}>
+          <div style={{ maxWidth: 420, width: "100%", background: "#0d0d0d", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 18, padding: 20, display: "flex", flexDirection: "column", gap: 14 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#f87171", fontSize: 14, fontWeight: 800 }}>
+              <ShieldAlert size={16} /> Rejeitar pedido?
+            </div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.5 }}>
+              O pedido <strong style={{ color: "#fff" }}>#{rejectTarget.id.slice(0, 8).toUpperCase()}</strong>
+              {rejectTarget.customer_name ? <> de <strong style={{ color: "#fff" }}>{rejectTarget.customer_name}</strong></> : null}
+              {" "}será marcado como cancelado e <strong style={{ color: "#fff" }}>não vai pra Cozinha</strong>.
+            </div>
+            <textarea
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              placeholder="Motivo (opcional)"
+              rows={2}
+              style={{ width: "100%", padding: 10, borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#fff", fontSize: 12, outline: "none", resize: "none", fontFamily: "inherit", boxSizing: "border-box" }}
+            />
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={() => setRejectTarget(null)} disabled={actionBusy != null} style={{ flex: 1, padding: 12, borderRadius: 10, border: "1px solid rgba(255,255,255,0.08)", cursor: "pointer", background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.6)", fontSize: 12, fontWeight: 700 }}>
+                Cancelar
+              </button>
+              <button onClick={handleRejectConfirm} disabled={actionBusy != null} style={{ flex: 1, padding: 12, borderRadius: 10, border: "none", cursor: "pointer", background: "rgba(248,113,113,0.15)", color: "#f87171", fontSize: 12, fontWeight: 800, opacity: actionBusy != null ? 0.5 : 1 }}>
+                {actionBusy ? "Rejeitando..." : "Rejeitar pedido"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <ReceiptPrinter jobs={printJobs} onComplete={handlePrintComplete} />
+    </div>
+  );
+}
+
+function PendingOrderCard({ order, busy, onConfirm, onAskReject }: { order: HubOrder; busy: boolean; onConfirm: () => void; onAskReject: () => void }) {
+  const deadlineMs = order.confirmation_deadline_at ? new Date(order.confirmation_deadline_at).getTime() : null;
+  const remainingSec = deadlineMs != null ? Math.max(0, Math.ceil((deadlineMs - Date.now()) / 1000)) : null;
+
+  // Color tiers — green > 15s, amber 5–15s, red pulsing < 5s. The card itself
+  // mirrors the timer accent so the urgency reads at a glance.
+  let tone: { fg: string; bg: string; border: string; pulse: boolean };
+  if (remainingSec == null) tone = { fg: "rgba(255,255,255,0.4)", bg: "rgba(255,255,255,0.04)", border: "rgba(255,255,255,0.08)", pulse: false };
+  else if (remainingSec > 15) tone = { fg: "#00ffae", bg: "rgba(0,255,174,0.05)", border: "rgba(0,255,174,0.2)", pulse: false };
+  else if (remainingSec > 5) tone = { fg: "#fbbf24", bg: "rgba(251,191,36,0.06)", border: "rgba(251,191,36,0.25)", pulse: false };
+  else tone = { fg: "#f87171", bg: "rgba(248,113,113,0.08)", border: "rgba(248,113,113,0.3)", pulse: true };
+
+  const tableLabel = order.table_number != null ? `Mesa ${order.table_number}` : (order.source === "whatsapp" ? "WhatsApp" : "Delivery");
+  const shortId = order.id.slice(0, 8).toUpperCase();
+  const itemsSummary = (order.items ?? []).slice(0, 3).map((i) => `${i.qty}× ${i.code_name ?? "Item"}`).join(", ")
+    + ((order.items?.length ?? 0) > 3 ? `, +${(order.items?.length ?? 0) - 3}` : "");
+  const totalFmt = `R$ ${(order.total / 100).toFixed(2).replace(".", ",")}`;
+
+  return (
+    <div style={{
+      padding: 12, borderRadius: 14,
+      background: tone.bg,
+      border: `1px solid ${tone.border}`,
+      display: "flex", alignItems: "center", gap: 12,
+      animation: tone.pulse ? "pulseCritical 1s ease-in-out infinite" : undefined,
+    }}>
+      <style>{`@keyframes pulseCritical { 0%,100% { box-shadow: 0 0 0 0 rgba(248,113,113,0); } 50% { box-shadow: 0 0 0 6px rgba(248,113,113,0.18); } }`}</style>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+          <span style={{ fontSize: 13, fontWeight: 800, color: "#fff" }}>{tableLabel}</span>
+          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>#{shortId}</span>
+          {order.customer_name && <span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)" }}>· {order.customer_name}</span>}
+        </div>
+        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{itemsSummary || "(sem itens)"}</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ fontSize: 12, fontWeight: 700, color: "#a78bfa" }}>{totalFmt}</span>
+          {remainingSec != null && (
+            <span style={{ fontSize: 11, fontWeight: 700, color: tone.fg, display: "inline-flex", alignItems: "center", gap: 4 }}>
+              ⏱ {remainingSec}s pra auto-confirmar
+            </span>
+          )}
+        </div>
+      </div>
+      <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+        <button onClick={onConfirm} disabled={busy} style={{ padding: "8px 12px", borderRadius: 10, border: "none", cursor: busy ? "not-allowed" : "pointer", background: "rgba(0,255,174,0.12)", color: "#00ffae", fontSize: 11, fontWeight: 700, opacity: busy ? 0.5 : 1, display: "inline-flex", alignItems: "center", gap: 4 }}>
+          <CheckCircle2 size={12} /> Confirmar
+        </button>
+        <button onClick={onAskReject} disabled={busy} style={{ padding: "8px 12px", borderRadius: 10, border: "none", cursor: busy ? "not-allowed" : "pointer", background: "rgba(248,113,113,0.12)", color: "#f87171", fontSize: 11, fontWeight: 700, opacity: busy ? 0.5 : 1, display: "inline-flex", alignItems: "center", gap: 4 }}>
+          <XIcon size={12} /> Rejeitar
+        </button>
+      </div>
     </div>
   );
 }

@@ -402,3 +402,85 @@ export async function closeComandaAsGarcom(opts: {
 
   return { ok: true, paymentId: payment.id as string };
 }
+
+// ─── Manager approval / rejection of pending delivery orders ────────────────
+// The pg_cron job auto-confirms after the 30s window expires, but the manager
+// can short-circuit it from the Hub: confirm early (skip the buffer) or reject
+// outright (stamps rejected_at so the cron skips it and Cozinha never sees it).
+
+type RejectResult =
+  | { ok: true; already?: boolean }
+  | { ok: false; error: "not_authenticated" | "order_not_found" | "not_authorized" | "order_already_confirmed" | "update_failed" };
+
+export async function rejectOrderIntent(opts: {
+  orderId: string;
+  reason?: string;
+}): Promise<RejectResult> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "not_authenticated" };
+
+  const admin = createAdminClient();
+
+  const { data: order } = await admin
+    .from("order_intents")
+    .select("id, restaurant_id, rejected_at, status, waiter_status")
+    .eq("id", opts.orderId)
+    .single();
+  if (!order) return { ok: false, error: "order_not_found" };
+
+  const isMember = await isRestaurantMember(admin, user.id, order.restaurant_id as string);
+  if (!isMember) return { ok: false, error: "not_authorized" };
+
+  if (order.rejected_at) return { ok: true, already: true };
+  if (order.status !== "pending") return { ok: false, error: "order_already_confirmed" };
+
+  const { error } = await admin
+    .from("order_intents")
+    .update({
+      status: "cancelled",
+      rejected_at: new Date().toISOString(),
+      rejected_by: user.id,
+      rejected_reason: opts.reason ?? "Rejeitado pelo gerente",
+    })
+    .eq("id", opts.orderId);
+  if (error) return { ok: false, error: "update_failed" };
+  return { ok: true };
+}
+
+type ConfirmEarlyResult =
+  | { ok: true; already?: boolean }
+  | { ok: false; error: "not_authenticated" | "order_not_found" | "not_authorized" | "order_already_rejected" | "update_failed" };
+
+export async function confirmOrderIntentEarly(orderId: string): Promise<ConfirmEarlyResult> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "not_authenticated" };
+
+  const admin = createAdminClient();
+
+  const { data: order } = await admin
+    .from("order_intents")
+    .select("id, restaurant_id, status, waiter_status")
+    .eq("id", orderId)
+    .single();
+  if (!order) return { ok: false, error: "order_not_found" };
+
+  const isMember = await isRestaurantMember(admin, user.id, order.restaurant_id as string);
+  if (!isMember) return { ok: false, error: "not_authorized" };
+
+  if (order.status === "confirmed") return { ok: true, already: true };
+  if (order.status === "cancelled") return { ok: false, error: "order_already_rejected" };
+
+  const { error } = await admin
+    .from("order_intents")
+    .update({
+      status: "confirmed",
+      waiter_status: "confirmed",
+      waiter_confirmed_at: new Date().toISOString(),
+      kitchen_status: "waiting",
+    })
+    .eq("id", orderId);
+  if (error) return { ok: false, error: "update_failed" };
+  return { ok: true };
+}
