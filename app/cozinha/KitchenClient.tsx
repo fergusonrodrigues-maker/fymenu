@@ -77,6 +77,9 @@ export default function KitchenClient({ unitId, unitName, restaurantName, initia
     if (printingState) return; // ReceiptPrinter is busy; let the in-flight job finish
     const result = await buildOrderIntentKitchenJobs(orderId);
     if (!result.ok) {
+      // Only surface the printer-config problem — the others are intentional
+      // gates (no_active_plan, disabled_by_owner) that the owner is already
+      // aware of, not errors to nag about.
       if (result.error === "no_printer_configured") {
         setNoPrinterWarning(true);
       }

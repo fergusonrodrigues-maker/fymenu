@@ -16,9 +16,45 @@ export type KitchenPrintJob = {
   html: string;
 };
 
+// Cozinha não tem gate por plano específico (todo plano ativo imprime). O
+// override do dono via units.comanda_config.auto_print_pdv prevalece. Reflete
+// o helper shouldAutoPrintReceipt (PR-IMP-2) — diferente só no fallback.
+type KitchenPlanRow = {
+  plan: string | null;
+  status: string | null;
+  is_complimentary: boolean | null;
+};
+
+function shouldAutoPrintKitchen(
+  restaurant: KitchenPlanRow | null,
+  comandaConfig: any,
+): { allowed: boolean; reason?: string } {
+  if (!restaurant) return { allowed: false, reason: "no_restaurant" };
+
+  if (!restaurant.is_complimentary && (!restaurant.plan || restaurant.status !== "active")) {
+    return { allowed: false, reason: "no_active_plan" };
+  }
+
+  const cfg = comandaConfig?.auto_print_kitchen;
+  if (cfg === true) return { allowed: true };
+  if (cfg === false) return { allowed: false, reason: "disabled_by_owner" };
+
+  // Default: cozinha é core, qualquer plano ativo imprime.
+  return { allowed: true };
+}
+
+type KitchenBuildError =
+  | "not_authenticated"
+  | "order_not_found"
+  | "not_authorized"
+  | "no_printer_configured"
+  | "no_active_plan"
+  | "disabled_by_owner"
+  | "no_restaurant";
+
 type BuildResult =
   | { ok: true; jobs: KitchenPrintJob[] }
-  | { ok: false; error: "not_authenticated" | "order_not_found" | "not_authorized" | "no_printer_configured"; jobs: [] };
+  | { ok: false; error: KitchenBuildError; jobs: [] };
 
 export async function buildOrderIntentKitchenJobs(orderId: string): Promise<BuildResult> {
   const supabase = await createClient();
@@ -36,6 +72,23 @@ export async function buildOrderIntentKitchenJobs(orderId: string): Promise<Buil
 
   const isMember = await isRestaurantMember(admin, user.id, order.restaurant_id as string);
   if (!isMember) return { ok: false, error: "not_authorized", jobs: [] };
+
+  // Gate: plan + owner override. Same shape as the PDV gate, with kitchen's
+  // looser fallback (any active plan = ON, no per-plan check).
+  const { data: unit } = await admin
+    .from("units")
+    .select("comanda_config, restaurants(plan, status, is_complimentary)")
+    .eq("id", order.unit_id as string)
+    .single();
+  const restaurantsRaw = unit?.restaurants;
+  const restaurant: KitchenPlanRow | null = Array.isArray(restaurantsRaw)
+    ? ((restaurantsRaw[0] ?? null) as KitchenPlanRow | null)
+    : ((restaurantsRaw as KitchenPlanRow | null | undefined) ?? null);
+  const gate = shouldAutoPrintKitchen(restaurant, unit?.comanda_config);
+  if (!gate.allowed) {
+    const reason = (gate.reason ?? "no_active_plan") as KitchenBuildError;
+    return { ok: false, error: reason, jobs: [] };
+  }
 
   const { data: printers } = await admin
     .from("printer_configs")

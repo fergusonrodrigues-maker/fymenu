@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { isRestaurantMember } from "@/lib/tenant/isRestaurantMember";
 import { invalidateMenuCache } from "@/lib/cache/invalidateMenuCache";
 import { uploadToR2, generateMediaKey, isR2Configured } from "@/lib/r2";
 import { logActivity } from "@/lib/audit/logActivity";
@@ -829,5 +831,49 @@ export async function updateProductNutrition(formData: FormData): Promise<void> 
 
   revalidatePath("/painel");
   revalidatePath("/u");
+}
+
+// ─── Unit comanda_config (printer behavior, receipt format, etc.) ──────────
+// Centralized save for the JSONB column. Replaces the client-side direct
+// update that PrinterModal used to do (which had no explicit auth check).
+// Patch is shallow-merged with the existing config so callers don't have to
+// round-trip the whole object — they can flip a single key at a time.
+
+type UpdateComandaConfigResult =
+  | { ok: true; config: Record<string, any> }
+  | { ok: false; error: "not_authenticated" | "unit_not_found" | "not_authorized" | "update_failed" };
+
+export async function updateComandaConfig(opts: {
+  unitId: string;
+  patch: Record<string, any>;
+}): Promise<UpdateComandaConfigResult> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "not_authenticated" };
+
+  const admin = createAdminClient();
+
+  const { data: unit } = await admin
+    .from("units")
+    .select("id, restaurant_id, comanda_config")
+    .eq("id", opts.unitId)
+    .single();
+  if (!unit) return { ok: false, error: "unit_not_found" };
+
+  const isMember = await isRestaurantMember(admin, user.id, unit.restaurant_id as string);
+  if (!isMember) return { ok: false, error: "not_authorized" };
+
+  const current = (unit.comanda_config && typeof unit.comanda_config === "object")
+    ? (unit.comanda_config as Record<string, any>)
+    : {};
+  const merged = { ...current, ...opts.patch };
+
+  const { error } = await admin
+    .from("units")
+    .update({ comanda_config: merged })
+    .eq("id", opts.unitId);
+  if (error) return { ok: false, error: "update_failed" };
+
+  return { ok: true, config: merged };
 }
 

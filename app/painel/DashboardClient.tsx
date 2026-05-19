@@ -1557,7 +1557,15 @@ export default function DashboardClient({
         {unit && <RestaurantOperationsModal unitId={unit.id} comandaClosePermission={unit.comanda_close_permission ?? "somente_caixa"} comandaRequirePhone={unit.comanda_require_phone ?? false} />}
       </Modal>
       <Modal open={modal === "impressoras"} onClose={close} title="Impressoras" size="lg">
-        {unit && <PrinterModal unitId={unit.id} categories={categories} />}
+        {unit && (
+          <PrinterModal
+            unitId={unit.id}
+            categories={categories}
+            restaurantPlan={restaurantState.plan ?? null}
+            restaurantStatus={restaurantState.status}
+            restaurantIsComplimentary={!!restaurantState.is_complimentary}
+          />
+        )}
       </Modal>
       <Modal open={modal === "equipe"} onClose={close} title="Equipe" size="lg">
         {unit && <StaffAnalyticsModal unitId={unit.id} plan={restaurantState.plan ?? "menu"} unitFeatures={unitFeatures} />}

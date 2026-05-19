@@ -1,13 +1,32 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
-import { AlertTriangle, Printer } from "lucide-react";
+import { AlertTriangle, Printer, ChefHat, CreditCard, RotateCcw } from "lucide-react";
 import { usePrinterConfig, type PrinterConfig } from "@/lib/hooks/usePrinterConfig";
 import { createClient } from "@/lib/supabase/client";
+import { updateComandaConfig } from "@/app/painel/actions";
 
 interface PrinterModalProps {
   unitId: string;
   categories: Array<{ id: string; name: string }>;
+  restaurantPlan: string | null;
+  restaurantStatus: string;
+  restaurantIsComplimentary: boolean;
+}
+
+// Default-ON gates mirror the server-side helpers (shouldAutoPrintKitchen +
+// shouldAutoPrintReceipt). Keep these in sync if the server logic changes.
+function getKitchenDefault(opts: { plan: string | null; status: string; isComplimentary: boolean }): boolean {
+  if (!opts.isComplimentary && (!opts.plan || opts.status !== "active")) return false;
+  return true;
+}
+
+function getPdvDefault(opts: { plan: string | null; status: string; isComplimentary: boolean }): boolean {
+  if (!opts.isComplimentary && (!opts.plan || opts.status !== "active")) return false;
+  if (opts.isComplimentary) return true;
+  if (opts.plan === "menu") return false;
+  if (opts.plan === "menupro" || opts.plan === "business") return true;
+  return false;
 }
 
 interface CategoryMapping {
@@ -31,7 +50,7 @@ const DEFAULT_COMANDA_CONFIG = {
   footerText: "Obrigado pela preferência!",
 };
 
-export default function PrinterModal({ unitId, categories }: PrinterModalProps) {
+export default function PrinterModal({ unitId, categories, restaurantPlan, restaurantStatus, restaurantIsComplimentary }: PrinterModalProps) {
   const {
     printers,
     fetchPrinters,
@@ -81,8 +100,16 @@ export default function PrinterModal({ unitId, categories }: PrinterModalProps) 
       });
   }, [unitId]);
 
+  // Save is a shallow patch on units.comanda_config via server action — auth
+  // + membership are enforced server-side, replacing the previous client-side
+  // direct update that depended on RLS.
   async function saveComandaConfig(config: Record<string, any>) {
-    await supabase.from("units").update({ comanda_config: config }).eq("id", unitId);
+    const result = await updateComandaConfig({ unitId, patch: config });
+    if (result.ok) {
+      // Merge server-confirmed config back into local state so any keys we
+      // didn't touch but the server normalized stay aligned.
+      setComandaConfig((prev) => ({ ...prev, ...result.config }));
+    }
   }
 
   // Load all mappings for this unit (for exclusivity checks and unassigned display)
@@ -521,7 +548,17 @@ export default function PrinterModal({ unitId, categories }: PrinterModalProps) 
       {/* ── TAB: FORMATO COMANDA ── */}
       {printerTab === "comandas" && (
         <div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "var(--dash-text)", marginBottom: 14 }}>
+          <AutoPrintSection
+            comandaConfig={comandaConfig}
+            restaurant={{ plan: restaurantPlan, status: restaurantStatus, isComplimentary: restaurantIsComplimentary }}
+            onChange={(key, value) => {
+              const updated = { ...comandaConfig, [key]: value };
+              setComandaConfig(updated);
+              void saveComandaConfig(updated);
+            }}
+          />
+
+          <div style={{ fontSize: 13, fontWeight: 700, color: "var(--dash-text)", marginBottom: 14, marginTop: 20 }}>
             Configurar formato da comanda
           </div>
 
@@ -715,6 +752,161 @@ export default function PrinterModal({ unitId, categories }: PrinterModalProps) 
         </div>
       )}
 
+    </div>
+  );
+}
+
+// ─── Auto-print section ──────────────────────────────────────────────────────
+// Tri-state controls saved to units.comanda_config.auto_print_{kitchen,pdv}.
+// The switch reflects the effective value (override OR plan-based default).
+// "Restaurar padrão" only appears when an explicit override exists, and clears
+// the key back to null so the server fallback applies again.
+
+interface AutoPrintRestaurant {
+  plan: string | null;
+  status: string;
+  isComplimentary: boolean;
+}
+
+function AutoPrintSection({
+  comandaConfig,
+  restaurant,
+  onChange,
+}: {
+  comandaConfig: Record<string, any>;
+  restaurant: AutoPrintRestaurant;
+  onChange: (key: string, value: boolean | null) => void;
+}) {
+  const kitchenOverride = comandaConfig.auto_print_kitchen;
+  const pdvOverride = comandaConfig.auto_print_pdv;
+
+  const kitchenDefault = getKitchenDefault(restaurant);
+  const pdvDefault = getPdvDefault(restaurant);
+
+  const kitchenValue =
+    kitchenOverride === true ? true :
+    kitchenOverride === false ? false :
+    kitchenDefault;
+  const pdvValue =
+    pdvOverride === true ? true :
+    pdvOverride === false ? false :
+    pdvDefault;
+
+  const hasKitchenOverride = kitchenOverride === true || kitchenOverride === false;
+  const hasPdvOverride = pdvOverride === true || pdvOverride === false;
+
+  // Plano "menu" não suporta auto_print_pdv por default — se o dono forçou ON,
+  // avisamos sem bloquear o save (a regra final fica no servidor).
+  const showPdvMenuWarning = restaurant.plan === "menu"
+    && !restaurant.isComplimentary
+    && pdvOverride === true;
+
+  return (
+    <div style={{ marginBottom: 18, padding: 14, borderRadius: 14, background: "var(--dash-card)", border: "1px solid var(--dash-card-border)" }}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: "var(--dash-text)", marginBottom: 12, display: "inline-flex", alignItems: "center", gap: 6 }}>
+        ⚙️ Comportamento de impressão
+      </div>
+
+      <AutoPrintToggle
+        icon={<ChefHat size={14} />}
+        label="Auto-imprimir cupom da Cozinha"
+        helper="Cupom será impresso automaticamente quando o pedido for confirmado."
+        defaultLabel={kitchenDefault ? "Ativado" : "Desativado"}
+        value={kitchenValue}
+        hasOverride={hasKitchenOverride}
+        onToggle={(next) => onChange("auto_print_kitchen", next)}
+        onRestore={() => onChange("auto_print_kitchen", null)}
+      />
+
+      <div style={{ height: 1, background: "var(--dash-border)", margin: "12px 0", opacity: 0.5 }} />
+
+      <AutoPrintToggle
+        icon={<CreditCard size={14} />}
+        label="Auto-imprimir cupom do PDV"
+        helper="Cupom da conta será impresso automaticamente quando o pagamento for confirmado."
+        defaultLabel={pdvDefault ? "Ativado" : "Desativado"}
+        value={pdvValue}
+        hasOverride={hasPdvOverride}
+        onToggle={(next) => onChange("auto_print_pdv", next)}
+        onRestore={() => onChange("auto_print_pdv", null)}
+        warning={showPdvMenuWarning
+          ? "Auto-impressão de PDV disponível só nos planos MenuPro+. Você ativou manualmente, mas pode não imprimir sem upgrade."
+          : undefined}
+      />
+    </div>
+  );
+}
+
+function AutoPrintToggle({
+  icon, label, helper, defaultLabel, value, hasOverride, onToggle, onRestore, warning,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  helper: string;
+  defaultLabel: string;
+  value: boolean;
+  hasOverride: boolean;
+  onToggle: (next: boolean) => void;
+  onRestore: () => void;
+  warning?: string;
+}) {
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "var(--dash-text)", display: "inline-flex", alignItems: "center", gap: 6 }}>
+            {icon} {label}
+          </div>
+          <div style={{ fontSize: 11, color: "var(--dash-text-muted)", marginTop: 4, lineHeight: 1.4 }}>{helper}</div>
+          <div style={{ fontSize: 10, color: "var(--dash-text-muted)", marginTop: 6 }}>
+            Padrão do plano: <strong style={{ color: "var(--dash-text-secondary)" }}>{defaultLabel}</strong>
+            {hasOverride && (
+              <button
+                onClick={onRestore}
+                style={{
+                  marginLeft: 8, padding: "2px 8px", borderRadius: 6,
+                  border: "1px solid var(--dash-border)", background: "transparent",
+                  color: "var(--dash-text-muted)", fontSize: 10, fontWeight: 600,
+                  cursor: "pointer", fontFamily: "inherit",
+                  display: "inline-flex", alignItems: "center", gap: 3,
+                }}
+              >
+                <RotateCcw size={9} /> Restaurar padrão
+              </button>
+            )}
+          </div>
+        </div>
+        <button
+          onClick={() => onToggle(!value)}
+          aria-pressed={value}
+          style={{
+            width: 44, height: 24, borderRadius: 12,
+            border: "none", cursor: "pointer", flexShrink: 0,
+            background: value ? "var(--dash-accent)" : "rgba(128,128,128,0.3)",
+            position: "relative",
+            transition: "background 0.2s",
+            padding: 0,
+          }}
+        >
+          <span style={{
+            position: "absolute",
+            top: 2, left: value ? 22 : 2,
+            width: 20, height: 20, borderRadius: "50%",
+            background: "#fff",
+            transition: "left 0.2s",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
+          }} />
+        </button>
+      </div>
+      {warning && (
+        <div style={{
+          marginTop: 8, padding: "8px 12px", borderRadius: 10,
+          background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.25)",
+          fontSize: 11, color: "#fbbf24", display: "inline-flex", alignItems: "flex-start", gap: 6, lineHeight: 1.4,
+        }}>
+          <AlertTriangle size={12} style={{ flexShrink: 0, marginTop: 1 }} /> {warning}
+        </div>
+      )}
     </div>
   );
 }
