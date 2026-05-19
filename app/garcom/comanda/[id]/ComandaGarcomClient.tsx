@@ -8,6 +8,8 @@ import { QRCodeSVG } from "qrcode.react";
 import { logComandaAction } from "@/app/hooks/useComandaAudit";
 import { X, CheckCircle2, ChefHat, Clock, Flame, UtensilsCrossed, Smartphone, Clipboard, Printer, Send } from "lucide-react";
 import { formatCents } from "@/lib/money";
+import ReceiptPrinter, { type PrintJobLite } from "@/components/print/ReceiptPrinter";
+import { closeComandaAsGarcom, buildSaleReceiptJobs, markReceiptPrinted } from "@/app/painel/printActions";
 
 type ComandaRecord = {
   id: string;
@@ -74,6 +76,8 @@ export default function ComandaGarcomClient({
   const [removingItem, setRemovingItem] = useState<ComandaItem | null>(null);
   const [removeReason, setRemoveReason] = useState("");
   const [saving, setSaving] = useState(false);
+  const [printJobs, setPrintJobs] = useState<PrintJobLite[] | null>(null);
+  const [printingPaymentId, setPrintingPaymentId] = useState<string | null>(null);
   const supabase = createClient();
   const router = useRouter();
 
@@ -212,15 +216,18 @@ export default function ComandaGarcomClient({
 
   const fecharComanda = async (method: string) => {
     setSaving(true);
-    await supabase.from("comandas").update({
-      status: "closed",
-      payment_method: method,
-      subtotal: total,
-      total,
-      closed_at: new Date().toISOString(),
-      closed_by: userId,
-      closed_by_name: waiterName,
-    }).eq("id", comanda.id);
+    // closeComandaAsGarcom updates comandas, inserts a payments row tied to
+    // the comanda, and returns the paymentId so we can auto-print the receipt
+    // before navigating away.
+    const result = await closeComandaAsGarcom({
+      comandaId: comanda.id,
+      method,
+      closedByName: waiterName,
+    });
+    if (!result.ok) {
+      setSaving(false);
+      return;
+    }
     await logComandaAction({
       comanda_id: comanda.id,
       unit_id: unitId,
@@ -231,7 +238,18 @@ export default function ComandaGarcomClient({
       performed_by_name: waiterName,
     });
     setSaving(false);
-    router.push("/garcom");
+    // Fire-and-forget print — navigation happens after the iframe batch
+    // finishes (or fails). We don't block the redirect on the print, but we
+    // do delay it slightly so the iframe gets a chance to mount.
+    const printRes = await buildSaleReceiptJobs(result.paymentId);
+    if (printRes.ok && printRes.jobs.length > 0) {
+      setPrintingPaymentId(result.paymentId);
+      setPrintJobs(printRes.jobs);
+      // Give the print iframe a beat before redirecting away.
+      setTimeout(() => router.push("/garcom"), 1500);
+    } else {
+      router.push("/garcom");
+    }
   };
 
   const enviarParaCaixa = async () => {
@@ -516,6 +534,16 @@ export default function ComandaGarcomClient({
           </div>
         </div>
       )}
+
+      <ReceiptPrinter
+        jobs={printJobs}
+        onComplete={async () => {
+          const pid = printingPaymentId;
+          setPrintJobs(null);
+          setPrintingPaymentId(null);
+          if (pid) await markReceiptPrinted(pid);
+        }}
+      />
     </div>
   );
 }

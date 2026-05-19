@@ -266,7 +266,74 @@ ${opts.printer.footer_message ? `<div class="sep"></div><div class="center small
   return wrapHtml({ title: `Cozinha — ${tableLabel}`, bodyHtml: body, paperWidth });
 }
 
-async function generatePartialCheckHTML(opts: {
+export async function generateOrderIntentReceiptHTML(opts: {
+  orderIntent: {
+    id: string;
+    items: OrderIntentItem[] | null;
+    total: number;
+    table_number: number | null;
+    customer_name?: string | null;
+    notes: string | null;
+    created_at: string;
+    payment_method: string | null;
+    paid_at: string | null;
+  };
+  printer: PrinterRow;
+  unitId: string;
+  cashPaid?: number;
+  change?: number;
+}): Promise<string> {
+  const db = createAdminClient();
+  const unit = await loadUnit(db, opts.unitId);
+
+  const paperWidth = opts.printer.paper_width ?? 80;
+  const o = opts.orderIntent;
+  const tableLabel = o.table_number != null ? `Mesa ${o.table_number}` : "Balcão / Delivery";
+  const shortId = (o.id || "").slice(0, 8).toUpperCase();
+  const items = Array.isArray(o.items) ? o.items : [];
+  const methodLabel = PAYMENT_LABEL[o.payment_method ?? ""] ?? (o.payment_method ? o.payment_method : "—");
+  const stamp = o.paid_at ?? new Date().toISOString();
+
+  const itemsHtml = items.map((it) => {
+    const qty = Number(it.qty ?? it.quantity ?? 1);
+    const name = it.code_name ?? it.name ?? "Item";
+    const unitPrice = Number(it.unit_price ?? 0);
+    const lineTotal = qty * unitPrice;
+    return `
+<div class="item">
+  <div class="row">
+    <div class="l name">${qty}× ${escapeHtml(name)}</div>
+    <div class="r bold">${fmtBRL(lineTotal)}</div>
+  </div>
+  ${it.notes ? `<div class="meta">obs: ${escapeHtml(it.notes)}</div>` : ""}
+</div>`;
+  }).join("");
+
+  const showCash = opts.cashPaid != null && opts.cashPaid > 0;
+  const showChange = opts.change != null && opts.change >= 0;
+
+  const body = `
+${renderHeader({ unit, printerLogo: opts.printer.print_logo ?? false, title: "RECIBO", paperWidth })}
+<div class="row"><div class="l bold">${escapeHtml(tableLabel)}</div><div class="r small">#${escapeHtml(shortId)}</div></div>
+${o.customer_name ? `<div class="row small muted"><div class="l">Cliente: ${escapeHtml(o.customer_name)}</div><div class="r">${fmtDateTime(stamp)}</div></div>` : `<div class="row small muted"><div class="r">${fmtDateTime(stamp)}</div></div>`}
+<div class="sep"></div>
+${itemsHtml || '<div class="muted small center">(nenhum item)</div>'}
+<div class="heavy"></div>
+<div class="row"><div class="l bold">TOTAL</div><div class="r bold big">${fmtBRL(Number(o.total ?? 0))}</div></div>
+<div class="sep"></div>
+<div class="row"><div class="l">Pagamento</div><div class="r bold">${escapeHtml(methodLabel)}</div></div>
+${showCash ? `<div class="row small"><div class="l muted">Recebido</div><div class="r">${fmtBRL(Number(opts.cashPaid))}</div></div>` : ""}
+${showChange ? `<div class="row small"><div class="l muted">Troco</div><div class="r bold">${fmtBRL(Number(opts.change))}</div></div>` : ""}
+${o.notes ? `<div class="sep"></div><div class="small">Obs: ${escapeHtml(o.notes)}</div>` : ""}
+<div class="heavy"></div>
+<div class="center small">Obrigado pela preferência!</div>
+${opts.printer.footer_message ? `<div class="sep"></div><div class="center small muted">${escapeHtml(opts.printer.footer_message)}</div>` : ""}
+<div class="center small muted stamp">================================</div>
+`;
+  return wrapHtml({ title: `Recibo — ${tableLabel}`, bodyHtml: body, paperWidth });
+}
+
+export async function generatePartialCheckHTML(opts: {
   comandaId: string;
   printer: PrinterRow;
 }): Promise<string> {
@@ -296,7 +363,7 @@ ${opts.printer.footer_message ? `<div class="sep"></div><div class="center small
   return wrapHtml({ title: `Conta parcial — ${mesaLabel}`, bodyHtml: body, paperWidth });
 }
 
-async function generateFinalReceiptHTML(opts: {
+export async function generateFinalReceiptHTML(opts: {
   comandaId: string;
   printer: PrinterRow;
 }): Promise<string> {

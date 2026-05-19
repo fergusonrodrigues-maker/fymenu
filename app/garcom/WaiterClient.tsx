@@ -11,6 +11,8 @@ import PDVModal from "./components/PDVModal";
 import { logComandaAction } from "@/app/hooks/useComandaAudit";
 import { UtensilsCrossed, Bell, Smartphone, Receipt, LayoutGrid, Download, Clipboard, Pencil, X, CheckCircle2 } from "lucide-react";
 import { formatCents } from "@/lib/money";
+import ReceiptPrinter, { type PrintJobLite } from "@/components/print/ReceiptPrinter";
+import { payOrderIntent, buildSaleReceiptJobs, markReceiptPrinted } from "@/app/painel/printActions";
 
 export type WaiterOrder = {
   id: string;
@@ -104,6 +106,8 @@ export default function WaiterClient({
   const [employeeName, setEmployeeName] = useState("");
   const [newCall, setNewCall] = useState<any>(null);
   const [showCalls, setShowCalls] = useState(false);
+  const [printJobs, setPrintJobs] = useState<PrintJobLite[] | null>(null);
+  const [printingPaymentId, setPrintingPaymentId] = useState<string | null>(null);
 
   const playSound = (type: "new" | "ready" | "call") => {
     try {
@@ -872,15 +876,38 @@ export default function WaiterClient({
           order={pdvOrder}
           onClose={() => setPdvOrder(null)}
           onPaid={async (method) => {
-            await supabase.from("order_intents").update({ waiter_status: "delivered", payment_method: method, paid_at: new Date().toISOString() }).eq("id", pdvOrder.id);
-            await supabase.from("payments").insert({ order_id: pdvOrder.id, amount: pdvOrder.total, method, status: "confirmed" });
-            await logComandaAction({ comanda_id: pdvOrder.id, order_id: pdvOrder.id, unit_id: unitId, action: "payment_received", new_value: { amount: pdvOrder.total, method, received_by: unitName }, performed_by_role: "garcom", performed_by_name: unitName });
-            await logComandaAction({ comanda_id: pdvOrder.id, order_id: pdvOrder.id, unit_id: unitId, action: "comanda_closed", new_value: { total: pdvOrder.total, payment_method: method, closed_by: unitName }, performed_by_role: "garcom", performed_by_name: unitName });
-            setOrders((prev) => prev.filter((o) => o.id !== pdvOrder.id));
+            const orderSnapshot = pdvOrder;
+            const result = await payOrderIntent({ orderId: orderSnapshot.id, method });
+            if (!result.ok) {
+              // Don't tear down the modal on failure — user might retry. But
+              // for now we still close to avoid getting stuck; the audit log
+              // below is skipped so we don't claim a payment we didn't write.
+              setPdvOrder(null);
+              return;
+            }
+            await logComandaAction({ comanda_id: orderSnapshot.id, order_id: orderSnapshot.id, unit_id: unitId, action: "payment_received", new_value: { amount: orderSnapshot.total, method, received_by: unitName }, performed_by_role: "garcom", performed_by_name: unitName });
+            await logComandaAction({ comanda_id: orderSnapshot.id, order_id: orderSnapshot.id, unit_id: unitId, action: "comanda_closed", new_value: { total: orderSnapshot.total, payment_method: method, closed_by: unitName }, performed_by_role: "garcom", performed_by_name: unitName });
+            setOrders((prev) => prev.filter((o) => o.id !== orderSnapshot.id));
             setPdvOrder(null);
+            // Auto-print: modal doesn't capture cash/troco, so no cashPaid passed.
+            const printRes = await buildSaleReceiptJobs(result.paymentId);
+            if (printRes.ok && printRes.jobs.length > 0) {
+              setPrintingPaymentId(result.paymentId);
+              setPrintJobs(printRes.jobs);
+            }
           }}
         />
       )}
+
+      <ReceiptPrinter
+        jobs={printJobs}
+        onComplete={async () => {
+          const pid = printingPaymentId;
+          setPrintJobs(null);
+          setPrintingPaymentId(null);
+          if (pid) await markReceiptPrinted(pid);
+        }}
+      />
 
       {showNewComanda && (
         <AbrirComandaModal

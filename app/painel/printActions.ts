@@ -3,7 +3,12 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isRestaurantMember } from "@/lib/tenant/isRestaurantMember";
-import { generateOrderIntentKitchenHTML } from "@/lib/print/generateReceipt";
+import {
+  generateOrderIntentKitchenHTML,
+  generateOrderIntentReceiptHTML,
+  generatePartialCheckHTML,
+  generateFinalReceiptHTML,
+} from "@/lib/print/generateReceipt";
 
 export type KitchenPrintJob = {
   printerId: string;
@@ -88,4 +93,312 @@ export async function markKitchenPrinted(orderId: string): Promise<MarkResult> {
 
   if (error) return { ok: false, error: "update_failed" };
   return { ok: true };
+}
+
+// ─── Sale receipt pipeline ─────────────────────────────────────────────────
+
+type RestaurantPlanRow = {
+  plan: string | null;
+  status: string | null;
+  is_complimentary: boolean | null;
+};
+
+// Auto-print gate: plan decides default; owner's explicit toggle (when set)
+// overrides. Reasons are returned to the client so the UI can distinguish
+// "configure printer" from "your plan doesn't include this" without copying
+// the rule.
+function shouldAutoPrintReceipt(
+  restaurant: RestaurantPlanRow | null,
+  comandaConfig: any,
+): { allowed: boolean; reason?: string } {
+  if (!restaurant) return { allowed: false, reason: "no_restaurant" };
+
+  if (!restaurant.is_complimentary && (!restaurant.plan || restaurant.status !== "active")) {
+    return { allowed: false, reason: "no_active_plan" };
+  }
+
+  const cfg = comandaConfig?.auto_print_pdv;
+  if (cfg === true) return { allowed: true };
+  if (cfg === false) return { allowed: false, reason: "disabled_by_owner" };
+
+  if (restaurant.is_complimentary) return { allowed: true };
+  if (restaurant.plan === "menu") return { allowed: false, reason: "plan_menu_no_auto_print" };
+  if (restaurant.plan === "menupro" || restaurant.plan === "business") return { allowed: true };
+  return { allowed: false, reason: "unknown_plan" };
+}
+
+type SaleErrorReason =
+  | "not_authenticated"
+  | "payment_not_found"
+  | "unit_not_found"
+  | "not_authorized"
+  | "no_active_plan"
+  | "disabled_by_owner"
+  | "plan_menu_no_auto_print"
+  | "unknown_plan"
+  | "no_restaurant"
+  | "no_printer_configured"
+  | "order_not_found"
+  | "split_not_found"
+  | "payment_has_no_target";
+
+type SaleBuildResult =
+  | { ok: true; jobs: KitchenPrintJob[] }
+  | { ok: false; error: SaleErrorReason; jobs: [] };
+
+export async function buildSaleReceiptJobs(
+  paymentId: string,
+  opts?: { cashPaid?: number; change?: number },
+): Promise<SaleBuildResult> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "not_authenticated", jobs: [] };
+
+  const admin = createAdminClient();
+
+  const { data: payment } = await admin
+    .from("payments")
+    .select("id, order_id, comanda_id, comanda_split_id, amount, method, unit_id, printed_at")
+    .eq("id", paymentId)
+    .single();
+  if (!payment) return { ok: false, error: "payment_not_found", jobs: [] };
+  if (!payment.unit_id) return { ok: false, error: "unit_not_found", jobs: [] };
+
+  const { data: unit } = await admin
+    .from("units")
+    .select("id, name, restaurant_id, comanda_config, restaurants(plan, status, is_complimentary)")
+    .eq("id", payment.unit_id)
+    .single();
+  if (!unit || !unit.restaurant_id) return { ok: false, error: "unit_not_found", jobs: [] };
+
+  const isMember = await isRestaurantMember(admin, user.id, unit.restaurant_id as string);
+  if (!isMember) return { ok: false, error: "not_authorized", jobs: [] };
+
+  // Supabase types the embedded relation as an array even on a one-to-one
+  // FK. Normalize to a single row (or null) before passing to the gate.
+  const restaurant = (Array.isArray(unit.restaurants)
+    ? ((unit.restaurants[0] ?? null) as RestaurantPlanRow | null)
+    : ((unit.restaurants as RestaurantPlanRow | null) ?? null));
+  const gate = shouldAutoPrintReceipt(restaurant, unit.comanda_config);
+  if (!gate.allowed) {
+    const reason = (gate.reason ?? "no_active_plan") as SaleErrorReason;
+    return { ok: false, error: reason, jobs: [] };
+  }
+
+  // Cashier preferred over generic. Order by purpose DESC puts 'kitchen' first
+  // alphabetically — not what we want; do the sort in JS to be explicit.
+  const { data: printersRaw } = await admin
+    .from("printer_configs")
+    .select("id, name, purpose, paper_width, print_logo, footer_message, is_active")
+    .eq("unit_id", payment.unit_id as string)
+    .in("purpose", ["cashier", "generic"])
+    .eq("is_active", true);
+
+  const printers = (printersRaw ?? []).sort((a, b) => {
+    const rank = (p: string | null) => (p === "cashier" ? 0 : p === "generic" ? 1 : 2);
+    return rank(a.purpose) - rank(b.purpose);
+  });
+  if (printers.length === 0) {
+    return { ok: false, error: "no_printer_configured", jobs: [] };
+  }
+
+  const printer = printers[0];
+
+  let html = "";
+  if (payment.order_id) {
+    const { data: order } = await admin
+      .from("order_intents")
+      .select("id, items, total, table_number, customer_name, notes, created_at, payment_method, paid_at")
+      .eq("id", payment.order_id)
+      .single();
+    if (!order) return { ok: false, error: "order_not_found", jobs: [] };
+    html = await generateOrderIntentReceiptHTML({
+      orderIntent: order as any,
+      printer: printer as any,
+      unitId: payment.unit_id as string,
+      cashPaid: opts?.cashPaid,
+      change: opts?.change,
+    });
+  } else if (payment.comanda_split_id) {
+    const { data: split } = await admin
+      .from("comanda_splits")
+      .select("comanda_id")
+      .eq("id", payment.comanda_split_id)
+      .single();
+    if (!split?.comanda_id) return { ok: false, error: "split_not_found", jobs: [] };
+    html = await generatePartialCheckHTML({
+      comandaId: split.comanda_id as string,
+      printer: printer as any,
+    });
+  } else if (payment.comanda_id) {
+    html = await generateFinalReceiptHTML({
+      comandaId: payment.comanda_id as string,
+      printer: printer as any,
+    });
+  } else {
+    return { ok: false, error: "payment_has_no_target", jobs: [] };
+  }
+
+  return {
+    ok: true,
+    jobs: [{ printerId: printer.id as string, printerName: printer.name as string, html }],
+  };
+}
+
+type MarkReceiptResult =
+  | { ok: true; already?: boolean }
+  | { ok: false; error: "not_authenticated" | "payment_not_found" | "not_authorized" | "update_failed" };
+
+export async function markReceiptPrinted(paymentId: string): Promise<MarkReceiptResult> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "not_authenticated" };
+
+  const admin = createAdminClient();
+
+  const { data: payment } = await admin
+    .from("payments")
+    .select("id, unit_id, printed_at, units!inner(restaurant_id)")
+    .eq("id", paymentId)
+    .single();
+  if (!payment) return { ok: false, error: "payment_not_found" };
+
+  const restaurantId = (payment.units as any)?.restaurant_id as string | undefined;
+  if (!restaurantId) return { ok: false, error: "not_authorized" };
+
+  const isMember = await isRestaurantMember(admin, user.id, restaurantId);
+  if (!isMember) return { ok: false, error: "not_authorized" };
+
+  if (payment.printed_at) return { ok: true, already: true };
+
+  const { error } = await admin
+    .from("payments")
+    .update({ printed_at: new Date().toISOString() })
+    .eq("id", paymentId);
+
+  if (error) return { ok: false, error: "update_failed" };
+  return { ok: true };
+}
+
+type PayOrderResult =
+  | { ok: true; paymentId: string; change?: number }
+  | {
+      ok: false;
+      error: "not_authenticated" | "order_not_found" | "not_authorized" | "already_paid" | "update_failed" | "payment_insert_failed";
+    };
+
+export async function payOrderIntent(opts: {
+  orderId: string;
+  method: string;
+  cashPaid?: number;
+}): Promise<PayOrderResult> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "not_authenticated" };
+
+  const admin = createAdminClient();
+
+  const { data: order } = await admin
+    .from("order_intents")
+    .select("id, unit_id, restaurant_id, total, paid_at")
+    .eq("id", opts.orderId)
+    .single();
+  if (!order) return { ok: false, error: "order_not_found" };
+
+  const isMember = await isRestaurantMember(admin, user.id, order.restaurant_id as string);
+  if (!isMember) return { ok: false, error: "not_authorized" };
+
+  if (order.paid_at) return { ok: false, error: "already_paid" };
+
+  const now = new Date().toISOString();
+
+  const { error: updErr } = await admin
+    .from("order_intents")
+    .update({
+      payment_method: opts.method,
+      paid_at: now,
+      waiter_status: "delivered",
+    })
+    .eq("id", opts.orderId);
+  if (updErr) return { ok: false, error: "update_failed" };
+
+  const { data: payment, error: payErr } = await admin
+    .from("payments")
+    .insert({
+      order_id: opts.orderId,
+      unit_id: order.unit_id,
+      amount: order.total,
+      method: opts.method,
+      status: "confirmed",
+    })
+    .select("id")
+    .single();
+
+  if (payErr || !payment) return { ok: false, error: "payment_insert_failed" };
+
+  const change = opts.cashPaid != null && opts.method === "cash"
+    ? opts.cashPaid - (order.total as number)
+    : undefined;
+
+  return { ok: true, paymentId: payment.id as string, change };
+}
+
+// Closing a comanda from the garçom side previously only mutated `comandas`
+// and never wrote a `payments` row. The auto-print pipeline keys off
+// payments, so this action now does both: updates the comanda and inserts a
+// single `payments` row tied to the comanda, returning the id for the client
+// to feed into `buildSaleReceiptJobs`.
+type PayComandaResult =
+  | { ok: true; paymentId: string }
+  | { ok: false; error: "not_authenticated" | "comanda_not_found" | "not_authorized" | "comanda_update_failed" | "payment_insert_failed" };
+
+export async function closeComandaAsGarcom(opts: {
+  comandaId: string;
+  method: string;
+  closedByName: string;
+}): Promise<PayComandaResult> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "not_authenticated" };
+
+  const admin = createAdminClient();
+
+  const { data: comanda } = await admin
+    .from("comandas")
+    .select("id, unit_id, restaurant_id, total, status")
+    .eq("id", opts.comandaId)
+    .single();
+  if (!comanda) return { ok: false, error: "comanda_not_found" };
+
+  const isMember = await isRestaurantMember(admin, user.id, comanda.restaurant_id as string);
+  if (!isMember) return { ok: false, error: "not_authorized" };
+
+  const now = new Date().toISOString();
+
+  const { error: updErr } = await admin
+    .from("comandas")
+    .update({
+      status: "closed",
+      payment_method: opts.method,
+      closed_at: now,
+      closed_by: user.id,
+      closed_by_name: opts.closedByName,
+    })
+    .eq("id", opts.comandaId);
+  if (updErr) return { ok: false, error: "comanda_update_failed" };
+
+  const { data: payment, error: payErr } = await admin
+    .from("payments")
+    .insert({
+      comanda_id: opts.comandaId,
+      unit_id: comanda.unit_id,
+      amount: comanda.total ?? 0,
+      method: opts.method,
+      status: "confirmed",
+    })
+    .select("id")
+    .single();
+  if (payErr || !payment) return { ok: false, error: "payment_insert_failed" };
+
+  return { ok: true, paymentId: payment.id as string };
 }

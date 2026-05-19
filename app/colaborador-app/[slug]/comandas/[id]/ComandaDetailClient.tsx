@@ -499,9 +499,19 @@ export default function ComandaDetailClient({
           customerName={data.customer_name}
           total={data.total}
           onClose={() => setShowCloseModal(false)}
-          onClosed={(_count, splits) => {
+          onClosed={async (_count, splits) => {
             setShowCloseModal(false);
             setReceipt({ splits, total: data.total });
+            // Auto-fire receipt print on close. Manual button in ReceiptModal
+            // stays available for re-print. Best-effort: errors are silent
+            // since the receipt is shown on-screen regardless.
+            try {
+              const token = sessionStorage.getItem("fy_emp_token") ?? "";
+              const result = await buildFinalReceiptPrintJob(token, data.id);
+              if (result.ok && result.job) {
+                setPrintJobs([{ printerId: result.job.printerId, printerName: result.job.printerName, html: result.job.html }]);
+              }
+            } catch { /* silent — manual print stays available */ }
           }}
         />
       )}

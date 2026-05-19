@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Banknote, CreditCard, Smartphone, CheckCircle2, AlertTriangle, ChefHat, Sparkles } from "lucide-react";
+import { Banknote, CreditCard, Smartphone, CheckCircle2, AlertTriangle, ChefHat, Sparkles, Printer } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useKitchenAlertContext } from "@/lib/context/KitchenAlertContext";
+import ReceiptPrinter, { type PrintJobLite } from "@/components/print/ReceiptPrinter";
+import { payOrderIntent, buildSaleReceiptJobs, markReceiptPrinted } from "@/app/painel/printActions";
 
 type PDVOrder = {
   id: string;
@@ -51,7 +53,11 @@ export default function PDVClient({ unitId, unitName, restaurantName, slug, init
   const [cashInput, setCashInput] = useState("");
   const [screen, setScreen] = useState<Screen>("list");
   const [processing, setProcessing] = useState(false);
-  const [lastReceipt, setLastReceipt] = useState<{ order: PDVOrder; method: PaymentMethod; cash?: number; change?: number } | null>(null);
+  const [lastReceipt, setLastReceipt] = useState<{ order: PDVOrder; method: PaymentMethod; cash?: number; change?: number; paymentId?: string } | null>(null);
+
+  const [printJobs, setPrintJobs] = useState<PrintJobLite[] | null>(null);
+  const [printingState, setPrintingState] = useState<{ paymentId: string; markOnDone: boolean } | null>(null);
+  const [printNotice, setPrintNotice] = useState<string | null>(null);
 
   const supabase = createClient();
   const { playAlert } = useKitchenAlertContext();
@@ -87,15 +93,50 @@ export default function PDVClient({ unitId, unitName, restaurantName, slug, init
   const handlePay = async () => {
     if (!selected || !method) return;
     setProcessing(true);
-    const cashPaid = method === "cash" && cashInput ? parseFloat(cashInput) * 100 : undefined;
-    const change = cashPaid != null ? cashPaid - selected.total : undefined;
-    await supabase.from("order_intents").update({ payment_method: method, paid_at: new Date().toISOString(), waiter_status: "delivered" }).eq("id", selected.id);
-    await supabase.from("payments").insert({ order_id: selected.id, amount: selected.total, method, status: "confirmed" });
+    const cashPaid = method === "cash" && cashInput ? Math.round(parseFloat(cashInput) * 100) : undefined;
+    const result = await payOrderIntent({ orderId: selected.id, method, cashPaid });
+    if (!result.ok) {
+      setProcessing(false);
+      setPrintNotice(`Erro ao processar pagamento: ${result.error}`);
+      return;
+    }
     playAlert();
-    setLastReceipt({ order: selected, method, cash: cashPaid, change });
+    setLastReceipt({ order: selected, method, cash: cashPaid, change: result.change, paymentId: result.paymentId });
     setOrders((prev) => prev.filter((o) => o.id !== selected.id));
     setScreen("receipt");
     setProcessing(false);
+    // Fire-and-forget auto-print — UI doesn't wait on it.
+    void triggerSalePrint(result.paymentId, true, cashPaid, result.change);
+  };
+
+  const triggerSalePrint = async (paymentId: string, markOnDone: boolean, cashPaid?: number, change?: number) => {
+    if (printingState) return;
+    const result = await buildSaleReceiptJobs(paymentId, { cashPaid, change });
+    if (!result.ok) {
+      // Plan/config gates aren't user-actionable here; only surface the printer
+      // problem so the owner knows where to fix it.
+      if (result.error === "no_printer_configured") {
+        setPrintNotice("Sem impressora ativa. Configure em Painel → Impressoras.");
+      }
+      return;
+    }
+    setPrintingState({ paymentId, markOnDone });
+    setPrintJobs(result.jobs);
+  };
+
+  const handlePrintComplete = async () => {
+    const finished = printingState;
+    setPrintJobs(null);
+    setPrintingState(null);
+    if (!finished) return;
+    if (finished.markOnDone) {
+      await markReceiptPrinted(finished.paymentId);
+    }
+  };
+
+  const handleReprintReceipt = async () => {
+    if (!lastReceipt?.paymentId) return;
+    await triggerSalePrint(lastReceipt.paymentId, false, lastReceipt.cash, lastReceipt.change);
   };
 
   const cashPaidCents = method === "cash" && cashInput ? Math.round(parseFloat(cashInput) * 100) : 0;
@@ -146,12 +187,18 @@ export default function PDVClient({ unitId, unitName, restaurantName, slug, init
               </div>
             ))}
           </div>
-          <div style={{ padding: "0 24px 24px" }}>
-            <button onClick={() => setScreen("list")} style={{ width: "100%", padding: 14, borderRadius: 14, border: "1px solid rgba(255,255,255,0.08)", cursor: "pointer", background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: 700 }}>
+          <div style={{ padding: "0 24px 24px", display: "flex", flexDirection: "column", gap: 8 }}>
+            {lastReceipt.paymentId && (
+              <button onClick={handleReprintReceipt} style={{ width: "100%", padding: 12, borderRadius: 14, border: "1px solid rgba(255,255,255,0.08)", cursor: "pointer", background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: 700, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                <Printer size={14} /> Reimprimir cupom
+              </button>
+            )}
+            <button onClick={() => { setScreen("list"); setPrintNotice(null); }} style={{ width: "100%", padding: 14, borderRadius: 14, border: "1px solid rgba(255,255,255,0.08)", cursor: "pointer", background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: 700 }}>
               ← Voltar ao PDV
             </button>
           </div>
         </div>
+        <ReceiptPrinter jobs={printJobs} onComplete={handlePrintComplete} />
       </div>
     );
   }
@@ -291,6 +338,15 @@ export default function PDVClient({ unitId, unitName, restaurantName, slug, init
           </div>
         )}
       </main>
+
+      {printNotice && (
+        <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", padding: "10px 18px", borderRadius: 10, background: "rgba(251,191,36,0.12)", color: "#fbbf24", fontSize: 12, fontWeight: 700, border: "1px solid rgba(251,191,36,0.25)", boxShadow: "0 8px 24px rgba(0,0,0,0.3)", zIndex: 50, display: "inline-flex", alignItems: "center", gap: 8, maxWidth: 360 }}>
+          <AlertTriangle size={13} /> {printNotice}
+          <button onClick={() => setPrintNotice(null)} style={{ marginLeft: 6, background: "transparent", border: "none", color: "rgba(251,191,36,0.6)", cursor: "pointer", fontSize: 16, padding: "0 4px" }}>×</button>
+        </div>
+      )}
+
+      <ReceiptPrinter jobs={printJobs} onComplete={handlePrintComplete} />
     </div>
   );
 }
