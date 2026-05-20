@@ -184,6 +184,23 @@ export default function EntrarClient() {
         return;
       }
 
+      // Bootstrap restaurant_members owner via admin (RLS bloqueia self-insert).
+      // Sem isso, painel barra todas as ações com "Sem permissão".
+      const memberRes = await fetch("/api/auth/bootstrap-member", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ restaurantId: restaurant.id }),
+      });
+
+      if (!memberRes.ok) {
+        const errBody = await memberRes.json().catch(() => ({}));
+        console.error("[signup] bootstrap-member falhou", errBody);
+        setError(
+          "Conta criada mas houve um problema ao finalizar. Recarregue a página ou contate o suporte.",
+        );
+        return;
+      }
+
       // Create default unit
       const slug =
         restaurantName

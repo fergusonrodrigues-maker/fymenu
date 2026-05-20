@@ -74,26 +74,34 @@ export async function POST(req: NextRequest) {
     .eq("id", restaurantId);
   if (completeError) return NextResponse.json({ error: "Erro ao finalizar configuração" }, { status: 500 });
 
-  // 5. Garante membership owner (auto-heal em getTenantContext continua como backup)
-  const { error: memberErr } = await admin
+  // 5. Garante membership owner — SELECT-then-INSERT idempotente.
+  // (Não usamos .upsert() porque restaurant_members não tem UNIQUE
+  // (restaurant_id, user_id); o onConflict falhava silenciosamente.)
+  const { data: existingMember } = await admin
     .from("restaurant_members")
-    .upsert(
-      {
+    .select("id")
+    .eq("restaurant_id", restaurantId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (!existingMember) {
+    const { error: memberErr } = await admin
+      .from("restaurant_members")
+      .insert({
         user_id: user.id,
         restaurant_id: restaurantId,
         role: "owner",
         status: "active",
-        invited_email: user.email,
+        invited_email: user.email ?? "",
         activated_at: new Date().toISOString(),
-      },
-      {
-        onConflict: "restaurant_id,user_id",
-        ignoreDuplicates: true,
-      },
-    );
-  if (memberErr) {
-    console.error("[onboarding/complete] Falha membership owner:", memberErr);
-    // NÃO retornar erro: getTenantContext auto-heal é backup
+      });
+    if (memberErr) {
+      console.error("[onboarding/complete] Falha membership owner:", memberErr);
+      return NextResponse.json(
+        { error: "member_insert_failed", detail: memberErr.message },
+        { status: 500 },
+      );
+    }
   }
 
   // 6. Envia email de boas-vindas (não-bloqueante: falha silenciosa)

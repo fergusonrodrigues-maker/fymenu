@@ -1,6 +1,7 @@
 // lib/tenant/getTenantContext.ts
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -54,7 +55,10 @@ export async function getTenantContext() {
       .maybeSingle();
 
     if (ownedRestaurant) {
-      const { data: newMember } = await supabase
+      // Admin client necessário: RLS members_insert exige is_restaurant_member,
+      // criando catch-22 (user não pode virar membro sem já ser membro).
+      const admin = createAdminClient();
+      const { data: newMember } = await admin
         .from("restaurant_members")
         .insert({
           restaurant_id: ownedRestaurant.id,
@@ -107,7 +111,10 @@ export async function getTenantContext() {
         is_published: false,
       });
 
-      const { data: newMember } = await supabase
+      // Admin client necessário: RLS members_insert exige is_restaurant_member,
+      // criando catch-22 (user não pode virar membro sem já ser membro).
+      const admin = createAdminClient();
+      const { data: newMember } = await admin
         .from("restaurant_members")
         .insert({
           restaurant_id: newRestaurant!.id,
