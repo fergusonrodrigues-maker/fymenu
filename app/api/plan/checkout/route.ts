@@ -214,19 +214,48 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    await admin.from("subscriptions").insert({
-      restaurant_id: restaurant.id,
-      asaas_subscription_id: asaasSub.id,
-      asaas_customer_id: customerId,
-      plan,
-      cycle,
-      billing_type: "UNDEFINED",
-      value: valueCents,
-      status: "pending",
-      next_due_date: nextDueDateStr,
-      started_at: now.toISOString(),
-      coupon_id: coupon?.id ?? null,
-      discount_applied: discountApplied,
+    const { data: sub, error: subErr } = await admin
+      .from("subscriptions")
+      .insert({
+        restaurant_id: restaurant.id,
+        asaas_subscription_id: asaasSub.id,
+        asaas_customer_id: customerId,
+        plan,
+        cycle,
+        // PIX como default seguro: o CHECK constraint do DB só aceita
+        // PIX/CREDIT_CARD/BOLETO. Asaas API aceita "UNDEFINED" na criação
+        // (cliente escolhe no checkout), mas no DB precisamos de valor
+        // válido. O webhook atualiza pro tipo real quando PAYMENT_CONFIRMED
+        // /PAYMENT_RECEIVED chegar com payment.billingType concreto.
+        billing_type: "PIX",
+        value: valueCents,
+        status: "pending",
+        next_due_date: nextDueDateStr,
+        started_at: now.toISOString(),
+        coupon_id: coupon?.id ?? null,
+        discount_applied: discountApplied,
+      })
+      .select("id")
+      .single();
+
+    if (subErr || !sub) {
+      console.error("[plan/checkout] CRITICAL: failed to insert subscription", {
+        error: subErr,
+        restaurantId: restaurant.id,
+        asaasSubId: asaasSub.id,
+      });
+      return NextResponse.json(
+        {
+          error: "Falha ao salvar assinatura no banco. Pagamento gerado mas não vinculado.",
+          asaas_subscription_id: asaasSub.id,
+        },
+        { status: 500 },
+      );
+    }
+    console.log("[plan/checkout] subscription created in DB", {
+      subId: sub.id,
+      restaurantId: restaurant.id,
+      asaasSubId: asaasSub.id,
     });
 
     if (coupon) {

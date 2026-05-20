@@ -65,6 +65,21 @@ export async function asaasRequest(method: string, endpoint: string, body?: any)
   return data;
 }
 
+/**
+ * Busca uma subscription no Asaas. Retorna null em qualquer erro
+ * (rede, 4xx, 5xx, payload inválido). Usado pelo webhook self-heal
+ * quando o evento chega antes ou apesar da row em subscriptions
+ * estar ausente no DB.
+ */
+export async function getAsaasSubscription(subscriptionId: string): Promise<any | null> {
+  try {
+    return await asaasRequest("GET", `/subscriptions/${subscriptionId}`);
+  } catch (err) {
+    console.error("[asaas] failed to fetch subscription", { subscriptionId, err });
+    return null;
+  }
+}
+
 export async function getOrCreateAsaasCustomer(restaurant: any): Promise<string> {
   const admin = createAdminClient();
 
