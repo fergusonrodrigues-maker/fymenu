@@ -337,7 +337,7 @@ export default function DashboardClient({
 }: {
   restaurant: Restaurant; unit: Unit | null; profile: Profile;
   categories: Category[]; products: Product[];
-  upsellItems: any[]; analytics: { views: number; clicks: number; orders: number };
+  upsellItems: any[]; analytics: { views: number; clicks: number; orders: number; todayOrders: number };
   tvCount: number; stockStats: StockStats;
   reportData: ReportData;
   /** Per-unit feature overrides from unit_features (admin/suporte). */
@@ -460,7 +460,7 @@ export default function DashboardClient({
   const CARD_CONFIGS: Record<string, { icon: React.ReactNode; label: string; sub: string | (() => string); modalKey: string }> = useMemo(() => ({
     analytics:   { icon: <BarChart3 size={22} />,     label: "Analytics",       sub: () => `${analytics.views} visitas · ${analytics.clicks} cliques`, modalKey: "analytics" },
     cardapio:    { icon: <ClipboardList size={22} />,  label: "Cardápio",        sub: () => `${products.length} produto${products.length !== 1 ? "s" : ""}`, modalKey: "cardapio" },
-    pedidos:     { icon: <Icon name="pedidos" size={22} />, label: "Pedidos",    sub: () => `${analytics.orders} pedido${analytics.orders !== 1 ? "s" : ""} hoje`, modalKey: "pedidos" },
+    pedidos:     { icon: <Icon name="pedidos" size={22} />, label: "Pedidos",    sub: () => `${analytics.todayOrders} pedido${analytics.todayOrders !== 1 ? "s" : ""} hoje`, modalKey: "pedidos" },
     financeiro:  { icon: <Wallet size={22} />,         label: "Financeiro",      sub: "Relatórios e receita", modalKey: "financeiro" },
     unidade:     { icon: <MapPin size={22} />,          label: "Unidade",         sub: () => unit?.is_published ? "Publicado" : "Não publicado", modalKey: "unidade" },
     tv:          { icon: <Tv size={22} />,              label: "Modo TV",         sub: () => `${tvCount} vídeo${tvCount !== 1 ? "s" : ""} ativo${tvCount !== 1 ? "s" : ""}`, modalKey: "modotv" },
@@ -1521,7 +1521,7 @@ export default function DashboardClient({
         <AnalyticsModal analytics={analytics} unit={unit} products={products} categories={categories} restaurant={{ ...restaurantState, plan: restaurantState.plan ?? "menu" }} />
       </Modal>
       <Modal open={modal === "pedidos"} onClose={close} title="Pedidos de hoje" size="lg">
-        {unit && <PedidosModal unitId={unit.id} unit={unit} onOpenImport={openImport} />}
+        {unit && <PedidosModal unitId={unit.id} unit={unit} onOpenImport={openImport} plan={restaurantState.plan} unitFeatures={unitFeatures} />}
       </Modal>
       <Modal open={modal === "cardapio"} onClose={close} title="Cardápio" size="lg">
         <CardapioModal unit={unit} categories={categories} products={products} upsellItems={upsellItems} restaurant={restaurantState} onClose={close} onOpenPlano={() => open("plano")} />

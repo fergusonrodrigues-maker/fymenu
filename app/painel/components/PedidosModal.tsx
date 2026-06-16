@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/client";
 import { Unit } from "../types";
 import FyLoader from "@/components/FyLoader";
 import { Download, ChefHat, MessageCircle, Pencil, Bike } from "lucide-react";
+import { hasPlanFeature } from "@/lib/plans";
+import { formatCents } from "@/lib/money";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -31,6 +33,7 @@ type Order = {
   customer_phone: string | null;
   notes: string | null;
   payment_method: string | null;
+  source: string | null;
   created_at: string;
 };
 
@@ -124,8 +127,23 @@ function generateTrackingCode(): string {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export default function PedidosModal({ unitId, unit, onOpenImport }: { unitId: string; unit?: Unit; onOpenImport?: (type: string) => void }) {
+export default function PedidosModal({
+  unitId,
+  unit,
+  onOpenImport,
+  plan,
+  unitFeatures,
+}: {
+  unitId: string;
+  unit?: Unit;
+  onOpenImport?: (type: string) => void;
+  plan?: string | null;
+  unitFeatures?: Record<string, boolean>;
+}) {
   const supabase = createClient();
+  // Gate de UI operacional (cozinha, status de entrega, tracking). No SaaS
+  // de cardápio de vídeo (MenuPro novo) operations = false → UI parqueada.
+  const operationsEnabled = hasPlanFeature(plan, "operations", unitFeatures);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterTab>("ativos");
@@ -157,7 +175,7 @@ export default function PedidosModal({ unitId, unit, onOpenImport }: { unitId: s
     const fetchOrders = async () => {
       const { data } = await supabase
         .from("order_intents")
-        .select("id, table_number, items, total, status, waiter_status, kitchen_status, delivery_status, customer_name, customer_phone, notes, payment_method, created_at")
+        .select("id, table_number, items, total, status, waiter_status, kitchen_status, delivery_status, customer_name, customer_phone, notes, payment_method, source, created_at")
         .eq("unit_id", unitId)
         .gte("created_at", todayStart())
         .order("created_at", { ascending: false });
@@ -203,6 +221,9 @@ export default function PedidosModal({ unitId, unit, onOpenImport }: { unitId: s
   };
 
   async function handleChangeDeliveryStatus(order: Order, newStatus: string) {
+    // No SaaS de cardápio (operations=false), o fluxo de delivery_status não
+    // é exposto na UI; este guard evita execução acidental via outros entrypoints.
+    if (!operationsEnabled) return;
     const updates: Record<string, string> = {
       delivery_status: newStatus,
       updated_at: new Date().toISOString(),
@@ -272,9 +293,14 @@ export default function PedidosModal({ unitId, unit, onOpenImport }: { unitId: s
     window.open(`https://wa.me/${fullPhone}?text=${msg}`, "_blank");
   }
 
-  const revenueDelivered = orders
-    .filter((o) => o.waiter_status === "delivered")
-    .reduce((sum, o) => sum + Number(o.total), 0);
+  // Pedidos enviados via WhatsApp HOJE (o clique = o envio, contar todos
+  // independente do status). Total em centavos → formatCents na UI.
+  const whatsappOrdersToday = orders.filter((o) => o.source === "whatsapp");
+  const whatsappCountToday = whatsappOrdersToday.length;
+  const whatsappValueTodayCents = whatsappOrdersToday.reduce(
+    (sum, o) => sum + Number(o.total ?? 0),
+    0
+  );
 
   const filterTabs: { id: FilterTab; label: string }[] = [
     { id: "ativos", label: `Ativos ${totals.ativos > 0 ? `(${totals.ativos})` : ""}` },
@@ -330,21 +356,19 @@ export default function PedidosModal({ unitId, unit, onOpenImport }: { unitId: s
             </div>
           ) : (
             <>
-              {/* Revenue summary */}
+              {/* Pedidos enviados via WhatsApp hoje */}
               <div style={{
                 background: "rgba(0,255,174,0.06)", border: "1px solid rgba(0,255,174,0.15)",
                 borderRadius: 14, padding: "14px 18px", marginBottom: 16,
                 display: "flex", justifyContent: "space-between", alignItems: "center",
               }}>
                 <div>
-                  <div style={{ color: "var(--dash-text-muted)", fontSize: 11, marginBottom: 2 }}>Faturamento do dia</div>
-                  <div style={{ color: "#00ffae", fontSize: 22, fontWeight: 900 }}>
-                    R$ {revenueDelivered.toFixed(2)}
-                  </div>
+                  <div style={{ color: "var(--dash-text-muted)", fontSize: 11, marginBottom: 2 }}>Pedidos enviados</div>
+                  <div style={{ color: "#00ffae", fontSize: 22, fontWeight: 900 }}>{whatsappCountToday}</div>
                 </div>
                 <div style={{ textAlign: "right" }}>
-                  <div style={{ color: "var(--dash-text-muted)", fontSize: 11, marginBottom: 2 }}>Pedidos entregues</div>
-                  <div style={{ color: "var(--dash-text)", fontSize: 22, fontWeight: 900 }}>{totals.entregues}</div>
+                  <div style={{ color: "var(--dash-text-muted)", fontSize: 11, marginBottom: 2 }}>em valor potencial</div>
+                  <div style={{ color: "var(--dash-text)", fontSize: 22, fontWeight: 900 }}>{formatCents(whatsappValueTodayCents)}</div>
                 </div>
               </div>
 
@@ -424,30 +448,43 @@ export default function PedidosModal({ unitId, unit, onOpenImport }: { unitId: s
                           </div>
                         </div>
 
-                        {/* Delivery progress bar */}
-                        <div style={{ padding: "0 14px 10px", display: "flex", gap: 3 }} onClick={(e) => e.stopPropagation()}>
-                          {DELIVERY_STEPS.map((step, i) => (
-                            <div
-                              key={step.id}
-                              title={step.label}
-                              style={{
-                                flex: 1, height: 3, borderRadius: 2,
-                                background: i <= dsIndex ? "#00ffae" : "rgba(255,255,255,0.06)",
-                                transition: "background 0.3s",
-                              }}
-                            />
-                          ))}
-                        </div>
+                        {/* Delivery progress bar (operacional — só com feature `operations`) */}
+                        {operationsEnabled && (
+                          <div style={{ padding: "0 14px 10px", display: "flex", gap: 3 }} onClick={(e) => e.stopPropagation()}>
+                            {DELIVERY_STEPS.map((step, i) => (
+                              <div
+                                key={step.id}
+                                title={step.label}
+                                style={{
+                                  flex: 1, height: 3, borderRadius: 2,
+                                  background: i <= dsIndex ? "#00ffae" : "rgba(255,255,255,0.06)",
+                                  transition: "background 0.3s",
+                                }}
+                              />
+                            ))}
+                          </div>
+                        )}
 
-                        {/* Current delivery status label */}
-                        <div style={{ padding: "0 14px 8px" }} onClick={(e) => e.stopPropagation()}>
-                          <span style={{ fontSize: 10, color: ds === "delivered" ? "#00ffae" : "var(--dash-text-muted)", fontWeight: 600 }}>
-                            {currentStep.emoji} {currentStep.label}
-                            {order.customer_name && order.customer_phone && (
-                              <span style={{ color: "rgba(255,255,255,0.2)", marginLeft: 6 }}>· {order.customer_phone}</span>
-                            )}
-                          </span>
-                        </div>
+                        {/* Current delivery status label (operacional) */}
+                        {operationsEnabled && (
+                          <div style={{ padding: "0 14px 8px" }} onClick={(e) => e.stopPropagation()}>
+                            <span style={{ fontSize: 10, color: ds === "delivered" ? "#00ffae" : "var(--dash-text-muted)", fontWeight: 600 }}>
+                              {currentStep.emoji} {currentStep.label}
+                              {order.customer_name && order.customer_phone && (
+                                <span style={{ color: "rgba(255,255,255,0.2)", marginLeft: 6 }}>· {order.customer_phone}</span>
+                              )}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Phone subtitle (visível sempre que operations=false e cliente forneceu telefone) */}
+                        {!operationsEnabled && order.customer_phone && (
+                          <div style={{ padding: "0 14px 8px" }} onClick={(e) => e.stopPropagation()}>
+                            <span style={{ fontSize: 10, color: "var(--dash-text-muted)", fontWeight: 600 }}>
+                              · {order.customer_phone}
+                            </span>
+                          </div>
+                        )}
 
                         {/* Expanded details */}
                         {isExpanded && (
@@ -459,58 +496,64 @@ export default function PedidosModal({ unitId, unit, onOpenImport }: { unitId: s
                             }}
                             onClick={(e) => e.stopPropagation()}
                           >
-                            {/* Kitchen status */}
-                            <div style={{ marginBottom: 10 }}>
-                              <span style={{
-                                fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 20,
-                                background: "var(--dash-card-hover)", color: "var(--dash-text-muted)",
-                                border: "1px solid var(--dash-card-border)",
-                              }}>
-                                <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><ChefHat size={11} />{KITCHEN_LABEL[ks] ?? ks}</span>
-                              </span>
-                            </div>
-
-                            {/* Delivery status buttons */}
-                            <div style={{ marginBottom: 12 }}>
-                              <div style={{ fontSize: 10, fontWeight: 700, color: "var(--dash-text-muted)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 1 }}>
-                                Status do pedido
+                            {/* Kitchen status (operacional) */}
+                            {operationsEnabled && (
+                              <div style={{ marginBottom: 10 }}>
+                                <span style={{
+                                  fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 20,
+                                  background: "var(--dash-card-hover)", color: "var(--dash-text-muted)",
+                                  border: "1px solid var(--dash-card-border)",
+                                }}>
+                                  <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><ChefHat size={11} />{KITCHEN_LABEL[ks] ?? ks}</span>
+                                </span>
                               </div>
-                              <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-                                {DELIVERY_STEPS.map((step, i) => {
-                                  const isCurrent = ds === step.id;
-                                  const isPast = i < dsIndex;
-                                  return (
-                                    <button
-                                      key={step.id}
-                                      onClick={() => !isCurrent && handleChangeDeliveryStatus(order, step.id)}
-                                      disabled={isCurrent}
-                                      style={{
-                                        padding: "6px 10px", borderRadius: 8,
-                                        border: isCurrent ? "1px solid var(--dash-accent)" : "1px solid var(--dash-card-border)",
-                                        cursor: isCurrent ? "default" : "pointer",
-                                        background: isCurrent
-                                          ? "var(--dash-accent-soft)"
-                                          : isPast
-                                          ? "rgba(0,255,174,0.03)"
-                                          : "var(--dash-card-hover)",
-                                        color: isCurrent
-                                          ? "var(--dash-accent)"
-                                          : isPast
-                                          ? "rgba(0,255,174,0.4)"
-                                          : "var(--dash-text-muted)",
-                                        fontSize: 11, fontWeight: 700,
-                                        transition: "all 0.15s",
-                                      }}
-                                    >
-                                      {step.emoji} {step.label}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            </div>
+                            )}
 
-                            {/* Notify client button */}
-                            {hasPhone && ds !== "pending" && (
+                            {/* Delivery status buttons (operacional) */}
+                            {operationsEnabled && (
+                              <div style={{ marginBottom: 12 }}>
+                                <div style={{ fontSize: 10, fontWeight: 700, color: "var(--dash-text-muted)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 1 }}>
+                                  Status do pedido
+                                </div>
+                                <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                                  {DELIVERY_STEPS.map((step, i) => {
+                                    const isCurrent = ds === step.id;
+                                    const isPast = i < dsIndex;
+                                    return (
+                                      <button
+                                        key={step.id}
+                                        onClick={() => !isCurrent && handleChangeDeliveryStatus(order, step.id)}
+                                        disabled={isCurrent}
+                                        style={{
+                                          padding: "6px 10px", borderRadius: 8,
+                                          border: isCurrent ? "1px solid var(--dash-accent)" : "1px solid var(--dash-card-border)",
+                                          cursor: isCurrent ? "default" : "pointer",
+                                          background: isCurrent
+                                            ? "var(--dash-accent-soft)"
+                                            : isPast
+                                            ? "rgba(0,255,174,0.03)"
+                                            : "var(--dash-card-hover)",
+                                          color: isCurrent
+                                            ? "var(--dash-accent)"
+                                            : isPast
+                                            ? "rgba(0,255,174,0.4)"
+                                            : "var(--dash-text-muted)",
+                                          fontSize: 11, fontWeight: 700,
+                                          transition: "all 0.15s",
+                                        }}
+                                      >
+                                        {step.emoji} {step.label}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Notify client button — sempre disponível quando há telefone
+                                e operations está desligado (SaaS de cardápio); caso operacional,
+                                segue regra antiga (só depois que delivery_status saiu de pending). */}
+                            {hasPhone && (!operationsEnabled || ds !== "pending") && (
                               <button
                                 onClick={() => openWaNotification(order, currentStep)}
                                 style={{

@@ -171,6 +171,17 @@ export default async function DashboardPage({ searchParams }: { searchParams?: P
   const clicks = events?.filter((e) => e.event === "product_click").length ?? 0;
   const orders = events?.filter((e) => e.event === "whatsapp_click").length ?? 0;
 
+  // Subtítulo "{N} pedidos hoje" + banner do PedidosModal usam contagem REAL
+  // de order_intents de HOJE com source='whatsapp'.
+  const todayStartIso = new Date(new Date().setHours(0, 0, 0, 0)).toISOString();
+  const { count: todayWhatsappCount } = await supabase
+    .from("order_intents")
+    .select("id", { count: "exact", head: true })
+    .eq("unit_id", unit?.id)
+    .eq("source", "whatsapp")
+    .gte("created_at", todayStartIso);
+  const todayWaOrdersCount = todayWhatsappCount ?? 0;
+
   const { count: tvCount } = await supabase
     .from("tv_media")
     .select("id", { count: "exact", head: true })
@@ -251,7 +262,7 @@ export default async function DashboardPage({ searchParams }: { searchParams?: P
       categories={categories ?? []}
       products={products ?? []}
       upsellItems={upsellItems ?? []}
-      analytics={{ views, clicks, orders }}
+      analytics={{ views, clicks, orders, todayOrders: todayWaOrdersCount }}
       tvCount={tvCount ?? 0}
       stockStats={stockStats}
       reportData={reportData}
