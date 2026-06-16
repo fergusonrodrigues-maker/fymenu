@@ -275,24 +275,17 @@ const GRID_LAYOUTS: Record<string, Array<{ id: string; cols: number; mobileCols:
     { id: "suporte",     cols: 1, mobileCols: 1 },
     { id: "impressoras", cols: 2, mobileCols: 2 },
   ],
-  // menupro: analytics full-width + 3 rows of 4
+  // menupro: layout enxuto — só cards com acesso no plano único (sem features parqueadas)
   menupro: [
     { id: "analytics",   cols: 4, mobileCols: 2 },
     { id: "cardapio",    cols: 1, mobileCols: 1 },
     { id: "pedidos",     cols: 1, mobileCols: 1 },
-    { id: "financeiro",  cols: 1, mobileCols: 1 },
-    { id: "operacoes",   cols: 1, mobileCols: 1 },
-    { id: "unidade",     cols: 1, mobileCols: 1 },
-    { id: "equipe",      cols: 1, mobileCols: 1 },
-    { id: "estoque",     cols: 1, mobileCols: 1 },
     { id: "crm",         cols: 1, mobileCols: 1 },
-    { id: "tarefas",     cols: 1, mobileCols: 1 },
-    { id: "whatsapp",    cols: 2, mobileCols: 2 },
+    { id: "unidade",     cols: 1, mobileCols: 1 },
     { id: "tv",          cols: 1, mobileCols: 1 },
     { id: "historico",   cols: 1, mobileCols: 1 },
+    { id: "config",      cols: 1, mobileCols: 1 },
     { id: "suporte",     cols: 1, mobileCols: 1 },
-    { id: "config",      cols: 2, mobileCols: 2 },
-    { id: "impressoras", cols: 2, mobileCols: 2 },
   ],
   // business: analytics full-width + 4 rows of 4
   business: [
@@ -1204,15 +1197,18 @@ export default function DashboardClient({
             </div>
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            {/* Links Rápidos */}
-            <button onClick={() => open("links")} style={{
-              width: 36, height: 36, borderRadius: 12,
-              background: "var(--dash-card)",
-              border: "1px solid var(--dash-border)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 16, cursor: "pointer", color: "var(--dash-text-muted)",
-              boxShadow: "var(--dash-shadow)",
-            }}><Link2 size={16} /></button>
+            {/* Links Rápidos — gated por feature 'operations' (acessos de operação: cozinha/garçom/PDV/gerente).
+                menupro/menu não têm operations → botão some; business mantém. */}
+            {hasCardAccess("operacoes") && (
+              <button onClick={() => open("links")} style={{
+                width: 36, height: 36, borderRadius: 12,
+                background: "var(--dash-card)",
+                border: "1px solid var(--dash-border)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 16, cursor: "pointer", color: "var(--dash-text-muted)",
+                boxShadow: "var(--dash-shadow)",
+              }}><Link2 size={16} /></button>
+            )}
             {/* Notification bell — persistent log (DB) */}
             <NotificationBell restaurantId={restaurant.id} />
             <ThemeToggle />
@@ -1570,7 +1566,7 @@ export default function DashboardClient({
       <Modal open={modal === "equipe"} onClose={close} title="Equipe" size="lg">
         {unit && <StaffAnalyticsModal unitId={unit.id} plan={restaurantState.plan ?? "menu"} unitFeatures={unitFeatures} />}
       </Modal>
-      <Modal open={modal === "links"} onClose={close} title="Acessos rápidos" size="sm">
+      <Modal open={modal === "links" && hasCardAccess("operacoes")} onClose={close} title="Acessos rápidos" size="sm">
         <div style={{ paddingTop: 4 }}>
           {/* Header */}
           <div style={{ marginBottom: 20 }}>
