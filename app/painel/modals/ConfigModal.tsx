@@ -5,7 +5,7 @@ import { UtensilsCrossed, Star, Building2, MessageCircle, LogOut, Users } from "
 import { createClient } from "@/lib/supabase/client";
 import type { Profile, Restaurant } from "../types";
 import PasswordReqs, { passwordValid, translatePasswordError } from "@/components/PasswordReqs";
-import { PLANS as PLAN_DEFS } from "@/lib/plans";
+import { PLANS as PLAN_DEFS, planLabel } from "@/lib/plans";
 import { formatCents } from "@/lib/money";
 import { listMembers, inviteMember, revokeInvite, removeMember } from "../membersActions";
 import type { MemberData } from "../membersActions";
@@ -67,8 +67,8 @@ function daysUntil(iso: string) {
   return Math.max(0, Math.ceil(ms / 86400000));
 }
 
-export default function ConfigModal({ profile, restaurant }: { profile: Profile; restaurant: Restaurant }) {
-  const [tab, setTab] = useState<"perfil" | "plano" | "socios" | "seguranca">("perfil");
+export default function ConfigModal({ profile, restaurant, initialTab = "perfil" }: { profile: Profile; restaurant: Restaurant; initialTab?: "perfil" | "plano" | "socios" | "seguranca" }) {
+  const [tab, setTab] = useState<"perfil" | "plano" | "socios" | "seguranca">(initialTab);
 
   // Perfil
   const [firstName, setFirstName] = useState(profile?.first_name || "");
@@ -106,6 +106,12 @@ export default function ConfigModal({ profile, restaurant }: { profile: Profile;
 
   const currentPlan = restaurant?.plan || "menu";
   const currentPlanIdx = PLANS.findIndex(p => p.key === currentPlan);
+
+  // Plano único (menupro): comparação/upgrade fica dormante — mantida no código, oculta na UI.
+  const showPlanComparison = false;
+  // Assinatura considerada ativa em trial/active/cortesia.
+  const planActive = !!restaurant?.plan &&
+    (restaurant?.status === "active" || restaurant?.status === "trial" || !!restaurant?.free_access);
 
   useEffect(() => {
     if (tab === "socios") loadMembers();
@@ -465,7 +471,50 @@ export default function ConfigModal({ profile, restaurant }: { profile: Profile;
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <style>{`@keyframes cfgGoldSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
 
-          {PLANS.map((plan, idx) => {
+          {/* ── Status da assinatura ── */}
+          <div style={{
+            padding: "14px 18px", borderRadius: 16, textAlign: "center",
+            background: planActive ? "rgba(0,255,174,0.04)" : "rgba(248,113,113,0.04)",
+            border: `1px solid ${planActive ? "rgba(0,255,174,0.1)" : "rgba(248,113,113,0.1)"}`,
+          }}>
+            {planActive ? (
+              <>
+                <div style={{ fontSize: 13, fontWeight: 800, color: "var(--dash-accent)" }}>
+                  Plano {planLabel(restaurant?.plan)} ativo
+                </div>
+                {restaurant?.status === "trial" && restaurant?.trial_ends_at ? (
+                  <div style={{ fontSize: 10, color: "var(--dash-text-muted)", marginTop: 4 }}>
+                    Trial até {fmtDate(restaurant.trial_ends_at)}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 10, color: "var(--dash-text-muted)", marginTop: 4 }}>
+                    Assinatura ativa
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <div style={{ fontSize: 13, fontWeight: 800, color: "var(--dash-danger)" }}>Nenhum plano ativo</div>
+                <div style={{ fontSize: 10, color: "var(--dash-text-muted)", marginTop: 4 }}>
+                  Assine para publicar seu cardápio
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* ── Assinar (sem plano ativo) — plano único MenuPro ── */}
+          {!planActive && (
+            <button onClick={() => handleChangePlan("menupro")} style={{
+              width: "100%", padding: 14, borderRadius: 14, border: "none", cursor: "pointer",
+              background: "linear-gradient(135deg, #00ffae, #00d9ff)", color: "#000",
+              fontSize: 14, fontWeight: 900, fontFamily: "inherit",
+            }}>
+              Assinar {PLAN_DEFS.menupro.name} · {formatCents(PLAN_DEFS.menupro.prices.monthly)}/mês
+            </button>
+          )}
+
+          {/* Comparação de planos — dormante no plano único (mantida no código, oculta na UI) */}
+          {showPlanComparison && PLANS.map((plan, idx) => {
             const isCurrent = currentPlan === plan.key;
             const isUpgrade = idx > currentPlanIdx;
             const isDowngrade = idx < currentPlanIdx;
@@ -608,7 +657,8 @@ export default function ConfigModal({ profile, restaurant }: { profile: Profile;
             );
           })}
 
-          {/* Cancelar plano */}
+          {/* Cancelar plano — só com assinatura ativa */}
+          {planActive && (
           <div style={{ marginTop: 4 }}>
             {!showCancelConfirm ? (
               <button onClick={() => setShowCancelConfirm(true)} style={{
@@ -640,6 +690,7 @@ export default function ConfigModal({ profile, restaurant }: { profile: Profile;
               </div>
             )}
           </div>
+          )}
         </div>
       )}
 
