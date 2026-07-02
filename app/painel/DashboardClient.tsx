@@ -275,24 +275,17 @@ const GRID_LAYOUTS: Record<string, Array<{ id: string; cols: number; mobileCols:
     { id: "suporte",     cols: 1, mobileCols: 1 },
     { id: "impressoras", cols: 2, mobileCols: 2 },
   ],
-  // menupro: analytics full-width + 3 rows of 4
+  // menupro: layout enxuto — só cards com acesso no plano único (sem features parqueadas)
   menupro: [
     { id: "analytics",   cols: 4, mobileCols: 2 },
     { id: "cardapio",    cols: 1, mobileCols: 1 },
     { id: "pedidos",     cols: 1, mobileCols: 1 },
-    { id: "financeiro",  cols: 1, mobileCols: 1 },
-    { id: "operacoes",   cols: 1, mobileCols: 1 },
-    { id: "unidade",     cols: 1, mobileCols: 1 },
-    { id: "equipe",      cols: 1, mobileCols: 1 },
-    { id: "estoque",     cols: 1, mobileCols: 1 },
     { id: "crm",         cols: 1, mobileCols: 1 },
-    { id: "tarefas",     cols: 1, mobileCols: 1 },
-    { id: "whatsapp",    cols: 2, mobileCols: 2 },
+    { id: "unidade",     cols: 1, mobileCols: 1 },
     { id: "tv",          cols: 1, mobileCols: 1 },
     { id: "historico",   cols: 1, mobileCols: 1 },
+    { id: "config",      cols: 1, mobileCols: 1 },
     { id: "suporte",     cols: 1, mobileCols: 1 },
-    { id: "config",      cols: 2, mobileCols: 2 },
-    { id: "impressoras", cols: 2, mobileCols: 2 },
   ],
   // business: analytics full-width + 4 rows of 4
   business: [
@@ -346,10 +339,13 @@ export default function DashboardClient({
   const router = useRouter();
   const [modal, setModal] = useState<"analytics" | "cardapio" | "pedidos" | "financeiro" | "unidade" | "plano" | "config" | "tv" | "modotv" | "estoque" | "operacoes" | "equipe" | "impressoras" | "links" | "crm" | "whatsapp" | "delivery" | "criar-unidade" | "importar" | "historico" | "tarefas" | null>(null);
   const [importInitialType, setImportInitialType] = useState<string | undefined>(undefined);
+  const [configInitialTab, setConfigInitialTab] = useState<"perfil" | "plano" | "socios" | "seguranca">("perfil");
   const [chatOpen, setChatOpen] = useState(false);
   const open = (m: typeof modal) => setModal(m);
-  const close = () => setModal(null);
+  const close = () => { setModal(null); setConfigInitialTab("perfil"); };
   const openImport = (type?: string) => { setImportInitialType(type); setModal("importar"); };
+  // Gestão de assinatura consolidada no ConfigModal → abre direto na aba "Plano".
+  const openConfigPlano = () => { setConfigInitialTab("plano"); setModal("config"); };
 
   // ── Plan gate state ──
   const [deniedCardId, setDeniedCardId] = useState<string | null>(null);
@@ -1184,7 +1180,7 @@ export default function DashboardClient({
                         onClick={() => {
                           setShowUnitSelector(false);
                           if (canAddUnit) open("criar-unidade");
-                          else open("plano");
+                          else openConfigPlano();
                         }}
                         title={canAddUnit ? undefined : "Disponível com plano ativo"}
                         style={{
@@ -1204,15 +1200,18 @@ export default function DashboardClient({
             </div>
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            {/* Links Rápidos */}
-            <button onClick={() => open("links")} style={{
-              width: 36, height: 36, borderRadius: 12,
-              background: "var(--dash-card)",
-              border: "1px solid var(--dash-border)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 16, cursor: "pointer", color: "var(--dash-text-muted)",
-              boxShadow: "var(--dash-shadow)",
-            }}><Link2 size={16} /></button>
+            {/* Links Rápidos — gated por feature 'operations' (acessos de operação: cozinha/garçom/PDV/gerente).
+                menupro/menu não têm operations → botão some; business mantém. */}
+            {hasCardAccess("operacoes") && (
+              <button onClick={() => open("links")} style={{
+                width: 36, height: 36, borderRadius: 12,
+                background: "var(--dash-card)",
+                border: "1px solid var(--dash-border)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 16, cursor: "pointer", color: "var(--dash-text-muted)",
+                boxShadow: "var(--dash-shadow)",
+              }}><Link2 size={16} /></button>
+            )}
             {/* Notification bell — persistent log (DB) */}
             <NotificationBell restaurantId={restaurant.id} />
             <ThemeToggle />
@@ -1234,7 +1233,7 @@ export default function DashboardClient({
             <div style={{ color: "var(--dash-warning)", fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
               <Timer size={14} /> {trialDays} dia{trialDays !== 1 ? "s" : ""} de trial restante{trialDays !== 1 ? "s" : ""}
             </div>
-            <button onClick={() => open("plano")} style={{ padding: "6px 12px", borderRadius: 8, border: "none", background: "rgba(255,180,0,0.2)", color: "var(--dash-warning)", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Ver planos</button>
+            <button onClick={openConfigPlano} style={{ padding: "6px 12px", borderRadius: 8, border: "none", background: "rgba(255,180,0,0.2)", color: "var(--dash-warning)", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Ver planos</button>
           </div>
         )}
 
@@ -1244,7 +1243,7 @@ export default function DashboardClient({
             <div style={{ color: "var(--dash-danger)", fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
               <Lock size={14} /> Seu cardápio está offline. Assine um plano para publicar.
             </div>
-            <button onClick={() => open("plano")} style={{ padding: "6px 14px", borderRadius: 8, border: "none", background: "var(--dash-danger-soft)", color: "var(--dash-danger)", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>Ver planos</button>
+            <button onClick={openConfigPlano} style={{ padding: "6px 14px", borderRadius: 8, border: "none", background: "var(--dash-danger-soft)", color: "var(--dash-danger)", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>Ver planos</button>
           </div>
         )}
 
@@ -1524,13 +1523,13 @@ export default function DashboardClient({
         {unit && <PedidosModal unitId={unit.id} unit={unit} onOpenImport={openImport} plan={restaurantState.plan} unitFeatures={unitFeatures} />}
       </Modal>
       <Modal open={modal === "cardapio"} onClose={close} title="Cardápio" size="lg">
-        <CardapioModal unit={unit} categories={categories} products={products} upsellItems={upsellItems} restaurant={restaurantState} onClose={close} onOpenPlano={() => open("plano")} />
+        <CardapioModal unit={unit} categories={categories} products={products} upsellItems={upsellItems} restaurant={restaurantState} onClose={close} onOpenPlano={openConfigPlano} />
       </Modal>
       <Modal open={modal === "financeiro"} onClose={close} title="Financeiro" size="lg">
-        <FinanceiroModal unit={unit} analytics={analytics} reportData={reportData} restaurant={restaurantState} onOpenPlano={() => open("plano")} onOpenImport={openImport} />
+        <FinanceiroModal unit={unit} analytics={analytics} reportData={reportData} restaurant={restaurantState} onOpenPlano={openConfigPlano} onOpenImport={openImport} />
       </Modal>
       <Modal open={modal === "unidade"} onClose={close} title="Unidade">
-        <UnidadeModal unit={unit} canAddUnit={canAddUnit} plan={restaurantState.plan ?? "menu"} unitFeatures={unitFeatures} restaurantStatus={restaurantState.status} restaurantIsComplimentary={!!restaurantState.is_complimentary} onClose={close} onOpenPlans={() => open("plano")} onOpenCreateUnit={() => { close(); open("criar-unidade"); }} />
+        <UnidadeModal unit={unit} canAddUnit={canAddUnit} plan={restaurantState.plan ?? "menu"} unitFeatures={unitFeatures} restaurantStatus={restaurantState.status} restaurantIsComplimentary={!!restaurantState.is_complimentary} onClose={close} onOpenPlans={openConfigPlano} onOpenCreateUnit={() => { close(); open("criar-unidade"); }} />
       </Modal>
       <Modal open={modal === "criar-unidade"} onClose={close} title="Nova Unidade" size="sm">
         <CriarUnidadeModal
@@ -1548,7 +1547,7 @@ export default function DashboardClient({
         <PlanoModal restaurant={restaurantState} highlightPlan={highlightPlan} trialDays={trialDays} onClose={() => { close(); setHighlightPlan(null); }} />
       </Modal>
       <Modal open={modal === "config"} onClose={close} title="Configurações" size="lg">
-        <ConfigModal profile={profile} restaurant={restaurantState} />
+        <ConfigModal profile={profile} restaurant={restaurantState} initialTab={configInitialTab} />
       </Modal>
       <Modal open={modal === "estoque"} onClose={close} title="Estoque" size="lg">
         <EstoqueModal unit={unit} restaurant={restaurantState} onOpenImport={openImport} />
@@ -1570,7 +1569,7 @@ export default function DashboardClient({
       <Modal open={modal === "equipe"} onClose={close} title="Equipe" size="lg">
         {unit && <StaffAnalyticsModal unitId={unit.id} plan={restaurantState.plan ?? "menu"} unitFeatures={unitFeatures} />}
       </Modal>
-      <Modal open={modal === "links"} onClose={close} title="Acessos rápidos" size="sm">
+      <Modal open={modal === "links" && hasCardAccess("operacoes")} onClose={close} title="Acessos rápidos" size="sm">
         <div style={{ paddingTop: 4 }}>
           {/* Header */}
           <div style={{ marginBottom: 20 }}>
@@ -1652,7 +1651,7 @@ export default function DashboardClient({
           restaurant={restaurantState}
           initialType={importInitialType as any}
           onClose={close}
-          onOpenPlano={() => { close(); open("plano"); }}
+          onOpenPlano={openConfigPlano}
         />
       </Modal>
       {upgradePopup && (() => {
@@ -1662,9 +1661,8 @@ export default function DashboardClient({
             minPlan={minPlan}
             onClose={() => setUpgradePopup(null)}
             onViewPlans={() => {
-              setHighlightPlan(minPlan);
               setUpgradePopup(null);
-              open("plano");
+              openConfigPlano();
             }}
           />
         );
