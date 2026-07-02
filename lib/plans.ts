@@ -120,9 +120,9 @@ export const PLANS: Record<PlanCode, PlanDef> = {
     trialDays: 7,
     hasTrial: true,
     prices: {
-      monthly: 49900,
-      quarterly: 44900,
-      semestral: 39900,
+      monthly: 12990,
+      quarterly: 10990,
+      semestral: 9990,
     },
     features: {
       ...ALL_FALSE,
@@ -182,7 +182,7 @@ const PLAN_ORDER: PlanCode[] = ["menu", "menupro", "business"];
 
 /**
  * Total amount billed at once for the cycle (per-month × months).
- *   getTotalCents("menupro", "quarterly") → 134700  (R$ 449 × 3)
+ *   getTotalCents("menupro", "quarterly") → 32970  (R$ 109,90 × 3)
  */
 export function getTotalCents(plan: PlanCode, cycle: BillingCycle): number {
   return PLANS[plan].prices[cycle] * CYCLE_MONTHS[cycle];
